@@ -1,0 +1,2447 @@
+{
+  "setId": "set-02",
+  "title": "Set 02 - Logic Trails",
+  "theme": "branching roads and recursive ladders",
+  "source": "template-generated",
+  "generatedAt": "2026-05-29T12:04:59.325195+00:00",
+  "levels": [
+    {
+      "id": 1,
+      "title": "Set 02 Level 01",
+      "rows": 1,
+      "cols": 4,
+      "map": [
+        [
+          "b",
+          "b",
+          "b",
+          "b"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "right();\nright();\nright();",
+      "difficulty": "easy",
+      "concept": "Sequence warm-up",
+      "learningObjective": "อ่านการเดินแนวนอนทีละคำสั่ง",
+      "whyHard": "ต้องนับช่องให้ครบโดยไม่หลุดสายตา",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 2,
+      "title": "Set 02 Level 02",
+      "rows": 4,
+      "cols": 1,
+      "map": [
+        [
+          "g"
+        ],
+        [
+          "g"
+        ],
+        [
+          "g"
+        ],
+        [
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "down();\ndown();\ndown();",
+      "difficulty": "easy",
+      "concept": "Vertical trace",
+      "learningObjective": "อ่านการเดินแนวตั้งทีละคำสั่ง",
+      "whyHard": "บังคับให้คิดเรื่อง row อย่างเดียวก่อน",
+      "expectedMoves": [
+        "down",
+        "down",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 3,
+      "title": "Set 02 Level 03",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "b",
+          "o",
+          "o",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "right();\nright();\nright();\ndown();\ndown();",
+      "difficulty": "easy",
+      "concept": "Turn once",
+      "learningObjective": "เห็นการเปลี่ยนทิศทางกลางโปรแกรม",
+      "whyHard": "มีจังหวะเลี้ยวครั้งเดียวแต่ต้องจับให้ถูก",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "down",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 4,
+      "title": "Set 02 Level 04",
+      "rows": 1,
+      "cols": 5,
+      "map": [
+        [
+          "p",
+          "p",
+          "p",
+          "p",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(4) {\n  right();\n}",
+      "difficulty": "easy",
+      "concept": "Repeat intro",
+      "learningObjective": "มอง repeat เป็นคำสั่งย่อ",
+      "whyHard": "ต้องแปลง repeat ให้เป็นหลายก้าวในหัว",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 5,
+      "title": "Set 02 Level 05",
+      "rows": 5,
+      "cols": 1,
+      "map": [
+        [
+          "y"
+        ],
+        [
+          "y"
+        ],
+        [
+          "y"
+        ],
+        [
+          "y"
+        ],
+        [
+          "y"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(4) {\n  down();\n}",
+      "difficulty": "easy",
+      "concept": "Repeat vertical",
+      "learningObjective": "ใช้ repeat กับแนวตั้ง",
+      "whyHard": "คล้ายด่านก่อนแต่เปลี่ยนแกนการคิด",
+      "expectedMoves": [
+        "down",
+        "down",
+        "down",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 6,
+      "title": "Set 02 Level 06",
+      "rows": 3,
+      "cols": 3,
+      "map": [
+        [
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(2) {\n  right();\n  down();\n}",
+      "difficulty": "easy",
+      "concept": "Repeat pattern",
+      "learningObjective": "มอง pattern ขวา-ลง ที่วนซ้ำ",
+      "whyHard": "ต้องรักษาจังหวะ 2 คำสั่งในแต่ละรอบ",
+      "expectedMoves": [
+        "right",
+        "down",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 7,
+      "title": "Set 02 Level 07",
+      "rows": 3,
+      "cols": 5,
+      "map": [
+        [
+          "b",
+          "b",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "b"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(2) {\n  right();\n  right();\n  down();\n}",
+      "difficulty": "normal",
+      "concept": "Nested rhythm",
+      "learningObjective": "trace pattern ที่ยาวขึ้น",
+      "whyHard": "แม้ logic ง่ายแต่ map กว้างขึ้นจนหลุดจังหวะได้",
+      "expectedMoves": [
+        "right",
+        "right",
+        "down",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 8,
+      "title": "Set 02 Level 08",
+      "rows": 1,
+      "cols": 4,
+      "map": [
+        [
+          "v",
+          "v",
+          "v",
+          "v"
+        ]
+      ],
+      "start": [
+        0,
+        2
+      ],
+      "code": "repeat(3) {\n  right();\n}",
+      "difficulty": "normal",
+      "concept": "Wrap awareness",
+      "learningObjective": "เข้าใจว่าขอบกระดานพากลับอีกฝั่ง",
+      "whyHard": "จุดยากคือคิด wrap ในหัวพร้อมกับ repeat",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 9,
+      "title": "Set 02 Level 09",
+      "rows": 4,
+      "cols": 1,
+      "map": [
+        [
+          "o"
+        ],
+        [
+          "o"
+        ],
+        [
+          "o"
+        ],
+        [
+          "o"
+        ]
+      ],
+      "start": [
+        2,
+        0
+      ],
+      "code": "repeat(3) {\n  down();\n}",
+      "difficulty": "normal",
+      "concept": "Vertical wrap",
+      "learningObjective": "ฝึก wrap ในแนวตั้ง",
+      "whyHard": "คล้ายด่าน wrap แต่เปลี่ยนเป็นคอลัมน์",
+      "expectedMoves": [
+        "down",
+        "down",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 10,
+      "title": "Set 02 Level 10",
+      "rows": 3,
+      "cols": 5,
+      "map": [
+        [
+          "p",
+          "p",
+          "p",
+          "p",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "p",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(2) {\n  right();\n  right();\n  down();\n}\nright();\nright();",
+      "difficulty": "medium",
+      "concept": "Multi-step repeat",
+      "learningObjective": "มองบล็อกคำสั่งยาวสามคำสั่งต่อรอบ",
+      "whyHard": "ถ้าหลุดหนึ่งจังหวะจะพังทั้งเส้นทาง",
+      "expectedMoves": [
+        "right",
+        "right",
+        "down",
+        "right",
+        "right",
+        "down",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 11,
+      "title": "Set 02 Level 11",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "g",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(3) {\n  right();\n}\nrepeat(3) {\n  down();\n}",
+      "difficulty": "medium",
+      "concept": "Batch execution",
+      "learningObjective": "แยกสองก้อนคำสั่งใหญ่ต่อกัน",
+      "whyHard": "ต้องรีเซ็ตการนับหลังจบก้อนแรก",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "down",
+        "down",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 12,
+      "title": "Set 02 Level 12",
+      "rows": 3,
+      "cols": 5,
+      "map": [
+        [
+          "b",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "b",
+          "b",
+          "n",
+          "b"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "b",
+          "b"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(2) {\n  down();\n  right();\n  right();\n}\nup();",
+      "difficulty": "medium",
+      "concept": "Mixed repeat path",
+      "learningObjective": "ตามเส้นทางที่เปลี่ยนทิศหลายครั้ง",
+      "whyHard": "เริ่มมีภาระจำลำดับคำสั่งหลายก้อน",
+      "expectedMoves": [
+        "down",
+        "right",
+        "right",
+        "down",
+        "right",
+        "right",
+        "up"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 13,
+      "title": "Set 02 Level 13",
+      "rows": 1,
+      "cols": 3,
+      "map": [
+        [
+          "p",
+          "b",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "if (p) {\n  right();\n}",
+      "difficulty": "easy",
+      "concept": "Single branch",
+      "learningObjective": "รู้ว่าถ้าเงื่อนไขจริงจะเข้าบล็อกไหน",
+      "whyHard": "มีแค่หนึ่งเงื่อนไขให้เริ่มต้นอย่างปลอดภัย",
+      "expectedMoves": [
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 14,
+      "title": "Set 02 Level 14",
+      "rows": 2,
+      "cols": 2,
+      "map": [
+        [
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "if (p) {\n  right();\n} else {\n  down();\n}",
+      "difficulty": "easy",
+      "concept": "If / else",
+      "learningObjective": "เห็นเส้นทางเมื่อเงื่อนไขไม่จริง",
+      "whyHard": "ต้องเลือก else ให้ถูกแทนที่จะเดา if",
+      "expectedMoves": [
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 15,
+      "title": "Set 02 Level 15",
+      "rows": 1,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "if (!p) {\n  right();\n} else {\n  left();\n}",
+      "difficulty": "normal",
+      "concept": "Negation intro",
+      "learningObjective": "อ่าน ! เป็น not บนกระดานจริง",
+      "whyHard": "เด็กมักพลาดเพราะเห็นสีที่ไม่ต้องการแล้วตกใจ",
+      "expectedMoves": [
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 16,
+      "title": "Set 02 Level 16",
+      "rows": 2,
+      "cols": 2,
+      "map": [
+        [
+          "o",
+          "n"
+        ],
+        [
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "if (p) {\n  down();\n} else if (o) {\n  right();\n} else {\n  left();\n}",
+      "difficulty": "normal",
+      "concept": "Else-if chain",
+      "learningObjective": "ไล่ลำดับการเช็กสีทีละข้อ",
+      "whyHard": "ถ้าเช็กผิดลำดับจะไปผิดทิศทันที",
+      "expectedMoves": [
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 17,
+      "title": "Set 02 Level 17",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(4) {\n  if (p) {\n    right();\n  } else {\n    down();\n  }\n}",
+      "difficulty": "normal",
+      "concept": "Repeat with branch",
+      "learningObjective": "ใช้สีตัดสินใจในทุก iteration",
+      "whyHard": "ต้องเช็กสีใหม่ทุกครั้ง ไม่ใช่จำคำตอบเดิม",
+      "expectedMoves": [
+        "right",
+        "down",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 18,
+      "title": "Set 02 Level 18",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(4) {\n  if (g) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "difficulty": "normal",
+      "concept": "Alternating branch",
+      "learningObjective": "มอง branch ที่สลับผลลัพธ์ไปมา",
+      "whyHard": "บังคับให้ trace ทีละ tile แบบไม่ข้าม",
+      "expectedMoves": [
+        "down",
+        "right",
+        "down",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 19,
+      "title": "Set 02 Level 19",
+      "rows": 3,
+      "cols": 3,
+      "map": [
+        [
+          "p",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "if (p) {\n  right();\n}\nif (o) {\n  right();\n}\nif (n) {\n  down();\n}",
+      "difficulty": "normal",
+      "concept": "Sequential if",
+      "learningObjective": "ตาม if หลายบรรทัดต่อเนื่องกัน",
+      "whyHard": "เงื่อนไขแต่ละบรรทัดขึ้นกับตำแหน่งล่าสุด",
+      "expectedMoves": [
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 20,
+      "title": "Set 02 Level 20",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "o",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(3) {\n  if (o) {\n    right();\n  } else if (y) {\n    down();\n  } else {\n    left();\n  }\n}",
+      "difficulty": "medium",
+      "concept": "Else-if routing",
+      "learningObjective": "ตัดสินใจสามทางจากสี",
+      "whyHard": "มีทางเลือกมากขึ้นแต่ยังยุติธรรม",
+      "expectedMoves": [
+        "right",
+        "down",
+        "left"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 21,
+      "title": "Set 02 Level 21",
+      "rows": 1,
+      "cols": 4,
+      "map": [
+        [
+          "b",
+          "n",
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        2
+      ],
+      "code": "if (p) {\n  right();\n}\nif (n) {\n  right();\n}",
+      "difficulty": "medium",
+      "concept": "Branch with wrap",
+      "learningObjective": "คิดเงื่อนไขพร้อมขอบ map",
+      "whyHard": "จุดหลอกคือคำสั่งสุดท้ายพากลับต้นแถว",
+      "expectedMoves": [
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 22,
+      "title": "Set 02 Level 22",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "o",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(3) {\n  if (o) {\n    right();\n  } else if (g) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "difficulty": "medium",
+      "concept": "Else-if in repeat",
+      "learningObjective": "ไล่ branch ซ้ำหลายรอบ",
+      "whyHard": "ต้องจับว่าค่า tile เปลี่ยนหลังทุก move",
+      "expectedMoves": [
+        "right",
+        "down",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 23,
+      "title": "Set 02 Level 23",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "if (p) {\n  down();\n}\nif (g) {\n  right();\n} else {\n  down();\n}\nif (o) {\n  right();\n}",
+      "difficulty": "medium",
+      "concept": "State update",
+      "learningObjective": "เข้าใจว่า move แรกเปลี่ยนบริบทของ if ถัดไป",
+      "whyHard": "ความยากอยู่ที่ state เปลี่ยนกลางโปรแกรม",
+      "expectedMoves": [
+        "down",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 24,
+      "title": "Set 02 Level 24",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(4) {\n  if (p) {\n    down();\n  } else if (o) {\n    right();\n  } else if (g) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "difficulty": "medium",
+      "concept": "Multi-branch repeat",
+      "learningObjective": "trace repeat ที่มี else-if หลายชั้น",
+      "whyHard": "เริ่มคล้ายด่านปลาย chapter ของ branch",
+      "expectedMoves": [
+        "down",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 25,
+      "title": "Set 02 Level 25",
+      "rows": 2,
+      "cols": 6,
+      "map": [
+        [
+          "b",
+          "b",
+          "b",
+          "b",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while (b) {\n  right();\n}\ndown();",
+      "difficulty": "normal",
+      "concept": "While stop color",
+      "learningObjective": "เข้าใจว่า while หยุดเมื่อสีเปลี่ยน",
+      "whyHard": "ต่างจาก repeat เพราะไม่รู้จำนวนรอบล่วงหน้า",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 26,
+      "title": "Set 02 Level 26",
+      "rows": 5,
+      "cols": 2,
+      "map": [
+        [
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "n"
+        ],
+        [
+          "g",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while (!p) {\n  down();\n}\nright();",
+      "difficulty": "normal",
+      "concept": "While vertical",
+      "learningObjective": "ตาม loop ในแนวตั้งจนเจอสีเป้าหมาย",
+      "whyHard": "ต้องเช็กเงื่อนไขทุกครั้งที่ลงมา",
+      "expectedMoves": [
+        "down",
+        "down",
+        "down",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 27,
+      "title": "Set 02 Level 27",
+      "rows": 4,
+      "cols": 2,
+      "map": [
+        [
+          "y",
+          "n"
+        ],
+        [
+          "y",
+          "n"
+        ],
+        [
+          "y",
+          "n"
+        ],
+        [
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while (y) {\n  down();\n}\nright();",
+      "difficulty": "normal",
+      "concept": "While on color",
+      "learningObjective": "ใช้ while กับสีบวกโดยตรง",
+      "whyHard": "ดูคล้าย repeat แต่ termination มาจาก map",
+      "expectedMoves": [
+        "down",
+        "down",
+        "down",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 28,
+      "title": "Set 02 Level 28",
+      "rows": 2,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "y",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while (!g) {\n  right();\n}\ndown();",
+      "difficulty": "normal",
+      "concept": "Negated while",
+      "learningObjective": "หยุดเมื่อถึงสีเป้าหมาย",
+      "whyHard": "มีสีหลอกก่อนถึงจุดจบ",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 29,
+      "title": "Set 02 Level 29",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "k"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while (!k) {\n  if (g) {\n    right();\n  } else {\n    down();\n  }\n}",
+      "difficulty": "medium",
+      "concept": "While with branch",
+      "learningObjective": "ใช้ branch เพื่อนำทางภายใน loop",
+      "whyHard": "ต้องเข้าใจทั้งเงื่อนไข loop และเงื่อนไข branch",
+      "expectedMoves": [
+        "right",
+        "down",
+        "right",
+        "down",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 30,
+      "title": "Set 02 Level 30",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "k",
+          "k"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while (!k) {\n  if (o) {\n    down();\n  } else if (g) {\n    right();\n  } else {\n    down();\n  }\n}",
+      "difficulty": "medium",
+      "concept": "Else-if in while",
+      "learningObjective": "ใช้หลายสีพาไปถึง stop tile",
+      "whyHard": "ต้องไม่ลืมว่า while เช็กที่ต้นรอบ",
+      "expectedMoves": [
+        "down",
+        "right",
+        "down",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 31,
+      "title": "Set 02 Level 31",
+      "rows": 3,
+      "cols": 6,
+      "map": [
+        [
+          "b",
+          "b",
+          "b",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "b",
+          "b",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(2) {\n  while (b) {\n    right();\n  }\n  down();\n}",
+      "difficulty": "medium",
+      "concept": "Repeat of while blocks",
+      "learningObjective": "มองว่ามี loop หลายก้อนต่อกัน",
+      "whyHard": "พลาดง่ายตรงเปลี่ยนจาก while แรกไป while ที่สอง",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "down",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 32,
+      "title": "Set 02 Level 32",
+      "rows": 1,
+      "cols": 4,
+      "map": [
+        [
+          "g",
+          "b",
+          "b",
+          "b"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "while (b) {\n  right();\n}\nleft();",
+      "difficulty": "medium",
+      "concept": "While with wrap",
+      "learningObjective": "เข้าใจว่าลูปยังทำงานข้ามขอบกระดาน",
+      "whyHard": "จุดยากคือ stop tile อยู่หลัง wrap",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "left"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 33,
+      "title": "Set 02 Level 33",
+      "rows": 3,
+      "cols": 5,
+      "map": [
+        [
+          "g",
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "g",
+          "k",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while (!k) {\n  if (g) {\n    right();\n  } else if (p) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "difficulty": "medium",
+      "concept": "Looped routing",
+      "learningObjective": "ตัดสินใจจากสีหลายชนิดใน while",
+      "whyHard": "เริ่มเข้าใกล้รูปแบบโจทย์จริงของ chapter นี้",
+      "expectedMoves": [
+        "right",
+        "down",
+        "right",
+        "down",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 34,
+      "title": "Set 02 Level 34",
+      "rows": 2,
+      "cols": 6,
+      "map": [
+        [
+          "v",
+          "v",
+          "v",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "y",
+          "y",
+          "y",
+          "y",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while (v) {\n  right();\n}\ndown();\nwhile (y) {\n  left();\n}",
+      "difficulty": "hard",
+      "concept": "Sequential while",
+      "learningObjective": "ตามสองลูปคนละทิศทาง",
+      "whyHard": "ต้องรีเซ็ต mental model หลังจบลูปแรก",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "down",
+        "left",
+        "left",
+        "left",
+        "left"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 35,
+      "title": "Set 02 Level 35",
+      "rows": 3,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "while (!p) {\n  right();\n}",
+      "difficulty": "normal",
+      "concept": "Short negation",
+      "learningObjective": "ใช้ ! กับด่านสั้นมากให้จับหลักให้แม่น",
+      "whyHard": "สั้นแต่หลอกเพราะคนชอบรีบเดา",
+      "expectedMoves": [
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 36,
+      "title": "Set 02 Level 36",
+      "rows": 3,
+      "cols": 6,
+      "map": [
+        [
+          "b",
+          "b",
+          "b",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "k",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while (b) {\n  right();\n}\ndown();\nwhile (!k) {\n  if (g) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "difficulty": "hard",
+      "concept": "While + branch finale",
+      "learningObjective": "รวม while สองช่วงกับ branch ที่สั้นแต่สำคัญ",
+      "whyHard": "เป็นสะพานก่อนเข้า function",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "down",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 37,
+      "title": "Set 02 Level 37",
+      "rows": 1,
+      "cols": 4,
+      "map": [
+        [
+          "v",
+          "v",
+          "v",
+          "v"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "go();\n\nfunction go() {\n  right();\n  right();\n  right();\n}",
+      "difficulty": "normal",
+      "concept": "Function intro",
+      "learningObjective": "รู้ว่าการเรียกฟังก์ชันคือกระโดดไปอ่านอีกบล็อก",
+      "whyHard": "ความแปลกใหม่มาจาก indirection",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 38,
+      "title": "Set 02 Level 38",
+      "rows": 4,
+      "cols": 1,
+      "map": [
+        [
+          "g"
+        ],
+        [
+          "g"
+        ],
+        [
+          "g"
+        ],
+        [
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "drop();\n\nfunction drop() {\n  down();\n  down();\n  down();\n}",
+      "difficulty": "normal",
+      "concept": "Function vertical",
+      "learningObjective": "ย้ายความเข้าใจ function ไปใช้กับแนวตั้ง",
+      "whyHard": "ต้องแยก call site กับ function body ให้ได้",
+      "expectedMoves": [
+        "down",
+        "down",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 39,
+      "title": "Set 02 Level 39",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "b",
+          "b",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "across();\ndescend();\n\nfunction across() {\n  right();\n  right();\n}\n\nfunction descend() {\n  down();\n  down();\n}",
+      "difficulty": "normal",
+      "concept": "Two helpers",
+      "learningObjective": "มองโปรแกรมเป็นชิ้นย่อยสองก้อน",
+      "whyHard": "ต้อง trace function แรกให้จบก่อนเริ่มอีกตัว",
+      "expectedMoves": [
+        "right",
+        "right",
+        "down",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 40,
+      "title": "Set 02 Level 40",
+      "rows": 1,
+      "cols": 5,
+      "map": [
+        [
+          "p",
+          "p",
+          "p",
+          "p",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "slide();\n\nfunction slide() {\n  repeat(4) {\n    right();\n  }\n}",
+      "difficulty": "medium",
+      "concept": "Function with repeat",
+      "learningObjective": "ซ้อนแนวคิด function และ repeat",
+      "whyHard": "ภาระจำเริ่มหลายชั้นขึ้นแต่ยังเป็น pattern ตรง",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 41,
+      "title": "Set 02 Level 41",
+      "rows": 3,
+      "cols": 3,
+      "map": [
+        [
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "step();\nstep();\n\nfunction step() {\n  right();\n  down();\n}",
+      "difficulty": "medium",
+      "concept": "Function reuse",
+      "learningObjective": "เห็นการเรียก helper เดิมซ้ำสองรอบ",
+      "whyHard": "ต้องเชื่อว่าฟังก์ชันเดิมทำงานเหมือนเดิมทุกครั้ง",
+      "expectedMoves": [
+        "right",
+        "down",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 42,
+      "title": "Set 02 Level 42",
+      "rows": 2,
+      "cols": 4,
+      "map": [
+        [
+          "o",
+          "o",
+          "o",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "zig();\n\nfunction zig() {\n  right();\n  right();\n  finish();\n}\n\nfunction finish() {\n  right();\n  down();\n}",
+      "difficulty": "medium",
+      "concept": "Nested calls",
+      "learningObjective": "ตามลำดับการเรียก function ต่อ function",
+      "whyHard": "เริ่มมี call stack ขนาดเล็ก",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 43,
+      "title": "Set 02 Level 43",
+      "rows": 3,
+      "cols": 3,
+      "map": [
+        [
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "check();\n\nfunction check() {\n  if (p) {\n    down();\n  }\n  if (o) {\n    right();\n  }\n}",
+      "difficulty": "medium",
+      "concept": "Conditional helper",
+      "learningObjective": "ใช้ if ภายใน function",
+      "whyHard": "ผู้เล่นต้องคิดเงื่อนไขขณะอยู่ในอีก scope หนึ่ง",
+      "expectedMoves": [
+        "down",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 44,
+      "title": "Set 02 Level 44",
+      "rows": 2,
+      "cols": 6,
+      "map": [
+        [
+          "y",
+          "y",
+          "y",
+          "y",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "sweep();\n\nfunction sweep() {\n  while (y) {\n    right();\n  }\n  down();\n}",
+      "difficulty": "hard",
+      "concept": "Looped helper",
+      "learningObjective": "ใช้ while ภายใน function เดียว",
+      "whyHard": "บังคับให้แปล function body เป็น execution ยาวหลายก้าว",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 45,
+      "title": "Set 02 Level 45",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "p",
+          "p",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "corner();\n\nfunction corner() {\n  repeat(2) {\n    down();\n  }\n  repeat(3) {\n    right();\n  }\n}",
+      "difficulty": "hard",
+      "concept": "Two repeats in helper",
+      "learningObjective": "อ่าน helper ที่มี repeat สองก้อนต่อกัน",
+      "whyHard": "คล้าย macro ที่ต้องขยายในหัว",
+      "expectedMoves": [
+        "down",
+        "down",
+        "right",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 46,
+      "title": "Set 02 Level 46",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "o",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "drop();\nturn();\n\nfunction drop() {\n  repeat(3) {\n    down();\n  }\n}\n\nfunction turn() {\n  if (o) {\n    right();\n  }\n}",
+      "difficulty": "hard",
+      "concept": "Composed helpers",
+      "learningObjective": "ตาม helper สองตัวที่พึ่งพาตำแหน่งล่าสุด",
+      "whyHard": "helper ที่สองมีความหมายเพราะ helper แรกพามาถึงสีใหม่",
+      "expectedMoves": [
+        "down",
+        "down",
+        "down",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 47,
+      "title": "Set 02 Level 47",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "walk();\n\nfunction walk() {\n  if (g) {\n    down();\n  }\n  turn();\n}\n\nfunction turn() {\n  if (o) {\n    right();\n    down();\n  }\n}",
+      "difficulty": "hard",
+      "concept": "Helper with branch chain",
+      "learningObjective": "อ่าน function ที่ขยับแล้วจึง branch ต่อ",
+      "whyHard": "state เปลี่ยนใน function เดียวกันหลายครั้ง",
+      "expectedMoves": [
+        "down",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 48,
+      "title": "Set 02 Level 48",
+      "rows": 3,
+      "cols": 5,
+      "map": [
+        [
+          "v",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "v",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "p",
+          "p",
+          "p",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "drop();\nslide();\n\nfunction drop() {\n  while (v) {\n    down();\n  }\n}\n\nfunction slide() {\n  repeat(4) {\n    right();\n  }\n}",
+      "difficulty": "expert",
+      "concept": "Function + while + repeat",
+      "learningObjective": "รวม helper, while และ repeat แบบอ่านได้",
+      "whyHard": "เป็น final ของ chapter function โดยไม่กระโดดโหดเกินไป",
+      "expectedMoves": [
+        "down",
+        "down",
+        "right",
+        "right",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 49,
+      "title": "Set 02 Level 49",
+      "rows": 1,
+      "cols": 4,
+      "map": [
+        [
+          "b",
+          "b",
+          "b",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "function crawl() {\n  right();\n  if (!p) {\n    crawl();\n  }\n}\n\ncrawl();",
+      "difficulty": "hard",
+      "concept": "Recursion intro",
+      "learningObjective": "เห็นการเรียกตัวเองจนถึง base case",
+      "whyHard": "จุดสำคัญคือหยุดเมื่อเจอสีเป้าหมาย",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 50,
+      "title": "Set 02 Level 50",
+      "rows": 4,
+      "cols": 1,
+      "map": [
+        [
+          "g"
+        ],
+        [
+          "g"
+        ],
+        [
+          "g"
+        ],
+        [
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "function dive() {\n  down();\n  if (!p) {\n    dive();\n  }\n}\n\ndive();",
+      "difficulty": "hard",
+      "concept": "Vertical recursion",
+      "learningObjective": "ย้าย recursion ไปใช้ในแนวตั้ง",
+      "whyHard": "ยังเป็น recursion ตรง ๆ แต่เปลี่ยนแกนการเคลื่อนที่",
+      "expectedMoves": [
+        "down",
+        "down",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 51,
+      "title": "Set 02 Level 51",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "function stair() {\n  if (o) {\n    down();\n  }\n  if (g) {\n    right();\n    stair();\n  }\n}\n\nstair();",
+      "difficulty": "expert",
+      "concept": "Recursive staircase",
+      "learningObjective": "ใช้ recursion กับ path ที่ต้องเลี้ยว",
+      "whyHard": "เริ่มต้องคิด call stack พร้อม state สี",
+      "expectedMoves": [
+        "down",
+        "right",
+        "down",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 52,
+      "title": "Set 02 Level 52",
+      "rows": 3,
+      "cols": 5,
+      "map": [
+        [
+          "y",
+          "y",
+          "y",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "run();\nturn();\n\nfunction run() {\n  while (y) {\n    right();\n  }\n}\n\nfunction turn() {\n  if (p) {\n    down();\n  }\n}",
+      "difficulty": "hard",
+      "concept": "While helper + branch helper",
+      "learningObjective": "อ่าน helper สองตัวที่คนละบทบาท",
+      "whyHard": "ด่านนี้ดีสำหรับเช็กว่าแยก abstraction ได้ไหม",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 53,
+      "title": "Set 02 Level 53",
+      "rows": 1,
+      "cols": 4,
+      "map": [
+        [
+          "p",
+          "b",
+          "b",
+          "b"
+        ]
+      ],
+      "start": [
+        0,
+        3
+      ],
+      "code": "function sweep() {\n  left();\n  if (!p) {\n    sweep();\n  }\n}\n\nsweep();",
+      "difficulty": "hard",
+      "concept": "Reverse recursion",
+      "learningObjective": "ใช้ recursion ในทิศย้อนกลับ",
+      "whyHard": "ผู้เล่นต้องระวัง wrap แม้ด่านจะไม่บังคับ",
+      "expectedMoves": [
+        "left",
+        "left",
+        "left"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 54,
+      "title": "Set 02 Level 54",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "march();\n\nfunction march() {\n  repeat(3) {\n    if (g) {\n      down();\n    } else {\n      right();\n    }\n  }\n}",
+      "difficulty": "hard",
+      "concept": "Repeat with branch in helper",
+      "learningObjective": "ใช้ repeat และ if ภายใน function เดียว",
+      "whyHard": "มีหลาย state แต่ไอเดียยังคงชัดว่าเดินตามสี",
+      "expectedMoves": [
+        "down",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 55,
+      "title": "Set 02 Level 55",
+      "rows": 2,
+      "cols": 6,
+      "map": [
+        [
+          "v",
+          "v",
+          "v",
+          "v",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "function sweep() {\n  right();\n  if (!p) {\n    sweep();\n  }\n}\n\nfunction finish() {\n  down();\n}\n\nsweep();\nfinish();",
+      "difficulty": "expert",
+      "concept": "Recursion plus epilogue",
+      "learningObjective": "เข้าใจว่า recursion จบแล้ว program ยังมีคำสั่งต่อ",
+      "whyHard": "มักพลาดเพราะคิดว่าจบด่านทันทีหลัง recursion",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 56,
+      "title": "Set 02 Level 56",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "o",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "k",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "route();\n\nfunction route() {\n  while (!k) {\n    if (o) {\n      down();\n    } else if (g) {\n      right();\n    } else if (p) {\n      down();\n    } else {\n      right();\n    }\n  }\n}",
+      "difficulty": "expert",
+      "concept": "While + else-if helper",
+      "learningObjective": "ใช้ branch หลายสีใน helper เดียว",
+      "whyHard": "เป็นโจทย์ routing แบบ compact",
+      "expectedMoves": [
+        "down",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 57,
+      "title": "Set 02 Level 57",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "b",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "go();\n\nfunction go() {\n  if (b) {\n    down();\n  }\n  turn();\n}\n\nfunction turn() {\n  if (g) {\n    right();\n    go();\n  }\n}",
+      "difficulty": "expert",
+      "concept": "Mutual-style recursion feel",
+      "learningObjective": "แม้ไม่ mutual recursion เต็มรูป แต่มีการเรียกตัวเองผ่าน helper chain",
+      "whyHard": "ต้องแยกว่าคำสั่งไหนอยู่ใน frame ไหน",
+      "expectedMoves": [
+        "down",
+        "right",
+        "down",
+        "right"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 58,
+      "title": "Set 02 Level 58",
+      "rows": 2,
+      "cols": 6,
+      "map": [
+        [
+          "b",
+          "b",
+          "b",
+          "b",
+          "b",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "function sweep() {\n  right();\n  if (!p) {\n    sweep();\n  }\n}\n\nsweep();\ndown();",
+      "difficulty": "expert",
+      "concept": "Long recursion",
+      "learningObjective": "trace recursion ที่ยาวขึ้นแต่ concept เดิม",
+      "whyHard": "ใช้วัดความอึดของการไล่ state",
+      "expectedMoves": [
+        "right",
+        "right",
+        "right",
+        "right",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 59,
+      "title": "Set 02 Level 59",
+      "rows": 5,
+      "cols": 5,
+      "map": [
+        [
+          "g",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "k"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "function stair() {\n  if (g) {\n    right();\n  } else {\n    down();\n  }\n}\n\nwhile (!p) {\n  stair();\n}\ndown();",
+      "difficulty": "expert",
+      "concept": "Function inside while",
+      "learningObjective": "ใช้ function เดิมใน while เพื่อเดินตาม pattern",
+      "whyHard": "เป็นการรวม abstraction กับ stop condition",
+      "expectedMoves": [
+        "right",
+        "down",
+        "right",
+        "down",
+        "right",
+        "down",
+        "right",
+        "down"
+      ],
+      "setId": "set-02"
+    },
+    {
+      "id": 60,
+      "title": "Set 02 Level 60",
+      "rows": 5,
+      "cols": 6,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "v",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "k",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "k",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        4,
+        3
+      ],
+      "code": "function rise() {\n  while (!g) {\n    up();\n  }\n}\n\nfunction dash() {\n  repeat(2) {\n    right();\n  }\n}\n\nrise();\nif (g) {\n  right();\n}\nif (p) {\n  dash();\n}",
+      "difficulty": "expert",
+      "concept": "Final mixed control flow",
+      "learningObjective": "รวม while, if และ repeat แบบอ่านได้จริง",
+      "whyHard": "ยากตรงต้องรักษาภาพรวมของ execution หลายช่วง",
+      "expectedMoves": [
+        "up",
+        "up",
+        "right",
+        "right",
+        "right"
+      ],
+      "setId": "set-02"
+    }
+  ]
+}
