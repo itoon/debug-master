@@ -12,7 +12,7 @@ import beacon from "~/assets/sprites/beacon.png";
 import gem from "~/assets/sprites/gem.png";
 import rock from "~/assets/sprites/rock.png";
 import background from "~/assets/bg.png";
-import { PLAYER_SPRITES } from "../utils/playerSprites";
+import { PLAYER_SPRITES, PLAYER_POSES } from "../utils/playerSprites";
 import { tileDefinition } from "./tiles";
 import { th } from "../i18n/messages";
 
@@ -123,6 +123,15 @@ export const assetGroups: AssetGroup[] = [
         preview: { kind: "image", src: codiDizzy, backdrop: "tile" },
         usedIn: "ยังไม่ได้ใช้ (เดิมใช้ตอนกดผิด / หมดเวลา)",
         spec: [],
+      },
+      {
+        id: "codi-failed",
+        name: th["asset.codiFailed"],
+        file: "app/assets/sprites/codi-failed.png",
+        status: "in-use",
+        preview: { kind: "image", src: PLAYER_POSES.failed, backdrop: "tile" },
+        usedIn: th["asset.codiFailedUsage"],
+        spec: [th["asset.codiFailedSpec"]],
       },
       {
         id: "codi-wave",

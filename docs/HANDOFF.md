@@ -116,3 +116,10 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Mode badge now fits its text instead of spanning the form. Nickname/random-name row uses a narrower random button, still at least 52px tall. Start button and requirement/privacy text are centered; small screens retain the full-width Start button and stacked nickname row.
 - Reduced blank space above the age bar from 86px to 64px and scaled its Codi marker/age bubble to suit. Form spacing remains consistent. Only scoped CSS changed; form validation, blank initial age, random names, drag/keyboard selection, focus handling, storage and session flow are unchanged.
 - Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport checks, per the standing build-only instruction.
+
+## 2026-10-12 — User-supplied Codi failure pose
+
+- Copied the supplied `Frame 637508.png` unchanged into `app/assets/sprites/codi-failed.png` (128×128 RGBA PNG). Added `PLAYER_POSES.failed` alongside the existing directional sprite registry, without replacing the walking assets.
+- The board actor now selects the failure pose while status is `failed` or `timeup`; when the existing retry starts and status becomes `playing`, it returns to the directional sprite. Existing failure animation, sound and 760ms retry timing remain unchanged. In Home V2, timeout already switches to summary, so the board pose is only visible while the board is rendered.
+- Preloads the new pose with the walking sprites. Sprite rendering uses `object-fit: contain` to preserve asset proportions. The elements inventory lists the pose as in use, with new text in the Thai dictionary.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live visual checks, per the standing build-only instruction.

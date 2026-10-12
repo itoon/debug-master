@@ -108,7 +108,7 @@
                   <div :key="playerHop" class="hop">
                     <img
                       class="player-sprite"
-                      :src="PLAYER_SPRITES[playerFacing]"
+                      :src="codiSprite"
                       alt=""
                       draggable="false"
                     />
@@ -413,7 +413,7 @@ import {
   type GeneratedLevel,
 } from "../utils/levelGen";
 import { PLAYER_AGES, type RankingBoard } from "../utils/ranking";
-import { PLAYER_SPRITES, START_FACING } from "../utils/playerSprites";
+import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
 import { homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
@@ -600,6 +600,11 @@ const notificationTitle = computed(() => {
 });
 const canControl = computed(
   () => status.value === "playing" && Boolean(expectedMove.value),
+);
+const codiSprite = computed(() =>
+  status.value === "failed" || status.value === "timeup"
+    ? PLAYER_POSES.failed
+    : PLAYER_SPRITES[playerFacing.value],
 );
 const actorStyle = computed(() => ({
   "--x": player.col,
@@ -1154,8 +1159,8 @@ function formatClock(seconds: number): string {
 }
 
 onMounted(async () => {
-  // Load every facing up front so the first turn doesn't flash.
-  for (const src of Object.values(PLAYER_SPRITES)) new Image().src = src;
+  // Load facings and the failure pose up front so switching doesn't flash.
+  for (const src of [...Object.values(PLAYER_SPRITES), ...Object.values(PLAYER_POSES)]) new Image().src = src;
   refreshStoredScores();
   unsubscribeScores = repositories.scores.subscribe(refreshStoredScores);
   if (homeConfig.enabled) {
