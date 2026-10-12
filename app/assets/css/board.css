@@ -199,6 +199,19 @@
   animation: hop 0.3s var(--ease-spring);
 }
 
+/* The player: one picture per facing (utils/playerSprites.ts). The art is
+   square with the feet near the bottom, so it sits a little high to stand
+   on the tile. */
+.player-sprite {
+  width: calc(var(--cell-size) * 1.05);
+  height: calc(var(--cell-size) * 1.05);
+  max-width: none;
+  margin-top: calc(var(--cell-size) * -0.18);
+  user-select: none;
+  filter: drop-shadow(0 5px 3px rgba(0, 0, 0, 0.3));
+  animation: codi-idle 1.6s ease-in-out infinite;
+}
+
 .codi {
   width: auto;
   height: calc(var(--cell-size) * 0.95);
