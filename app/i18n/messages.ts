@@ -1,6 +1,7 @@
 export const th = {
   "brand": "CodeVenture · Debug Master",
   "home.title": "อ่านโค้ด แล้วออกเดินทางกับ Codi",
+  "home.greeting": "สวัสดี! เราชื่อ Codi",
   "home.subtitle": "เลือกภารกิจของคุณ · ใช้ปุ่มลูกศรเดินตามโค้ด",
   "home.player": "เตรียมพร้อมก่อนออกเดินทาง",
   "home.nickname": "ชื่อเล่น",

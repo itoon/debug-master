@@ -47,3 +47,12 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Age selector uses the existing configured 5–18 range (the image supplies the bar style, not a new age specification). Discrete tick buttons along a rail support tap, pointer dragging in whole steps, and keyboard arrows/Home/End. Selected age shows a yellow fill/dot/number with a Codi marker and age bubble; no age is selected initially. Each tick has a target at least 48px wide and 80px tall. Narrow screens can scroll the strip horizontally.
 - Player persistence and tutorial are invoked only after valid popup confirmation; repository/gameplay/scoring rules are unchanged.
 - Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. No tests or browser/visual checks, as requested.
+
+## 2026-10-12 — Home visual theme from Signal Lost reference
+
+- Reference: https://codeventure-signal-lost.innovasive.workers.dev/ — inspected in the browser for visual direction only. The entry page uses a blue space scene, navy cards, Codi illustrations on pale blue grid panels, white headings and rounded yellow buttons with a raised edge.
+- Home now uses a larger Codi greeting/header, navy mode cards with blue/gold borders, compact difficulty/level/time metadata, and yellow pill-shaped “เริ่มเกม” buttons with a pressed/hover treatment. Existing `bg.png`, `cody-happy.webp`, fonts and rank badges are reused; no new dependency or downloaded asset.
+- `ChallengeRanking` has an optional `space` presentation variant used only by Home. Ranking rows stay readable on the dark cards, with numbered gold/silver/bronze top-three highlights. Empty boards show Codi above a landing pad on a light blue grid, with a white message bubble. Summary's default light ranking stays intact.
+- Three boards and their popup launch buttons remain the same flow; mode names, player form, age selection, scores/repository, idle policy and gameplay are unchanged. The only new text is the Codi greeting in the Thai dictionary.
+- Wide layout still uses three columns and compact top-ten rows; narrow screens stack cards. Component styles do not touch html/body. Actual target-size rendering was not checked: only the external reference was inspected, and product verification remains build only.
+- Verification: `pnpm build` passed (exit 0), and `git diff --check` passed. No tests written or run.
