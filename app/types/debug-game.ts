@@ -13,7 +13,7 @@ export type GameStatus =
   | "timeup"
   | "completed";
 
-export type Mode = "campaign" | "timer" | "ranking";
+export type Mode = "campaign" | "timer" | "ranking" | "dead";
 
 export type Condition = { color: string; negate: boolean };
 
@@ -73,6 +73,10 @@ export type Score = {
   inputs: number;
   elapsedMs: number;
   createdAt: string;
+  /** Player age picked on the start screen (shown as an age band). */
+  age?: number;
+  /** Ranking / timer modes: the run's time limit, so boards don't mix. */
+  timeLimitSec?: number;
 };
 
 export type ScorePopup = {
