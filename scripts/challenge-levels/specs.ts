@@ -8,8 +8,8 @@ import type { LessonSpec } from "./paint";
 // Ids: 101–130 Beginner, 201–230 Intermediate, 301–330 Pro.
 // Where each lesson sits in its group is set in app/data/challenge-groups.ts.
 //
-// `tiles` lists the colour of each cell an if / while reads, in the order it
-// is first read ("." = plain path tile). Run `bun scripts/challenge-levels/build.ts`
+// `tiles` lists the tile letter of each cell an if / while reads, in the
+// order it is first read ("." = plain path tile). Run `bun scripts/challenge-levels/build.ts`
 // after editing; it re-checks every lesson with the game's interpreter.
 
 const SEQ = "Sequence and repeat loops";
@@ -42,30 +42,30 @@ const beginner: LessonSpec[] = [
   { id: 116, group: "beginner", concept: SEQ, objective: "ในรอบนอกมี repeat สองก้อน ทำทีละก้อน", code: "repeat(2):\n  repeat(2):\n    right()\n  repeat(2):\n    down()" },
   { id: 117, group: "beginner", concept: SEQ, objective: "ไปแล้วกลับในรอบเดียว แล้วขยับต่อ", code: "repeat(2):\n  repeat(3):\n    down()\n  repeat(3):\n    up()\n  right()" },
   // if (no else)
-  { id: 118, group: "beginner", concept: COND, objective: "if สีช่อง: ทำคำสั่งข้างในเฉพาะเมื่อยืนอยู่บนสีนั้น", code: "right()\nif o:\n  down()\nright()", tiles: "o" },
-  { id: 119, group: "beginner", concept: COND, objective: "ถ้าสีไม่ตรง ข้ามบล็อก if ไปเลย", code: "down()\nif g:\n  right()\ndown()\nif g:\n  left()\ndown()", tiles: "g." },
+  { id: 118, group: "beginner", concept: COND, objective: "if ชนิดช่อง: ทำคำสั่งข้างในเฉพาะเมื่อยืนอยู่บนช่องชนิดนั้น", code: "right()\nif o:\n  down()\nright()", tiles: "o" },
+  { id: 119, group: "beginner", concept: COND, objective: "ถ้าช่องไม่ตรง ข้ามบล็อก if ไปเลย", code: "down()\nif g:\n  right()\ndown()\nif g:\n  left()\ndown()", tiles: "g." },
   { id: 120, group: "beginner", concept: COND, objective: "if แต่ละตัวอ่านช่องที่ยืนอยู่ตอนนั้น ไม่ใช่ช่องเริ่ม", code: "up()\nif p:\n  up()\nif p:\n  left()\nleft()", tiles: "p." },
   // repeat + if
-  { id: 121, group: "beginner", concept: COND, objective: "if อยู่ใน repeat: ทุกรอบต้องดูสีช่องใหม่", code: "repeat(4):\n  right()\n  if b:\n    up()", tiles: "b..b" },
-  { id: 122, group: "beginner", concept: COND, objective: "if อยู่บรรทัดแรกของรอบ อ่านสีก่อนเดิน", code: "repeat(5):\n  if y:\n    left()\n  down()", tiles: ".y.y." },
+  { id: 121, group: "beginner", concept: COND, objective: "if อยู่ใน repeat: ทุกรอบต้องดูช่องที่ยืนใหม่", code: "repeat(4):\n  right()\n  if b:\n    up()", tiles: "b..b" },
+  { id: 122, group: "beginner", concept: COND, objective: "if อยู่บรรทัดแรกของรอบ ดูช่องก่อนเดิน", code: "repeat(5):\n  if y:\n    left()\n  down()", tiles: ".y.y." },
   { id: 123, group: "beginner", concept: COND, objective: "ใน if มีสองคำสั่ง ทำครบทั้งสองเมื่อเงื่อนไขจริง", code: "repeat(3):\n  down()\n  if o:\n    right()\n    right()", tiles: "o.o" },
   { id: 124, group: "beginner", concept: COND, objective: "if สองตัวในรอบเดียว ตัวที่สองอ่านช่องหลังจากตัวแรกพาเดินแล้ว", code: "repeat(3):\n  right()\n  if p:\n    down()\n  if g:\n    up()", tiles: "p.g." },
   // if traps
   { id: 125, group: "beginner", concept: COND, objective: "repeat มากแค่ไหนก็ไม่เดิน ถ้า if ไม่เคยจริง", code: "repeat(10):\n  if v:\n    down()\nright()\nup()", tiles: "." },
-  { id: 126, group: "beginner", concept: COND, objective: "เดินตามสีจนหลุดสี แล้วรอบที่เหลือไม่ทำอะไร", code: "repeat(6):\n  if o:\n    right()\nup()", tiles: "oo." },
+  { id: 126, group: "beginner", concept: COND, objective: "เดินบนน้ำผึ้งจนหลุดออกมา แล้วรอบที่เหลือไม่ทำอะไร", code: "repeat(6):\n  if o:\n    right()\nup()", tiles: "oo." },
   // repeat inside if
-  { id: 127, group: "beginner", concept: COND, objective: "repeat อยู่ใน if: ทำซ้ำเฉพาะเมื่อสีตรง", code: "repeat(3):\n  if b:\n    repeat(2):\n      right()\n  down()", tiles: "b.b" },
-  { id: 128, group: "beginner", concept: COND, objective: "อ่านสีหลังเดินซ้าย แล้วค่อยตัดสินว่าจะขึ้นสองช่องไหม", code: "repeat(4):\n  left()\n  if y:\n    repeat(2):\n      up()", tiles: ".y.y" },
+  { id: 127, group: "beginner", concept: COND, objective: "repeat อยู่ใน if: ทำซ้ำเฉพาะเมื่อช่องตรง", code: "repeat(3):\n  if b:\n    repeat(2):\n      right()\n  down()", tiles: "b.b" },
+  { id: 128, group: "beginner", concept: COND, objective: "ดูช่องหลังเดินซ้าย แล้วค่อยตัดสินว่าจะขึ้นสองช่องไหม", code: "repeat(4):\n  left()\n  if y:\n    repeat(2):\n      up()", tiles: ".y.y" },
   // if + wrap
-  { id: 129, group: "beginner", concept: COND, objective: "ทะลุขอบแล้วยังต้องอ่านสีช่องที่โผล่", code: "repeat(5):\n  right()\n  if p:\n    down()", tiles: ".p.p.", board: [3, 4, 0, 1] },
+  { id: 129, group: "beginner", concept: COND, objective: "ทะลุขอบแล้วยังต้องดูช่องที่โผล่", code: "repeat(5):\n  right()\n  if p:\n    down()", tiles: ".p.p.", board: [3, 4, 0, 1] },
   { id: 130, group: "beginner", concept: COND, objective: "รวมทุกอย่าง: repeat, if และนับช่องให้ครบ", code: "repeat(5):\n  if g:\n    down()\n    down()\n  right()", tiles: "g..g." },
 ];
 
 const intermediate: LessonSpec[] = [
   // if / else
   { id: 201, group: "intermediate", concept: COND, objective: "if / else: ต้องเลือกทางใดทางหนึ่งเสมอ", code: "right()\nif o:\n  down()\nelse:\n  up()\nright()", tiles: "o" },
-  { id: 202, group: "intermediate", concept: COND, objective: "สีไม่ตรง ไปทำฝั่ง else", code: "up()\nif g:\n  left()\nelse:\n  right()\nup()", tiles: "." },
-  { id: 203, group: "intermediate", concept: COND, objective: "if / else สองชุด อ่านสีใหม่ทุกครั้ง", code: "down()\nif b:\n  right()\nelse:\n  left()\ndown()\nif b:\n  right()\nelse:\n  left()", tiles: "b." },
+  { id: 202, group: "intermediate", concept: COND, objective: "ช่องไม่ตรง ไปทำฝั่ง else", code: "up()\nif g:\n  left()\nelse:\n  right()\nup()", tiles: "." },
+  { id: 203, group: "intermediate", concept: COND, objective: "if / else สองชุด ดูช่องใหม่ทุกครั้ง", code: "down()\nif b:\n  right()\nelse:\n  left()\ndown()\nif b:\n  right()\nelse:\n  left()", tiles: "b." },
   { id: 204, group: "intermediate", concept: COND, objective: "ในแต่ละฝั่งของ if / else มี repeat ได้", code: "if p:\n  repeat(2):\n    right()\nelse:\n  repeat(2):\n    left()\nup()\nif p:\n  up()\nelse:\n  down()", tiles: ".p" },
   // elif
   { id: 205, group: "intermediate", concept: COND, objective: "elif: ตรวจทีละเงื่อนไขจากบนลงล่าง ทำแค่อันแรกที่จริง", code: "left()\nif y:\n  up()\nelif o:\n  down()\nelse:\n  left()\nleft()", tiles: "o" },
@@ -74,37 +74,37 @@ const intermediate: LessonSpec[] = [
   // repeat + if / else / elif
   { id: 208, group: "intermediate", concept: COND, objective: "if / else ใน repeat: ทุกรอบเดินแน่นอนหนึ่งก้าว", code: "repeat(6):\n  if o:\n    up()\n  else:\n    right()", tiles: ".o.o.o" },
   { id: 209, group: "intermediate", concept: COND, objective: "ทางเลือกแล้วตามด้วยก้าวบังคับในรอบเดียว", code: "repeat(5):\n  if g:\n    down()\n  else:\n    left()\n  left()", tiles: "g..g." },
-  { id: 210, group: "intermediate", concept: COND, objective: "elif ใน repeat: สีบอกทิศ เดินเป็นงู", code: "repeat(8):\n  if b:\n    right()\n  elif p:\n    down()\n  else:\n    left()", tiles: "bbp..pbb" },
+  { id: 210, group: "intermediate", concept: COND, objective: "elif ใน repeat: ชนิดช่องบอกทิศ เดินเป็นงู", code: "repeat(8):\n  if b:\n    right()\n  elif p:\n    down()\n  else:\n    left()", tiles: "bbp..pbb" },
   { id: 211, group: "intermediate", concept: COND, objective: "ฝั่ง if มี repeat ฝั่ง else เดินก้าวเดียว", code: "repeat(4):\n  if y:\n    repeat(3):\n      down()\n  else:\n    right()", tiles: "y.y." },
   // while
-  { id: 212, group: "intermediate", concept: WHILE, objective: "while: ทำซ้ำไปเรื่อยๆ ตราบที่ยังยืนบนสีนั้น", code: "while p:\n  down()\nright()", tiles: "pppp." },
-  { id: 213, group: "intermediate", concept: WHILE, objective: "while สองก้อน แต่ละก้อนหยุดเมื่อหลุดสี", code: "while b:\n  left()\nup()\nwhile b:\n  left()", tiles: "bbb.bb." },
-  { id: 214, group: "intermediate", concept: WHILE, objective: "ใน while มีหลายคำสั่ง เช็กสีเฉพาะตอนจบรอบ", code: "while g:\n  right()\n  up()", tiles: "ggg." },
+  { id: 212, group: "intermediate", concept: WHILE, objective: "while: ทำซ้ำไปเรื่อยๆ ตราบที่ยังยืนบนช่องชนิดนั้น", code: "while p:\n  down()\nright()", tiles: "pppp." },
+  { id: 213, group: "intermediate", concept: WHILE, objective: "while สองก้อน แต่ละก้อนหยุดเมื่อหลุดจากน้ำแข็ง", code: "while b:\n  left()\nup()\nwhile b:\n  left()", tiles: "bbb.bb." },
+  { id: 214, group: "intermediate", concept: WHILE, objective: "ใน while มีหลายคำสั่ง เช็กช่องเฉพาะตอนจบรอบ", code: "while g:\n  right()\n  up()", tiles: "ggg." },
   { id: 215, group: "intermediate", concept: WHILE, objective: "while อยู่ใน repeat: แต่ละรอบเดินไม่เท่ากัน", code: "repeat(2):\n  while y:\n    down()\n  right()", tiles: "yy.yyy." },
   // while + if, nested while
-  { id: 216, group: "intermediate", concept: WHILE, objective: "if อยู่ใน while: อ่านสีสองแบบในช่องเดียวกัน", code: "while o:\n  right()\n  if v:\n    down()", tiles: "ovoovo." },
-  { id: 217, group: "intermediate", concept: WHILE, objective: "while ซ้อน while: วงในเดินจนหลุดสีก่อน", code: "while b:\n  up()\n  while p:\n    left()", tiles: "bppbpb." },
-  { id: 218, group: "intermediate", concept: WHILE, objective: "repeat ครอบ while สองตัว สลับทิศตามสี", code: "repeat(3):\n  while g:\n    right()\n  while y:\n    down()", tiles: "ggyygyg." },
-  { id: 219, group: "intermediate", concept: WHILE, objective: "repeat อยู่ใน while: ทำครบ repeat ก่อนเช็กสี", code: "while v:\n  repeat(2):\n    left()\n  down()", tiles: "vvv." },
+  { id: 216, group: "intermediate", concept: WHILE, objective: "if อยู่ใน while: เช็กสองเงื่อนไขกับช่องเดียวกัน", code: "while o:\n  right()\n  if v:\n    down()", tiles: "ovoovo." },
+  { id: 217, group: "intermediate", concept: WHILE, objective: "while ซ้อน while: วงในเดินจนหลุดดอกไม้ก่อน", code: "while b:\n  up()\n  while p:\n    left()", tiles: "bppbpb." },
+  { id: 218, group: "intermediate", concept: WHILE, objective: "repeat ครอบ while สองตัว สลับทิศตามชนิดช่อง", code: "repeat(3):\n  while g:\n    right()\n  while y:\n    down()", tiles: "ggyygyg." },
+  { id: 219, group: "intermediate", concept: WHILE, objective: "repeat อยู่ใน while: ทำครบ repeat ก่อนเช็กช่อง", code: "while v:\n  repeat(2):\n    left()\n  down()", tiles: "vvv." },
   // not (if)
-  { id: 220, group: "intermediate", concept: WHILE, objective: "if not: ทำเมื่อสี *ไม่* ตรง", code: "right()\nif not g:\n  down()\nright()", tiles: "." },
-  { id: 221, group: "intermediate", concept: WHILE, objective: "not กลับความหมาย: ยืนบนสีนั้นจะข้าม", code: "down()\nif not b:\n  left()\ndown()\nif not b:\n  left()", tiles: "b." },
+  { id: 220, group: "intermediate", concept: WHILE, objective: "if not: ทำเมื่อช่อง *ไม่* ตรง", code: "right()\nif not g:\n  down()\nright()", tiles: "." },
+  { id: 221, group: "intermediate", concept: WHILE, objective: "not กลับความหมาย: ยืนบนน้ำแข็งจะข้าม", code: "down()\nif not b:\n  left()\ndown()\nif not b:\n  left()", tiles: "b." },
   { id: 222, group: "intermediate", concept: WHILE, objective: "if not ใน repeat", code: "repeat(4):\n  if not o:\n    up()\n  right()", tiles: "o.o." },
   { id: 223, group: "intermediate", concept: WHILE, objective: "if not กับ else: ระวังฝั่งไหนทำเมื่อไร", code: "repeat(5):\n  if not p:\n    left()\n  else:\n    down()", tiles: "..p.p" },
-  { id: 224, group: "intermediate", concept: WHILE, objective: "repeat เยอะแต่เดินถึงสีแล้วติด ต้องรู้ว่าหยุดตรงไหน", code: "repeat(12):\n  if not y:\n    right()\nup()", tiles: "...y" },
+  { id: 224, group: "intermediate", concept: WHILE, objective: "repeat เยอะแต่เดินถึงทรายแล้วติด ต้องรู้ว่าหยุดตรงไหน", code: "repeat(12):\n  if not y:\n    right()\nup()", tiles: "...y" },
   // while not
-  { id: 225, group: "intermediate", concept: WHILE, objective: "while not: เดินไปเรื่อยๆ จนกว่าจะเจอสีนั้น", code: "while not v:\n  down()\nleft()", tiles: "...v" },
+  { id: 225, group: "intermediate", concept: WHILE, objective: "while not: เดินไปเรื่อยๆ จนกว่าจะเจอคริสตัล", code: "while not v:\n  down()\nleft()", tiles: "...v" },
   { id: 226, group: "intermediate", concept: WHILE, objective: "while not กับหลายคำสั่งในรอบ", code: "while not o:\n  right()\n  down()", tiles: "...o" },
-  { id: 227, group: "intermediate", concept: WHILE, objective: "while not สองก้อน หยุดที่สีเป้าหมายทั้งสองครั้ง", code: "while not g:\n  left()\nup()\nwhile not g:\n  right()", tiles: "..g..g" },
-  { id: 228, group: "intermediate", concept: WHILE, objective: "while not ครอบ if: หยุดเมื่อเจอเป้าหมาย ระหว่างทางเลี้ยวตามสี", code: "while not b:\n  up()\n  if p:\n    right()", tiles: ".p..pb" },
+  { id: 227, group: "intermediate", concept: WHILE, objective: "while not สองก้อน หยุดที่หญ้าทั้งสองครั้ง", code: "while not g:\n  left()\nup()\nwhile not g:\n  right()", tiles: "..g..g" },
+  { id: 228, group: "intermediate", concept: WHILE, objective: "while not ครอบ if: หยุดเมื่อเจอน้ำแข็ง ระหว่างทางเลี้ยวที่ดอกไม้", code: "while not b:\n  up()\n  if p:\n    right()", tiles: ".p..pb" },
   { id: 229, group: "intermediate", concept: WHILE, objective: "repeat ครอบ while not: เริ่มรอบใหม่ทั้งที่อาจยืนบนเป้าหมายอยู่แล้ว", code: "repeat(3):\n  while not y:\n    right()\n  down()", tiles: "..y.yy" },
-  { id: 230, group: "intermediate", concept: WHILE, objective: "while not + elif: สีบอกทาง จนกว่าจะเจอคริสตัล", code: "while not v:\n  if o:\n    up()\n  elif b:\n    right()\n  else:\n    down()", tiles: "bb..bov" },
+  { id: 230, group: "intermediate", concept: WHILE, objective: "while not + elif: ชนิดช่องบอกทาง จนกว่าจะเจอคริสตัล", code: "while not v:\n  if o:\n    up()\n  elif b:\n    right()\n  else:\n    down()", tiles: "bb..bov" },
 ];
 
 const pro: LessonSpec[] = [
   // Advanced control flow (no functions yet)
-  { id: 301, group: "pro", concept: WHILE, objective: "repeat ซ้อนกับ if not / else: นับรอบและอ่านสีพร้อมกัน", code: "repeat(3):\n  repeat(3):\n    if not g:\n      right()\n    else:\n      down()\n  down()", tiles: "..g.g.g.." },
-  { id: 302, group: "pro", concept: WHILE, objective: "while not + elif สามทาง เดินตามป้ายสีจนเจอเป้าหมาย", code: "while not v:\n  if p:\n    right()\n  elif y:\n    down()\n  else:\n    left()", tiles: "ppy..yppv" },
+  { id: 301, group: "pro", concept: WHILE, objective: "repeat ซ้อนกับ if not / else: นับรอบและเช็กช่องพร้อมกัน", code: "repeat(3):\n  repeat(3):\n    if not g:\n      right()\n    else:\n      down()\n  down()", tiles: "..g.g.g.." },
+  { id: 302, group: "pro", concept: WHILE, objective: "while not + elif สามทาง ชนิดช่องบอกทางจนเจอคริสตัล", code: "while not v:\n  if p:\n    right()\n  elif y:\n    down()\n  else:\n    left()", tiles: "ppy..yppv" },
   { id: 303, group: "pro", concept: WHILE, objective: "while แล้ว if not ในรอบเดียว", code: "repeat(4):\n  while o:\n    right()\n  if not o:\n    down()", tiles: "oo.o.oo.." },
   { id: 304, group: "pro", concept: WHILE, objective: "while ซ้อนใน while not", code: "while not b:\n  while g:\n    up()\n  right()", tiles: "gg.g.gg.b" },
   { id: 305, group: "pro", concept: WHILE, objective: "elif แบบมี not", code: "repeat(5):\n  left()\n  if y:\n    up()\n  elif not p:\n    down()", tiles: "y.pyp" },
@@ -120,13 +120,13 @@ const pro: LessonSpec[] = [
   { id: 314, group: "pro", concept: FUNC, objective: "ฟังก์ชันซ้อนสองชั้น ทำซ้ำสามครั้ง", code: "walk()\nwalk()\nwalk()\n\ndef bounce():\n  up()\n  down()\n\ndef walk():\n  right()\n  bounce()" },
   { id: 315, group: "pro", concept: FUNC, objective: "ใน def มี if: ผลแต่ละครั้งที่เรียกอาจต่างกัน", code: "check()\ncheck()\ncheck()\ncheck()\n\ndef check():\n  right()\n  if o:\n    down()", tiles: ".o.o" },
   { id: 316, group: "pro", concept: FUNC, objective: "ฟังก์ชันที่มี if / else ถูกเรียกใน repeat", code: "repeat(5):\n  turn()\n\ndef turn():\n  if b:\n    up()\n  else:\n    right()", tiles: ".b.b." },
-  { id: 317, group: "pro", concept: FUNC, objective: "while อยู่ในฟังก์ชัน: ไถลจนหลุดสี", code: "slide()\nright()\nslide()\n\ndef slide():\n  while y:\n    down()", tiles: "yy.yyy." },
+  { id: 317, group: "pro", concept: FUNC, objective: "while อยู่ในฟังก์ชัน: ไถลบนทรายจนหลุดออกมา", code: "slide()\nright()\nslide()\n\ndef slide():\n  while y:\n    down()", tiles: "yy.yyy." },
   { id: 318, group: "pro", concept: FUNC, objective: "เรียกฟังก์ชันใน while not จนเจอเป้าหมาย", code: "def zig():\n  right()\n  down()\n\nwhile not g:\n  zig()", tiles: "...g" },
   // Recursion
   { id: 319, group: "pro", concept: REC, objective: "ฟังก์ชันเรียกตัวเอง: ทำซ้ำจนเงื่อนไขหยุด", code: "go()\n\ndef go():\n  right()\n  if not p:\n    go()", tiles: "...p" },
   { id: 320, group: "pro", concept: REC, objective: "recursion ขึ้นบันได แล้วกลับมาทำคำสั่งหลังเรียก", code: "climb()\nright()\n\ndef climb():\n  up()\n  if g:\n    climb()", tiles: "ggg." },
   { id: 321, group: "pro", concept: REC, objective: "เรียกตัวเองใน else และอีกฟังก์ชันใน if", code: "def road():\n  right()\n  right()\n  if y:\n    turn()\n  else:\n    road()\n\ndef turn():\n  down()\n  down()\n\nroad()", tiles: ".y" },
-  { id: 322, group: "pro", concept: REC, objective: "recursion เป็นบันไดลง หยุดที่สีส้ม", code: "stairs()\nleft()\n\ndef stairs():\n  right()\n  down()\n  if not o:\n    stairs()", tiles: "..o" },
+  { id: 322, group: "pro", concept: REC, objective: "recursion เป็นบันไดลง หยุดที่น้ำผึ้ง", code: "stairs()\nleft()\n\ndef stairs():\n  right()\n  down()\n  if not o:\n    stairs()", tiles: "..o" },
   { id: 323, group: "pro", concept: REC, objective: "คำสั่งหลังเรียกตัวเองทำตอนย้อนกลับ (call stack)", code: "dive()\n\ndef dive():\n  down()\n  if b:\n    dive()\n  right()", tiles: "bb." },
   { id: 324, group: "pro", concept: REC, objective: "ย้อนกลับครบทุกชั้น จำนวนก้าวตอนกลับเท่ากับตอนไป", code: "back()\n\ndef back():\n  left()\n  if not v:\n    back()\n  up()", tiles: "..v" },
   { id: 325, group: "pro", concept: REC, objective: "สองฟังก์ชันเรียกกันไปมา", code: "a()\n\ndef a():\n  right()\n  if p:\n    b()\n\ndef b():\n  down()\n  if p:\n    a()", tiles: "ppp." },

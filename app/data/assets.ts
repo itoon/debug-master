@@ -20,7 +20,8 @@ export type AssetPreview =
   | { kind: "image"; src: string; backdrop?: "tile" | "dark" | "light" }
   | {
       kind: "tile";
-      colorName: string;
+      /** Tile kind, e.g. "honey" (CSS class tile-honey). */
+      tileKind: string;
       letter: string;
       /** Also show the checker (alt) shade. */
       alt?: boolean;
@@ -68,7 +69,7 @@ const CODI_SPEC = [
 
 const TILE_SPEC = [
   "WebP 160 × 160 px ไม่โปร่งใส มุมเหลี่ยม (CSS ตัดมุมมนและใส่ขอบนูนให้)",
-  "ไม่มีตัวอักษรบนช่อง ผู้เล่นแยกชนิดจากสีและลายเท่านั้น",
+  "ไม่มีตัวอักษรบนช่อง แต่ละชนิดคือ 'ของ' หนึ่งอย่าง (หญ้า ดอกไม้ น้ำผึ้ง ...) ต้องดูออกจากรูปทรงและลาย ไม่ใช่จากสีอย่างเดียว (ผู้เล่นตาบอดสีต้องแยกได้)",
   "ทุกชนิดต้องแยกกันออกชัดเมื่อย่อเหลือ 26 px และเมื่อ Codi ยืนทับตรงกลาง",
   "ลายต้องเบาพอที่ Codi (หมวกแดง) ยืนทับแล้วยังเห็นตัวชัด",
 ];
@@ -178,24 +179,24 @@ export const assetGroups: AssetGroup[] = [
     id: "tiles",
     title: "ช่องบนกระดาน (8 ชนิด)",
     description:
-      "ตัวอักษรในโค้ด (n, b, y, …) คือชนิดช่อง ใช้เป็นเงื่อนไขใน if / while จึงต้องแยกกันออกชัด ตอนนี้วาดด้วย CSS ทั้งหมด ส่งเป็นรูปพื้นผิวมาแทนได้",
+      "ช่องแต่ละชนิดเป็น 'ของ' หนึ่งอย่าง ใช้ชื่อเดียวกันทุกที่: ป้ายในโค้ด (if honey:), class CSS (tile-honey) และรายการนี้ ใช้เป็นเงื่อนไขใน if / while จึงต้องแยกกันออกชัด ตัวอักษร (n, b, y, …) เป็นแค่รหัสในข้อมูลด่าน ผู้เล่นไม่เห็น ตอนนี้วาดด้วย CSS ทั้งหมด ส่งเป็นรูปพื้นผิวมาแทนได้",
     common: TILE_SPEC,
     items: [
-      tile("floor", "n", "gray", "พื้นธรรมดา (floor)", "ช่องที่มากที่สุด (~1,000 ช่อง) ต้องเรียบที่สุด ให้ช่องเงื่อนไขเด่น", true),
-      tile("ice", "b", "cyan", "น้ำแข็ง (ice)", "ฟ้าขาวเงา มีแสงสะท้อน ต้องต่างจาก floor ชัด"),
-      tile("sand", "y", "yellow", "ทราย (sand)", "เหลืองทอง เม็ดทรายจางๆ"),
-      tile("green", "g", "green", "เขียว (green)", "สีเขียว + ต้นหญ้าเล็ก 3 กอที่มุม (SVG ใน CSS) ถ้าทำรูปมาแทน ต้องยังดูออกว่าเป็น 'สีเขียว' และตรงกลางโล่งให้ Codi ยืน"),
-      tile("pink", "p", "pink", "ชมพู (pink)", "สีชมพู + ดอกไม้เล็ก 3 ดอกที่มุม (SVG ใน CSS) ถ้าทำรูปมาแทน ต้องยังดูออกว่าเป็น 'สีชมพู' และตรงกลางโล่งให้ Codi ยืน"),
-      tile("orange", "o", "orange", "ส้ม (orange)", "สีส้ม ไม่สว่างจ้าตรงกลาง (Codi ยืนทับได้) มีฟองเล็กผุดด้วย CSS"),
+      tile("floor", "n", "พื้นธรรมดา (floor)", "ช่องที่มากที่สุด (~1,000 ช่อง) ต้องเรียบที่สุด ให้ช่องเงื่อนไขเด่น", true),
+      tile("ice", "b", "น้ำแข็ง (ice)", "ฟ้าขาวเงา มีแสงสะท้อน ต้องต่างจาก floor ชัด"),
+      tile("sand", "y", "ทราย (sand)", "เหลืองอ่อน เม็ดทรายจางๆ ต้องต่างจาก honey ชัด (sand ซีดและด้าน honey เข้มและมันวาว)"),
+      tile("grass", "g", "หญ้า (grass)", "พื้นเขียว + พุ่มหญ้าใหญ่สองโทน 1 พุ่มกลางช่อง แบบเดียวกับคริสตัลและหิน (SVG ใน CSS) ถ้าทำรูปมาแทน ต้องดูออกทันทีว่าเป็นหญ้า แม้ Codi ยืนทับ"),
+      tile("flower", "p", "ดอกไม้ (flower)", "พื้นชมพู + ดอกซากุระ 1 ดอกกลางช่อง (กลีบ 5 กลีบปลายเว้า ใจชมพูเข้มมีเกสร) แบบเดียวกับคริสตัลและหิน (SVG ใน CSS) ถ้าทำรูปมาแทน ต้องดูออกทันทีว่าเป็นดอกซากุระ แม้ Codi ยืนทับ"),
+      tile("honey", "o", "น้ำผึ้ง (honey)", "อำพันเข้ม + ลายรวงผึ้งจางๆ + ไหดินเผาใส่น้ำผึ้ง 1 ใบกลางช่อง น้ำผึ้งล้นปากไหย้อยลงมา แบบเดียวกับคริสตัลและหิน (SVG ใน CSS) ห้ามมีตัวหนังสือ ต้องเข้มกว่า sand ชัดเจน และดูออกว่าเป็นน้ำผึ้งแม้ Codi ยืนทับ"),
       {
-        ...tile("gem", "v", "purple", "คริสตัล (gem)", "ม่วง + รูปคริสตัล"),
+        ...tile("gem", "v", "คริสตัล (gem)", "ม่วง + รูปคริสตัล"),
         status: "in-use",
         file: "app/assets/sprites/gem.png",
         spec: ["ตัวคริสตัล: PNG โปร่งใส 172 × 192 px วางกลางช่อง (พื้นม่วงยังเป็น CSS)"],
         swap: "ทับไฟล์ gem.png ได้เลย",
       },
       {
-        ...tile("rock", "k", "black", "หิน (rock)", "กรมท่า + รูปก้อนหิน"),
+        ...tile("rock", "k", "หิน (rock)", "กรมท่า + รูปก้อนหิน"),
         status: "in-use",
         file: "app/assets/sprites/rock.png",
         spec: ["ตัวหิน: PNG โปร่งใส 190 × 192 px วางกลางช่อง (พื้นกรมท่ายังเป็น CSS)"],
@@ -213,7 +214,7 @@ export const assetGroups: AssetGroup[] = [
         name: "จุดเริ่ม (START)",
         file: "app/assets/css/board.css → .tile.start",
         status: "css",
-        preview: { kind: "tile", colorName: "gray", letter: "n", start: true },
+        preview: { kind: "tile", tileKind: "floor", letter: "n", start: true },
         usedIn: "ช่องเริ่มของทุกด่าน",
         spec: [
           "ตอนนี้เป็นเส้นประสีเขียวรอบช่อง ต้องเห็นชัดบนทุกชนิดช่อง",
@@ -336,7 +337,6 @@ export const assetGroups: AssetGroup[] = [
 function tile(
   name: string,
   letter: string,
-  colorName: string,
   title: string,
   note: string,
   alt = false,
@@ -346,8 +346,8 @@ function tile(
     name: `${title} · ${letter}`,
     file: `app/assets/tiles/${name}.webp`,
     status: "css",
-    preview: { kind: "tile", colorName, letter, alt },
-    usedIn: `กระดาน + ไอคอนในโค้ด (if ${letter}:)`,
+    preview: { kind: "tile", tileKind: name, letter, alt },
+    usedIn: `กระดาน + ป้ายในโค้ด (if ${name}: · รหัสในข้อมูลด่าน ${letter})`,
     spec: [note],
     swap: TILE_SWAP.replace("<ชื่อ>", name),
   };

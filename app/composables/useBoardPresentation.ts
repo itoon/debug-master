@@ -1,26 +1,12 @@
 import { computed, type ComputedRef, type Ref } from "vue";
-import { colorMeta, type LevelLike, type VisibleTile } from "../types/debug-game";
+import { tileMeta, type LevelLike, type VisibleTile } from "../types/debug-game";
 
-export function tileColorName(color: string): string {
-  return colorMeta[color]?.name ?? "gray";
-}
-
-// Name of each tile letter, shown in the code view next to a mini swatch.
-// Textured / sprite tiles use what they look like (ice, sand, gem, rock);
-// plain colour tiles use their colour, matching the letter (g = green).
-const tileKinds: Record<string, string> = {
-  n: "floor",
-  b: "ice",
-  y: "sand",
-  g: "green",
-  p: "pink",
-  o: "orange",
-  v: "gem",
-  k: "rock",
-};
-
-export function tileKindLabel(color: string): string {
-  return tileKinds[color] ?? "floor";
+/**
+ * Kind of a tile letter (floor, ice, sand, grass, flower, honey, gem, rock).
+ * Shown in the code view next to a mini swatch, and used as the CSS class.
+ */
+export function tileKind(letter: string): string {
+  return tileMeta[letter]?.name ?? "floor";
 }
 
 // Must match the .board CSS: gap = max(5px, 0.14 * cell),
@@ -75,8 +61,8 @@ export function useBoardPresentation(
         row: rowIndex,
         col: colIndex,
         raw: color,
-        colorName: tileColorName(color),
-        symbol: colorMeta[color]?.symbol ?? "",
+        kind: tileKind(color),
+        symbol: tileMeta[color]?.symbol ?? "",
       })),
     ),
   );

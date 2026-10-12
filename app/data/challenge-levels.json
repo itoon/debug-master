@@ -831,7 +831,7 @@
       ],
       "code": "right()\nif o:\n  down()\nright()",
       "concept": "Conditionals",
-      "learningObjective": "if สีช่อง: ทำคำสั่งข้างในเฉพาะเมื่อยืนอยู่บนสีนั้น",
+      "learningObjective": "if ชนิดช่อง: ทำคำสั่งข้างในเฉพาะเมื่อยืนอยู่บนช่องชนิดนั้น",
       "group": "beginner"
     },
     {
@@ -872,7 +872,7 @@
       ],
       "code": "down()\nif g:\n  right()\ndown()\nif g:\n  left()\ndown()",
       "concept": "Conditionals",
-      "learningObjective": "ถ้าสีไม่ตรง ข้ามบล็อก if ไปเลย",
+      "learningObjective": "ถ้าช่องไม่ตรง ข้ามบล็อก if ไปเลย",
       "group": "beginner"
     },
     {
@@ -970,7 +970,7 @@
       ],
       "code": "repeat(4):\n  right()\n  if b:\n    up()",
       "concept": "Conditionals",
-      "learningObjective": "if อยู่ใน repeat: ทุกรอบต้องดูสีช่องใหม่",
+      "learningObjective": "if อยู่ใน repeat: ทุกรอบต้องดูช่องที่ยืนใหม่",
       "group": "beginner"
     },
     {
@@ -1028,7 +1028,7 @@
       ],
       "code": "repeat(5):\n  if y:\n    left()\n  down()",
       "concept": "Conditionals",
-      "learningObjective": "if อยู่บรรทัดแรกของรอบ อ่านสีก่อนเดิน",
+      "learningObjective": "if อยู่บรรทัดแรกของรอบ ดูช่องก่อนเดิน",
       "group": "beginner"
     },
     {
@@ -1171,7 +1171,7 @@
       ],
       "code": "repeat(6):\n  if o:\n    right()\nup()",
       "concept": "Conditionals",
-      "learningObjective": "เดินตามสีจนหลุดสี แล้วรอบที่เหลือไม่ทำอะไร",
+      "learningObjective": "เดินบนน้ำผึ้งจนหลุดออกมา แล้วรอบที่เหลือไม่ทำอะไร",
       "group": "beginner"
     },
     {
@@ -1222,7 +1222,7 @@
       ],
       "code": "repeat(3):\n  if b:\n    repeat(2):\n      right()\n  down()",
       "concept": "Conditionals",
-      "learningObjective": "repeat อยู่ใน if: ทำซ้ำเฉพาะเมื่อสีตรง",
+      "learningObjective": "repeat อยู่ใน if: ทำซ้ำเฉพาะเมื่อช่องตรง",
       "group": "beginner"
     },
     {
@@ -1283,7 +1283,7 @@
       ],
       "code": "repeat(4):\n  left()\n  if y:\n    repeat(2):\n      up()",
       "concept": "Conditionals",
-      "learningObjective": "อ่านสีหลังเดินซ้าย แล้วค่อยตัดสินว่าจะขึ้นสองช่องไหม",
+      "learningObjective": "ดูช่องหลังเดินซ้าย แล้วค่อยตัดสินว่าจะขึ้นสองช่องไหม",
       "group": "beginner"
     },
     {
@@ -1317,7 +1317,7 @@
       ],
       "code": "repeat(5):\n  right()\n  if p:\n    down()",
       "concept": "Conditionals",
-      "learningObjective": "ทะลุขอบแล้วยังต้องอ่านสีช่องที่โผล่",
+      "learningObjective": "ทะลุขอบแล้วยังต้องดูช่องที่โผล่",
       "group": "beginner"
     },
     {
@@ -1446,7 +1446,7 @@
       ],
       "code": "up()\nif g:\n  left()\nelse:\n  right()\nup()",
       "concept": "Conditionals",
-      "learningObjective": "สีไม่ตรง ไปทำฝั่ง else",
+      "learningObjective": "ช่องไม่ตรง ไปทำฝั่ง else",
       "group": "intermediate"
     },
     {
@@ -1482,7 +1482,7 @@
       ],
       "code": "down()\nif b:\n  right()\nelse:\n  left()\ndown()\nif b:\n  right()\nelse:\n  left()",
       "concept": "Conditionals",
-      "learningObjective": "if / else สองชุด อ่านสีใหม่ทุกครั้ง",
+      "learningObjective": "if / else สองชุด ดูช่องใหม่ทุกครั้ง",
       "group": "intermediate"
     },
     {
@@ -1763,7 +1763,7 @@
       ],
       "code": "repeat(8):\n  if b:\n    right()\n  elif p:\n    down()\n  else:\n    left()",
       "concept": "Conditionals",
-      "learningObjective": "elif ใน repeat: สีบอกทิศ เดินเป็นงู",
+      "learningObjective": "elif ใน repeat: ชนิดช่องบอกทิศ เดินเป็นงู",
       "group": "intermediate"
     },
     {
@@ -1868,7 +1868,7 @@
       ],
       "code": "while p:\n  down()\nright()",
       "concept": "While loops and negation",
-      "learningObjective": "while: ทำซ้ำไปเรื่อยๆ ตราบที่ยังยืนบนสีนั้น",
+      "learningObjective": "while: ทำซ้ำไปเรื่อยๆ ตราบที่ยังยืนบนช่องชนิดนั้น",
       "group": "intermediate"
     },
     {
@@ -1908,7 +1908,7 @@
       ],
       "code": "while b:\n  left()\nup()\nwhile b:\n  left()",
       "concept": "While loops and negation",
-      "learningObjective": "while สองก้อน แต่ละก้อนหยุดเมื่อหลุดสี",
+      "learningObjective": "while สองก้อน แต่ละก้อนหยุดเมื่อหลุดจากน้ำแข็ง",
       "group": "intermediate"
     },
     {
@@ -1948,7 +1948,7 @@
       ],
       "code": "while g:\n  right()\n  up()",
       "concept": "While loops and negation",
-      "learningObjective": "ใน while มีหลายคำสั่ง เช็กสีเฉพาะตอนจบรอบ",
+      "learningObjective": "ใน while มีหลายคำสั่ง เช็กช่องเฉพาะตอนจบรอบ",
       "group": "intermediate"
     },
     {
@@ -2054,7 +2054,7 @@
       ],
       "code": "while o:\n  right()\n  if v:\n    down()",
       "concept": "While loops and negation",
-      "learningObjective": "if อยู่ใน while: อ่านสีสองแบบในช่องเดียวกัน",
+      "learningObjective": "if อยู่ใน while: เช็กสองเงื่อนไขกับช่องเดียวกัน",
       "group": "intermediate"
     },
     {
@@ -2110,7 +2110,7 @@
       ],
       "code": "while b:\n  up()\n  while p:\n    left()",
       "concept": "While loops and negation",
-      "learningObjective": "while ซ้อน while: วงในเดินจนหลุดสีก่อน",
+      "learningObjective": "while ซ้อน while: วงในเดินจนหลุดดอกไม้ก่อน",
       "group": "intermediate"
     },
     {
@@ -2171,7 +2171,7 @@
       ],
       "code": "repeat(3):\n  while g:\n    right()\n  while y:\n    down()",
       "concept": "While loops and negation",
-      "learningObjective": "repeat ครอบ while สองตัว สลับทิศตามสี",
+      "learningObjective": "repeat ครอบ while สองตัว สลับทิศตามชนิดช่อง",
       "group": "intermediate"
     },
     {
@@ -2247,7 +2247,7 @@
       ],
       "code": "while v:\n  repeat(2):\n    left()\n  down()",
       "concept": "While loops and negation",
-      "learningObjective": "repeat อยู่ใน while: ทำครบ repeat ก่อนเช็กสี",
+      "learningObjective": "repeat อยู่ใน while: ทำครบ repeat ก่อนเช็กช่อง",
       "group": "intermediate"
     },
     {
@@ -2278,7 +2278,7 @@
       ],
       "code": "right()\nif not g:\n  down()\nright()",
       "concept": "While loops and negation",
-      "learningObjective": "if not: ทำเมื่อสี *ไม่* ตรง",
+      "learningObjective": "if not: ทำเมื่อช่อง *ไม่* ตรง",
       "group": "intermediate"
     },
     {
@@ -2310,7 +2310,7 @@
       ],
       "code": "down()\nif not b:\n  left()\ndown()\nif not b:\n  left()",
       "concept": "While loops and negation",
-      "learningObjective": "not กลับความหมาย: ยืนบนสีนั้นจะข้าม",
+      "learningObjective": "not กลับความหมาย: ยืนบนน้ำแข็งจะข้าม",
       "group": "intermediate"
     },
     {
@@ -2432,7 +2432,7 @@
       ],
       "code": "repeat(12):\n  if not y:\n    right()\nup()",
       "concept": "While loops and negation",
-      "learningObjective": "repeat เยอะแต่เดินถึงสีแล้วติด ต้องรู้ว่าหยุดตรงไหน",
+      "learningObjective": "repeat เยอะแต่เดินถึงทรายแล้วติด ต้องรู้ว่าหยุดตรงไหน",
       "group": "intermediate"
     },
     {
@@ -2484,7 +2484,7 @@
       ],
       "code": "while not v:\n  down()\nleft()",
       "concept": "While loops and negation",
-      "learningObjective": "while not: เดินไปเรื่อยๆ จนกว่าจะเจอสีนั้น",
+      "learningObjective": "while not: เดินไปเรื่อยๆ จนกว่าจะเจอคริสตัล",
       "group": "intermediate"
     },
     {
@@ -2564,7 +2564,7 @@
       ],
       "code": "while not g:\n  left()\nup()\nwhile not g:\n  right()",
       "concept": "While loops and negation",
-      "learningObjective": "while not สองก้อน หยุดที่สีเป้าหมายทั้งสองครั้ง",
+      "learningObjective": "while not สองก้อน หยุดที่หญ้าทั้งสองครั้ง",
       "group": "intermediate"
     },
     {
@@ -2604,7 +2604,7 @@
       ],
       "code": "while not b:\n  up()\n  if p:\n    right()",
       "concept": "While loops and negation",
-      "learningObjective": "while not ครอบ if: หยุดเมื่อเจอเป้าหมาย ระหว่างทางเลี้ยวตามสี",
+      "learningObjective": "while not ครอบ if: หยุดเมื่อเจอน้ำแข็ง ระหว่างทางเลี้ยวที่ดอกไม้",
       "group": "intermediate"
     },
     {
@@ -2701,7 +2701,7 @@
       ],
       "code": "while not v:\n  if o:\n    up()\n  elif b:\n    right()\n  else:\n    down()",
       "concept": "While loops and negation",
-      "learningObjective": "while not + elif: สีบอกทาง จนกว่าจะเจอคริสตัล",
+      "learningObjective": "while not + elif: ชนิดช่องบอกทาง จนกว่าจะเจอคริสตัล",
       "group": "intermediate"
     },
     {
@@ -2789,7 +2789,7 @@
       ],
       "code": "repeat(3):\n  repeat(3):\n    if not g:\n      right()\n    else:\n      down()\n  down()",
       "concept": "While loops and negation",
-      "learningObjective": "repeat ซ้อนกับ if not / else: นับรอบและอ่านสีพร้อมกัน",
+      "learningObjective": "repeat ซ้อนกับ if not / else: นับรอบและเช็กช่องพร้อมกัน",
       "group": "pro"
     },
     {
@@ -2829,7 +2829,7 @@
       ],
       "code": "while not v:\n  if p:\n    right()\n  elif y:\n    down()\n  else:\n    left()",
       "concept": "While loops and negation",
-      "learningObjective": "while not + elif สามทาง เดินตามป้ายสีจนเจอเป้าหมาย",
+      "learningObjective": "while not + elif สามทาง ชนิดช่องบอกทางจนเจอคริสตัล",
       "group": "pro"
     },
     {
@@ -3579,7 +3579,7 @@
       ],
       "code": "slide()\nright()\nslide()\n\ndef slide():\n  while y:\n    down()",
       "concept": "Functions and decomposition",
-      "learningObjective": "while อยู่ในฟังก์ชัน: ไถลจนหลุดสี",
+      "learningObjective": "while อยู่ในฟังก์ชัน: ไถลบนทรายจนหลุดออกมา",
       "group": "pro"
     },
     {
@@ -3792,7 +3792,7 @@
       ],
       "code": "stairs()\nleft()\n\ndef stairs():\n  right()\n  down()\n  if not o:\n    stairs()",
       "concept": "Recursion and advanced control flow",
-      "learningObjective": "recursion เป็นบันไดลง หยุดที่สีส้ม",
+      "learningObjective": "recursion เป็นบันไดลง หยุดที่น้ำผึ้ง",
       "group": "pro"
     },
     {

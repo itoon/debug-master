@@ -11,7 +11,7 @@
       :key="`${tile.row}-${tile.col}`"
       class="tile"
       :class="[
-        `tile-${tile.colorName}`,
+        `tile-${tile.kind}`,
         {
           alt: (tile.row + tile.col) % 2 === 1,
           start:
@@ -20,7 +20,7 @@
       ]"
       :style="tileStyle(tile)"
       role="gridcell"
-      :aria-label="`row ${tile.row}, col ${tile.col}, ${tileKindLabel(tile.raw)}`"
+      :aria-label="`row ${tile.row}, col ${tile.col}, ${tile.kind}`"
     />
     <!-- Actors (Codi, markers) use .actor with --x / --y grid coordinates. -->
     <slot />
@@ -31,7 +31,6 @@
 // The level map, drawn the same way everywhere (game + review page).
 // Tile looks live in assets/css/board.css.
 import {
-  tileKindLabel,
   useBoardPresentation,
   type BoardSpace,
 } from "../composables/useBoardPresentation";

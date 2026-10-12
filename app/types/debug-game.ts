@@ -100,7 +100,8 @@ export type VisibleTile = {
   row: number;
   col: number;
   raw: string;
-  colorName: string;
+  /** Tile kind (floor, ice, ...): its CSS class is `tile-${kind}`. */
+  kind: string;
   symbol: string;
 };
 
@@ -109,13 +110,17 @@ export type LevelLike = Pick<
   "id" | "rows" | "cols" | "map" | "start" | "code" | "concept" | "learningObjective"
 >;
 
-export const colorMeta: Record<string, TileMeta> = {
-  b: { name: "cyan", symbol: "B" },
-  p: { name: "pink", symbol: "P" },
-  g: { name: "green", symbol: "G" },
-  o: { name: "orange", symbol: "O" },
-  y: { name: "yellow", symbol: "Y" },
-  v: { name: "purple", symbol: "V" },
-  n: { name: "gray", symbol: "" },
-  k: { name: "black", symbol: "K" },
+// Tile letter (as written in level maps and code) -> tile kind. The kind is
+// the one name for a tile everywhere: the label players read in the code
+// view, the CSS class (tile-honey) and the art team's asset list. Players
+// never see the letters, so they stay as short internal codes.
+export const tileMeta: Record<string, TileMeta> = {
+  n: { name: "floor", symbol: "" },
+  b: { name: "ice", symbol: "B" },
+  y: { name: "sand", symbol: "Y" },
+  g: { name: "grass", symbol: "G" },
+  p: { name: "flower", symbol: "P" },
+  o: { name: "honey", symbol: "O" },
+  v: { name: "gem", symbol: "V" },
+  k: { name: "rock", symbol: "K" },
 };

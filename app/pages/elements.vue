@@ -54,7 +54,7 @@
               <div
                 class="tile"
                 :class="[
-                  `tile-${item.preview.colorName}`,
+                  `tile-${item.preview.tileKind}`,
                   { start: item.preview.start },
                 ]"
                 style="--cell-size: 84px"
@@ -62,7 +62,7 @@
               <div
                 v-if="item.preview.alt"
                 class="tile alt"
-                :class="`tile-${item.preview.colorName}`"
+                :class="`tile-${item.preview.tileKind}`"
                 style="--cell-size: 84px"
               />
             </template>
@@ -95,9 +95,9 @@
               class="el-chip-sample"
             >
               ในโค้ด:
-              <span class="code-tile" :class="`tile-${item.preview.colorName}`"
+              <span class="code-tile" :class="`tile-${item.preview.tileKind}`"
                 ><i class="code-tile-swatch" /><span class="code-tile-label">{{
-                  tileKindLabel(item.preview.letter)
+                  item.preview.tileKind
                 }}</span></span
               >
             </div>
@@ -137,7 +137,6 @@
 // Team page: every visual/audio asset the game uses or wants, from the
 // checklist in data/assets.ts. Previews are the real files and the real tile
 // CSS (assets/css/board.css), so this page never drifts from the game.
-import { tileKindLabel } from "../composables/useBoardPresentation";
 import {
   assetGroups,
   STATUS_LABELS,

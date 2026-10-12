@@ -34,14 +34,14 @@
       aria-hidden="true"
     >{{ language === "js" ? "!" : "not " }}</span><span
       class="code-tile"
-      :class="`tile-${tileColorName(segment.color)}`"
+      :class="`tile-${tileKind(segment.color)}`"
       role="img"
-      :aria-label="`${segment.negate ? 'not ' : ''}${tileKindLabel(segment.color)} (${segment.color})`"
+      :aria-label="`${segment.negate ? 'not ' : ''}${tileKind(segment.color)}`"
       :title="segment.color"
     ><i class="code-tile-swatch" aria-hidden="true" /><span
       class="code-tile-label"
       aria-hidden="true"
-    >{{ tileKindLabel(segment.color) }}</span></span><span
+    >{{ tileKind(segment.color) }}</span></span><span
       v-if="language === 'js'"
       class="code-token code-token-punct"
     >)</span></template></template></span></code></pre>
@@ -51,10 +51,7 @@
 <script setup lang="ts">
 // A level's program in the "window" card, drawn the same way everywhere
 // (game + review page). Styles live in assets/css/board.css.
-import {
-  tileColorName,
-  tileKindLabel,
-} from "../composables/useBoardPresentation";
+import { tileKind } from "../composables/useBoardPresentation";
 import { useCodePresentation } from "../composables/useCodePresentation";
 import type { LevelLike } from "../types/debug-game";
 import type { CodeLanguage } from "../utils/codeLanguage";

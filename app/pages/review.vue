@@ -185,7 +185,7 @@
             >
             <span class="muted">
               · จบที่ ({{ item.solution.end[0] }}, {{ item.solution.end[1] }})
-              บนช่อง {{ tileKindLabel(tileAt(item.level, item.solution.end)) }}
+              บนช่อง {{ tileKind(tileAt(item.level, item.solution.end)) }}
             </span>
           </div>
 
@@ -210,7 +210,7 @@ import { ceilingForSet, challengeSets } from "../data/challenge-groups";
 import { featuresBeyond, FEATURE_LABELS } from "../utils/conceptFeatures";
 import type { RawLevel } from "../data/levels";
 import {
-  tileKindLabel,
+  tileKind,
   type BoardSpace,
 } from "../composables/useBoardPresentation";
 import { useProgramParser } from "../composables/useProgramParser";
