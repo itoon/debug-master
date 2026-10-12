@@ -20,6 +20,17 @@
             Set {{ setLetter(index) }} <small>{{ set.title }}</small>
           </button>
           <button
+            v-for="set in challengeSets"
+            :key="set.id"
+            type="button"
+            role="tab"
+            :aria-selected="selectedSetId === set.id"
+            :class="{ on: selectedSetId === set.id }"
+            @click="selectedSetId = set.id"
+          >
+            {{ set.title }} <small>ท้าทายเวลา · {{ set.levels.length }} ด่าน</small>
+          </button>
+          <button
             type="button"
             role="tab"
             :aria-selected="selectedSetId === DEAD_PREVIEW_ID"
@@ -94,6 +105,7 @@
         <header class="review-card-head">
           <h2>ด่าน {{ pad(item.level.id) }}</h2>
           <span class="pill pill-blue">{{ item.level.concept }}</span>
+          <span v-if="item.level.source" class="pill pill-yellow">{{ item.level.source }}</span>
           <span class="pill">{{ item.level.rows }}×{{ item.level.cols }}</span>
           <span class="pill">เริ่ม ({{ item.level.start[0] }}, {{ item.level.start[1] }})</span>
           <span class="pill">{{ item.solution.moves.length }} ก้าว</span>
@@ -194,6 +206,8 @@
 // components (LevelBoard / LevelCode) and solves with the same interpreter
 // (utils/programRunner.ts) as the game, so an edit in one place shows up here.
 import { levelSets } from "../data/level-sets";
+import { ceilingForSet, challengeSets } from "../data/challenge-groups";
+import { featuresBeyond, FEATURE_LABELS } from "../utils/conceptFeatures";
 import type { RawLevel } from "../data/levels";
 import {
   tileKindLabel,
@@ -242,7 +256,8 @@ const deadPreview = computed(() => ({
 const activeSet = computed(() =>
   selectedSetId.value === DEAD_PREVIEW_ID
     ? deadPreview.value
-    : (levelSets.find((set) => set.id === selectedSetId.value) ?? levelSets[0]),
+    : ([...levelSets, ...challengeSets].find((set) => set.id === selectedSetId.value) ??
+      levelSets[0]),
 );
 const languageTitle = computed(
   () => CODE_LANGUAGE_OPTIONS.find((o) => o.id === language.value)?.title ?? "",
@@ -262,13 +277,22 @@ type Reviewed = {
 const reviewed = computed<Reviewed[]>(() =>
   activeSet.value.levels.map((level) => {
     const { parseProgram } = useProgramParser(() => level.id);
-    const solution = solveLevel(level, parseProgram(level.code));
+    const program = parseProgram(level.code);
+    const solution = solveLevel(level, program);
+    // Challenge groups must not use concepts beyond their tier.
+    const ceiling = ceilingForSet(selectedSetId.value);
+    const beyond = ceiling ? featuresBeyond(program, ceiling) : [];
     return {
       level,
       solution,
       runs: compressRuns(solution.moves),
       pathCells: uniqueCells(solution.path.slice(1)),
-      issues: findIssues(level, solution),
+      issues: [
+        ...findIssues(level, solution),
+        ...(beyond.length
+          ? [`ใช้ ${beyond.map((f) => FEATURE_LABELS[f]).join(", ")} เกินคอนเซปต์ของกลุ่มนี้`]
+          : []),
+      ],
     };
   }),
 );

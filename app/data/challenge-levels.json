@@ -1,0 +1,4201 @@
+{
+  "title": "Challenge lessons (new)",
+  "description": "บทเรียนใหม่สำหรับโหมดท้าทายเวลา แต่งตามแนวของ Set 01 ไม่เกินคอนเซปต์ของกลุ่มตัวเอง",
+  "source": "scripts/challenge-levels/specs.ts",
+  "levels": [
+    {
+      "id": 101,
+      "title": "New 101",
+      "rows": 4,
+      "cols": 3,
+      "map": [
+        [
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "n",
+          "p"
+        ],
+        [
+          "p",
+          "p",
+          "p"
+        ],
+        [
+          "g",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "down()\nright()\nright()\nup()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "อ่านคำสั่งทีละบรรทัด เลี้ยวตามลำดับที่เขียน",
+      "group": "beginner"
+    },
+    {
+      "id": 102,
+      "title": "New 102",
+      "rows": 4,
+      "cols": 3,
+      "map": [
+        [
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "g",
+          "n",
+          "y"
+        ],
+        [
+          "g",
+          "g",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        2
+      ],
+      "code": "left()\nleft()\ndown()\ndown()\nright()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "นับช่องให้ครบก่อนเปลี่ยนทิศ",
+      "group": "beginner"
+    },
+    {
+      "id": 103,
+      "title": "New 103",
+      "rows": 5,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "y",
+          "y",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "y",
+          "p",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        4,
+        0
+      ],
+      "code": "up()\nright()\nup()\nright()\nup()\nright()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "เดินสลับทิศเป็นขั้นบันได",
+      "group": "beginner"
+    },
+    {
+      "id": 104,
+      "title": "New 104",
+      "rows": 4,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "o",
+          "o",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "v",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "o",
+          "v",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "right()\nright()\nleft()\ndown()\ndown()\nleft()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "เดินกลับทางเดิมได้ ช่องเดิมเหยียบซ้ำได้",
+      "group": "beginner"
+    },
+    {
+      "id": 105,
+      "title": "New 105",
+      "rows": 6,
+      "cols": 1,
+      "map": [
+        [
+          "b"
+        ],
+        [
+          "b"
+        ],
+        [
+          "b"
+        ],
+        [
+          "b"
+        ],
+        [
+          "b"
+        ],
+        [
+          "o"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(4):\n  down()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "repeat(n) คือทำคำสั่งข้างในซ้ำ n ครั้ง",
+      "group": "beginner"
+    },
+    {
+      "id": 106,
+      "title": "New 106",
+      "rows": 4,
+      "cols": 3,
+      "map": [
+        [
+          "p",
+          "p",
+          "y"
+        ],
+        [
+          "v",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "p"
+        ]
+      ],
+      "start": [
+        3,
+        2
+      ],
+      "code": "left()\nrepeat(3):\n  up()\nleft()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "คำสั่งก่อนและหลัง repeat ทำแค่ครั้งเดียว",
+      "group": "beginner"
+    },
+    {
+      "id": 107,
+      "title": "New 107",
+      "rows": 6,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "n",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g"
+        ],
+        [
+          "b",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "repeat(2):\n  right()\nrepeat(3):\n  down()\nrepeat(2):\n  left()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "repeat หลายก้อนต่อกัน นับแยกทีละก้อน",
+      "group": "beginner"
+    },
+    {
+      "id": 108,
+      "title": "New 108",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "y",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "y",
+          "o"
+        ],
+        [
+          "n",
+          "p",
+          "y",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(3):\n  right()\n  down()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "ข้างใน repeat มีหลายคำสั่ง ทำครบทุกบรรทัดก่อนเริ่มรอบใหม่",
+      "group": "beginner"
+    },
+    {
+      "id": 109,
+      "title": "New 109",
+      "rows": 8,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "v",
+          "o",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        6,
+        1
+      ],
+      "code": "repeat(3):\n  up()\n  up()\n  right()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "รูปแบบในรอบเดียวยาวขึ้น นับรอบให้ครบ",
+      "group": "beginner"
+    },
+    {
+      "id": 110,
+      "title": "New 110",
+      "rows": 4,
+      "cols": 7,
+      "map": [
+        [
+          "b",
+          "b",
+          "n",
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "o",
+          "b",
+          "b",
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "b",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "b",
+          "b"
+        ]
+      ],
+      "start": [
+        2,
+        6
+      ],
+      "code": "down()\nrepeat(3):\n  left()\n  up()\n  left()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "คำสั่งเดี่ยวนำหน้า แล้วตามด้วยรูปแบบที่ทำซ้ำ",
+      "group": "beginner"
+    },
+    {
+      "id": 111,
+      "title": "New 111",
+      "rows": 1,
+      "cols": 5,
+      "map": [
+        [
+          "p",
+          "p",
+          "p",
+          "p",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        3
+      ],
+      "code": "repeat(4):\n  right()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "เดินตกขอบแล้วไปโผล่อีกฝั่ง นับต่อให้ถูก",
+      "group": "beginner"
+    },
+    {
+      "id": 112,
+      "title": "New 112",
+      "rows": 4,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "g",
+          "b"
+        ],
+        [
+          "n",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "n"
+        ],
+        [
+          "g",
+          "g",
+          "p"
+        ]
+      ],
+      "start": [
+        2,
+        1
+      ],
+      "code": "repeat(5):\n  down()\nleft()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "repeat มากกว่าความสูงกระดาน ต้องทะลุขอบแล้ววนกลับมา",
+      "group": "beginner"
+    },
+    {
+      "id": 113,
+      "title": "New 113",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "y",
+          "b",
+          "n",
+          "y"
+        ],
+        [
+          "y",
+          "y",
+          "y",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "y"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "repeat(3):\n  left()\n  up()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "ทะลุขอบได้ทั้งแนวนอนและแนวตั้ง",
+      "group": "beginner"
+    },
+    {
+      "id": 114,
+      "title": "New 114",
+      "rows": 3,
+      "cols": 7,
+      "map": [
+        [
+          "o",
+          "o",
+          "o",
+          "o",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "o",
+          "o",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "v",
+          "n",
+          "n",
+          "o"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(2):\n  repeat(3):\n    right()\n  down()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "repeat ซ้อนกัน: รอบในทำจนครบก่อน แล้วค่อยนับรอบนอก",
+      "group": "beginner"
+    },
+    {
+      "id": 115,
+      "title": "New 115",
+      "rows": 8,
+      "cols": 6,
+      "map": [
+        [
+          "p",
+          "b",
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "b",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "b",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "b",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        6,
+        4
+      ],
+      "code": "repeat(3):\n  repeat(2):\n    up()\n  left()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "repeat ซ้อน: นับรอบในคูณรอบนอก",
+      "group": "beginner"
+    },
+    {
+      "id": 116,
+      "title": "New 116",
+      "rows": 7,
+      "cols": 7,
+      "map": [
+        [
+          "n",
+          "n",
+          "v",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "p",
+          "p",
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "p",
+          "p",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "repeat(2):\n  repeat(2):\n    right()\n  repeat(2):\n    down()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "ในรอบนอกมี repeat สองก้อน ทำทีละก้อน",
+      "group": "beginner"
+    },
+    {
+      "id": 117,
+      "title": "New 117",
+      "rows": 5,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "o",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "g",
+          "g",
+          "p"
+        ],
+        [
+          "n",
+          "g",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "g",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "repeat(2):\n  repeat(3):\n    down()\n  repeat(3):\n    up()\n  right()",
+      "concept": "Sequence and repeat loops",
+      "learningObjective": "ไปแล้วกลับในรอบเดียว แล้วขยับต่อ",
+      "group": "beginner"
+    },
+    {
+      "id": 118,
+      "title": "New 118",
+      "rows": 3,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "o",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "right()\nif o:\n  down()\nright()",
+      "concept": "Conditionals",
+      "learningObjective": "if สีช่อง: ทำคำสั่งข้างในเฉพาะเมื่อยืนอยู่บนสีนั้น",
+      "group": "beginner"
+    },
+    {
+      "id": 119,
+      "title": "New 119",
+      "rows": 5,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "g"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "down()\nif g:\n  right()\ndown()\nif g:\n  left()\ndown()",
+      "concept": "Conditionals",
+      "learningObjective": "ถ้าสีไม่ตรง ข้ามบล็อก if ไปเลย",
+      "group": "beginner"
+    },
+    {
+      "id": 120,
+      "title": "New 120",
+      "rows": 5,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "n",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        3,
+        2
+      ],
+      "code": "up()\nif p:\n  up()\nif p:\n  left()\nleft()",
+      "concept": "Conditionals",
+      "learningObjective": "if แต่ละตัวอ่านช่องที่ยืนอยู่ตอนนั้น ไม่ใช่ช่องเริ่ม",
+      "group": "beginner"
+    },
+    {
+      "id": 121,
+      "title": "New 121",
+      "rows": 4,
+      "cols": 7,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "n",
+          "n",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        2,
+        1
+      ],
+      "code": "repeat(4):\n  right()\n  if b:\n    up()",
+      "concept": "Conditionals",
+      "learningObjective": "if อยู่ใน repeat: ทุกรอบต้องดูสีช่องใหม่",
+      "group": "beginner"
+    },
+    {
+      "id": 122,
+      "title": "New 122",
+      "rows": 7,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "y",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        2
+      ],
+      "code": "repeat(5):\n  if y:\n    left()\n  down()",
+      "concept": "Conditionals",
+      "learningObjective": "if อยู่บรรทัดแรกของรอบ อ่านสีก่อนเดิน",
+      "group": "beginner"
+    },
+    {
+      "id": 123,
+      "title": "New 123",
+      "rows": 4,
+      "cols": 6,
+      "map": [
+        [
+          "o",
+          "n",
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "repeat(3):\n  down()\n  if o:\n    right()\n    right()",
+      "concept": "Conditionals",
+      "learningObjective": "ใน if มีสองคำสั่ง ทำครบทั้งสองเมื่อเงื่อนไขจริง",
+      "group": "beginner"
+    },
+    {
+      "id": 124,
+      "title": "New 124",
+      "rows": 2,
+      "cols": 6,
+      "map": [
+        [
+          "p",
+          "n",
+          "p",
+          "n",
+          "n",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "repeat(3):\n  right()\n  if p:\n    down()\n  if g:\n    up()",
+      "concept": "Conditionals",
+      "learningObjective": "if สองตัวในรอบเดียว ตัวที่สองอ่านช่องหลังจากตัวแรกพาเดินแล้ว",
+      "group": "beginner"
+    },
+    {
+      "id": 125,
+      "title": "New 125",
+      "rows": 4,
+      "cols": 2,
+      "map": [
+        [
+          "n",
+          "n"
+        ],
+        [
+          "v",
+          "n"
+        ],
+        [
+          "n",
+          "n"
+        ],
+        [
+          "v",
+          "v"
+        ]
+      ],
+      "start": [
+        2,
+        0
+      ],
+      "code": "repeat(10):\n  if v:\n    down()\nright()\nup()",
+      "concept": "Conditionals",
+      "learningObjective": "repeat มากแค่ไหนก็ไม่เดิน ถ้า if ไม่เคยจริง",
+      "group": "beginner"
+    },
+    {
+      "id": 126,
+      "title": "New 126",
+      "rows": 3,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "o",
+          "n"
+        ],
+        [
+          "o",
+          "o",
+          "n"
+        ],
+        [
+          "o",
+          "n",
+          "o"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "repeat(6):\n  if o:\n    right()\nup()",
+      "concept": "Conditionals",
+      "learningObjective": "เดินตามสีจนหลุดสี แล้วรอบที่เหลือไม่ทำอะไร",
+      "group": "beginner"
+    },
+    {
+      "id": 127,
+      "title": "New 127",
+      "rows": 5,
+      "cols": 5,
+      "map": [
+        [
+          "b",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "b",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "b"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(3):\n  if b:\n    repeat(2):\n      right()\n  down()",
+      "concept": "Conditionals",
+      "learningObjective": "repeat อยู่ใน if: ทำซ้ำเฉพาะเมื่อสีตรง",
+      "group": "beginner"
+    },
+    {
+      "id": 128,
+      "title": "New 128",
+      "rows": 5,
+      "cols": 7,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "y",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y",
+          "n",
+          "n",
+          "y"
+        ]
+      ],
+      "start": [
+        4,
+        5
+      ],
+      "code": "repeat(4):\n  left()\n  if y:\n    repeat(2):\n      up()",
+      "concept": "Conditionals",
+      "learningObjective": "อ่านสีหลังเดินซ้าย แล้วค่อยตัดสินว่าจะขึ้นสองช่องไหม",
+      "group": "beginner"
+    },
+    {
+      "id": 129,
+      "title": "New 129",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "n",
+          "p",
+          "p",
+          "n"
+        ],
+        [
+          "p",
+          "n",
+          "n",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "repeat(5):\n  right()\n  if p:\n    down()",
+      "concept": "Conditionals",
+      "learningObjective": "ทะลุขอบแล้วยังต้องอ่านสีช่องที่โผล่",
+      "group": "beginner"
+    },
+    {
+      "id": 130,
+      "title": "New 130",
+      "rows": 5,
+      "cols": 7,
+      "map": [
+        [
+          "g",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "g",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(5):\n  if g:\n    down()\n    down()\n  right()",
+      "concept": "Conditionals",
+      "learningObjective": "รวมทุกอย่าง: repeat, if และนับช่องให้ครบ",
+      "group": "beginner"
+    },
+    {
+      "id": 201,
+      "title": "New 201",
+      "rows": 3,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "o",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "right()\nif o:\n  down()\nelse:\n  up()\nright()",
+      "concept": "Conditionals",
+      "learningObjective": "if / else: ต้องเลือกทางใดทางหนึ่งเสมอ",
+      "group": "intermediate"
+    },
+    {
+      "id": 202,
+      "title": "New 202",
+      "rows": 3,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "g"
+        ]
+      ],
+      "start": [
+        2,
+        1
+      ],
+      "code": "up()\nif g:\n  left()\nelse:\n  right()\nup()",
+      "concept": "Conditionals",
+      "learningObjective": "สีไม่ตรง ไปทำฝั่ง else",
+      "group": "intermediate"
+    },
+    {
+      "id": 203,
+      "title": "New 203",
+      "rows": 4,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "n",
+          "b"
+        ],
+        [
+          "b",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "down()\nif b:\n  right()\nelse:\n  left()\ndown()\nif b:\n  right()\nelse:\n  left()",
+      "concept": "Conditionals",
+      "learningObjective": "if / else สองชุด อ่านสีใหม่ทุกครั้ง",
+      "group": "intermediate"
+    },
+    {
+      "id": 204,
+      "title": "New 204",
+      "rows": 4,
+      "cols": 3,
+      "map": [
+        [
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "p",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        3,
+        2
+      ],
+      "code": "if p:\n  repeat(2):\n    right()\nelse:\n  repeat(2):\n    left()\nup()\nif p:\n  up()\nelse:\n  down()",
+      "concept": "Conditionals",
+      "learningObjective": "ในแต่ละฝั่งของ if / else มี repeat ได้",
+      "group": "intermediate"
+    },
+    {
+      "id": 205,
+      "title": "New 205",
+      "rows": 2,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "o",
+          "o",
+          "n"
+        ],
+        [
+          "o",
+          "n",
+          "n",
+          "y"
+        ]
+      ],
+      "start": [
+        0,
+        3
+      ],
+      "code": "left()\nif y:\n  up()\nelif o:\n  down()\nelse:\n  left()\nleft()",
+      "concept": "Conditionals",
+      "learningObjective": "elif: ตรวจทีละเงื่อนไขจากบนลงล่าง ทำแค่อันแรกที่จริง",
+      "group": "intermediate"
+    },
+    {
+      "id": 206,
+      "title": "New 206",
+      "rows": 4,
+      "cols": 2,
+      "map": [
+        [
+          "g",
+          "n"
+        ],
+        [
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "down()\nif g:\n  right()\nelif p:\n  left()\nelse:\n  down()\ndown()",
+      "concept": "Conditionals",
+      "learningObjective": "ไม่ตรงทั้ง if และ elif ไปทำ else",
+      "group": "intermediate"
+    },
+    {
+      "id": 207,
+      "title": "New 207",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "y",
+          "b",
+          "n"
+        ],
+        [
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "right()\nif b:\n  up()\nelif y:\n  down()\nelse:\n  right()\nif b:\n  up()\nelif y:\n  down()\nelse:\n  right()",
+      "concept": "Conditionals",
+      "learningObjective": "elif สองชุดต่อกัน ชุดหลังอ่านช่องใหม่",
+      "group": "intermediate"
+    },
+    {
+      "id": 208,
+      "title": "New 208",
+      "rows": 5,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        3,
+        1
+      ],
+      "code": "repeat(6):\n  if o:\n    up()\n  else:\n    right()",
+      "concept": "Conditionals",
+      "learningObjective": "if / else ใน repeat: ทุกรอบเดินแน่นอนหนึ่งก้าว",
+      "group": "intermediate"
+    },
+    {
+      "id": 209,
+      "title": "New 209",
+      "rows": 4,
+      "cols": 9,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "g",
+          "n",
+          "n",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "g",
+          "n",
+          "n",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        8
+      ],
+      "code": "repeat(5):\n  if g:\n    down()\n  else:\n    left()\n  left()",
+      "concept": "Conditionals",
+      "learningObjective": "ทางเลือกแล้วตามด้วยก้าวบังคับในรอบเดียว",
+      "group": "intermediate"
+    },
+    {
+      "id": 210,
+      "title": "New 210",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "b",
+          "b",
+          "p"
+        ],
+        [
+          "p",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "b",
+          "b",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "repeat(8):\n  if b:\n    right()\n  elif p:\n    down()\n  else:\n    left()",
+      "concept": "Conditionals",
+      "learningObjective": "elif ใน repeat: สีบอกทิศ เดินเป็นงู",
+      "group": "intermediate"
+    },
+    {
+      "id": 211,
+      "title": "New 211",
+      "rows": 8,
+      "cols": 4,
+      "map": [
+        [
+          "y",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "y",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "repeat(4):\n  if y:\n    repeat(3):\n      down()\n  else:\n    right()",
+      "concept": "Conditionals",
+      "learningObjective": "ฝั่ง if มี repeat ฝั่ง else เดินก้าวเดียว",
+      "group": "intermediate"
+    },
+    {
+      "id": 212,
+      "title": "New 212",
+      "rows": 5,
+      "cols": 3,
+      "map": [
+        [
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "p",
+          "n"
+        ],
+        [
+          "p",
+          "p",
+          "n"
+        ],
+        [
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "while p:\n  down()\nright()",
+      "concept": "While loops and negation",
+      "learningObjective": "while: ทำซ้ำไปเรื่อยๆ ตราบที่ยังยืนบนสีนั้น",
+      "group": "intermediate"
+    },
+    {
+      "id": 213,
+      "title": "New 213",
+      "rows": 3,
+      "cols": 6,
+      "map": [
+        [
+          "n",
+          "b",
+          "b",
+          "b",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "b"
+        ]
+      ],
+      "start": [
+        1,
+        5
+      ],
+      "code": "while b:\n  left()\nup()\nwhile b:\n  left()",
+      "concept": "While loops and negation",
+      "learningObjective": "while สองก้อน แต่ละก้อนหยุดเมื่อหลุดสี",
+      "group": "intermediate"
+    },
+    {
+      "id": 214,
+      "title": "New 214",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "n",
+          "g"
+        ],
+        [
+          "g",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        3,
+        0
+      ],
+      "code": "while g:\n  right()\n  up()",
+      "concept": "While loops and negation",
+      "learningObjective": "ใน while มีหลายคำสั่ง เช็กสีเฉพาะตอนจบรอบ",
+      "group": "intermediate"
+    },
+    {
+      "id": 215,
+      "title": "New 215",
+      "rows": 6,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "y",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "repeat(2):\n  while y:\n    down()\n  right()",
+      "concept": "While loops and negation",
+      "learningObjective": "while อยู่ใน repeat: แต่ละรอบเดินไม่เท่ากัน",
+      "group": "intermediate"
+    },
+    {
+      "id": 216,
+      "title": "New 216",
+      "rows": 4,
+      "cols": 6,
+      "map": [
+        [
+          "v",
+          "o",
+          "v",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "o",
+          "v",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "v",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "while o:\n  right()\n  if v:\n    down()",
+      "concept": "While loops and negation",
+      "learningObjective": "if อยู่ใน while: อ่านสีสองแบบในช่องเดียวกัน",
+      "group": "intermediate"
+    },
+    {
+      "id": 217,
+      "title": "New 217",
+      "rows": 5,
+      "cols": 6,
+      "map": [
+        [
+          "p",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "p",
+          "b",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "p",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "p",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        3,
+        4
+      ],
+      "code": "while b:\n  up()\n  while p:\n    left()",
+      "concept": "While loops and negation",
+      "learningObjective": "while ซ้อน while: วงในเดินจนหลุดสีก่อน",
+      "group": "intermediate"
+    },
+    {
+      "id": 218,
+      "title": "New 218",
+      "rows": 5,
+      "cols": 7,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "y",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "g",
+          "n",
+          "y"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "repeat(3):\n  while g:\n    right()\n  while y:\n    down()",
+      "concept": "While loops and negation",
+      "learningObjective": "repeat ครอบ while สองตัว สลับทิศตามสี",
+      "group": "intermediate"
+    },
+    {
+      "id": 219,
+      "title": "New 219",
+      "rows": 6,
+      "cols": 8,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "v"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "v",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "v",
+          "n",
+          "v",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "v",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "v",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        7
+      ],
+      "code": "while v:\n  repeat(2):\n    left()\n  down()",
+      "concept": "While loops and negation",
+      "learningObjective": "repeat อยู่ใน while: ทำครบ repeat ก่อนเช็กสี",
+      "group": "intermediate"
+    },
+    {
+      "id": 220,
+      "title": "New 220",
+      "rows": 3,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "n",
+          "g"
+        ],
+        [
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "right()\nif not g:\n  down()\nright()",
+      "concept": "While loops and negation",
+      "learningObjective": "if not: ทำเมื่อสี *ไม่* ตรง",
+      "group": "intermediate"
+    },
+    {
+      "id": 221,
+      "title": "New 221",
+      "rows": 4,
+      "cols": 2,
+      "map": [
+        [
+          "n",
+          "b"
+        ],
+        [
+          "b",
+          "n"
+        ],
+        [
+          "b",
+          "b"
+        ],
+        [
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "down()\nif not b:\n  left()\ndown()\nif not b:\n  left()",
+      "concept": "While loops and negation",
+      "learningObjective": "not กลับความหมาย: ยืนบนสีนั้นจะข้าม",
+      "group": "intermediate"
+    },
+    {
+      "id": 222,
+      "title": "New 222",
+      "rows": 4,
+      "cols": 6,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "o",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        2,
+        1
+      ],
+      "code": "repeat(4):\n  if not o:\n    up()\n  right()",
+      "concept": "While loops and negation",
+      "learningObjective": "if not ใน repeat",
+      "group": "intermediate"
+    },
+    {
+      "id": 223,
+      "title": "New 223",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "n",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        3
+      ],
+      "code": "repeat(5):\n  if not p:\n    left()\n  else:\n    down()",
+      "concept": "While loops and negation",
+      "learningObjective": "if not กับ else: ระวังฝั่งไหนทำเมื่อไร",
+      "group": "intermediate"
+    },
+    {
+      "id": 224,
+      "title": "New 224",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "y",
+          "y",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "repeat(12):\n  if not y:\n    right()\nup()",
+      "concept": "While loops and negation",
+      "learningObjective": "repeat เยอะแต่เดินถึงสีแล้วติด ต้องรู้ว่าหยุดตรงไหน",
+      "group": "intermediate"
+    },
+    {
+      "id": 225,
+      "title": "New 225",
+      "rows": 6,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "v"
+        ],
+        [
+          "n",
+          "v",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "v",
+          "n"
+        ],
+        [
+          "n",
+          "v",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        2
+      ],
+      "code": "while not v:\n  down()\nleft()",
+      "concept": "While loops and negation",
+      "learningObjective": "while not: เดินไปเรื่อยๆ จนกว่าจะเจอสีนั้น",
+      "group": "intermediate"
+    },
+    {
+      "id": 226,
+      "title": "New 226",
+      "rows": 6,
+      "cols": 4,
+      "map": [
+        [
+          "o",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "while not o:\n  right()\n  down()",
+      "concept": "While loops and negation",
+      "learningObjective": "while not กับหลายคำสั่งในรอบ",
+      "group": "intermediate"
+    },
+    {
+      "id": 227,
+      "title": "New 227",
+      "rows": 2,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "g",
+          "g"
+        ],
+        [
+          "g",
+          "n",
+          "n",
+          "g"
+        ]
+      ],
+      "start": [
+        1,
+        2
+      ],
+      "code": "while not g:\n  left()\nup()\nwhile not g:\n  right()",
+      "concept": "While loops and negation",
+      "learningObjective": "while not สองก้อน หยุดที่สีเป้าหมายทั้งสองครั้ง",
+      "group": "intermediate"
+    },
+    {
+      "id": 228,
+      "title": "New 228",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "p",
+          "b"
+        ],
+        [
+          "n",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "n",
+          "b",
+          "n"
+        ]
+      ],
+      "start": [
+        3,
+        1
+      ],
+      "code": "while not b:\n  up()\n  if p:\n    right()",
+      "concept": "While loops and negation",
+      "learningObjective": "while not ครอบ if: หยุดเมื่อเจอเป้าหมาย ระหว่างทางเลี้ยวตามสี",
+      "group": "intermediate"
+    },
+    {
+      "id": 229,
+      "title": "New 229",
+      "rows": 5,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "repeat(3):\n  while not y:\n    right()\n  down()",
+      "concept": "While loops and negation",
+      "learningObjective": "repeat ครอบ while not: เริ่มรอบใหม่ทั้งที่อาจยืนบนเป้าหมายอยู่แล้ว",
+      "group": "intermediate"
+    },
+    {
+      "id": 230,
+      "title": "New 230",
+      "rows": 5,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "v",
+          "n"
+        ],
+        [
+          "b",
+          "b",
+          "n",
+          "b"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "v"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "b"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "while not v:\n  if o:\n    up()\n  elif b:\n    right()\n  else:\n    down()",
+      "concept": "While loops and negation",
+      "learningObjective": "while not + elif: สีบอกทาง จนกว่าจะเจอคริสตัล",
+      "group": "intermediate"
+    },
+    {
+      "id": 301,
+      "title": "New 301",
+      "rows": 8,
+      "cols": 7,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "g",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "g",
+          "n",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "g",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "repeat(3):\n  repeat(3):\n    if not g:\n      right()\n    else:\n      down()\n  down()",
+      "concept": "While loops and negation",
+      "learningObjective": "repeat ซ้อนกับ if not / else: นับรอบและอ่านสีพร้อมกัน",
+      "group": "pro"
+    },
+    {
+      "id": 302,
+      "title": "New 302",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "y",
+          "y"
+        ],
+        [
+          "v",
+          "p",
+          "p",
+          "y"
+        ],
+        [
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "p",
+          "v"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "while not v:\n  if p:\n    right()\n  elif y:\n    down()\n  else:\n    left()",
+      "concept": "While loops and negation",
+      "learningObjective": "while not + elif สามทาง เดินตามป้ายสีจนเจอเป้าหมาย",
+      "group": "pro"
+    },
+    {
+      "id": 303,
+      "title": "New 303",
+      "rows": 6,
+      "cols": 8,
+      "map": [
+        [
+          "n",
+          "o",
+          "o",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "o",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "o",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "repeat(4):\n  while o:\n    right()\n  if not o:\n    down()",
+      "concept": "While loops and negation",
+      "learningObjective": "while แล้ว if not ในรอบเดียว",
+      "group": "pro"
+    },
+    {
+      "id": 304,
+      "title": "New 304",
+      "rows": 7,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "n",
+          "b",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        6,
+        0
+      ],
+      "code": "while not b:\n  while g:\n    up()\n  right()",
+      "concept": "While loops and negation",
+      "learningObjective": "while ซ้อนใน while not",
+      "group": "pro"
+    },
+    {
+      "id": 305,
+      "title": "New 305",
+      "rows": 3,
+      "cols": 8,
+      "map": [
+        [
+          "n",
+          "p",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "p",
+          "n",
+          "y",
+          "n",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "p",
+          "n",
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        6
+      ],
+      "code": "repeat(5):\n  left()\n  if y:\n    up()\n  elif not p:\n    down()",
+      "concept": "While loops and negation",
+      "learningObjective": "elif แบบมี not",
+      "group": "pro"
+    },
+    {
+      "id": 306,
+      "title": "New 306",
+      "rows": 5,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "k",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "k",
+          "n"
+        ],
+        [
+          "n",
+          "k",
+          "n",
+          "k",
+          "k"
+        ],
+        [
+          "n",
+          "n",
+          "k",
+          "n",
+          "k"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "repeat(2):\n  repeat(2):\n    while not k:\n      right()\n    down()\n  left()",
+      "concept": "While loops and negation",
+      "learningObjective": "while not อยู่ใน repeat ซ้อน repeat",
+      "group": "pro"
+    },
+    {
+      "id": 307,
+      "title": "New 307",
+      "rows": 4,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "g",
+          "g",
+          "b"
+        ],
+        [
+          "n",
+          "g",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "o",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        3,
+        0
+      ],
+      "code": "hop()\nhop()\nhop()\n\ndef hop():\n  up()\n  right()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "def ตั้งชื่อชุดคำสั่ง เรียกกี่ครั้งก็ทำซ้ำเท่านั้น",
+      "group": "pro"
+    },
+    {
+      "id": 308,
+      "title": "New 308",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "v",
+          "y",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "y",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "down()\nstep()\nstep()\n\ndef step():\n  right()\n  down()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "คำสั่งปกติกับการเรียกฟังก์ชันสลับกัน",
+      "group": "pro"
+    },
+    {
+      "id": 309,
+      "title": "New 309",
+      "rows": 4,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "o",
+          "o",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "o",
+          "o"
+        ]
+      ],
+      "start": [
+        3,
+        4
+      ],
+      "code": "def corner():\n  left()\n  left()\n  up()\n\ncorner()\nright()\ncorner()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "def อยู่บนสุดก็ยังไม่ทำ จนกว่าจะถูกเรียก",
+      "group": "pro"
+    },
+    {
+      "id": 310,
+      "title": "New 310",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "b",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "o",
+          "n",
+          "v",
+          "n"
+        ]
+      ],
+      "start": [
+        2,
+        0
+      ],
+      "code": "zig()\nzag()\nzig()\n\ndef zig():\n  right()\n  up()\n\ndef zag():\n  right()\n  down()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "สองฟังก์ชัน ต้องจำว่าชื่อไหนทำอะไร",
+      "group": "pro"
+    },
+    {
+      "id": 311,
+      "title": "New 311",
+      "rows": 6,
+      "cols": 7,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "p",
+          "p",
+          "n",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "p",
+          "p",
+          "n",
+          "b"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "p",
+          "p",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "repeat(3):\n  stair()\n\ndef stair():\n  repeat(2):\n    right()\n  down()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "เรียกฟังก์ชันใน repeat และมี repeat ในฟังก์ชัน",
+      "group": "pro"
+    },
+    {
+      "id": 312,
+      "title": "New 312",
+      "rows": 3,
+      "cols": 4,
+      "map": [
+        [
+          "g",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "n",
+          "v",
+          "n",
+          "p"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "box()\nright()\nright()\nbox()\n\ndef box():\n  right()\n  down()\n  left()\n  up()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "ฟังก์ชันพากลับจุดเดิม แล้วไปทำซ้ำอีกที่",
+      "group": "pro"
+    },
+    {
+      "id": 313,
+      "title": "New 313",
+      "rows": 3,
+      "cols": 7,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "y",
+          "y",
+          "y",
+          "n",
+          "n",
+          "v",
+          "n"
+        ],
+        [
+          "p",
+          "n",
+          "y",
+          "y",
+          "y",
+          "y",
+          "y"
+        ]
+      ],
+      "start": [
+        2,
+        6
+      ],
+      "code": "def two():\n  left()\n  left()\n\ndef four():\n  two()\n  two()\n\nfour()\nup()\ntwo()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "ฟังก์ชันเรียกฟังก์ชัน: ไล่ทีละชั้นแล้วกลับมาต่อ",
+      "group": "pro"
+    },
+    {
+      "id": 314,
+      "title": "New 314",
+      "rows": 4,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "v",
+          "o",
+          "o",
+          "o"
+        ],
+        [
+          "o",
+          "o",
+          "o",
+          "o"
+        ],
+        [
+          "y",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        2,
+        0
+      ],
+      "code": "walk()\nwalk()\nwalk()\n\ndef bounce():\n  up()\n  down()\n\ndef walk():\n  right()\n  bounce()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "ฟังก์ชันซ้อนสองชั้น ทำซ้ำสามครั้ง",
+      "group": "pro"
+    },
+    {
+      "id": 315,
+      "title": "New 315",
+      "rows": 5,
+      "cols": 7,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "o",
+          "n",
+          "n",
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "n",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        1
+      ],
+      "code": "check()\ncheck()\ncheck()\ncheck()\n\ndef check():\n  right()\n  if o:\n    down()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "ใน def มี if: ผลแต่ละครั้งที่เรียกอาจต่างกัน",
+      "group": "pro"
+    },
+    {
+      "id": 316,
+      "title": "New 316",
+      "rows": 4,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "n",
+          "b",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        2,
+        0
+      ],
+      "code": "repeat(5):\n  turn()\n\ndef turn():\n  if b:\n    up()\n  else:\n    right()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "ฟังก์ชันที่มี if / else ถูกเรียกใน repeat",
+      "group": "pro"
+    },
+    {
+      "id": 317,
+      "title": "New 317",
+      "rows": 6,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "n",
+          "y"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "slide()\nright()\nslide()\n\ndef slide():\n  while y:\n    down()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "while อยู่ในฟังก์ชัน: ไถลจนหลุดสี",
+      "group": "pro"
+    },
+    {
+      "id": 318,
+      "title": "New 318",
+      "rows": 4,
+      "cols": 5,
+      "map": [
+        [
+          "g",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "g"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "g"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "def zig():\n  right()\n  down()\n\nwhile not g:\n  zig()",
+      "concept": "Functions and decomposition",
+      "learningObjective": "เรียกฟังก์ชันใน while not จนเจอเป้าหมาย",
+      "group": "pro"
+    },
+    {
+      "id": 319,
+      "title": "New 319",
+      "rows": 2,
+      "cols": 6,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "p",
+          "n"
+        ],
+        [
+          "p",
+          "n",
+          "n",
+          "p",
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "go()\n\ndef go():\n  right()\n  if not p:\n    go()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "ฟังก์ชันเรียกตัวเอง: ทำซ้ำจนเงื่อนไขหยุด",
+      "group": "pro"
+    },
+    {
+      "id": 320,
+      "title": "New 320",
+      "rows": 5,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "g",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "n"
+        ]
+      ],
+      "start": [
+        4,
+        0
+      ],
+      "code": "climb()\nright()\n\ndef climb():\n  up()\n  if g:\n    climb()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "recursion ขึ้นบันได แล้วกลับมาทำคำสั่งหลังเรียก",
+      "group": "pro"
+    },
+    {
+      "id": 321,
+      "title": "New 321",
+      "rows": 4,
+      "cols": 6,
+      "map": [
+        [
+          "n",
+          "y",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "y",
+          "n"
+        ],
+        [
+          "y",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "y"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "def road():\n  right()\n  right()\n  if y:\n    turn()\n  else:\n    road()\n\ndef turn():\n  down()\n  down()\n\nroad()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "เรียกตัวเองใน else และอีกฟังก์ชันใน if",
+      "group": "pro"
+    },
+    {
+      "id": 322,
+      "title": "New 322",
+      "rows": 4,
+      "cols": 6,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "o",
+          "n"
+        ]
+      ],
+      "start": [
+        0,
+        1
+      ],
+      "code": "stairs()\nleft()\n\ndef stairs():\n  right()\n  down()\n  if not o:\n    stairs()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "recursion เป็นบันไดลง หยุดที่สีส้ม",
+      "group": "pro"
+    },
+    {
+      "id": 323,
+      "title": "New 323",
+      "rows": 5,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "b",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "n",
+          "b"
+        ]
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "code": "dive()\n\ndef dive():\n  down()\n  if b:\n    dive()\n  right()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "คำสั่งหลังเรียกตัวเองทำตอนย้อนกลับ (call stack)",
+      "group": "pro"
+    },
+    {
+      "id": 324,
+      "title": "New 324",
+      "rows": 6,
+      "cols": 6,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "v",
+          "n",
+          "v",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "v",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "v",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        4,
+        4
+      ],
+      "code": "back()\n\ndef back():\n  left()\n  if not v:\n    back()\n  up()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "ย้อนกลับครบทุกชั้น จำนวนก้าวตอนกลับเท่ากับตอนไป",
+      "group": "pro"
+    },
+    {
+      "id": 325,
+      "title": "New 325",
+      "rows": 4,
+      "cols": 3,
+      "map": [
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "p"
+        ],
+        [
+          "p",
+          "p",
+          "p"
+        ],
+        [
+          "n",
+          "p",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        0
+      ],
+      "code": "a()\n\ndef a():\n  right()\n  if p:\n    b()\n\ndef b():\n  down()\n  if p:\n    a()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "สองฟังก์ชันเรียกกันไปมา",
+      "group": "pro"
+    },
+    {
+      "id": 326,
+      "title": "New 326",
+      "rows": 6,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "g",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "k",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "g",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "g",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        4,
+        0
+      ],
+      "code": "climb()\n\ndef climb():\n  while g:\n    up()\n  right()\n  if not k:\n    climb()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "while อยู่ในฟังก์ชันที่เรียกตัวเอง",
+      "group": "pro"
+    },
+    {
+      "id": 327,
+      "title": "New 327",
+      "rows": 5,
+      "cols": 7,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y",
+          "y",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "y",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        4,
+        0
+      ],
+      "code": "wave()\n\ndef wave():\n  repeat(2):\n    right()\n  up()\n  if y:\n    wave()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "repeat ในฟังก์ชันเรียกตัวเอง ทำเป็นคลื่น",
+      "group": "pro"
+    },
+    {
+      "id": 328,
+      "title": "New 328",
+      "rows": 5,
+      "cols": 4,
+      "map": [
+        [
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "b",
+          "b",
+          "o",
+          "o"
+        ],
+        [
+          "b",
+          "b",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        1,
+        3
+      ],
+      "code": "choice()\n\ndef choice():\n  if o:\n    left()\n    choice()\n  elif b:\n    down()\n    choice()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "เลือกทางด้วย if / elif แล้วเรียกตัวเองต่อ",
+      "group": "pro"
+    },
+    {
+      "id": 329,
+      "title": "New 329",
+      "rows": 6,
+      "cols": 3,
+      "map": [
+        [
+          "y",
+          "n",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "y"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "start": [
+        4,
+        2
+      ],
+      "code": "tower()\nright()\n\ndef tower():\n  up()\n  if not y:\n    tower()\n    left()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "คำสั่งหลังเรียกตัวเองอยู่ใน if: ย้อนกลับเฉพาะชั้นที่เรียกต่อ",
+      "group": "pro"
+    },
+    {
+      "id": 330,
+      "title": "New 330",
+      "rows": 5,
+      "cols": 5,
+      "map": [
+        [
+          "n",
+          "v",
+          "n",
+          "k",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "k"
+        ],
+        [
+          "v",
+          "n",
+          "n",
+          "p",
+          "k"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "k",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "p"
+        ]
+      ],
+      "start": [
+        2,
+        1
+      ],
+      "code": "def fall():\n  while not p:\n    down()\n\ndef eye():\n  repeat(2):\n    right()\n    if k:\n      fall()\n\nwhile not v:\n  up()\neye()\nleft()\neye()",
+      "concept": "Recursion and advanced control flow",
+      "learningObjective": "ด่านปิด: while, repeat, def และ recursion รวมกัน",
+      "group": "pro"
+    }
+  ]
+}

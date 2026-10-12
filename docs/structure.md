@@ -59,6 +59,8 @@ game/
 │  │  ├─ levels.ts             Set A: 60 ด่านต้นฉบับ
 │  │  ├─ set-02.json           Set B: 60 ด่านชุดใหม่
 │  │  ├─ level-sets.ts         รวมชุดด่าน + ชื่อ/คำอธิบายที่โชว์ในเกม
+│  │  ├─ challenge-groups.ts   กลุ่มโหมดท้าทายเวลา Beginner / Intermediate / Pro (ลำดับด่าน)
+│  │  ├─ challenge-levels.json ด่านใหม่ 90 ด่านของกลุ่มท้าทายเวลา (สร้างจาก scripts/challenge-levels/)
 │  │  └─ assets.ts             รายการ asset สำหรับหน้า /elements
 │  ├─ types/debug-game.ts      ชนิดข้อมูล (type) ที่ใช้ร่วมกันทั้งโปรเจกต์
 │  └─ assets/                  ไฟล์ที่ผ่าน Vite (ได้ hash + base URL ถูกต้องอัตโนมัติ)
@@ -66,6 +68,8 @@ game/
 │     ├─ css/board.css         หน้าตากระดาน ช่องทุกชนิด Codi และหน้าต่างโค้ด
 │     ├─ sprites/ font/ bg.png รูป Codi, หิน, คริสตัล, ฟอนต์, ฉากหลัง
 ├─ scripts/check-level-gen.ts  สคริปต์ทดสอบตัวสร้างด่านแบบจำนวนมาก
+├─ scripts/challenge-levels/   spec ด่านใหม่ของกลุ่มท้าทายเวลา + ตัวสร้าง JSON
+├─ scripts/check-challenge-groups.ts  ตรวจกลุ่มท้าทายเวลาทั้งหมด
 ├─ public/                     ไฟล์ที่เสิร์ฟตรงๆ ไม่ผ่าน Vite (favicon, robots.txt)
 ├─ nuxt.config.ts              ตั้งค่า Nuxt (โมดูล, ไฟล์ CSS ส่วนกลาง)
 └─ .github/workflows/deploy.yml   build แล้ว deploy ขึ้น GitHub Pages ทุกครั้งที่ push main
@@ -188,6 +192,25 @@ game/
 
 ---
 
+## 5.5 กลุ่มโหมดท้าทายเวลา (Beginner / Intermediate / Pro)
+
+โหมด **แข่ง 05:00** และ **ท้าทายเวลา** เล่นได้เฉพาะ 3 กลุ่มนี้ (ตะลุยด่านเลือกได้ทั้งกลุ่มและชุดเต็ม) แต่ละกลุ่มมี 50 ด่าน
+= Set 01 ช่วงของตัวเอง 20 ด่าน + ด่านใหม่ 30 ด่าน และ **ห้ามใช้คอนเซปต์เกินกลุ่ม**:
+
+| กลุ่ม | Set 01 | ใช้ได้ (`TIER_CEILINGS` ใน `utils/conceptFeatures.ts`) | id ด่านใหม่ |
+|---|---|---|---|
+| Beginner | ด่าน 1–20 | `repeat`, `if` (ไม่มี else/elif/not) | 101–130 |
+| Intermediate | ด่าน 21–40 | + `else`, `elif`, `while`, `not` | 201–230 |
+| Pro | ด่าน 41–60 | + `def`, recursion | 301–330 |
+
+- **ย้าย/เพิ่ม/ลบด่านในกลุ่ม** → แก้รายการ `levels` ใน `data/challenge-groups.ts` (ลำดับในรายการ = ลำดับที่เล่น)
+  เช่น `...s01(1, 20)` = Set 01 ด่าน 1–20, `...fresh(101)` = ด่านใหม่ #101 ในกลุ่ม ด่านจะถูกเรียงเลขใหม่ 1..N
+- **แก้/เพิ่มด่านใหม่** → แก้ `scripts/challenge-levels/specs.ts` (โค้ด + สีของช่องที่ if/while อ่าน ตามลำดับ)
+  แล้วรัน `bun scripts/challenge-levels/build.ts --write` ตัวสร้างจะวาดกระดานให้ตรงกับโค้ด และตรวจด้วยตัวรันของเกม
+- อันดับแยกตามกลุ่ม (`setId` = `challenge-beginner` ฯลฯ) หน้า `/review` มีแท็บของทั้ง 3 กลุ่ม และขึ้นขอบแดงถ้าด่านใช้คอนเซปต์เกินกลุ่ม
+
+---
+
 ## 6. วงจรการเล่น 1 ด่าน (ไล่ตามฟังก์ชันใน `pages/index.vue`)
 
 ```
@@ -277,4 +300,5 @@ startGame()          อ่านค่าจากหน้าตั้งค�
 - [ ] `pnpm dev` แล้วลองเล่นอย่างน้อย 1 ด่าน + กดผิด 1 ครั้ง
 - [ ] เปิด `/review` ต้องไม่มีการ์ดขอบแดง (ถ้าแก้ข้อมูลด่าน)
 - [ ] แก้ `utils/levelGen` → รัน `pnpm dlx jiti scripts/check-level-gen.ts 300 30` ต้องขึ้น `OK`
+- [ ] แก้กลุ่มท้าทายเวลา → รัน `pnpm dlx jiti scripts/check-challenge-groups.ts` ต้องขึ้น `OK`
 - [ ] `NUXT_APP_BASE_URL=/debug-master/ pnpm generate` ต้อง build ผ่าน (แบบเดียวกับตอน deploy)

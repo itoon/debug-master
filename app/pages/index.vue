@@ -288,9 +288,17 @@
           <label v-if="selectedMode !== 'dead'" class="field narrow">
             <span>ชุดโจทย์</span>
             <select id="level-set" v-model="selectedSetId">
-              <option v-for="set in levelSets" :key="set.id" :value="set.id">
-                {{ set.title }}
-              </option>
+              <optgroup label="ชุดท้าทายเวลา">
+                <option v-for="set in challengeSets" :key="set.id" :value="set.id">
+                  {{ set.title }} · {{ set.levels.length }} ด่าน
+                </option>
+              </optgroup>
+              <!-- Timed modes only play the challenge groups. -->
+              <optgroup v-if="!isTimedMode" label="ชุดโจทย์เต็ม">
+                <option v-for="set in levelSets" :key="set.id" :value="set.id">
+                  {{ set.title }}
+                </option>
+              </optgroup>
             </select>
           </label>
 
@@ -395,6 +403,7 @@
 
 <script setup lang="ts">
 import { levelSets } from "../data/level-sets";
+import { challengeSets } from "../data/challenge-groups";
 import type { BoardSpace } from "../composables/useBoardPresentation";
 import { useProgramParser } from "../composables/useProgramParser";
 import type {
@@ -429,7 +438,11 @@ const STORAGE_KEY = "debug-runner-scores-v1";
 const showSetup = ref(true);
 const showRanking = ref(false);
 const selectedMode = ref<Mode>("ranking");
-const selectedSetId = ref(levelSets[0]?.id ?? "set-01");
+// Every playable set: the time-challenge groups (Beginner / Intermediate /
+// Pro, see data/challenge-groups.ts) and the full sets for campaign.
+const allSets = [...challengeSets, ...levelSets];
+// The default mode is a timed race, so start on the first challenge group.
+const selectedSetId = ref(allSets[0].id);
 const playerNameDraft = ref("");
 const playerAgeDraft = ref<number | null>(null);
 const playerAge = ref<number | undefined>(undefined);
@@ -447,7 +460,7 @@ const displayLanguage = computed(() =>
 const selectedLevelIndex = ref(0);
 const selectedLevelDraft = ref(1);
 const activeSet = computed(
-  () => levelSets.find((set) => set.id === selectedSetId.value) ?? levelSets[0],
+  () => allSets.find((set) => set.id === selectedSetId.value) ?? allSets[0],
 );
 // Dead Mode: levels are generated one at a time while the run goes on
 // (utils/levelGen). Every other mode plays the selected level set.
@@ -952,8 +965,11 @@ function handleKeydown(event: KeyboardEvent): void {
 // that set and starting level in the setup dialog.
 async function applyLevelFromQuery(): Promise<void> {
   const query = useRoute().query;
-  const set = levelSets.find((item) => item.id === query.set);
+  const set = allSets.find((item) => item.id === query.set);
   if (set) {
+    // Full sets are campaign-only; switch first so the mode watcher keeps the set.
+    if (!isChallengeSet(set.id)) selectedMode.value = "campaign";
+    await nextTick();
     selectedSetId.value = set.id;
     await nextTick(); // let the set watcher reset the level first
   }
@@ -989,6 +1005,17 @@ onMounted(async () => {
 watch(selectedSetId, () => {
   selectedLevelIndex.value = 0;
   selectedLevelDraft.value = 1;
+});
+
+function isChallengeSet(setId: string): boolean {
+  return challengeSets.some((set) => set.id === setId);
+}
+
+// Timed modes play only the challenge groups (their own rankings per group).
+watch(selectedMode, () => {
+  if (isTimedMode.value && !isChallengeSet(selectedSetId.value)) {
+    selectedSetId.value = challengeSets[0].id;
+  }
 });
 
 onBeforeUnmount(() => {

@@ -9,6 +9,8 @@ export type RawLevel = {
   code: string;
   concept: string;
   learningObjective: string;
+  /** Where a level in a challenge group came from (data/challenge-groups.ts). */
+  source?: string;
 };
 
 export const rawLevels = [
