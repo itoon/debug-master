@@ -42,6 +42,7 @@ export function fitCellSize(
   cols: number,
   rows: number,
   space?: BoardSpace,
+  maxCellSize = MAX_CELL,
 ): number {
   const safeCols = Math.max(1, cols);
   const safeRows = Math.max(1, rows);
@@ -52,7 +53,7 @@ export function fitCellSize(
       Math.min(54, Math.floor(Math.min(520 / safeCols, 500 / safeRows))),
     );
   }
-  let cell = MAX_CELL;
+  let cell = Math.max(MIN_CELL, Math.floor(maxCellSize));
   while (
     cell > MIN_CELL &&
     (boardLength(safeCols, cell) > space.width ||
@@ -68,6 +69,7 @@ export type BoardSpace = { width: number; height: number };
 export function useBoardPresentation(
   currentLevel: ComputedRef<LevelLike>,
   boardSpace?: Ref<BoardSpace | undefined>,
+  maxCellSize?: Ref<number>,
 ) {
   const visibleTiles = computed<VisibleTile[]>(() =>
     currentLevel.value.map.flatMap((row, rowIndex) =>
@@ -83,7 +85,7 @@ export function useBoardPresentation(
 
   const boardStyle = computed(() => {
     const { cols, rows } = currentLevel.value;
-    const cell = fitCellSize(cols, rows, boardSpace?.value);
+    const cell = fitCellSize(cols, rows, boardSpace?.value, maxCellSize?.value);
     return {
       gridTemplateColumns: `repeat(${cols}, ${cell}px)`,
       "--cell-size": `${cell}px`,

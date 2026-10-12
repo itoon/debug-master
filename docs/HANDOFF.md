@@ -63,3 +63,13 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Button text, generated-name format, name pool and screen-reader announcement use the Thai dictionary. Candidates respect the configured nickname length. Small screens stack the input and button.
 - Popup still opens blank; randomization is opt-in. Age remains unselected and required, and player data is saved only on valid confirmation. Existing idle/reset behavior is unchanged.
 - Verification: `pnpm build` passed (exit 0), and `git diff --check` passed. No tests written or run.
+
+## 2026-10-12 — Gameplay layout and hierarchy
+
+- User requested an actual two-column gameplay composition: board with attached D-pad on the left, readable code on the right, with a compact top HUD. Existing space background, tiles, Codi, font and palette are retained.
+- `index.vue`: Level/concept/stage title, player/language/mode, status, timer, score, combo, progress and Dead Mode hearts are grouped in the top HUD. Timer and score are larger focal metrics; Start/Restart/Menu remain together with their original handlers and disabled conditions.
+- D-pad moved inside the left board group, immediately below the rendered board. Up remains above Left/Down/Right. A short contextual instruction sits above the board; the concept is shown beside the level in the HUD, replacing the separate full-width instruction bar.
+- Board area is measured with instruction/control heights reserved, so the board and D-pad share one centered group with 12px spacing. Gameplay opts into a 160px maximum tile size (previously 88px); actual tiles still shrink to fit the available width/height. Review and other LevelBoard uses retain the 88px default. No map/grid structure, tile values, Codi positioning, movement, parser or runner changes.
+- Code panel aligns with the board/control area and caps its height at 780px. Gameplay opts into readable 16–20.8px code and 1.65 line spacing; long programs scroll inside the editor vertically/horizontally instead of shrinking into tiny text. Review/default LevelCode uses keep the previous sizing and syntax highlighting.
+- Desktop keeps two columns within a centered 1640px game frame. At 920px and below, board/controls and code stack with scrollable page overflow; controls and debug features stay available. Notifications, score popups and hints are preserved. New labels use the Thai dictionary; no html/body styles added.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport checks performed, per the standing build-only instruction. 1920×1080/laptop fit is designed for but not visually verified.

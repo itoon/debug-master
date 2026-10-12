@@ -1,5 +1,5 @@
 <template>
-  <section class="code-card">
+  <section class="code-card" :class="{ 'code-card-readable': readable }">
     <div class="window-bar">
       <span class="window-dots" aria-hidden="true"><i /><i /><i /></span>
       <h2>{{ title }}</h2>
@@ -65,6 +65,8 @@ const props = withDefaults(
     language?: CodeLanguage;
     title?: string;
     lineNumbers?: boolean;
+    /** Gameplay keeps readable text and scrolls instead of shrinking long code. */
+    readable?: boolean;
     /** Highlights a source line (the game uses it in Debug Mode). */
     isActiveLine?: (line: string) => boolean;
   }>(),
@@ -72,6 +74,7 @@ const props = withDefaults(
     language: "python",
     title: "Read the program",
     lineNumbers: false,
+    readable: false,
     isActiveLine: undefined,
   },
 );
@@ -81,3 +84,10 @@ const { codeLineEntries, codeBoxStyle } = useCodePresentation(
   computed(() => props.language),
 );
 </script>
+
+<style scoped>
+.code-card-readable .code-box { font-size: clamp(1rem, 1.15vw, 1.3rem); line-height: 1.65; overflow: auto; padding: 16px 0; }
+.code-card-readable .code-line { white-space: pre; flex-wrap: nowrap; width: max-content; min-width: 100%; padding: 0 18px; }
+.code-card-readable .code-token { white-space: pre; flex: none; }
+.code-card-readable .window-bar { padding: 14px 18px; }
+</style>

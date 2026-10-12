@@ -13,21 +13,19 @@
           <div class="title-block">
             <p class="brand-pill"><span class="brand-dot" />Debug Runner</p>
             <h1>
-              LV
-              <span class="level-number">{{
-                currentLevel.id.toString().padStart(2, "0")
-              }}</span>
+              <span class="level-mark">LV <span class="level-number">{{ currentLevel.id.toString().padStart(2, "0") }}</span></span>
+              <span class="stage-concept">{{ currentLevel.concept }}</span>
             </h1>
+            <p v-if="currentLevel.title" class="stage-name">{{ currentLevel.title }}</p>
           </div>
-          <div class="header-tools">
-            <div class="hud">
-              <span>{{ playerName || "Player" }}</span>
-              <span>{{ languageLabel }}</span>
-              <span>{{ activeChallenge ? `${activeChallenge.id} · ${t(activeChallenge.nameKey)}` : modeLabel }}</span>
-              <span v-if="isTimedMode">{{ formattedTime }}</span>
-              <span>Score {{ totalScore }}</span>
-              <span>Combo x{{ Math.max(1, comboStreak) }}</span>
-              <span>{{ progressLabel }}</span>
+          <div class="hud">
+            <div class="hud-primary">
+              <div v-if="isTimedMode" class="hud-metric timer-metric"><span>{{ t('game.timer') }}</span><strong>{{ formattedTime }}</strong></div>
+              <div class="hud-metric score-metric"><span>{{ t('game.score') }}</span><strong>{{ totalScore }}</strong></div>
+            </div>
+            <div class="hud-secondary">
+              <span>{{ t('game.combo') }} <strong>×{{ Math.max(1, comboStreak) }}</strong></span>
+              <span>{{ t('game.progress') }} <strong>{{ progressLabel }}</strong></span>
               <span
                 v-if="deadRun"
                 class="hearts"
@@ -41,6 +39,13 @@
                   >♥</i
                 ></span
               >
+            </div>
+          </div>
+          <div class="header-tools">
+            <div class="session-details">
+              <strong class="player-name" :title="playerName">{{ playerName || "Player" }}</strong>
+              <span>{{ languageLabel }}</span>
+              <span>{{ activeChallenge ? `${activeChallenge.id} · ${t(activeChallenge.nameKey)}` : modeLabel }}</span>
             </div>
             <div class="header-menu">
               <span class="status" :class="`status-${status}`">{{
@@ -73,40 +78,46 @@
           </div>
         </header>
 
-        <div class="objective">
-          <span>{{ currentLevel.concept }}</span>
-          <strong>กดลูกศรให้ตรงกับ code จนจบด่าน</strong>
-        </div>
-
         <div class="play-cluster">
           <div ref="boardWrapEl" class="board-wrap">
-            <LevelBoard
-              :level="currentLevel"
-              :space="boardSpace"
-              :shattering="boardShattering"
-            >
-              <div
-                class="actor"
-                :class="[`actor-${status}`, { warp: playerWarped }]"
-                :style="actorStyle"
-                aria-hidden="true"
+            <div class="board-and-controls">
+              <p ref="instructionEl" class="objective">{{ t('game.instruction') }}</p>
+              <LevelBoard
+                :level="currentLevel"
+                :space="boardSpace"
+                :max-cell-size="160"
+                :shattering="boardShattering"
               >
-                <div :key="playerHop" class="hop">
-                  <img
-                    class="player-sprite"
-                    :src="PLAYER_SPRITES[playerFacing]"
-                    alt=""
-                    draggable="false"
-                  />
+                <div
+                  class="actor"
+                  :class="[`actor-${status}`, { warp: playerWarped }]"
+                  :style="actorStyle"
+                  aria-hidden="true"
+                >
+                  <div :key="playerHop" class="hop">
+                    <img
+                      class="player-sprite"
+                      :src="PLAYER_SPRITES[playerFacing]"
+                      alt=""
+                      draggable="false"
+                    />
+                  </div>
                 </div>
+              </LevelBoard>
+              <div ref="controlsEl" class="touch-controls" :aria-label="t('game.controls')">
+                <button type="button" class="arrow up" :disabled="!canControl" :aria-label="t('game.up')" @click="controlMove('up')">▲</button>
+                <button type="button" class="arrow left" :disabled="!canControl" :aria-label="t('game.left')" @click="controlMove('left')">◀</button>
+                <button type="button" class="arrow down" :disabled="!canControl" :aria-label="t('game.down')" @click="controlMove('down')">▼</button>
+                <button type="button" class="arrow right" :disabled="!canControl" :aria-label="t('game.right')" @click="controlMove('right')">▶</button>
               </div>
-            </LevelBoard>
+            </div>
           </div>
 
           <LevelCode
             :level="currentLevel"
             :language="displayLanguage"
-            :title="`Read the program · ${languageLabel}`"
+            :title="t('game.readCode', { language: languageLabel })"
+            :readable="true"
             :is-active-line="(line) => debugMode && isActiveRawLine(line)"
           />
         </div>
@@ -120,45 +131,6 @@
             >
           </div>
         </transition>
-
-        <div class="touch-controls" aria-label="Touch arrow controls">
-          <button
-            type="button"
-            class="arrow up"
-            :disabled="!canControl"
-            aria-label="Move up"
-            @click="controlMove('up')"
-          >
-            ▲
-          </button>
-          <button
-            type="button"
-            class="arrow left"
-            :disabled="!canControl"
-            aria-label="Move left"
-            @click="controlMove('left')"
-          >
-            ◀
-          </button>
-          <button
-            type="button"
-            class="arrow down"
-            :disabled="!canControl"
-            aria-label="Move down"
-            @click="controlMove('down')"
-          >
-            ▼
-          </button>
-          <button
-            type="button"
-            class="arrow right"
-            :disabled="!canControl"
-            aria-label="Move right"
-            @click="controlMove('right')"
-          >
-            ▶
-          </button>
-        </div>
 
         <section v-if="debugMode" class="debug-card">
           <div class="metric-grid">
@@ -490,6 +462,8 @@ const currentLevel = computed(
 const { parseProgram } = useProgramParser(() => currentLevel.value.id);
 // The board area is measured so tiles scale to fill it (see fitCellSize).
 const boardWrapEl = ref<HTMLElement | null>(null);
+const controlsEl = ref<HTMLElement | null>(null);
+const instructionEl = ref<HTMLElement | null>(null);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
 let boardResizeObserver: ResizeObserver | null = null;
 
@@ -1120,12 +1094,19 @@ onMounted(async () => {
   }
   window.addEventListener("keydown", handleKeydown);
   if (boardWrapEl.value) {
-    boardResizeObserver = new ResizeObserver(([entry]) => {
-      if (!entry) return;
-      const { width, height } = entry.contentRect;
-      boardSpace.value = { width, height };
+    boardResizeObserver = new ResizeObserver(() => {
+      const area = boardWrapEl.value;
+      if (!area) return;
+      // Measure the available stage, then reserve the real control/instruction
+      // heights and two 12px gaps. The board remains adjacent to the D-pad.
+      boardSpace.value = {
+        width: Math.max(0, area.clientWidth - 12),
+        height: Math.max(0, area.clientHeight - (controlsEl.value?.offsetHeight ?? 0) - (instructionEl.value?.offsetHeight ?? 0) - 24 - 12),
+      };
     });
     boardResizeObserver.observe(boardWrapEl.value);
+    if (controlsEl.value) boardResizeObserver.observe(controlsEl.value);
+    if (instructionEl.value) boardResizeObserver.observe(instructionEl.value);
   }
 });
 
@@ -1203,15 +1184,20 @@ summary:focus-visible {
   grid-template-columns: 1fr;
   height: 100%;
   min-height: 0;
+  overflow-y: auto;
 }
 
 .board-panel {
   min-width: 0;
   min-height: 0;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
-  gap: 12px;
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  width: 100%;
+  max-width: 1640px;
+  height: 100%;
+  margin: 0 auto;
   position: relative;
   border: 1px solid var(--cv-glass-border);
   border-radius: var(--cv-radius-xl);
@@ -1220,37 +1206,44 @@ summary:focus-visible {
 }
 
 .play-cluster {
-  min-height: 0;
+  flex: 1;
+  min-height: 320px;
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
-  gap: 18px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 24px;
+  align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 1220px;
   margin: 0 auto;
 }
 
 .play-cluster .code-card {
-  align-self: stretch;
+  align-self: center;
+  min-width: 0;
+  width: 100%;
+  height: min(100%, 780px);
   max-height: 100%;
 }
 
-.game-header,
 .header-tools,
 .header-menu,
-.panel-title,
-.objective,
-.hud {
+.panel-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
+.game-header { flex: none; display: grid; grid-template-columns: minmax(220px, 1fr) auto minmax(290px, auto); align-items: center; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid rgba(150, 190, 255, .3); }
+.session-details { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; color: #c4d9ff; font-size: .75rem; }
+.player-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; }
+.game-header .header-menu .small { min-width: 72px; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: .82rem; }
+
 .header-tools {
   flex-direction: column;
   align-items: flex-end;
+  min-width: 0;
+  gap: 8px;
 }
 
 .header-menu {
@@ -1267,11 +1260,18 @@ p {
 }
 
 h1 {
-  font-size: clamp(2rem, 5vw, 4.2rem);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(1.25rem, 1.5vw, 1.65rem);
   font-weight: 800;
-  line-height: 0.95;
+  line-height: 1.3;
   letter-spacing: -0.01em;
 }
+
+.level-mark { flex: none; white-space: nowrap; }
+.stage-concept { padding-left: 10px; border-left: 2px solid #719bdf; font-size: .875rem; font-weight: 700; text-transform: uppercase; }
+.stage-name { color: #c4d9ff; font-size: .72rem; }
 
 h2 {
   font-size: 1.15rem;
@@ -1284,7 +1284,7 @@ h2 {
 
 .title-block {
   display: grid;
-  gap: 8px;
+  gap: 4px;
   justify-items: start;
 }
 
@@ -1293,19 +1293,16 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.12);
+  padding: 0;
   color: var(--cv-on-dark);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .brand-dot {
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
   border: 2px solid var(--cv-yellow);
   border-radius: 9999px;
 }
@@ -1326,11 +1323,19 @@ h2 {
 /* ---------- HUD / status ---------- */
 
 .hud {
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  display: grid;
+  gap: 7px;
 }
 
-.hud span,
+.hud-primary { display: flex; justify-content: center; gap: 10px; }
+.hud-metric { display: grid; gap: 2px; min-width: 112px; padding: 7px 16px; border: 1px solid #537fcb; border-radius: 12px; background: #122c63; font-variant-numeric: tabular-nums; }
+.hud-metric > span { color: #bfd6ff; font-size: .7rem; font-weight: 700; }
+.hud-metric > strong { color: #fff; font-size: clamp(1.5rem, 2vw, 2rem); font-weight: 800; line-height: 1.1; }
+.score-metric { border-color: rgba(255, 213, 81, .55); }
+.score-metric > strong { color: #ffdc53; }
+.hud-secondary { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px; color: #bfd6ff; font-size: .72rem; }
+.hud-secondary strong { color: #fff; font-size: .8rem; }
+
 .status {
   padding: 6px 12px;
   border: 1px solid var(--cv-glass-border);
@@ -1362,22 +1367,12 @@ h2 {
 }
 
 .objective {
-  padding: 10px 14px;
-  border: 1px solid var(--cv-glass-border);
-  border-radius: var(--cv-radius-lg);
-  background: var(--cv-glass-soft);
-}
-
-.objective span {
-  color: var(--cv-blue-light);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.objective strong {
-  font-weight: 700;
+  max-width: min(100%, 520px);
+  margin: 0;
+  color: #dbe9ff;
+  text-align: center;
+  font-size: .85rem;
+  line-height: 1.4;
 }
 
 /* ---------- Board ---------- */
@@ -1386,18 +1381,18 @@ h2 {
   min-height: 0;
   display: grid;
   place-items: center;
-  overflow: hidden;
   position: relative;
   justify-self: center;
   width: 100%;
   height: 100%;
-  max-width: min(100%, 760px);
-  padding: 4px 6px;
+  padding: 6px;
 }
+
+.board-and-controls { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; min-width: 0; }
 
 .score-popup {
   position: absolute;
-  top: 86px;
+  top: 130px;
   left: 50%;
   z-index: 7;
   transform: translateX(-50%);
@@ -1429,22 +1424,24 @@ h2 {
 
 .touch-controls {
   display: grid;
-  grid-template-columns: repeat(3, 58px);
+  grid-template-columns: repeat(3, 68px);
   grid-template-areas:
     ". up ."
     "left down right";
   justify-content: center;
-  gap: 9px;
+  gap: 8px;
+  flex: none;
 }
 
 .arrow {
-  width: 58px;
-  height: 48px;
-  border: 0;
-  border-radius: var(--cv-radius-lg);
+  width: 68px;
+  height: 52px;
+  border: 1px solid #a8ceff;
+  border-radius: 12px;
   background: #fff;
   color: var(--cv-blue);
   font-weight: 800;
+  font-size: 1.1rem;
   box-shadow:
     inset 0 -4px 0 rgba(6, 26, 56, 0.12),
     var(--cv-shadow-md);
@@ -1486,8 +1483,9 @@ h2 {
 
 .debug-card,
 .notification {
+  flex: none;
   width: 100%;
-  max-width: 1220px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -2030,28 +2028,37 @@ h2 {
 }
 
 @media (max-width: 920px) {
+  .app-shell { overflow-y: auto; }
+  .game { height: auto; min-height: 100%; overflow: visible; }
+  .board-panel { height: auto; min-height: 100%; padding: 14px; }
   .game-header {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
   }
 
   .header-tools {
-    align-items: stretch;
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
   }
 
   .play-cluster {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) minmax(170px, 1fr);
-    gap: 10px;
+    grid-template-rows: auto auto;
+    gap: 16px;
   }
 
-  .play-cluster :deep(.code-box) {
-    font-size: min(var(--code-font-size), 1rem);
-  }
+  .board-wrap { height: clamp(340px, 65dvh, 580px); }
+  .play-cluster .code-card { height: clamp(300px, 55dvh, 560px); }
+  .session-details { justify-content: flex-start; }
+}
 
-  .debug-card {
-    display: none;
-  }
+@media (max-width: 520px) {
+  .game-header { grid-template-columns: 1fr; }
+  .hud-primary, .hud-secondary { justify-content: flex-start; }
+  .hud-metric { flex: 1; }
+  .header-menu { justify-content: flex-start; }
 }
 
 

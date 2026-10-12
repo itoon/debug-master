@@ -42,13 +42,16 @@ const props = withDefaults(
     level: LevelLike;
     /** Space the board may fill; tiles scale to fit it. */
     space?: BoardSpace;
+    /** Presentation only: gameplay can use larger tiles than review cards. */
+    maxCellSize?: number;
     shattering?: boolean;
   }>(),
-  { space: undefined, shattering: false },
+  { space: undefined, shattering: false, maxCellSize: 88 },
 );
 
 const { visibleTiles, boardStyle, tileStyle } = useBoardPresentation(
   computed(() => props.level),
   toRef(props, "space"),
+  toRef(props, "maxCellSize"),
 );
 </script>
