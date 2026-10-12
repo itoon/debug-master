@@ -56,3 +56,10 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Three boards and their popup launch buttons remain the same flow; mode names, player form, age selection, scores/repository, idle policy and gameplay are unchanged. The only new text is the Codi greeting in the Thai dictionary.
 - Wide layout still uses three columns and compact top-ten rows; narrow screens stack cards. Component styles do not touch html/body. Actual target-size rendering was not checked: only the external reference was inspected, and product verification remains build only.
 - Verification: `pnpm build` passed (exit 0), and `git diff --check` passed. No tests written or run.
+
+## 2026-10-12 — Random nickname button
+
+- Added a “สุ่มชื่อ” dice button beside the nickname field in the player popup. Clicking fills an editable Thai space-themed nickname with a two-digit suffix; consecutive clicks always change the current name. This does not imply names are globally unique.
+- Button text, generated-name format, name pool and screen-reader announcement use the Thai dictionary. Candidates respect the configured nickname length. Small screens stack the input and button.
+- Popup still opens blank; randomization is opt-in. Age remains unselected and required, and player data is saved only on valid confirmation. Existing idle/reset behavior is unchanged.
+- Verification: `pnpm build` passed (exit 0), and `git diff --check` passed. No tests written or run.

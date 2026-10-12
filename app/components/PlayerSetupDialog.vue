@@ -11,9 +11,17 @@
       <div class="selected-mode"><ModeBadge :mode="mode.id" /><strong>{{ t(mode.nameKey) }}</strong></div>
       <div class="nickname-field">
         <label for="setup-nickname">{{ t('home.nickname') }}</label>
-        <input id="setup-nickname" ref="nicknameInput" v-model="nickname" type="text"
-          :maxlength="homeConfig.nicknameMaxLength" :placeholder="t('home.nicknamePlaceholder')"
-          autocomplete="off" autocapitalize="off" spellcheck="false" required aria-describedby="nickname-note" />
+        <div class="nickname-entry">
+          <input id="setup-nickname" ref="nicknameInput" v-model="nickname" type="text"
+            :maxlength="homeConfig.nicknameMaxLength" :placeholder="t('home.nicknamePlaceholder')"
+            autocomplete="off" autocapitalize="off" spellcheck="false" required aria-describedby="nickname-note"
+            @input="generatedAnnouncement = ''" />
+          <button type="button" class="random-name-button" :disabled="busy" @click="randomizeNickname">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8" cy="8" r="1.5" /><circle cx="16" cy="8" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="8" cy="16" r="1.5" /><circle cx="16" cy="16" r="1.5" /></svg>
+            {{ t('home.randomName') }}
+          </button>
+        </div>
+        <span class="sr-only" role="status">{{ generatedAnnouncement }}</span>
         <small id="nickname-note">{{ t('home.nicknameLimit', { max: homeConfig.nicknameMaxLength }) }}</small>
       </div>
       <fieldset class="age-field">
@@ -59,6 +67,8 @@ const dialog = ref<HTMLDialogElement | null>(null);
 const nicknameInput = ref<HTMLInputElement | null>(null);
 const ageTrack = ref<HTMLDivElement | null>(null);
 const nickname = ref("");
+const generatedAnnouncement = ref("");
+const randomNameKeys = ["nickname.star", "nickname.comet", "nickname.rocket", "nickname.captain", "nickname.explorer", "nickname.moon", "nickname.cosmo", "nickname.spark"] as const;
 const age = ref<number | null>(null);
 const normalizedName = computed(() => nickname.value.trim());
 const valid = computed(() => normalizedName.value.length > 0 && normalizedName.value.length <= homeConfig.nicknameMaxLength && homeConfig.ages.includes(age.value as number));
@@ -69,6 +79,20 @@ const trackStyle = computed(() => ({
   "--age-count": homeConfig.ages.length,
   "--age-position": `${(selectedIndex.value + .5) / homeConfig.ages.length * 100}%`,
 }));
+
+function randomizeNickname(): void {
+  const names = randomNameKeys.map((key) => t(key)).filter((name) =>
+    t("nickname.generated", { name, number: "00" }).length <= homeConfig.nicknameMaxLength,
+  );
+  if (!names.length) return;
+  const name = names[Math.floor(Math.random() * names.length)]!;
+  const number = Math.floor(Math.random() * 100);
+  const candidate = t("nickname.generated", { name, number: number.toString().padStart(2, "0") });
+  nickname.value = candidate === normalizedName.value
+    ? t("nickname.generated", { name, number: ((number + 1) % 100).toString().padStart(2, "0") })
+    : candidate;
+  generatedAnnouncement.value = t("home.randomNameReady", { name: nickname.value });
+}
 
 function selectAgeAt(event: PointerEvent) {
   const rect = ageTrack.value?.getBoundingClientRect();
@@ -125,6 +149,13 @@ button { cursor: pointer; }
 .close-button { flex: none; width: 48px; height: 48px; border: 1px solid #7d9cfa; border-radius: 12px; background: #0c225e; color: white; font-size: 1.7rem; }
 .selected-mode { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; border: 1px solid #668eff; border-radius: 14px; background: #0c225e; }
 .nickname-field { display: grid; gap: 5px; }
+.nickname-entry { display: flex; gap: 10px; }
+.nickname-entry input { flex: 1; min-width: 0; }
+.random-name-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; min-width: 132px; min-height: 52px; padding: 8px 14px; border: 2px solid #ffe889; border-radius: 14px; background: #ffdc53; color: #142854; font-weight: 800; }
+.random-name-button svg { width: 22px; height: 22px; flex: none; }
+.random-name-button rect { fill: none; stroke: currentColor; stroke-width: 2; }
+.random-name-button circle { fill: currentColor; }
+.random-name-button:disabled { opacity: .5; cursor: not-allowed; }
 label, legend { font-weight: 800; }
 .nickname-field input { width: 100%; min-height: 52px; padding: 10px 16px; border: 2px solid #8db7ff; border-radius: 14px; background: white; color: #172b52; font-size: 1.05rem; }
 .nickname-field small { color: #c2d8ff; font-size: .75rem; }
@@ -152,4 +183,5 @@ label, legend { font-weight: 800; }
 .confirm-button:disabled { background: #667bad; color: #d5def3; cursor: not-allowed; }
 button:focus-visible, input:focus-visible { outline: 3px solid #ffdc5a; outline-offset: 3px; }
 @media (max-width: 760px) { .age-scroll-hint { display: block; } .confirm-button { justify-self: stretch; } }
+@media (max-width: 420px) { .nickname-entry { flex-direction: column; } }
 </style>
