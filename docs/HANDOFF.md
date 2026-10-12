@@ -82,3 +82,13 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - HUD has a keyboard-accessible, localized sound toggle with visible on/off text and pressed state. Sound starts enabled; this setting lives only in the mounted game page and is not persisted in storage. Muting or returning to Home stops current/queued sounds; unmount closes the audio context and releases voices.
 - Clear/failure cues replace overlapping step tones, and effect playback is skipped while the document is hidden. Normal effect durations finish before the existing auto-advance/retry delay.
 - Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or listening/browser checks, per the build-only instruction.
+
+## 2026-10-12 — Exit during gameplay and save latest score
+
+- During an active run, the HUD's Menu action now reads “ออกเกม”. Clicking captures the current score/time/progress/player/mode, saves through ScoreRepository, then returns to Home with a blank player form. A/B/C results keep the active challengeId and appear on that challenge's existing daily board; legacy modes keep their board metadata.
+- The saved score is the latest cumulative score shown in the HUD. The scoring formula is unchanged; an unfinished level does not receive additional completion points. Exiting before the first clear still saves the current zero score.
+- Snapshot creation is shared with normal end-of-run saving. Exiting does not also create a summary or a second final result. Repeated save attempts reuse the same snapshot ID (repository upsert), with elapsed time frozen at the first exit click.
+- If storage rejects the write, gameplay/timer/audio stop and the frozen result stays in memory. A localized error and “ลองบันทึกและออก” action allow retry; Start/Restart are disabled while that result is pending. Home is entered only after a successful write via this exit action.
+- Pending move, failure-animation and retry callbacks are now tracked and cleared when stopping/leaving/restarting a level, alongside the existing level-advance/score-popup timers. Their normal 80ms/0ms/760ms delays are unchanged, and an old callback cannot resume a previous run after exiting. Parser, runner, maps and scoring logic are unchanged.
+- The existing browser refresh/Back and idle-home reset policy remains separate; this change saves on the explicit in-game exit action, not as continuous autosave or refresh recovery.
+- Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live browser checks, per the build-only instruction.

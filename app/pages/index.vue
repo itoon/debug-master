@@ -59,7 +59,7 @@
               <button
                 type="button"
                 class="primary-button small"
-                :disabled="status === 'playing' || campaignStarted"
+                :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
                 @click="startGame"
               >
                 Start
@@ -67,7 +67,7 @@
               <button
                 type="button"
                 class="soft-button small"
-                :disabled="!campaignStarted"
+                :disabled="!campaignStarted || Boolean(pendingExitScore)"
                 @click="restartLevel"
               >
                 Restart
@@ -75,13 +75,19 @@
               <button
                 type="button"
                 class="soft-button small"
-                @click="openSetup"
+                :title="campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
+                @click="exitGame"
               >
-                Menu
+                {{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : 'Menu' }}
               </button>
             </div>
           </div>
         </header>
+
+        <div v-if="exitSaveError" class="exit-save-error" role="alert">
+          <p>{{ t('game.exitSaveError') }}</p>
+          <button type="button" class="soft-button small" @click="exitGame">{{ t('game.retryExit') }}</button>
+        </div>
 
         <div class="play-cluster">
           <div ref="boardWrapEl" class="board-wrap">
@@ -425,6 +431,8 @@ const summaryScore = ref<Score | undefined>();
 const scoreSaved = ref(false);
 const homeStorageError = ref("");
 const scoreStorageError = ref(false);
+const pendingExitScore = ref<Score | undefined>();
+const exitSaveError = ref(false);
 let lastInteractionAt = Date.now();
 let idleTimer: ReturnType<typeof setInterval> | undefined;
 let unsubscribeScores: (() => void) | undefined;
@@ -511,6 +519,9 @@ const levelCorrectInputs = ref(0);
 let timerId: ReturnType<typeof setInterval> | null = null;
 let levelAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
 let scorePopupTimer: ReturnType<typeof setTimeout> | null = null;
+let stepTimer: ReturnType<typeof setTimeout> | null = null;
+let failAnimationTimer: ReturnType<typeof setTimeout> | null = null;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Start screen: the four ways to play, in display order.
 const MODE_OPTIONS: { id: Mode; title: string; hint: string }[] = [
@@ -661,8 +672,11 @@ function backToStart(): void {
 }
 
 function openSetup(): void {
+  pendingExitScore.value = undefined;
+  exitSaveError.value = false;
   stopSounds();
   stopTimer();
+  clearPendingRunTimers();
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
   if (!deadRun.value) selectedLevelDraft.value = currentLevel.value.id;
@@ -673,6 +687,36 @@ function openSetup(): void {
   campaignStarted.value = false;
   status.value = "ready";
   if (homeConfig.enabled) resetHomeSession();
+}
+
+function exitGame(): void {
+  if (!pendingExitScore.value && (!campaignStarted.value || showSummary.value || showRanking.value)) {
+    openSetup();
+    return;
+  }
+  if (!pendingExitScore.value) {
+    // Freeze exactly what the HUD currently shows. Retry reuses this snapshot
+    // and ID, so elapsed time and scores cannot change or be recorded twice.
+    pendingExitScore.value = createScoreSnapshot();
+    stopTimer();
+    stopSounds();
+    clearPendingRunTimers();
+    clearLevelAdvanceTimer();
+    clearScorePopupTimer();
+    scorePopup.value = null;
+    campaignStarted.value = false;
+    expectedMove.value = null;
+    status.value = "ready";
+  }
+  try {
+    repositories.scores.save(pendingExitScore.value);
+  } catch {
+    exitSaveError.value = true;
+    return; // Stay with the frozen score until it can be saved.
+  }
+  lastScoreId.value = pendingExitScore.value.id;
+  refreshStoredScores();
+  openSetup();
 }
 
 /** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
@@ -797,7 +841,18 @@ function clearScorePopupTimer(): void {
   }
 }
 
+function clearPendingRunTimers(): void {
+  for (const timer of [stepTimer, failAnimationTimer, retryTimer]) {
+    if (timer !== null) clearTimeout(timer);
+  }
+  stepTimer = null;
+  failAnimationTimer = null;
+  retryTimer = null;
+  boardShattering.value = false;
+}
+
 function beginLevel(): void {
+  clearPendingRunTimers();
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
   runState = createRunState(parseProgram(currentLevel.value.code));
@@ -878,7 +933,10 @@ function controlMove(direction: Direction): void {
   feedbackMessage.value = result.wrapped
     ? `ถูกต้อง และ wrap ไปอีกฝั่ง`
     : "ถูกต้อง";
-  setTimeout(() => advanceToMove(), 80);
+  stepTimer = setTimeout(() => {
+    stepTimer = null;
+    advanceToMove();
+  }, 80);
 }
 
 function completeLevel(): void {
@@ -928,10 +986,12 @@ function failLevel(reason: string): void {
   notificationMessage.value = reason;
   feedbackMessage.value = notificationMessage.value;
   boardShattering.value = false;
-  setTimeout(() => {
+  failAnimationTimer = setTimeout(() => {
+    failAnimationTimer = null;
     boardShattering.value = true;
   }, 0);
-  setTimeout(() => {
+  retryTimer = setTimeout(() => {
+    retryTimer = null;
     boardShattering.value = false;
     if (!campaignStarted.value || status.value !== "failed") return;
     if (deadRun.value && livesLeft.value === 0) {
@@ -960,9 +1020,9 @@ function timeUp(): void {
   showRanking.value = true;
 }
 
-function saveScore(): void {
+function createScoreSnapshot(): Score {
   const elapsedMs = Math.max(0, Date.now() - startedAt.value);
-  const score: Score = {
+  return {
     challengeId: activeChallenge.value?.challengeId,
     playerId: currentPlayerId.value || undefined,
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -984,9 +1044,14 @@ function saveScore(): void {
     age: playerAge.value,
     timeLimitSec: timeLimitSec.value,
   };
+}
+
+function saveScore(): void {
+  const score = createScoreSnapshot();
   lastScoreId.value = score.id;
   if (activeChallenge.value) {
     stopTimer();
+    clearPendingRunTimers();
     clearLevelAdvanceTimer();
     clearScorePopupTimer();
     campaignStarted.value = false;
@@ -1128,6 +1193,7 @@ watch(selectedSetId, () => {
 });
 
 onBeforeUnmount(() => {
+  clearPendingRunTimers();
   unsubscribeScores?.();
   clearInterval(idleTimer);
   for (const event of ["pointerdown", "keydown", "input", "focusin"]) window.removeEventListener(event, recordInteraction);
@@ -1253,6 +1319,7 @@ summary:focus-visible {
 .sound-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .sound-toggle[aria-pressed="false"] { color: #b6c7e7; background: #102955; }
 .game-header .header-menu .small { min-width: 72px; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: .82rem; }
+.exit-save-error { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border: 1px solid #f3bc76; border-radius: 12px; background: #412d36; color: #ffe2c1; font-size: .9rem; }
 
 .header-tools {
   flex-direction: column;
