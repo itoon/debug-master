@@ -1,8 +1,28 @@
 <template>
-  <section class="challenge-ranking" :class="{ space: variant === 'space' }" :aria-labelledby="headingId">
-    <h3 :id="headingId">{{ t('home.today') }}</h3>
+  <section class="challenge-ranking" :class="{ space: variant === 'space', 'with-podium': podium, 'with-credits': credits }" :aria-labelledby="headingId">
+    <div class="ranking-heading">
+      <h3 :id="headingId">{{ t('home.today') }}</h3>
+      <button v-if="overflowing && !reducedMotion" type="button" class="scroll-control" :aria-pressed="manuallyPaused"
+        @click.stop="manuallyPaused = !manuallyPaused">{{ t(manuallyPaused ? 'ranking.resumeScroll' : 'ranking.pauseScroll') }}</button>
+    </div>
     <p v-if="error" class="board-error" role="alert">{{ t('storage.loadError') }}</p>
-    <ol v-else-if="rows.length" class="challenge-rows">
+    <template v-else-if="rows.length">
+      <div v-if="podium" class="rank-podium">
+        <div v-for="place in podiumPlaces" :key="place.rank" class="podium-slot" :class="`podium-place-${place.rank}`"
+          role="group" :aria-label="t('ranking.podiumPlayer', { rank: place.rank, name: place.score?.name ?? t('ranking.waiting') })">
+          <div class="podium-avatar" :class="{ vacant: !place.score }">
+            <svg v-if="place.rank === 1 && place.score" class="winner-crown" viewBox="0 0 32 24" aria-hidden="true"><path d="m3 6 7 5 6-9 6 9 7-5-4 15H7z" /><path d="M8 17h16" /></svg>
+            <img v-if="place.score" :src="PLAYER_SPRITES.down" alt="" draggable="false" />
+            <span v-else aria-hidden="true">—</span>
+            <span class="podium-medal" aria-hidden="true">{{ place.rank }}</span>
+          </div>
+          <strong class="podium-name" :title="place.score?.name">{{ place.score?.name ?? t('ranking.waiting') }}</strong>
+          <small class="podium-points">{{ place.score ? t('ranking.points', { score: place.score.score.toLocaleString('th-TH') }) : '—' }}</small>
+          <div class="podium-block" aria-hidden="true"><span>{{ place.rank }}</span></div>
+        </div>
+      </div>
+      <div ref="creditsViewport" class="credits-viewport" @wheel.passive="pauseForInput" @touchstart.passive="pauseForInput">
+      <ol ref="creditsContent" class="challenge-rows">
       <li v-for="(score, index) in rows" :key="score.id"
         :class="[{ podium: index < 3, mine: score.id === highlightId }, `place-${index + 1}`]">
         <span class="rank-number" :aria-label="t('ranking.rank', { rank: index + 1 })">{{ index + 1 }}</span>
@@ -17,6 +37,8 @@
         </span>
       </li>
     </ol>
+      </div>
+    </template>
     <div v-else class="challenge-empty">
       <div class="codi-stand">
         <span class="landing-pad" aria-hidden="true" />
@@ -35,11 +57,19 @@ import { PLAYER_SPRITES } from "../utils/playerSprites";
 import { useScoreBoard } from "../composables/useScoreBoard";
 import { useGameI18n } from "../composables/useGameI18n";
 import codiHappy from "~/assets/sprites/cody-happy.webp";
+import { useLeaderboardCredits } from "../composables/useLeaderboardCredits";
 
-const props = withDefaults(defineProps<{ repository: ScoreRepository; board: RankingBoard; highlightId?: string; variant?: "light" | "space" }>(), { variant: "light" });
+const props = withDefaults(defineProps<{ repository: ScoreRepository; board: RankingBoard; highlightId?: string; variant?: "light" | "space"; podium?: boolean; credits?: boolean; paused?: boolean }>(), { variant: "light", podium: false, credits: false, paused: false });
 const { t } = useGameI18n();
 const headingId = useId();
 const { rows, error } = useScoreBoard(props.repository, computed(() => props.board));
+const podiumPlaces = computed(() => [2, 1, 3].map((rank) => ({ rank, score: rows.value[rank - 1] })));
+const creditsViewport = ref<HTMLElement | null>(null);
+const creditsContent = ref<HTMLElement | null>(null);
+const manuallyPaused = ref(false);
+const { overflowing, reducedMotion, pauseForInput } = useLeaderboardCredits(
+  creditsViewport, creditsContent, computed(() => props.credits), computed(() => props.paused || manuallyPaused.value),
+);
 function ageRange(age?: number): string {
   if (!age) return "";
   const band = [[5, 8], [9, 12], [13, 15], [16, 18]].find(([from, to]) => age >= from! && age <= to!);
@@ -49,6 +79,33 @@ function ageRange(age?: number): string {
 
 <style scoped>
 .challenge-ranking { display: flex; flex-direction: column; min-height: 0; gap: 6px; color: var(--cv-text); }
+.ranking-heading { display: flex; align-items: center; gap: 10px; flex: none; }
+.ranking-heading h3 { flex: 1; }
+.credits-viewport { min-height: 0; }
+.with-credits .credits-viewport { flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #6c87c8 transparent; scroll-behavior: auto; }
+.scroll-control { flex: none; min-height: 44px; padding: 6px 9px; border: 1px solid #728cc7; border-radius: 9px; background: #122b65; color: #dce8ff; font: inherit; font-size: .65rem; cursor: pointer; }
+.scroll-control:focus-visible { outline: 3px solid #ffdc53; outline-offset: 2px; }
+.rank-podium { flex: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 6px; height: 190px; padding: 18px 6px 0; }
+.podium-slot { --medal: #ffdc53; display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 4px; min-width: 0; }
+.podium-place-2 { --medal: #c1d8ff; }
+.podium-place-3 { --medal: #efb387; }
+.podium-avatar { position: relative; display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 3px; border: 3px solid var(--medal); border-radius: 50%; background: radial-gradient(circle at top, #76a3ed, #23448d); box-shadow: 0 4px 12px #06183c; }
+.podium-avatar img { width: 40px; height: 44px; object-fit: contain; }
+.podium-avatar.vacant { border-style: dashed; opacity: .6; }
+.podium-medal { position: absolute; right: -3px; bottom: -5px; display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid #142c64; border-radius: 50%; background: var(--medal); color: #112455; font-size: .7rem; font-weight: 800; }
+.winner-crown { position: absolute; width: 30px; height: 24px; top: -27px; left: 8px; fill: #ffda4b; stroke: #b27f21; stroke-width: 1.5; filter: drop-shadow(0 2px 2px #101d46); }
+.podium-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font-size: .8rem; line-height: 1.2; }
+.podium-points { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--medal); font-size: .65rem; line-height: 1.2; }
+.podium-block { position: relative; isolation: isolate; display: grid; place-items: center; width: 100%; height: 68px; margin-top: 9px; border: 1px solid #b3b9ff; border-radius: 9px 9px 3px 3px; background: linear-gradient(135deg, #8c92ef, #444b99 85%); box-shadow: inset -8px 0 0 rgba(18, 29, 79, .25), 0 6px 10px #061638; }
+.podium-block::before { content: ""; position: absolute; left: -1px; right: -1px; top: -10px; height: 13px; border-radius: 5px 5px 0 0; clip-path: polygon(9% 0, 91% 0, 100% 100%, 0 100%); background: #bac2ff; z-index: -1; }
+.podium-block span { color: #fff; font-size: 2.8rem; line-height: 1; font-weight: 800; text-shadow: 0 3px 0 rgba(38, 37, 94, .45); }
+.podium-place-2 .podium-block { height: 47px; background: linear-gradient(135deg, #788bcf, #394c8c); }
+.podium-place-3 .podium-block { height: 34px; background: linear-gradient(135deg, #7d78c4, #39366f); }
+.podium-place-3 .podium-block span { font-size: 2rem; }
+.space.with-podium .challenge-rows { gap: 6px; }
+.space.with-podium .challenge-rows li { min-height: 46px; padding: 5px 9px; }
+.space.with-podium .who { display: grid; gap: 2px; }
+.space.with-podium .result { display: grid; gap: 2px; text-align: right; }
 h3 { margin: 0; font-size: .85rem; font-weight: 800; color: var(--cv-heading); }
 .challenge-rows { display: grid; gap: 3px; margin: 0; padding: 0; list-style: none; }
 .challenge-rows li { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 24px; padding: 2px 8px; line-height: 1.2; border-radius: 8px; background: #f1f5fb; }

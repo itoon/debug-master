@@ -7,6 +7,7 @@ export type ChallengeMode = {
   /** Seconds. Placeholder until the booth playthrough; maximum 15 minutes. */
   timeLimit: number;
   challengeId: ChallengeId;
+  thumbnail: string;
 };
 
 export const homeConfig = {
@@ -16,9 +17,10 @@ export const homeConfig = {
   idleTimeoutMs: 90_000,
   nicknameMaxLength: 24,
   ages: Array.from({ length: 14 }, (_, index) => index + 5),
+  leaderboardScroll: { pixelsPerSecond: 18, startPauseMs: 1400, endPauseMs: 1800, interactionPauseMs: 3000 },
   modes: [
-    { id: "A", nameKey: "mode.A", levelRange: [1, 20], timeLimit: 900, challengeId: "A" },
-    { id: "B", nameKey: "mode.B", levelRange: [21, 40], timeLimit: 900, challengeId: "B" },
-    { id: "C", nameKey: "mode.C", levelRange: [41, 60], timeLimit: 900, challengeId: "C" },
+    { id: "A", nameKey: "mode.A", levelRange: [1, 20], timeLimit: 900, challengeId: "A", thumbnail: "thumbnail-game-1.png" },
+    { id: "B", nameKey: "mode.B", levelRange: [21, 40], timeLimit: 900, challengeId: "B", thumbnail: "thumbnail-game-2.png" },
+    { id: "C", nameKey: "mode.C", levelRange: [41, 60], timeLimit: 900, challengeId: "C", thumbnail: "thumbnail-game-3.png" },
   ] satisfies ChallengeMode[],
 } as const;
