@@ -1,0 +1,1664 @@
+<template>
+  <div class="app-shell">
+    <main class="game">
+      <section class="board-panel">
+        <header class="game-header">
+          <div class="title-block">
+            <p class="brand-pill"><span class="brand-dot" />Debug Runner</p>
+            <h1>
+              LV
+              <span class="level-number">{{
+                currentLevel.id.toString().padStart(2, "0")
+              }}</span>
+            </h1>
+          </div>
+          <div class="header-tools">
+            <div class="hud">
+              <span>{{ playerName || "Player" }}</span>
+              <span>{{ languageLabel }}</span>
+              <span>{{ modeLabel }}</span>
+              <span v-if="isTimedMode">{{ formattedTime }}</span>
+              <span>Score {{ totalScore }}</span>
+              <span>Combo x{{ Math.max(1, comboStreak) }}</span>
+              <span>{{ completedLevels }}/{{ activeLevels.length }}</span>
+            </div>
+            <div class="header-menu">
+              <span class="status" :class="`status-${status}`">{{
+                statusLabel
+              }}</span>
+              <button
+                type="button"
+                class="primary-button small"
+                :disabled="status === 'playing' || campaignStarted"
+                @click="startGame"
+              >
+                Start
+              </button>
+              <button
+                type="button"
+                class="soft-button small"
+                :disabled="!campaignStarted"
+                @click="restartLevel"
+              >
+                Restart
+              </button>
+              <button
+                type="button"
+                class="soft-button small"
+                @click="openSetup"
+              >
+                Menu
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div class="objective">
+          <span>{{ currentLevel.concept }}</span>
+          <strong>กดลูกศรให้ตรงกับ code จนจบด่าน</strong>
+        </div>
+
+        <div class="play-cluster">
+          <div ref="boardWrapEl" class="board-wrap">
+            <LevelBoard
+              :level="currentLevel"
+              :space="boardSpace"
+              :shattering="boardShattering"
+            >
+              <div
+                class="actor"
+                :class="[`actor-${status}`, { warp: playerWarped }]"
+                :style="actorStyle"
+                aria-hidden="true"
+              >
+                <div :key="playerHop" class="hop">
+                  <img class="codi" :src="codiSprite" alt="" draggable="false" />
+                </div>
+              </div>
+            </LevelBoard>
+          </div>
+
+          <LevelCode
+            :level="currentLevel"
+            :language="displayLanguage"
+            :title="`Read the program · ${languageLabel}`"
+            :is-active-line="(line) => debugMode && isActiveRawLine(line)"
+          />
+        </div>
+
+        <transition name="score-pop">
+          <div v-if="scorePopup" class="score-popup" role="status" aria-live="polite">
+            <strong>+{{ scorePopup.points }}</strong>
+            <span
+              >Speed {{ scorePopup.speedMultiplier.toFixed(2) }} x Combo
+              {{ scorePopup.comboMultiplier.toFixed(2) }}</span
+            >
+          </div>
+        </transition>
+
+        <div class="touch-controls" aria-label="Touch arrow controls">
+          <button
+            type="button"
+            class="arrow up"
+            :disabled="!canControl"
+            aria-label="Move up"
+            @click="controlMove('up')"
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            class="arrow left"
+            :disabled="!canControl"
+            aria-label="Move left"
+            @click="controlMove('left')"
+          >
+            ◀
+          </button>
+          <button
+            type="button"
+            class="arrow down"
+            :disabled="!canControl"
+            aria-label="Move down"
+            @click="controlMove('down')"
+          >
+            ▼
+          </button>
+          <button
+            type="button"
+            class="arrow right"
+            :disabled="!canControl"
+            aria-label="Move right"
+            @click="controlMove('right')"
+          >
+            ▶
+          </button>
+        </div>
+
+        <section v-if="debugMode" class="debug-card">
+          <div class="metric-grid">
+            <div>
+              <span>Position</span
+              ><strong>[{{ player.row }}, {{ player.col }}]</strong>
+            </div>
+            <div>
+              <span>Tile</span><strong>{{ currentTile }}</strong>
+            </div>
+            <div>
+              <span>Step</span><strong>{{ executionSteps }}</strong>
+            </div>
+            <div>
+              <span>Input</span><strong>{{ playerInputs }}</strong>
+            </div>
+          </div>
+          <p class="debug-note">{{ feedbackMessage }}</p>
+          <button type="button" class="soft-button" @click="showNextHint">
+            Hint
+          </button>
+          <div v-if="revealedHints.length" class="hint-list">
+            <p v-for="hint in revealedHints" :key="hint">{{ hint }}</p>
+          </div>
+        </section>
+
+        <div
+          v-if="notificationMessage && status !== 'success'"
+          class="notification"
+          :class="`notification-${status}`"
+          role="alert"
+        >
+          <strong>{{ notificationTitle }}</strong>
+          <p>{{ notificationMessage }}</p>
+        </div>
+      </section>
+    </main>
+
+    <section
+      v-if="showSetup"
+      class="overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="setup-title"
+    >
+      <form class="setup-card" @submit.prevent="startGame">
+        <p class="eyebrow">Before start</p>
+        <h2 id="setup-title">ตั้งค่าเกม</h2>
+
+        <label class="field">
+          <span>ชื่อผู้เล่น</span>
+          <input
+            v-model.trim="playerNameDraft"
+            type="text"
+            maxlength="24"
+            placeholder="เช่น น้องเอ"
+            required
+          />
+        </label>
+
+        <fieldset class="set-grid">
+          <legend>เลือกชุดข้อสอบ</legend>
+          <label
+            v-for="set in levelSets"
+            :key="set.id"
+            class="set-option"
+            :class="{ selected: selectedSetId === set.id }"
+          >
+            <input v-model="selectedSetId" type="radio" :value="set.id" />
+            <span
+              ><strong>{{ set.title }}</strong
+              ><small>{{ set.description }}</small></span
+            >
+          </label>
+        </fieldset>
+
+        <fieldset class="mode-grid">
+          <legend>เลือกรูปแบบโค้ด</legend>
+          <label
+            v-for="option in codeLanguageOptions"
+            :key="option.id"
+          >
+            <input
+              v-model="selectedLanguageDraft"
+              type="radio"
+              :value="option.id"
+            />
+            <span
+              ><strong>{{ option.title }}</strong
+              ><small>{{ option.description }}</small></span
+            >
+          </label>
+        </fieldset>
+
+        <fieldset class="mode-grid">
+          <legend>เลือก Mode</legend>
+          <label>
+            <input v-model="selectedMode" type="radio" value="campaign" />
+            <span
+              ><strong>ตะลุยด่าน</strong
+              ><small
+                >เลือกเริ่มด่านได้ เล่นต่อเนื่องจนครบ 60 ด่าน ไม่จับเวลา</small
+              ></span
+            >
+          </label>
+          <label>
+            <input v-model="selectedMode" type="radio" value="timer" />
+            <span
+              ><strong>จับเวลา</strong
+              ><small>ตั้งเวลาที่ต้องการเอง</small></span
+            >
+          </label>
+          <label>
+            <input v-model="selectedMode" type="radio" value="ranking" />
+            <span
+              ><strong>Ranking Mode</strong
+              ><small>เวลา固定 5 นาที แล้วจัดอันดับ</small></span
+            >
+          </label>
+        </fieldset>
+
+        <fieldset v-if="selectedMode === 'campaign'" class="level-picker">
+          <legend>เลือกด่านเริ่มต้น</legend>
+          <p class="level-picker-note">
+            {{ activeSet.title }} ·
+            ด่าน {{ selectedLevelDraft.toString().padStart(2, "0") }} ·
+            {{ campaignLevelConcept }}
+          </p>
+          <div class="level-grid" role="listbox" aria-label="เลือกด่าน">
+            <button
+              v-for="level in activeLevels"
+              :key="level.id"
+              type="button"
+              class="level-chip"
+              :class="{ selected: selectedLevelDraft === level.id }"
+              role="option"
+              :aria-selected="selectedLevelDraft === level.id"
+              :aria-label="`ด่าน ${level.id}`"
+              @click="selectedLevelDraft = level.id"
+            >
+              {{ level.id.toString().padStart(2, "0") }}
+            </button>
+          </div>
+        </fieldset>
+
+        <label
+          class="field timer-field"
+          :class="{ disabled: selectedMode !== 'timer' }"
+        >
+          <span>เวลาโหมดจับเวลา (นาที)</span>
+          <input
+            v-model.number="customMinutes"
+            type="number"
+            min="1"
+            max="60"
+            :disabled="selectedMode !== 'timer'"
+          />
+        </label>
+
+        <label class="debug-toggle">
+          <input v-model="debugModeDraft" type="checkbox" />
+          <span
+            ><strong>Debug Mode</strong
+            ><small
+              >เปิดเพื่อดู Position, Tile, Step, Input และ Hint
+              ระหว่างเล่น</small
+            ></span
+          >
+        </label>
+
+        <div class="setup-actions">
+          <div class="setup-links">
+            <button type="button" class="soft-button" @click="showRanking = true">
+              ดู Ranking
+            </button>
+            <NuxtLink class="text-link" to="/review">คลังโจทย์ทั้งหมด</NuxtLink>
+            <NuxtLink class="text-link" to="/elements">Elements</NuxtLink>
+          </div>
+          <button type="submit" class="primary-button">Start Game</button>
+        </div>
+      </form>
+    </section>
+
+    <section
+      v-if="showRanking"
+      class="overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ranking-title"
+    >
+      <div class="ranking-card">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">LocalStorage</p>
+            <h2 id="ranking-title">Ranking</h2>
+          </div>
+          <button
+            type="button"
+            class="soft-button small"
+            @click="showRanking = false"
+          >
+            Close
+          </button>
+        </div>
+        <ol class="ranking-list">
+          <li v-for="score in rankedScores" :key="score.id">
+            <strong>{{ score.name }}</strong>
+            <span
+              >{{ score.setTitle || "Set 01 - Original" }} ·
+              {{ score.language === "js" ? "JS" : "Python" }} ·
+              {{ score.mode }} · {{ score.score }} pts ·
+              {{ score.levelsCompleted }} ด่าน ·
+              {{ formatDuration(score.elapsedMs) }} · combo
+              {{ score.bestCombo }}</span
+            >
+          </li>
+        </ol>
+        <p v-if="!rankedScores.length" class="empty-ranking">ยังไม่มีคะแนน</p>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { levelSets } from "../data/level-sets";
+import type { BoardSpace } from "../composables/useBoardPresentation";
+import { useProgramParser } from "../composables/useProgramParser";
+import type {
+  Direction,
+  GameStatus,
+  Mode,
+  MoveNode,
+  Node,
+  Score,
+  ScorePopup,
+} from "../types/debug-game";
+import {
+  CODE_LANGUAGE_OPTIONS,
+  type CodeLanguage,
+} from "../utils/codeLanguage";
+import {
+  createRunState,
+  runUntilMove,
+  stepPosition,
+  type RunState,
+} from "../utils/programRunner";
+import codiDizzy from "~/assets/sprites/cody-dizzy.webp";
+import codiHappy from "~/assets/sprites/cody-happy.webp";
+import codiIdle from "~/assets/sprites/cody-idle.webp";
+
+const STORAGE_KEY = "debug-runner-scores-v1";
+
+const showSetup = ref(true);
+const showRanking = ref(false);
+const selectedMode = ref<Mode>("campaign");
+const selectedSetId = ref(levelSets[0]?.id ?? "set-01");
+const playerNameDraft = ref("A");
+const playerName = ref("");
+const customMinutes = ref(10);
+const debugModeDraft = ref(false);
+const debugMode = ref(false);
+const selectedLanguageDraft = ref<CodeLanguage>("python");
+const codeLanguage = ref<CodeLanguage>("python");
+const codeLanguageOptions = CODE_LANGUAGE_OPTIONS;
+const displayLanguage = computed(() =>
+  showSetup.value ? selectedLanguageDraft.value : codeLanguage.value,
+);
+
+const selectedLevelIndex = ref(0);
+const selectedLevelDraft = ref(1);
+const activeSet = computed(
+  () => levelSets.find((set) => set.id === selectedSetId.value) ?? levelSets[0],
+);
+const activeLevels = computed(() => activeSet.value.levels);
+const currentLevel = computed(
+  () => activeLevels.value[selectedLevelIndex.value] ?? activeLevels.value[0],
+);
+const { parseProgram } = useProgramParser(() => currentLevel.value.id);
+// The board area is measured so tiles scale to fill it (see fitCellSize).
+const boardWrapEl = ref<HTMLElement | null>(null);
+const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
+let boardResizeObserver: ResizeObserver | null = null;
+
+// Junior note:
+// `player` is the only mutable board position. Everything else should derive
+// from current level + player position so we have one clear source of truth.
+const player = reactive({
+  row: currentLevel.value.start[0],
+  col: currentLevel.value.start[1],
+});
+// Codi (the board actor) only reads `player`; these refs drive its animation.
+const playerHop = ref(0);
+const playerWarped = ref(false);
+const playerFacing = ref<1 | -1>(1);
+const status = ref<GameStatus>("ready");
+const campaignStarted = ref(false);
+const notificationMessage = ref("");
+const boardShattering = ref(false);
+const feedbackMessage = ref("กด Start เพื่อเริ่มเกม");
+// Interpreter state for the current level (see utils/programRunner.ts).
+let runState: RunState = createRunState({ main: [], functions: {} });
+const activeNode = ref<Node | null>(null);
+const expectedMove = ref<MoveNode | null>(null);
+const executionSteps = ref(0);
+const playerInputs = ref(0);
+const totalInputs = ref(0);
+const completedLevels = ref(0);
+const totalScore = ref(0);
+const comboStreak = ref(0);
+const bestCombo = ref(0);
+const revealedHintCount = ref(0);
+const scores = ref<Score[]>([]);
+const scorePopup = ref<ScorePopup | null>(null);
+const timerRemaining = ref(0);
+const startedAt = ref(0);
+const levelStartedAt = ref(0);
+const levelCorrectInputs = ref(0);
+let timerId: ReturnType<typeof setInterval> | null = null;
+let levelAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
+let scorePopupTimer: ReturnType<typeof setTimeout> | null = null;
+
+const isTimedMode = computed(
+  () => selectedMode.value === "timer" || selectedMode.value === "ranking",
+);
+const modeLabel = computed(() => {
+  if (selectedMode.value === "campaign") return "ตะลุยด่าน";
+  if (selectedMode.value === "ranking") return "Ranking 5:00";
+  return `${customMinutes.value} min`;
+});
+const languageLabel = computed(() =>
+  displayLanguage.value === "js" ? "JavaScript" : "Python",
+);
+const statusLabel = computed(
+  () =>
+    ({
+      ready: "Ready",
+      playing: "Control",
+      success: "Correct",
+      failed: "Restart",
+      timeup: "Time up",
+      completed: "Done",
+    })[status.value],
+);
+const notificationTitle = computed(() => {
+  if (status.value === "failed") return "ผิด";
+  if (status.value === "timeup") return "หมดเวลา";
+  if (status.value === "success") return "ถูกต้อง";
+  return "แจ้งเตือน";
+});
+const canControl = computed(
+  () => status.value === "playing" && Boolean(expectedMove.value),
+);
+const actorStyle = computed(() => ({
+  "--x": player.col,
+  "--y": player.row,
+  "--flip": playerFacing.value,
+}));
+const codiSprite = computed(() => {
+  if (status.value === "failed" || status.value === "timeup")
+    return codiDizzy;
+  if (status.value === "success" || status.value === "completed")
+    return codiHappy;
+  return codiIdle;
+});
+const currentTile = computed(
+  () => currentLevel.value.map[player.row]?.[player.col] ?? "n",
+);
+const campaignLevelConcept = computed(() => {
+  const level =
+    activeLevels.value[
+      Math.max(
+        0,
+        Math.min(activeLevels.value.length - 1, selectedLevelDraft.value - 1),
+      )
+    ];
+  return level?.concept ?? "";
+});
+const formattedTime = computed(() => formatClock(timerRemaining.value));
+const revealedHints = computed(() =>
+  [
+    `Concept: ${currentLevel.value.concept}`,
+    currentLevel.value.learningObjective ||
+      "อ่าน code จากบนลงล่าง แล้วกดลูกศรตามคำสั่งที่โปรแกรมต้องการ",
+    expectedMove.value
+      ? `คำสั่งถัดไปคือ ${expectedMove.value.direction}()`
+      : "ให้ดูว่าเงื่อนไขหรือ loop จะพาไปคำสั่ง move ใดต่อ",
+  ].slice(0, revealedHintCount.value),
+);
+const rankedScores = computed(() =>
+  [...scores.value]
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.levelsCompleted - a.levelsCompleted ||
+        a.elapsedMs - b.elapsedMs ||
+        a.inputs - b.inputs,
+    )
+    .slice(0, 12),
+);
+
+function startGame(): void {
+  // Copy setup modal values into live game state once, right before a run.
+  playerName.value = playerNameDraft.value || "Player";
+  debugMode.value = debugModeDraft.value;
+  codeLanguage.value = selectedLanguageDraft.value;
+  showSetup.value = false;
+  showRanking.value = false;
+  if (selectedMode.value === "campaign") {
+    const levelIndex = Math.max(
+      0,
+      Math.min(activeLevels.value.length - 1, selectedLevelDraft.value - 1),
+    );
+    selectedLevelIndex.value = levelIndex;
+  } else {
+    selectedLevelIndex.value = 0;
+  }
+  completedLevels.value = 0;
+  totalInputs.value = 0;
+  totalScore.value = 0;
+  comboStreak.value = 0;
+  bestCombo.value = 0;
+  scorePopup.value = null;
+  campaignStarted.value = true;
+  startedAt.value = Date.now();
+  beginTimer();
+  beginLevel();
+}
+
+function openSetup(): void {
+  stopTimer();
+  clearLevelAdvanceTimer();
+  clearScorePopupTimer();
+  selectedLevelDraft.value = currentLevel.value.id;
+  selectedSetId.value = activeSet.value.id;
+  selectedLanguageDraft.value = codeLanguage.value;
+  showSetup.value = true;
+  campaignStarted.value = false;
+  status.value = "ready";
+}
+
+function beginTimer(): void {
+  stopTimer();
+  if (!isTimedMode.value) {
+    timerRemaining.value = 0;
+    return;
+  }
+  timerRemaining.value =
+    selectedMode.value === "ranking"
+      ? 300
+      : Math.max(1, customMinutes.value) * 60;
+  timerId = setInterval(() => {
+    timerRemaining.value -= 1;
+    if (timerRemaining.value <= 0) {
+      timeUp();
+    }
+  }, 1000);
+}
+
+function stopTimer(): void {
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+}
+
+function clearLevelAdvanceTimer(): void {
+  if (levelAdvanceTimer) {
+    clearTimeout(levelAdvanceTimer);
+    levelAdvanceTimer = null;
+  }
+}
+
+function clearScorePopupTimer(): void {
+  if (scorePopupTimer) {
+    clearTimeout(scorePopupTimer);
+    scorePopupTimer = null;
+  }
+}
+
+function beginLevel(): void {
+  clearLevelAdvanceTimer();
+  clearScorePopupTimer();
+  runState = createRunState(parseProgram(currentLevel.value.code));
+  player.row = currentLevel.value.start[0];
+  player.col = currentLevel.value.start[1];
+  playerWarped.value = true;
+  playerFacing.value = 1;
+  expectedMove.value = null;
+  activeNode.value = null;
+  executionSteps.value = 0;
+  playerInputs.value = 0;
+  levelCorrectInputs.value = 0;
+  levelStartedAt.value = Date.now();
+  revealedHintCount.value = 0;
+  notificationMessage.value = "";
+  boardShattering.value = false;
+  scorePopup.value = null;
+  status.value = "playing";
+  feedbackMessage.value = "เริ่มด่านแล้ว กดลูกศรตาม code";
+  advanceToMove();
+}
+
+function restartLevel(): void {
+  if (!campaignStarted.value) return;
+  beginLevel();
+}
+
+function advanceToMove(): void {
+  // Run the program until it needs the next arrow key (or ends / errors).
+  if (status.value !== "playing") return;
+  const result = runUntilMove(
+    runState,
+    () => currentTile.value,
+    (node) => {
+      activeNode.value = node;
+    },
+  );
+  executionSteps.value = runState.steps;
+  if (result.kind === "move") {
+    expectedMove.value = result.node;
+    feedbackMessage.value = `รอกด ${result.node.direction}()`;
+    return;
+  }
+  if (result.kind === "error") {
+    failLevel(result.reason);
+    return;
+  }
+  completeLevel();
+}
+
+function controlMove(direction: Direction): void {
+  // The game only succeeds when the player's input matches the next move node.
+  if (!canControl.value || !expectedMove.value) return;
+  const expected = expectedMove.value.direction;
+  if (direction !== expected) {
+    failLevel("Wrong key");
+    return;
+  }
+  const result = stepPosition(
+    player,
+    direction,
+    currentLevel.value.rows,
+    currentLevel.value.cols,
+  );
+  player.row = result.row;
+  player.col = result.col;
+  // Wrapping teleports to the far edge, so skip the slide across the board.
+  playerWarped.value = result.wrapped;
+  if (direction === "left" || direction === "right") {
+    playerFacing.value = direction === "left" ? -1 : 1;
+  }
+  playerHop.value += 1;
+  playerInputs.value += 1;
+  totalInputs.value += 1;
+  levelCorrectInputs.value += 1;
+  comboStreak.value += 1;
+  bestCombo.value = Math.max(bestCombo.value, comboStreak.value);
+  expectedMove.value = null;
+  feedbackMessage.value = result.wrapped
+    ? `ถูกต้อง และ wrap ไปอีกฝั่ง`
+    : "ถูกต้อง";
+  setTimeout(() => advanceToMove(), 80);
+}
+
+function completeLevel(): void {
+  const levelScore = calculateLevelScore();
+  totalScore.value += levelScore.points;
+  scorePopup.value = {
+    levelId: currentLevel.value.id,
+    points: levelScore.points,
+    speedMultiplier: levelScore.speedMultiplier,
+    comboMultiplier: levelScore.comboMultiplier,
+  };
+  clearScorePopupTimer();
+  scorePopupTimer = setTimeout(() => {
+    scorePopup.value = null;
+  }, 1400);
+  completedLevels.value += 1;
+  status.value = "success";
+  notificationMessage.value = "";
+  if (selectedLevelIndex.value >= activeLevels.value.length - 1) {
+    status.value = "completed";
+    saveScore();
+    stopTimer();
+    showRanking.value = true;
+    return;
+  }
+  levelAdvanceTimer = setTimeout(() => {
+    selectedLevelIndex.value += 1;
+    beginLevel();
+  }, 520);
+}
+
+function failLevel(reason: string): void {
+  status.value = "failed";
+  expectedMove.value = null;
+  comboStreak.value = 0;
+  notificationMessage.value = reason;
+  feedbackMessage.value = notificationMessage.value;
+  boardShattering.value = false;
+  setTimeout(() => {
+    boardShattering.value = true;
+  }, 0);
+  setTimeout(() => {
+    boardShattering.value = false;
+    if (campaignStarted.value && status.value === "failed") {
+      beginLevel();
+    }
+  }, 760);
+}
+
+function timeUp(): void {
+  stopTimer();
+  status.value = "timeup";
+  expectedMove.value = null;
+  notificationMessage.value = "หมดเวลา 5 นาที/เวลาที่ตั้งไว้ แสดง Ranking แล้ว";
+  saveScore();
+  showRanking.value = true;
+}
+
+function saveScore(): void {
+  const elapsedMs = Math.max(0, Date.now() - startedAt.value);
+  const score: Score = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    name: playerName.value || "Player",
+    setId: activeSet.value.id,
+    setTitle: activeSet.value.title,
+    mode: selectedMode.value,
+    language: codeLanguage.value,
+    debug: debugMode.value,
+    score: totalScore.value,
+    bestCombo: bestCombo.value,
+    levelsCompleted: completedLevels.value,
+    levelReached: currentLevel.value.id,
+    inputs: totalInputs.value,
+    elapsedMs,
+    createdAt: new Date().toISOString(),
+  };
+  scores.value = [...scores.value, score];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(scores.value));
+}
+
+function calculateLevelScore(): {
+  points: number;
+  speedMultiplier: number;
+  comboMultiplier: number;
+} {
+  const elapsedSec = Math.max(
+    1,
+    Math.round((Date.now() - levelStartedAt.value) / 1000),
+  );
+  const base = 180 + currentLevel.value.id * 14 + levelCorrectInputs.value * 36;
+  const speedMultiplier = Math.max(1, Math.min(4.5, 18 / elapsedSec));
+  const comboMultiplier = 1 + Math.max(0, comboStreak.value - 1) * 0.16;
+  const points = Math.round(base * speedMultiplier * comboMultiplier);
+  return { points, speedMultiplier, comboMultiplier };
+}
+
+function showNextHint(): void {
+  if (!debugMode.value) return;
+  revealedHintCount.value = Math.min(revealedHintCount.value + 1, 3);
+}
+
+function isActiveRawLine(line: string): boolean {
+  if (!activeNode.value) return false;
+  const text = line.trim();
+  const isJs = codeLanguage.value === "js";
+  if (activeNode.value.type === "move") {
+    return isJs
+      ? text === `${activeNode.value.direction}();`
+      : text === `${activeNode.value.direction}()`;
+  }
+  if (activeNode.value.type === "if") {
+    return (
+      text.startsWith("if ") ||
+      text.startsWith("elif ") ||
+      text.includes("else if")
+    );
+  }
+  if (activeNode.value.type === "repeat") return text.startsWith("repeat");
+  if (activeNode.value.type === "while") return text.startsWith("while");
+  if (activeNode.value.type === "call") {
+    return isJs
+      ? text === `${activeNode.value.name}();`
+      : text === `${activeNode.value.name}()`;
+  }
+  return false;
+}
+
+function handleKeydown(event: KeyboardEvent): void {
+  const keys: Partial<Record<string, Direction>> = {
+    ArrowUp: "up",
+    ArrowDown: "down",
+    ArrowLeft: "left",
+    ArrowRight: "right",
+  };
+  const direction = keys[event.key];
+  if (!direction) return;
+  if (status.value === "playing") {
+    event.preventDefault();
+    controlMove(direction);
+  }
+}
+
+// /?set=set-02&level=12 (the review page's "เล่นด่านนี้" link) preselects
+// that set and starting level in the setup dialog.
+async function applyLevelFromQuery(): Promise<void> {
+  const query = useRoute().query;
+  const set = levelSets.find((item) => item.id === query.set);
+  if (set) {
+    selectedSetId.value = set.id;
+    await nextTick(); // let the set watcher reset the level first
+  }
+  const level = Number(query.level);
+  if (activeLevels.value.some((item) => item.id === level)) {
+    selectedMode.value = "campaign";
+    selectedLevelDraft.value = level;
+  }
+}
+
+function formatClock(seconds: number): string {
+  const mins = Math.max(0, Math.floor(seconds / 60));
+  const secs = Math.max(0, seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+function formatDuration(ms: number): string {
+  return formatClock(Math.round(ms / 1000));
+}
+
+onMounted(async () => {
+  scores.value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  await applyLevelFromQuery();
+  window.addEventListener("keydown", handleKeydown);
+  if (boardWrapEl.value) {
+    boardResizeObserver = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      boardSpace.value = { width, height };
+    });
+    boardResizeObserver.observe(boardWrapEl.value);
+  }
+});
+
+watch(selectedSetId, () => {
+  selectedLevelIndex.value = 0;
+  selectedLevelDraft.value = 1;
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", handleKeydown);
+  boardResizeObserver?.disconnect();
+  stopTimer();
+  clearLevelAdvanceTimer();
+  clearScorePopupTimer();
+});
+</script>
+
+<style scoped>
+:global(*) {
+  box-sizing: border-box;
+}
+
+:global(html),
+:global(body),
+:global(#__nuxt) {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+:global(body) {
+  background: var(--cv-navy-900);
+  color: var(--cv-on-dark);
+  font-family: var(--cv-font);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  accent-color: var(--cv-blue);
+}
+
+button {
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+button:not(:disabled):active {
+  transform: translateY(1px) scale(0.98);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--cv-yellow);
+  outline-offset: 3px;
+}
+
+/* ---------- Shell: navy hero background like codeventure.app ---------- */
+
+.app-shell {
+  height: 100dvh;
+  padding: 14px;
+  overflow: hidden;
+  background: var(--cv-navy-900) url("~/assets/bg.png") center bottom / cover
+    no-repeat;
+}
+
+.game {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: 100%;
+  min-height: 0;
+}
+
+.board-panel {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  gap: 12px;
+  padding: 16px;
+  position: relative;
+  border: 1px solid var(--cv-glass-border);
+  border-radius: var(--cv-radius-xl);
+  background: rgba(6, 26, 56, 0.22);
+  box-shadow: var(--cv-shadow-window);
+}
+
+.setup-card,
+.ranking-card {
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius-xl);
+  background: #fff;
+  color: var(--cv-text);
+  box-shadow: var(--cv-shadow-window);
+}
+
+.play-cluster {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+  gap: 18px;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  max-width: 1220px;
+  margin: 0 auto;
+}
+
+.play-cluster .code-card {
+  align-self: stretch;
+  max-height: 100%;
+}
+
+.game-header,
+.header-tools,
+.header-menu,
+.panel-title,
+.objective,
+.hud,
+.setup-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.header-tools {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.header-menu {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ---------- Typography ---------- */
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 4.2rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.level-number {
+  color: var(--cv-yellow);
+}
+
+.title-block {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+/* Glass pill with yellow ring, like the hero tagline */
+.brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--cv-on-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.brand-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--cv-yellow);
+  border-radius: 9999px;
+}
+
+/* Light-surface label, like "Why do so many kids love it?" */
+.eyebrow {
+  display: inline-block;
+  margin: 0 0 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(31, 117, 255, 0.1);
+  color: var(--cv-blue);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.setup-card .eyebrow {
+  align-self: flex-start;
+}
+
+/* ---------- HUD / status ---------- */
+
+.hud {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.hud span,
+.status {
+  padding: 6px 12px;
+  border: 1px solid var(--cv-glass-border);
+  border-radius: 9999px;
+  background: var(--cv-glass-soft);
+  color: var(--cv-on-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.objective {
+  padding: 10px 14px;
+  border: 1px solid var(--cv-glass-border);
+  border-radius: var(--cv-radius-lg);
+  background: var(--cv-glass-soft);
+}
+
+.objective span {
+  color: var(--cv-blue-light);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.objective strong {
+  font-weight: 700;
+}
+
+/* ---------- Board ---------- */
+
+.board-wrap {
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  position: relative;
+  justify-self: center;
+  width: 100%;
+  height: 100%;
+  max-width: min(100%, 760px);
+  padding: 4px 6px;
+}
+
+.score-popup {
+  position: absolute;
+  top: 86px;
+  left: 50%;
+  z-index: 7;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 2px;
+  border-radius: var(--cv-radius-lg);
+  background: var(--cv-cta);
+  color: var(--cv-gray-800);
+  padding: 10px 16px;
+  text-align: center;
+  box-shadow: var(--cv-shadow-xl);
+  pointer-events: none;
+  min-width: min(320px, calc(100% - 28px));
+}
+
+.score-popup strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.score-popup span {
+  color: rgba(34, 40, 42, 0.8);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* ---------- Touch arrows ---------- */
+
+.touch-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 58px);
+  grid-template-areas:
+    ". up ."
+    "left down right";
+  justify-content: center;
+  gap: 9px;
+}
+
+.arrow {
+  width: 58px;
+  height: 48px;
+  border: 0;
+  border-radius: var(--cv-radius-lg);
+  background: #fff;
+  color: var(--cv-blue);
+  font-weight: 800;
+  box-shadow:
+    inset 0 -4px 0 rgba(6, 26, 56, 0.12),
+    var(--cv-shadow-md);
+}
+
+.arrow:not(:disabled):hover {
+  background: var(--cv-blue-soft);
+}
+
+.arrow.up {
+  grid-area: up;
+}
+.arrow.left {
+  grid-area: left;
+}
+.arrow.down {
+  grid-area: down;
+}
+.arrow.right {
+  grid-area: right;
+}
+
+/* ---------- Debug panel ---------- */
+
+.debug-card {
+  min-height: 0;
+  padding: 12px;
+  border: 1px solid var(--cv-glass-border);
+  border-radius: var(--cv-radius-xl);
+  background: var(--cv-glass);
+  box-shadow: var(--cv-shadow-window);
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.debug-card,
+.notification {
+  width: 100%;
+  max-width: 1220px;
+  margin: 0 auto;
+}
+
+.metric-grid div {
+  border: 1px solid var(--cv-glass-border);
+  border-radius: var(--cv-radius);
+  background: var(--cv-glass-soft);
+  padding: 8px 10px;
+}
+
+.metric-grid span {
+  display: block;
+  color: var(--cv-on-dark-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.metric-grid strong {
+  font-size: 0.92rem;
+}
+
+.debug-note {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--cv-glass-border);
+  border-radius: var(--cv-radius);
+  background: var(--cv-glass-soft);
+  color: var(--cv-on-dark-muted);
+  line-height: 1.35;
+}
+
+.hint-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hint-list p {
+  border-left: 4px solid var(--cv-yellow);
+  border-radius: var(--cv-radius-sm);
+  background: var(--cv-glass-soft);
+  padding: 7px 10px;
+  color: var(--cv-on-dark);
+}
+
+/* ---------- Buttons ---------- */
+
+.primary-button,
+.soft-button {
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--cv-radius-lg);
+  padding: 0 18px;
+  font-weight: 800;
+}
+
+/* Yellow-orange CTA, like "Try free!" */
+.primary-button {
+  background: var(--cv-cta);
+  color: var(--cv-gray-800);
+  box-shadow: var(--cv-shadow-xl);
+}
+
+.primary-button:not(:disabled):hover {
+  filter: brightness(1.05);
+}
+
+/* Outline button on light surfaces, like "Compare all plans" */
+.soft-button {
+  border: 2px solid var(--cv-blue);
+  background: #fff;
+  color: var(--cv-blue);
+}
+
+.soft-button:not(:disabled):hover {
+  background: var(--cv-blue-soft);
+}
+
+/* Glass button on the dark game panel */
+.board-panel .soft-button {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--cv-on-dark);
+}
+
+.board-panel .soft-button:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.primary-button.small,
+.soft-button.small {
+  min-height: 38px;
+  border-radius: var(--cv-radius);
+  padding: 0 14px;
+  font-size: 0.9rem;
+}
+
+.primary-button.small {
+  box-shadow: var(--cv-shadow-md);
+}
+
+/* ---------- Notifications ---------- */
+
+.notification {
+  padding: 10px 14px;
+  border: 1px solid var(--cv-glass-border);
+  border-radius: var(--cv-radius-lg);
+  background: var(--cv-glass-soft);
+  line-height: 1.35;
+}
+
+.score-pop-enter-active,
+.score-pop-leave-active {
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.score-pop-enter-from,
+.score-pop-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(12px) scale(0.92);
+}
+
+.notification-failed,
+.status-failed,
+.status-timeup {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: var(--cv-red);
+}
+
+.notification-success,
+.notification-completed,
+.status-success,
+.status-completed {
+  background: rgba(50, 213, 131, 0.2);
+  border-color: var(--cv-green);
+}
+
+.status-playing {
+  background: rgba(253, 202, 63, 0.2);
+  border-color: var(--cv-yellow);
+}
+
+/* ---------- Setup / ranking dialogs ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(6, 26, 56, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.setup-card,
+.ranking-card {
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100dvh - 32px));
+  overflow: hidden;
+  padding: 24px;
+}
+
+.setup-card h2,
+.ranking-card h2 {
+  color: var(--cv-heading);
+  font-size: 1.6rem;
+}
+
+.setup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.field,
+.debug-toggle,
+.mode-grid label,
+.set-grid label {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.field span,
+.mode-grid legend,
+.set-grid legend,
+.level-picker legend {
+  color: var(--cv-heading);
+  font-weight: 700;
+}
+
+.field input {
+  min-height: 46px;
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius);
+  padding: 0 14px;
+  color: var(--cv-ink);
+  background: #fff;
+}
+
+.field input:focus {
+  border-color: var(--cv-blue);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 117, 255, 0.2);
+}
+
+.timer-field.disabled {
+  opacity: 0.55;
+}
+
+.mode-grid,
+.set-grid {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.mode-grid label,
+.set-option,
+.debug-toggle {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius-lg);
+  background: #fff;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.mode-grid label:hover,
+.set-option:hover,
+.debug-toggle:hover {
+  border-color: var(--cv-blue-light);
+}
+
+.mode-grid label:has(input:checked),
+.set-option.selected {
+  border-color: var(--cv-blue);
+  background: var(--cv-blue-soft);
+  box-shadow: 0 0 0 1px var(--cv-blue);
+}
+
+.mode-grid strong,
+.set-grid strong,
+.debug-toggle strong {
+  color: var(--cv-heading);
+  font-weight: 700;
+}
+
+.mode-grid small,
+.set-grid small,
+.debug-toggle small {
+  display: block;
+  color: var(--cv-muted);
+}
+
+.level-picker {
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.level-picker-note {
+  margin: 6px 0 8px;
+  color: var(--cv-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+  max-height: min(200px, 28dvh);
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius-lg);
+  background: var(--cv-surface);
+}
+
+.level-chip {
+  min-height: 40px;
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius);
+  background: #fff;
+  color: var(--cv-text);
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.level-chip:hover {
+  border-color: var(--cv-blue-light);
+  color: var(--cv-blue);
+}
+
+.level-chip.selected {
+  border-color: var(--cv-blue);
+  background: var(--cv-blue);
+  color: #fff;
+  box-shadow: var(--cv-shadow-md);
+}
+
+.setup-actions {
+  margin-top: 20px;
+}
+
+.setup-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.text-link {
+  color: var(--cv-blue);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+.ranking-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(520px, calc(100dvh - 190px));
+  overflow: hidden;
+  padding-left: 24px;
+}
+
+.ranking-list li {
+  border-bottom: 1px solid var(--cv-border);
+  padding: 8px 0;
+}
+
+.ranking-list li::marker {
+  color: var(--cv-blue);
+  font-weight: 800;
+}
+
+.ranking-list strong {
+  color: var(--cv-heading);
+}
+
+.ranking-list span {
+  display: block;
+  color: var(--cv-muted);
+}
+
+.empty-ranking {
+  color: var(--cv-muted);
+  padding: 18px 0;
+}
+
+@media (max-width: 920px) {
+  .game-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-tools {
+    align-items: stretch;
+  }
+
+  .play-cluster {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(170px, 1fr);
+    gap: 10px;
+  }
+
+  .play-cluster :deep(.code-box) {
+    font-size: min(var(--code-font-size), 1rem);
+  }
+
+  .debug-card {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .level-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+
+@media (hover: none) and (pointer: coarse) {
+  .touch-controls {
+    grid-template-columns: repeat(3, 74px);
+  }
+
+  .arrow {
+    width: 74px;
+    height: 62px;
+    font-size: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+</style>

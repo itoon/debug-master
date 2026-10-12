@@ -1,11 +1,74 @@
-import { computed, type ComputedRef } from "vue";
+import { computed, type ComputedRef, type Ref } from "vue";
 import { colorMeta, type LevelLike, type VisibleTile } from "../types/debug-game";
 
 export function tileColorName(color: string): string {
   return colorMeta[color]?.name ?? "gray";
 }
 
-export function useBoardPresentation(currentLevel: ComputedRef<LevelLike>) {
+// Name of each tile letter, shown in the code view next to a mini swatch.
+// Textured / sprite tiles use what they look like (ice, sand, gem, rock);
+// plain colour tiles use their colour, matching the letter (g = green).
+const tileKinds: Record<string, string> = {
+  n: "floor",
+  b: "ice",
+  y: "sand",
+  g: "green",
+  p: "pink",
+  o: "orange",
+  v: "gem",
+  k: "rock",
+};
+
+export function tileKindLabel(color: string): string {
+  return tileKinds[color] ?? "floor";
+}
+
+// Must match the .board CSS: gap = max(5px, 0.14 * cell),
+// padding = max(10px, 0.24 * cell), and a 2px border on each side.
+const MIN_CELL = 24;
+const MAX_CELL = 88;
+
+function boardLength(count: number, cell: number): number {
+  const gap = Math.max(5, cell * 0.14);
+  const pad = Math.max(10, cell * 0.24);
+  return count * cell + (count - 1) * gap + pad * 2 + 4;
+}
+
+/**
+ * The largest square tile that lets the whole board fit the space it is given,
+ * so small levels get big, easy-to-read tiles and large ones still fit.
+ */
+export function fitCellSize(
+  cols: number,
+  rows: number,
+  space?: BoardSpace,
+): number {
+  const safeCols = Math.max(1, cols);
+  const safeRows = Math.max(1, rows);
+  if (!space || space.width <= 0 || space.height <= 0) {
+    // Before the board area is measured (first render): a safe guess.
+    return Math.max(
+      MIN_CELL,
+      Math.min(54, Math.floor(Math.min(520 / safeCols, 500 / safeRows))),
+    );
+  }
+  let cell = MAX_CELL;
+  while (
+    cell > MIN_CELL &&
+    (boardLength(safeCols, cell) > space.width ||
+      boardLength(safeRows, cell) > space.height)
+  ) {
+    cell -= 1;
+  }
+  return cell;
+}
+
+export type BoardSpace = { width: number; height: number };
+
+export function useBoardPresentation(
+  currentLevel: ComputedRef<LevelLike>,
+  boardSpace?: Ref<BoardSpace | undefined>,
+) {
   const visibleTiles = computed<VisibleTile[]>(() =>
     currentLevel.value.map.flatMap((row, rowIndex) =>
       row.map((color, colIndex) => ({
@@ -19,24 +82,10 @@ export function useBoardPresentation(currentLevel: ComputedRef<LevelLike>) {
   );
 
   const boardStyle = computed(() => {
-    // Junior note:
-    // Large maps should not overflow the board panel, so we size the square
-    // cell using both the row count and column count.
-    const cell = Math.max(
-      18,
-      Math.min(
-        54,
-        Math.floor(
-          Math.min(
-            520 / Math.max(1, currentLevel.value.cols),
-            500 / Math.max(1, currentLevel.value.rows),
-          ),
-        ),
-      ),
-    );
-
+    const { cols, rows } = currentLevel.value;
+    const cell = fitCellSize(cols, rows, boardSpace?.value);
     return {
-      gridTemplateColumns: `repeat(${currentLevel.value.cols}, ${cell}px)`,
+      gridTemplateColumns: `repeat(${cols}, ${cell}px)`,
       "--cell-size": `${cell}px`,
     };
   });
