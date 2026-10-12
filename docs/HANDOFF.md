@@ -139,3 +139,11 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Keyboard movement is ignored while setup/tutorial/summary/ranking is open, outside the playing state, during IME composition, for input/textarea/select/contenteditable/textbox targets, and for Ctrl/Meta/Alt shortcuts or already-handled events. On-screen direction buttons remain unchanged and now declare their keyboard shortcuts for accessibility.
 - Home, tutorial, gameplay instructions, legacy setup copy and fallback hints show WASD support through the lightweight dictionary. Original puzzle descriptions were not rewritten.
 - Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live keyboard checks, per the standing build-only instruction.
+
+## 2026-10-12 — Stable board layout during failure notifications
+
+- User reports the failure message appears below the visible area and squeezes the board. Source confirms the conditionally mounted notification was a normal flex child below gameplay/debug in the fixed-height board panel, reducing the measured play area whenever it appeared.
+- Moved the notification into the board area's positioned container as an absolute overlay, centered near its top. It no longer participates in panel/board sizing or introduces an extra flex gap. Pointer events pass through; existing controls, failure sound/pose, shatter animation and 760ms retry remain unchanged.
+- Notice uses an opaque contrasting background, larger bold heading and readable white text. Wrong-input reason and notification headings now use the Thai dictionary. Runner error reasons and Dead Mode heart information remain available.
+- Board grid rows now explicitly use the same computed pixel size as columns and tiles, keeping square track dimensions consistent. Existing fit-to-space calculations, map structure and gameplay logic are unchanged.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport checks, per the standing build-only instruction. Diagnosis is based on source/layout inspection; the supplied recording was not decoded in this environment.

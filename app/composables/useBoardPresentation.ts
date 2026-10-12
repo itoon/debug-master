@@ -75,6 +75,7 @@ export function useBoardPresentation(
     const cell = fitCellSize(cols, rows, boardSpace?.value, maxCellSize?.value);
     return {
       gridTemplateColumns: `repeat(${cols}, ${cell}px)`,
+      gridTemplateRows: `repeat(${rows}, ${cell}px)`,
       "--cell-size": `${cell}px`,
     };
   });

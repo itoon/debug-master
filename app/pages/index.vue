@@ -91,6 +91,15 @@
 
         <div class="play-cluster">
           <div ref="boardWrapEl" class="board-wrap">
+            <div
+              v-if="notificationMessage && status !== 'success'"
+              class="notification"
+              :class="`notification-${status}`"
+              role="alert"
+            >
+              <strong>{{ notificationTitle }}</strong>
+              <p>{{ notificationMessage }}</p>
+            </div>
             <div class="board-and-controls">
               <p ref="instructionEl" class="objective">{{ t('game.instruction') }}</p>
               <LevelBoard
@@ -168,15 +177,6 @@
           </div>
         </section>
 
-        <div
-          v-if="notificationMessage && status !== 'success'"
-          class="notification"
-          :class="`notification-${status}`"
-          role="alert"
-        >
-          <strong>{{ notificationTitle }}</strong>
-          <p>{{ notificationMessage }}</p>
-        </div>
       </section>
     </main>
 
@@ -592,11 +592,11 @@ const statusLabel = computed(() =>
       }[status.value],
 );
 const notificationTitle = computed(() => {
-  if (isDeadRunOver.value) return "Game over";
-  if (status.value === "failed") return "ผิด";
-  if (status.value === "timeup") return "หมดเวลา";
-  if (status.value === "success") return "ถูกต้อง";
-  return "แจ้งเตือน";
+  if (isDeadRunOver.value) return t("game.gameOver");
+  if (status.value === "failed") return t("game.retryTitle");
+  if (status.value === "timeup") return t("game.timeUpTitle");
+  if (status.value === "success") return t("game.correctTitle");
+  return t("game.notificationTitle");
 });
 const canControl = computed(
   () => status.value === "playing" && Boolean(expectedMove.value),
@@ -985,6 +985,7 @@ function failLevel(reason: string): void {
   status.value = "failed";
   expectedMove.value = null;
   comboStreak.value = 0;
+  if (reason === "Wrong key") reason = t("game.wrongMove");
   if (deadRun.value) {
     livesLeft.value = Math.max(0, livesLeft.value - 1);
     reason = `${reason} · เหลือ ${livesLeft.value} หัวใจ`;
@@ -1579,8 +1580,7 @@ h2 {
   gap: 6px;
 }
 
-.debug-card,
-.notification {
+.debug-card {
   flex: none;
   width: 100%;
   max-width: 100%;
@@ -1688,12 +1688,24 @@ h2 {
 /* ---------- Notifications ---------- */
 
 .notification {
-  padding: 10px 14px;
-  border: 1px solid var(--cv-glass-border);
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 8;
+  transform: translateX(-50%);
+  width: min(440px, calc(100% - 24px));
+  padding: 12px 16px;
+  border: 2px solid #94bcff;
   border-radius: var(--cv-radius-lg);
-  background: var(--cv-glass-soft);
-  line-height: 1.35;
+  background: #102b62;
+  color: #fff;
+  text-align: center;
+  line-height: 1.4;
+  box-shadow: 0 8px 24px rgba(3, 10, 40, .45);
+  pointer-events: none;
 }
+.notification strong { display: block; font-size: 1.1rem; font-weight: 800; }
+.notification p { margin: 3px 0 0; font-size: .95rem; }
 
 .score-pop-enter-active,
 .score-pop-leave-active {
@@ -1714,6 +1726,8 @@ h2 {
   background: rgba(255, 107, 107, 0.2);
   border-color: var(--cv-red);
 }
+.notification-failed { background: #52283d; border-color: #ffa8a0; }
+.notification-timeup { background: #523b20; border-color: #ffd479; }
 
 .notification-success,
 .notification-completed,
