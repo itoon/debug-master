@@ -12,6 +12,7 @@ import beacon from "~/assets/sprites/beacon.png";
 import gem from "~/assets/sprites/gem.png";
 import rock from "~/assets/sprites/rock.png";
 import background from "~/assets/bg.png";
+import { PLAYER_SPRITES } from "../utils/playerSprites";
 
 export type AssetStatus = "in-use" | "css" | "wanted" | "spare";
 
@@ -59,9 +60,9 @@ export const STATUS_LABELS: Record<AssetStatus, string> = {
 };
 
 const CODI_SPEC = [
-  "WebP พื้นหลังโปร่งใส สูง 320 px กว้างไม่เกิน 320 px",
-  "ทุกท่าตัวขนาดเท่ากัน เท้าชิดขอบล่างเส้นเดียวกัน (สลับท่าแล้วตัวไม่กระโดด)",
-  "หันหน้าตรงหรือเฉียงขวา เกมกลับด้านให้เองตอนเดินซ้าย จึงห้ามมีตัวหนังสือ/โลโก้บนตัว",
+  "พื้นหลังโปร่งใส ทุกรูปตัวขนาดเท่ากัน เท้าอยู่ระดับเดียวกัน (สลับรูปแล้วตัวไม่กระโดด)",
+  "ตัวเดินวาดแยกครบ 4 ทิศ เกมไม่กลับด้านรูปให้",
+  "รูปท่าทาง (ดีใจ มึน ...): WebP สูง 320 px กว้างไม่เกิน 320 px",
   "ไม่ต้องใส่เงาใต้เท้า (CSS ใส่ drop-shadow ให้)",
 ];
 
@@ -80,34 +81,45 @@ export const assetGroups: AssetGroup[] = [
     id: "codi",
     title: "Codi (ตัวละคร)",
     description:
-      "หุ่นยนต์ที่ผู้เล่นบังคับ เกมสลับท่าตามสถานะ: ปกติ / ผ่านด่าน / ผิดหรือหมดเวลา",
+      "ตัวที่ผู้เล่นบังคับใช้รูป 4 ทิศ (หันตามก้าวล่าสุด เริ่มด่านหันหน้าลง) ส่วนรูปท่าทางชุดเดิมยังเก็บไว้",
     common: CODI_SPEC,
     items: [
+      ...(["right", "up", "down", "left"] as const).map(
+        (direction): AssetItem => ({
+          id: `codi-walk-${direction}`,
+          name: `ตัวเดิน หัน${{ right: "ขวา", up: "ขึ้น (หันหลัง)", down: "ลง (หันหน้า)", left: "ซ้าย" }[direction]}`,
+          file: `app/assets/sprites/codi-${direction}.png`,
+          status: "in-use",
+          preview: { kind: "image", src: PLAYER_SPRITES[direction], backdrop: "tile" },
+          usedIn: direction === "down" ? "หน้าแรก, ตัวผู้เล่นตอนเริ่มด่าน / เดินลง, หน้าคลังโจทย์" : `ตัวผู้เล่นตอนเดิน${direction === "up" ? "ขึ้น" : direction === "left" ? "ซ้าย" : "ขวา"}`,
+          spec: ["PNG โปร่งใส 128 × 128 px ทั้ง 4 ทิศตัวขนาดเท่ากัน เท้าอยู่ระดับเดียวกัน"],
+        }),
+      ),
       {
         id: "codi-idle",
         name: "ยืนรอ (idle)",
         file: "app/assets/sprites/cody-idle.webp",
-        status: "in-use",
+        status: "spare",
         preview: { kind: "image", src: codiIdle, backdrop: "tile" },
-        usedIn: "ตลอดการเล่น, หน้าคลังโจทย์ (จุดเริ่ม)",
+        usedIn: "ยังไม่ได้ใช้ (เดิมใช้ตลอดการเล่น)",
         spec: ["ท่าที่เห็นบ่อยที่สุด ควรอ่านง่ายที่สุด"],
       },
       {
         id: "codi-happy",
         name: "ดีใจ (happy)",
         file: "app/assets/sprites/cody-happy.webp",
-        status: "in-use",
+        status: "spare",
         preview: { kind: "image", src: codiHappy, backdrop: "tile" },
-        usedIn: "ตอนผ่านด่าน",
+        usedIn: "ยังไม่ได้ใช้ (เดิมใช้ตอนผ่านด่าน)",
         spec: [],
       },
       {
         id: "codi-dizzy",
         name: "มึน (dizzy)",
         file: "app/assets/sprites/cody-dizzy.webp",
-        status: "in-use",
+        status: "spare",
         preview: { kind: "image", src: codiDizzy, backdrop: "tile" },
-        usedIn: "ตอนกดผิด / หมดเวลา",
+        usedIn: "ยังไม่ได้ใช้ (เดิมใช้ตอนกดผิด / หมดเวลา)",
         spec: [],
       },
       {
@@ -275,6 +287,16 @@ export const assetGroups: AssetGroup[] = [
         usedIn: "ปุ่มบังคับบนจอ, เฉลยในหน้าคลังโจทย์",
         spec: [],
         swap: "แทนตัวอักษร ▲◀▼▶ ในปุ่ม .arrow (pages/index.vue)",
+      },
+      {
+        id: "heart",
+        name: "หัวใจ (ชีวิตใน Dead Mode)",
+        file: "app/assets/icons/heart-{full,empty}.svg",
+        status: "wanted",
+        preview: { kind: "glyph", text: "♥ ♥ ♥" },
+        usedIn: "HUD ของ Dead Mode, 5 ดวง (ตอนนี้ใช้ตัวอักษร ♥)",
+        spec: ["2 แบบ: เต็ม (แดง) และเสียแล้ว (จาง) ต้องแยกออกบนพื้นน้ำเงินเข้ม"],
+        swap: "แทนตัวอักษร ♥ ใน .hearts (pages/index.vue)",
       },
       {
         id: "logo",

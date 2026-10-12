@@ -1,6 +1,6 @@
 <template>
   <div class="app-shell">
-    <main class="game">
+    <main v-show="!showSetup" class="game">
       <section class="board-panel">
         <header class="game-header">
           <div class="title-block">
@@ -20,7 +20,20 @@
               <span v-if="isTimedMode">{{ formattedTime }}</span>
               <span>Score {{ totalScore }}</span>
               <span>Combo x{{ Math.max(1, comboStreak) }}</span>
-              <span>{{ completedLevels }}/{{ activeLevels.length }}</span>
+              <span>{{ progressLabel }}</span>
+              <span
+                v-if="deadRun"
+                class="hearts"
+                role="img"
+                :aria-label="`เหลือ ${livesLeft} หัวใจ`"
+                ><i
+                  v-for="heart in DEAD_LIVES"
+                  :key="heart"
+                  :class="{ lost: heart > livesLeft }"
+                  aria-hidden="true"
+                  >♥</i
+                ></span
+              >
             </div>
             <div class="header-menu">
               <span class="status" :class="`status-${status}`">{{
@@ -72,7 +85,12 @@
                 aria-hidden="true"
               >
                 <div :key="playerHop" class="hop">
-                  <img class="codi" :src="codiSprite" alt="" draggable="false" />
+                  <img
+                    class="player-sprite"
+                    :src="PLAYER_SPRITES[playerFacing]"
+                    alt=""
+                    draggable="false"
+                  />
                 </div>
               </div>
             </LevelBoard>
@@ -172,186 +190,204 @@
       </section>
     </main>
 
-    <section
-      v-if="showSetup"
-      class="overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="setup-title"
-    >
-      <form class="setup-card" @submit.prevent="startGame">
-        <p class="eyebrow">Before start</p>
-        <h2 id="setup-title">ตั้งค่าเกม</h2>
+    <div v-if="showSetup" class="landing">
+      <header class="landing-top">
+        <p class="landing-brand">CodeVenture · Debug Master</p>
+        <p class="landing-tagline">อ่านโค้ด · คิด · เดินไปกับ Codi</p>
+      </header>
 
-        <label class="field">
-          <span>ชื่อผู้เล่น</span>
-          <input
-            v-model.trim="playerNameDraft"
-            type="text"
-            maxlength="24"
-            placeholder="เช่น น้องเอ"
-            required
-          />
-        </label>
+      <div class="landing-grid">
+        <TodayRanking
+          class="landing-card landing-ranking"
+          :scores="scores"
+          :board="rankingBoard"
+          :subtitle="rankingSubtitle"
+        />
 
-        <fieldset class="set-grid">
-          <legend>เลือกชุดข้อสอบ</legend>
-          <label
-            v-for="set in levelSets"
-            :key="set.id"
-            class="set-option"
-            :class="{ selected: selectedSetId === set.id }"
-          >
-            <input v-model="selectedSetId" type="radio" :value="set.id" />
-            <span
-              ><strong>{{ set.title }}</strong
-              ><small>{{ set.description }}</small></span
-            >
-          </label>
-        </fieldset>
-
-        <fieldset class="mode-grid">
-          <legend>เลือกรูปแบบโค้ด</legend>
-          <label
-            v-for="option in codeLanguageOptions"
-            :key="option.id"
-          >
-            <input
-              v-model="selectedLanguageDraft"
-              type="radio"
-              :value="option.id"
-            />
-            <span
-              ><strong>{{ option.title }}</strong
-              ><small>{{ option.description }}</small></span
-            >
-          </label>
-        </fieldset>
-
-        <fieldset class="mode-grid">
-          <legend>เลือก Mode</legend>
-          <label>
-            <input v-model="selectedMode" type="radio" value="campaign" />
-            <span
-              ><strong>ตะลุยด่าน</strong
-              ><small
-                >เลือกเริ่มด่านได้ เล่นต่อเนื่องจนครบ 60 ด่าน ไม่จับเวลา</small
-              ></span
-            >
-          </label>
-          <label>
-            <input v-model="selectedMode" type="radio" value="timer" />
-            <span
-              ><strong>จับเวลา</strong
-              ><small>ตั้งเวลาที่ต้องการเอง</small></span
-            >
-          </label>
-          <label>
-            <input v-model="selectedMode" type="radio" value="ranking" />
-            <span
-              ><strong>Ranking Mode</strong
-              ><small>เวลา固定 5 นาที แล้วจัดอันดับ</small></span
-            >
-          </label>
-        </fieldset>
-
-        <fieldset v-if="selectedMode === 'campaign'" class="level-picker">
-          <legend>เลือกด่านเริ่มต้น</legend>
-          <p class="level-picker-note">
-            {{ activeSet.title }} ·
-            ด่าน {{ selectedLevelDraft.toString().padStart(2, "0") }} ·
-            {{ campaignLevelConcept }}
-          </p>
-          <div class="level-grid" role="listbox" aria-label="เลือกด่าน">
-            <button
-              v-for="level in activeLevels"
-              :key="level.id"
-              type="button"
-              class="level-chip"
-              :class="{ selected: selectedLevelDraft === level.id }"
-              role="option"
-              :aria-selected="selectedLevelDraft === level.id"
-              :aria-label="`ด่าน ${level.id}`"
-              @click="selectedLevelDraft = level.id"
-            >
-              {{ level.id.toString().padStart(2, "0") }}
-            </button>
-          </div>
-        </fieldset>
-
-        <label
-          class="field timer-field"
-          :class="{ disabled: selectedMode !== 'timer' }"
+        <form
+          class="landing-card setup-card"
+          aria-labelledby="setup-title"
+          @submit.prevent="startGame"
         >
-          <span>เวลาโหมดจับเวลา (นาที)</span>
-          <input
-            v-model.number="customMinutes"
-            type="number"
-            min="1"
-            max="60"
-            :disabled="selectedMode !== 'timer'"
-          />
-        </label>
-
-        <label class="debug-toggle">
-          <input v-model="debugModeDraft" type="checkbox" />
-          <span
-            ><strong>Debug Mode</strong
-            ><small
-              >เปิดเพื่อดู Position, Tile, Step, Input และ Hint
-              ระหว่างเล่น</small
-            ></span
-          >
-        </label>
-
-        <div class="setup-actions">
-          <div class="setup-links">
-            <button type="button" class="soft-button" @click="showRanking = true">
-              ดู Ranking
-            </button>
-            <NuxtLink class="text-link" to="/review">คลังโจทย์ทั้งหมด</NuxtLink>
-            <NuxtLink class="text-link" to="/elements">Elements</NuxtLink>
+          <div class="setup-hero">
+            <img
+              class="setup-codi"
+              :src="PLAYER_SPRITES.down"
+              alt=""
+              draggable="false"
+            />
+            <div>
+              <h2 id="setup-title">ผจญภัยกับ Codi</h2>
+              <p>อ่าน {{ languageName }} แล้วกดลูกศรเดินตาม</p>
+            </div>
           </div>
-          <button type="submit" class="primary-button">Start Game</button>
-        </div>
-      </form>
-    </section>
+
+          <label class="field">
+            <span>ชื่อเล่น</span>
+            <input
+              id="player-name"
+              v-model.trim="playerNameDraft"
+              type="text"
+              maxlength="24"
+              placeholder="ชื่อที่ใช้แสดงอันดับ"
+              autocomplete="nickname"
+              required
+            />
+          </label>
+
+          <fieldset class="choice-group">
+            <legend>เลือกอายุ</legend>
+            <div class="age-grid">
+              <button
+                v-for="age in PLAYER_AGES"
+                :key="age"
+                type="button"
+                class="age-chip"
+                :class="{ selected: playerAgeDraft === age }"
+                :aria-pressed="playerAgeDraft === age"
+                @click="playerAgeDraft = age"
+              >
+                {{ age }} ปี
+              </button>
+            </div>
+          </fieldset>
+
+          <fieldset class="choice-group">
+            <legend>เลือกวิธีเล่น · อันดับด้านข้างเปลี่ยนตามนี้</legend>
+            <div class="mode-cards">
+              <label
+                v-for="option in MODE_OPTIONS"
+                :key="option.id"
+                class="mode-card"
+                :class="{ selected: selectedMode === option.id }"
+              >
+                <input
+                  v-model="selectedMode"
+                  class="visually-hidden"
+                  type="radio"
+                  name="mode"
+                  :value="option.id"
+                />
+                <strong>{{ option.title }}</strong>
+                <small>{{ option.hint }}</small>
+              </label>
+            </div>
+          </fieldset>
+
+          <label v-if="selectedMode === 'timer'" class="field narrow">
+            <span>เวลา (นาที)</span>
+            <input
+              id="timer-minutes"
+              v-model.number="customMinutes"
+              type="number"
+              min="1"
+              max="60"
+            />
+          </label>
+
+          <label v-if="selectedMode !== 'dead'" class="field narrow">
+            <span>ชุดโจทย์</span>
+            <select id="level-set" v-model="selectedSetId">
+              <option v-for="set in levelSets" :key="set.id" :value="set.id">
+                {{ set.title }}
+              </option>
+            </select>
+          </label>
+
+          <fieldset v-if="selectedMode === 'campaign'" class="level-picker">
+            <legend>เลือกด่านเริ่ม</legend>
+            <p class="level-picker-note">
+              ด่าน {{ selectedLevelDraft.toString().padStart(2, "0") }} ·
+              {{ campaignLevelConcept }}
+            </p>
+            <div class="level-grid" role="listbox" aria-label="เลือกด่าน">
+              <button
+                v-for="level in activeLevels"
+                :key="level.id"
+                type="button"
+                class="level-chip"
+                :class="{ selected: selectedLevelDraft === level.id }"
+                role="option"
+                :aria-selected="selectedLevelDraft === level.id"
+                :aria-label="`ด่าน ${level.id}`"
+                @click="selectedLevelDraft = level.id"
+              >
+                {{ level.id.toString().padStart(2, "0") }}
+              </button>
+            </div>
+          </fieldset>
+
+          <details class="more-options">
+            <summary>ตัวเลือกเพิ่มเติม</summary>
+            <div class="more-options-body">
+              <div class="segmented" role="radiogroup" aria-label="รูปแบบโค้ด">
+                <label
+                  v-for="option in codeLanguageOptions"
+                  :key="option.id"
+                  :class="{ selected: selectedLanguageDraft === option.id }"
+                >
+                  <input
+                    v-model="selectedLanguageDraft"
+                    class="visually-hidden"
+                    type="radio"
+                    name="language"
+                    :value="option.id"
+                  />
+                  {{ option.title }}
+                </label>
+              </div>
+              <label class="debug-toggle">
+                <input v-model="debugModeDraft" type="checkbox" />
+                <span
+                  ><strong>Debug Mode</strong
+                  ><small>ดู Position, Tile, Step, Input และ Hint ระหว่างเล่น</small></span
+                >
+              </label>
+            </div>
+          </details>
+
+          <p class="privacy-note">
+            ชื่อเล่นและอายุใช้จัดอันดับในเครื่องนี้เท่านั้น ผู้จัดลบข้อมูลหลังงาน
+            ไม่ต้องใช้ชื่อจริง
+          </p>
+
+          <div class="start-row">
+            <p v-if="!canStart" class="start-hint">กรอกชื่อเล่นเพื่อเริ่มเล่น</p>
+            <button type="submit" class="primary-button start-button" :disabled="!canStart">
+              เริ่มเล่น
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <p class="landing-links">
+        สำหรับทีม: <NuxtLink to="/review">คลังโจทย์</NuxtLink> ·
+        <NuxtLink to="/elements">Elements</NuxtLink>
+      </p>
+    </div>
 
     <section
       v-if="showRanking"
       class="overlay"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="ranking-title"
+      aria-label="อันดับวันนี้"
     >
       <div class="ranking-card">
-        <div class="panel-title">
-          <div>
-            <p class="eyebrow">LocalStorage</p>
-            <h2 id="ranking-title">Ranking</h2>
-          </div>
-          <button
-            type="button"
-            class="soft-button small"
-            @click="showRanking = false"
-          >
-            Close
+        <TodayRanking
+          :scores="scores"
+          :board="rankingBoard"
+          :subtitle="rankingSubtitle"
+          :highlight-id="lastScoreId"
+        />
+        <div class="ranking-actions">
+          <button type="button" class="soft-button" @click="showRanking = false">
+            ปิด
+          </button>
+          <button type="button" class="primary-button" @click="backToStart">
+            กลับหน้าแรก
           </button>
         </div>
-        <ol class="ranking-list">
-          <li v-for="score in rankedScores" :key="score.id">
-            <strong>{{ score.name }}</strong>
-            <span
-              >{{ score.setTitle || "Set 01 - Original" }} ·
-              {{ score.language === "js" ? "JS" : "Python" }} ·
-              {{ score.mode }} · {{ score.score }} pts ·
-              {{ score.levelsCompleted }} ด่าน ·
-              {{ formatDuration(score.elapsedMs) }} · combo
-              {{ score.bestCombo }}</span
-            >
-          </li>
-        </ol>
-        <p v-if="!rankedScores.length" class="empty-ranking">ยังไม่มีคะแนน</p>
       </div>
     </section>
   </div>
@@ -380,17 +416,23 @@ import {
   stepPosition,
   type RunState,
 } from "../utils/programRunner";
-import codiDizzy from "~/assets/sprites/cody-dizzy.webp";
-import codiHappy from "~/assets/sprites/cody-happy.webp";
-import codiIdle from "~/assets/sprites/cody-idle.webp";
+import {
+  generateLevel,
+  newRunSeed,
+  type GeneratedLevel,
+} from "../utils/levelGen";
+import { PLAYER_AGES, type RankingBoard } from "../utils/ranking";
+import { PLAYER_SPRITES, START_FACING } from "../utils/playerSprites";
 
 const STORAGE_KEY = "debug-runner-scores-v1";
 
 const showSetup = ref(true);
 const showRanking = ref(false);
-const selectedMode = ref<Mode>("campaign");
+const selectedMode = ref<Mode>("ranking");
 const selectedSetId = ref(levelSets[0]?.id ?? "set-01");
-const playerNameDraft = ref("A");
+const playerNameDraft = ref("");
+const playerAgeDraft = ref<number | null>(null);
+const playerAge = ref<number | undefined>(undefined);
 const playerName = ref("");
 const customMinutes = ref(10);
 const debugModeDraft = ref(false);
@@ -407,7 +449,15 @@ const selectedLevelDraft = ref(1);
 const activeSet = computed(
   () => levelSets.find((set) => set.id === selectedSetId.value) ?? levelSets[0],
 );
-const activeLevels = computed(() => activeSet.value.levels);
+// Dead Mode: levels are generated one at a time while the run goes on
+// (utils/levelGen). Every other mode plays the selected level set.
+const deadRun = ref<{ seed: number; levels: GeneratedLevel[] } | null>(null);
+// Lives in Dead Mode: a mistake costs one and replays the level.
+const DEAD_LIVES = 5;
+const livesLeft = ref(DEAD_LIVES);
+const activeLevels = computed(
+  () => deadRun.value?.levels ?? activeSet.value.levels,
+);
 const currentLevel = computed(
   () => activeLevels.value[selectedLevelIndex.value] ?? activeLevels.value[0],
 );
@@ -427,7 +477,7 @@ const player = reactive({
 // Codi (the board actor) only reads `player`; these refs drive its animation.
 const playerHop = ref(0);
 const playerWarped = ref(false);
-const playerFacing = ref<1 | -1>(1);
+const playerFacing = ref<Direction>(START_FACING);
 const status = ref<GameStatus>("ready");
 const campaignStarted = ref(false);
 const notificationMessage = ref("");
@@ -455,10 +505,49 @@ let timerId: ReturnType<typeof setInterval> | null = null;
 let levelAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
 let scorePopupTimer: ReturnType<typeof setTimeout> | null = null;
 
+// Start screen: the four ways to play, in display order.
+const MODE_OPTIONS: { id: Mode; title: string; hint: string }[] = [
+  { id: "ranking", title: "แข่ง 05:00", hint: "เวลาเท่ากันทุกคน" },
+  { id: "timer", title: "ท้าทายเวลา", hint: "เลือกเวลาเอง" },
+  { id: "campaign", title: "ตะลุยด่าน", hint: "เลือกด่านเริ่ม ไม่จับเวลา" },
+  { id: "dead", title: "Dead Mode", hint: "ด่านสุ่ม มี 5 หัวใจ" },
+];
+const RANKING_SECONDS = 300;
+const canStart = computed(() => playerNameDraft.value.length > 0);
+const languageName = computed(
+  () => codeLanguageOptions.find((option) => option.id === selectedLanguageDraft.value)?.title,
+);
+const timeLimitSec = computed(() => {
+  if (selectedMode.value === "ranking") return RANKING_SECONDS;
+  if (selectedMode.value === "timer") return Math.max(1, customMinutes.value) * 60;
+  return undefined;
+});
+// Which leaderboard applies to the current choices (start screen and the
+// end-of-game dialog both show this one).
+const rankingBoard = computed<RankingBoard>(() => ({
+  setId: selectedMode.value === "dead" ? "dead" : selectedSetId.value,
+  mode: selectedMode.value,
+  timeLimitSec: timeLimitSec.value,
+}));
+const rankingSubtitle = computed(() => {
+  const setTitle = activeSet.value.title;
+  if (selectedMode.value === "dead") return "Dead Mode · ด่านสุ่ม 5 หัวใจ";
+  if (selectedMode.value === "ranking") return `${setTitle} · แข่งเวลา · 05:00`;
+  if (selectedMode.value === "timer")
+    return `${setTitle} · ท้าทายเวลา · ${Math.max(1, customMinutes.value)} นาที`;
+  return `${setTitle} · ตะลุยด่าน`;
+});
+const lastScoreId = ref("");
 const isTimedMode = computed(
   () => selectedMode.value === "timer" || selectedMode.value === "ranking",
 );
+const progressLabel = computed(() =>
+  deadRun.value
+    ? `ผ่าน ${completedLevels.value} ด่าน`
+    : `${completedLevels.value}/${activeLevels.value.length}`,
+);
 const modeLabel = computed(() => {
+  if (selectedMode.value === "dead") return "Dead Mode";
   if (selectedMode.value === "campaign") return "ตะลุยด่าน";
   if (selectedMode.value === "ranking") return "Ranking 5:00";
   return `${customMinutes.value} min`;
@@ -466,18 +555,24 @@ const modeLabel = computed(() => {
 const languageLabel = computed(() =>
   displayLanguage.value === "js" ? "JavaScript" : "Python",
 );
-const statusLabel = computed(
-  () =>
-    ({
-      ready: "Ready",
-      playing: "Control",
-      success: "Correct",
-      failed: "Restart",
-      timeup: "Time up",
-      completed: "Done",
-    })[status.value],
+// Dead Mode ends when the hearts run out (see endDeadRun).
+const isDeadRunOver = computed(
+  () => Boolean(deadRun.value) && status.value === "failed" && !campaignStarted.value,
+);
+const statusLabel = computed(() =>
+  isDeadRunOver.value
+    ? "Game over"
+    : {
+        ready: "Ready",
+        playing: "Control",
+        success: "Correct",
+        failed: "Restart",
+        timeup: "Time up",
+        completed: "Done",
+      }[status.value],
 );
 const notificationTitle = computed(() => {
+  if (isDeadRunOver.value) return "Game over";
   if (status.value === "failed") return "ผิด";
   if (status.value === "timeup") return "หมดเวลา";
   if (status.value === "success") return "ถูกต้อง";
@@ -489,15 +584,7 @@ const canControl = computed(
 const actorStyle = computed(() => ({
   "--x": player.col,
   "--y": player.row,
-  "--flip": playerFacing.value,
 }));
-const codiSprite = computed(() => {
-  if (status.value === "failed" || status.value === "timeup")
-    return codiDizzy;
-  if (status.value === "success" || status.value === "completed")
-    return codiHappy;
-  return codiIdle;
-});
 const currentTile = computed(
   () => currentLevel.value.map[player.row]?.[player.col] ?? "n",
 );
@@ -522,25 +609,21 @@ const revealedHints = computed(() =>
       : "ให้ดูว่าเงื่อนไขหรือ loop จะพาไปคำสั่ง move ใดต่อ",
   ].slice(0, revealedHintCount.value),
 );
-const rankedScores = computed(() =>
-  [...scores.value]
-    .sort(
-      (a, b) =>
-        b.score - a.score ||
-        b.levelsCompleted - a.levelsCompleted ||
-        a.elapsedMs - b.elapsedMs ||
-        a.inputs - b.inputs,
-    )
-    .slice(0, 12),
-);
-
 function startGame(): void {
   // Copy setup modal values into live game state once, right before a run.
   playerName.value = playerNameDraft.value || "Player";
+  playerAge.value = playerAgeDraft.value ?? undefined;
   debugMode.value = debugModeDraft.value;
   codeLanguage.value = selectedLanguageDraft.value;
   showSetup.value = false;
   showRanking.value = false;
+  if (selectedMode.value === "dead") {
+    const seed = newRunSeed();
+    deadRun.value = { seed, levels: [generateLevel(seed, 0)] };
+    livesLeft.value = DEAD_LIVES;
+  } else {
+    deadRun.value = null;
+  }
   if (selectedMode.value === "campaign") {
     const levelIndex = Math.max(
       0,
@@ -562,11 +645,17 @@ function startGame(): void {
   beginLevel();
 }
 
+function backToStart(): void {
+  showRanking.value = false;
+  openSetup();
+}
+
 function openSetup(): void {
   stopTimer();
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
-  selectedLevelDraft.value = currentLevel.value.id;
+  if (!deadRun.value) selectedLevelDraft.value = currentLevel.value.id;
+  deadRun.value = null;
   selectedSetId.value = activeSet.value.id;
   selectedLanguageDraft.value = codeLanguage.value;
   showSetup.value = true;
@@ -580,10 +669,7 @@ function beginTimer(): void {
     timerRemaining.value = 0;
     return;
   }
-  timerRemaining.value =
-    selectedMode.value === "ranking"
-      ? 300
-      : Math.max(1, customMinutes.value) * 60;
+  timerRemaining.value = timeLimitSec.value ?? 0;
   timerId = setInterval(() => {
     timerRemaining.value -= 1;
     if (timerRemaining.value <= 0) {
@@ -620,7 +706,7 @@ function beginLevel(): void {
   player.row = currentLevel.value.start[0];
   player.col = currentLevel.value.start[1];
   playerWarped.value = true;
-  playerFacing.value = 1;
+  playerFacing.value = START_FACING;
   expectedMove.value = null;
   activeNode.value = null;
   executionSteps.value = 0;
@@ -682,9 +768,7 @@ function controlMove(direction: Direction): void {
   player.col = result.col;
   // Wrapping teleports to the far edge, so skip the slide across the board.
   playerWarped.value = result.wrapped;
-  if (direction === "left" || direction === "right") {
-    playerFacing.value = direction === "left" ? -1 : 1;
-  }
+  playerFacing.value = direction;
   playerHop.value += 1;
   playerInputs.value += 1;
   totalInputs.value += 1;
@@ -714,6 +798,11 @@ function completeLevel(): void {
   completedLevels.value += 1;
   status.value = "success";
   notificationMessage.value = "";
+  if (deadRun.value) {
+    // Endless: build the next level now, so the run never runs out.
+    const run = deadRun.value;
+    run.levels.push(generateLevel(run.seed, run.levels.length));
+  }
   if (selectedLevelIndex.value >= activeLevels.value.length - 1) {
     status.value = "completed";
     saveScore();
@@ -731,6 +820,10 @@ function failLevel(reason: string): void {
   status.value = "failed";
   expectedMove.value = null;
   comboStreak.value = 0;
+  if (deadRun.value) {
+    livesLeft.value = Math.max(0, livesLeft.value - 1);
+    reason = `${reason} · เหลือ ${livesLeft.value} หัวใจ`;
+  }
   notificationMessage.value = reason;
   feedbackMessage.value = notificationMessage.value;
   boardShattering.value = false;
@@ -739,10 +832,22 @@ function failLevel(reason: string): void {
   }, 0);
   setTimeout(() => {
     boardShattering.value = false;
-    if (campaignStarted.value && status.value === "failed") {
-      beginLevel();
+    if (!campaignStarted.value || status.value !== "failed") return;
+    if (deadRun.value && livesLeft.value === 0) {
+      endDeadRun();
+      return;
     }
+    beginLevel();
   }, 760);
+}
+
+// Dead Mode ends when the last heart is lost.
+function endDeadRun(): void {
+  campaignStarted.value = false;
+  stopTimer();
+  notificationMessage.value = `ผ่านไป ${completedLevels.value} ด่าน · ${totalScore.value} คะแนน`;
+  saveScore();
+  showRanking.value = true;
 }
 
 function timeUp(): void {
@@ -759,8 +864,10 @@ function saveScore(): void {
   const score: Score = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     name: playerName.value || "Player",
-    setId: activeSet.value.id,
-    setTitle: activeSet.value.title,
+    setId: deadRun.value ? "dead" : activeSet.value.id,
+    setTitle: deadRun.value
+      ? `Dead Mode (seed ${deadRun.value.seed})`
+      : activeSet.value.title,
     mode: selectedMode.value,
     language: codeLanguage.value,
     debug: debugMode.value,
@@ -771,7 +878,10 @@ function saveScore(): void {
     inputs: totalInputs.value,
     elapsedMs,
     createdAt: new Date().toISOString(),
+    age: playerAge.value,
+    timeLimitSec: timeLimitSec.value,
   };
+  lastScoreId.value = score.id;
   scores.value = [...scores.value, score];
   localStorage.setItem(STORAGE_KEY, JSON.stringify(scores.value));
 }
@@ -860,11 +970,9 @@ function formatClock(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-function formatDuration(ms: number): string {
-  return formatClock(Math.round(ms / 1000));
-}
-
 onMounted(async () => {
+  // Load every facing up front so the first turn doesn't flash.
+  for (const src of Object.values(PLAYER_SPRITES)) new Image().src = src;
   scores.value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   await applyLevelFromQuery();
   window.addEventListener("keydown", handleKeydown);
@@ -978,15 +1086,6 @@ summary:focus-visible {
   box-shadow: var(--cv-shadow-window);
 }
 
-.setup-card,
-.ranking-card {
-  border: 1px solid var(--cv-border);
-  border-radius: var(--cv-radius-xl);
-  background: #fff;
-  color: var(--cv-text);
-  box-shadow: var(--cv-shadow-window);
-}
-
 .play-cluster {
   min-height: 0;
   display: grid;
@@ -1009,8 +1108,7 @@ summary:focus-visible {
 .header-menu,
 .panel-title,
 .objective,
-.hud,
-.setup-actions {
+.hud {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1092,10 +1190,6 @@ h2 {
   letter-spacing: 0.04em;
 }
 
-.setup-card .eyebrow {
-  align-self: flex-start;
-}
-
 /* ---------- HUD / status ---------- */
 
 .hud {
@@ -1112,6 +1206,26 @@ h2 {
   color: var(--cv-on-dark);
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.hud .hearts {
+  display: inline-flex;
+  gap: 2px;
+  color: var(--cv-red);
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
+.hearts i {
+  font-style: normal;
+  transition:
+    color 200ms ease,
+    transform 200ms ease;
+}
+
+.hearts i.lost {
+  color: rgba(255, 255, 255, 0.25);
+  transform: scale(0.85);
 }
 
 .objective {
@@ -1385,7 +1499,344 @@ h2 {
   border-color: var(--cv-yellow);
 }
 
-/* ---------- Setup / ranking dialogs ---------- */
+/* ---------- Start screen (landing) ---------- */
+
+.landing {
+  height: 100%;
+  overflow-y: auto;
+  /* Still scrolls (wheel, touch, keys); just no visible scrollbar. */
+  scrollbar-width: none;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 4px 4px 16px;
+}
+
+.landing::-webkit-scrollbar {
+  display: none;
+}
+
+.landing-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.landing-brand {
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.landing-tagline {
+  color: var(--cv-on-dark-muted);
+  font-size: 0.85rem;
+}
+
+.landing-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.landing-card,
+.ranking-card {
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius-xl);
+  background: #fff;
+  color: var(--cv-text);
+  box-shadow: var(--cv-shadow-window);
+}
+
+.landing-card {
+  padding: clamp(18px, 3vw, 32px);
+}
+
+.landing-links {
+  color: var(--cv-on-dark-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.landing-links a {
+  color: #fff;
+}
+
+.setup-card {
+  display: grid;
+  gap: 18px;
+}
+
+.setup-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.setup-codi {
+  width: 76px;
+  height: auto;
+  flex: none;
+  filter: drop-shadow(0 6px 4px rgba(6, 26, 56, 0.25));
+}
+
+.setup-hero h2 {
+  color: var(--cv-heading);
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.setup-hero p {
+  margin-top: 4px;
+  color: var(--cv-text);
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field.narrow {
+  max-width: 380px;
+}
+
+.field span,
+.choice-group legend,
+.level-picker legend {
+  color: var(--cv-heading);
+  font-weight: 700;
+}
+
+.field input,
+.field select {
+  min-height: 50px;
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius);
+  padding: 0 16px;
+  background: #fff;
+  color: var(--cv-ink);
+  font: inherit;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--cv-blue);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 117, 255, 0.2);
+}
+
+.choice-group,
+.level-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group legend,
+.level-picker legend {
+  margin-bottom: 10px;
+  padding: 0;
+}
+
+.age-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.age-chip,
+.level-chip {
+  min-height: 46px;
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius);
+  background: #fff;
+  color: var(--cv-heading);
+  font-weight: 700;
+  box-shadow: 0 2px 0 rgba(6, 26, 56, 0.06);
+}
+
+.age-chip:hover,
+.level-chip:hover {
+  border-color: var(--cv-blue-light);
+}
+
+.age-chip.selected,
+.level-chip.selected {
+  border-color: var(--cv-blue);
+  background: var(--cv-blue);
+  color: #fff;
+}
+
+.mode-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mode-card {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-height: 80px;
+  padding: 14px 16px;
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius-lg);
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.mode-card:hover {
+  border-color: var(--cv-blue-light);
+}
+
+.mode-card.selected {
+  border: 2px solid var(--cv-blue);
+  background: var(--cv-blue-soft);
+  padding: 13px 15px;
+}
+
+.mode-card:has(input:focus-visible) {
+  outline: 3px solid var(--cv-yellow);
+  outline-offset: 2px;
+}
+
+.mode-card strong {
+  color: var(--cv-heading);
+  font-size: 1.05rem;
+}
+
+.mode-card small {
+  color: var(--cv-muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.level-picker-note {
+  margin-bottom: 8px;
+  color: var(--cv-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius-lg);
+  background: var(--cv-surface);
+}
+
+.level-chip {
+  min-height: 38px;
+  font-size: 0.8rem;
+}
+
+.more-options {
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius-lg);
+  padding: 10px 16px;
+}
+
+.more-options summary {
+  color: var(--cv-heading);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.more-options-body {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.segmented {
+  display: inline-flex;
+  width: fit-content;
+  padding: 3px;
+  border-radius: var(--cv-radius);
+  background: var(--cv-surface);
+  border: 1px solid var(--cv-border);
+}
+
+.segmented label {
+  padding: 6px 16px;
+  border-radius: 9px;
+  color: var(--cv-muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.segmented label.selected {
+  background: var(--cv-blue);
+  color: #fff;
+}
+
+.debug-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.debug-toggle input {
+  margin-top: 6px;
+}
+
+.debug-toggle span {
+  display: grid;
+}
+
+.debug-toggle strong {
+  color: var(--cv-heading);
+}
+
+.debug-toggle small {
+  color: var(--cv-muted);
+}
+
+.privacy-note {
+  color: var(--cv-muted);
+  font-size: 0.88rem;
+}
+
+.start-row {
+  display: grid;
+  gap: 8px;
+}
+
+.start-hint {
+  color: var(--cv-muted);
+  font-size: 0.85rem;
+}
+
+.start-button {
+  min-height: 54px;
+  font-size: 1.1rem;
+}
+
+/* ---------- End-of-game ranking dialog ---------- */
 
 .overlay {
   position: fixed;
@@ -1398,214 +1849,51 @@ h2 {
   backdrop-filter: blur(4px);
 }
 
-.setup-card,
 .ranking-card {
-  width: min(620px, 100%);
-  max-height: min(760px, calc(100dvh - 32px));
-  overflow: hidden;
+  display: grid;
+  gap: 18px;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   padding: 24px;
 }
 
-.setup-card h2,
-.ranking-card h2 {
-  color: var(--cv-heading);
-  font-size: 1.6rem;
-}
-
-.setup-card {
+.ranking-actions {
   display: flex;
-  flex-direction: column;
-  gap: 0;
-  overflow-y: auto;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
-.field,
-.debug-toggle,
-.mode-grid label,
-.set-grid label {
-  display: grid;
-  gap: 6px;
-  margin-top: 12px;
+/* Side-by-side cards get narrow here: 2 x 2 mode cards. */
+@media (min-width: 1101px) and (max-width: 1360px) {
+  .mode-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.field span,
-.mode-grid legend,
-.set-grid legend,
-.level-picker legend {
-  color: var(--cv-heading);
-  font-weight: 700;
+@media (max-width: 1100px) {
+  .landing-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Setup first on narrow screens; the ranking follows. */
+  .landing-ranking {
+    order: 2;
+  }
 }
 
-.field input {
-  min-height: 46px;
-  border: 1px solid var(--cv-border);
-  border-radius: var(--cv-radius);
-  padding: 0 14px;
-  color: var(--cv-ink);
-  background: #fff;
-}
+@media (max-width: 640px) {
+  .age-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 
-.field input:focus {
-  border-color: var(--cv-blue);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(31, 117, 255, 0.2);
-}
+  .mode-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-.timer-field.disabled {
-  opacity: 0.55;
-}
-
-.mode-grid,
-.set-grid {
-  display: grid;
-  gap: 8px;
-  margin: 16px 0 0;
-  padding: 0;
-  border: 0;
-}
-
-.mode-grid label,
-.set-option,
-.debug-toggle {
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  border: 1px solid var(--cv-border);
-  border-radius: var(--cv-radius-lg);
-  background: #fff;
-  padding: 12px 14px;
-  cursor: pointer;
-  transition:
-    border-color 120ms ease,
-    background-color 120ms ease;
-}
-
-.mode-grid label:hover,
-.set-option:hover,
-.debug-toggle:hover {
-  border-color: var(--cv-blue-light);
-}
-
-.mode-grid label:has(input:checked),
-.set-option.selected {
-  border-color: var(--cv-blue);
-  background: var(--cv-blue-soft);
-  box-shadow: 0 0 0 1px var(--cv-blue);
-}
-
-.mode-grid strong,
-.set-grid strong,
-.debug-toggle strong {
-  color: var(--cv-heading);
-  font-weight: 700;
-}
-
-.mode-grid small,
-.set-grid small,
-.debug-toggle small {
-  display: block;
-  color: var(--cv-muted);
-}
-
-.level-picker {
-  margin: 16px 0 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
-}
-
-.level-picker-note {
-  margin: 6px 0 8px;
-  color: var(--cv-muted);
-  font-size: 0.82rem;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.level-grid {
-  display: grid;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
-  gap: 6px;
-  max-height: min(200px, 28dvh);
-  overflow-y: auto;
-  padding: 8px;
-  border: 1px solid var(--cv-border);
-  border-radius: var(--cv-radius-lg);
-  background: var(--cv-surface);
-}
-
-.level-chip {
-  min-height: 40px;
-  border: 1px solid var(--cv-border);
-  border-radius: var(--cv-radius);
-  background: #fff;
-  color: var(--cv-text);
-  font-size: 0.8rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.level-chip:hover {
-  border-color: var(--cv-blue-light);
-  color: var(--cv-blue);
-}
-
-.level-chip.selected {
-  border-color: var(--cv-blue);
-  background: var(--cv-blue);
-  color: #fff;
-  box-shadow: var(--cv-shadow-md);
-}
-
-.setup-actions {
-  margin-top: 20px;
-}
-
-.setup-links {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.text-link {
-  color: var(--cv-blue);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.text-link:hover {
-  text-decoration: underline;
-}
-
-.ranking-list {
-  display: grid;
-  gap: 8px;
-  max-height: min(520px, calc(100dvh - 190px));
-  overflow: hidden;
-  padding-left: 24px;
-}
-
-.ranking-list li {
-  border-bottom: 1px solid var(--cv-border);
-  padding: 8px 0;
-}
-
-.ranking-list li::marker {
-  color: var(--cv-blue);
-  font-weight: 800;
-}
-
-.ranking-list strong {
-  color: var(--cv-heading);
-}
-
-.ranking-list span {
-  display: block;
-  color: var(--cv-muted);
-}
-
-.empty-ranking {
-  color: var(--cv-muted);
-  padding: 18px 0;
+  .level-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 920px) {
@@ -1630,12 +1918,6 @@ h2 {
 
   .debug-card {
     display: none;
-  }
-}
-
-@media (max-width: 520px) {
-  .level-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 

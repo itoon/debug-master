@@ -19,6 +19,23 @@
           >
             Set {{ setLetter(index) }} <small>{{ set.title }}</small>
           </button>
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="selectedSetId === DEAD_PREVIEW_ID"
+            :class="{ on: selectedSetId === DEAD_PREVIEW_ID }"
+            @click="selectedSetId = DEAD_PREVIEW_ID"
+          >
+            Dead Mode <small>ตัวอย่างด่านสุ่ม</small>
+          </button>
+        </div>
+
+        <div v-if="selectedSetId === DEAD_PREVIEW_ID" class="review-seed">
+          <label>
+            <span>seed</span>
+            <input v-model.number="deadSeed" type="number" min="0" />
+          </label>
+          <button type="button" @click="deadSeed = newRunSeed()">สุ่ม seed ใหม่</button>
         </div>
 
         <div class="segmented" role="tablist" aria-label="รูปแบบโค้ด">
@@ -83,7 +100,11 @@
           <span v-if="item.solution.wraps" class="pill pill-yellow"
             >ทะลุขอบ {{ item.solution.wraps }} ครั้ง</span
           >
+          <span v-if="generatorInfo(item.level)" class="pill pill-yellow">{{
+            generatorInfo(item.level)
+          }}</span>
           <NuxtLink
+            v-if="selectedSetId !== DEAD_PREVIEW_ID"
             class="review-play"
             :to="{ path: '/', query: { set: selectedSetId, level: item.level.id } }"
             >เล่นด่านนี้ →</NuxtLink
@@ -110,10 +131,14 @@
                 >
               </template>
               <span
-                class="actor review-codi"
+                class="actor review-player"
                 :style="{ '--x': item.level.start[1], '--y': item.level.start[0] }"
                 aria-hidden="true"
-                ><img class="codi" :src="codiIdle" alt="" draggable="false"
+                ><img
+                  class="player-sprite"
+                  :src="PLAYER_SPRITES[START_FACING]"
+                  alt=""
+                  draggable="false"
               /></span>
             </LevelBoard>
           </div>
@@ -178,7 +203,12 @@ import { useProgramParser } from "../composables/useProgramParser";
 import type { Direction } from "../types/debug-game";
 import { CODE_LANGUAGE_OPTIONS, type CodeLanguage } from "../utils/codeLanguage";
 import { solveLevel, type LevelSolution } from "../utils/programRunner";
-import codiIdle from "~/assets/sprites/cody-idle.webp";
+import { PLAYER_SPRITES, START_FACING } from "../utils/playerSprites";
+import {
+  generateRun,
+  newRunSeed,
+  type GeneratedLevel,
+} from "../utils/levelGen";
 
 useHead({ title: "คลังโจทย์ · Debug Runner" });
 
@@ -198,8 +228,21 @@ const conceptFilter = ref("");
 const showSolution = ref(true);
 const issuesOnly = ref(false);
 
-const activeSet = computed(
-  () => levelSets.find((set) => set.id === selectedSetId.value) ?? levelSets[0],
+// Dead Mode preview: the first levels of a generated run, by seed, so the
+// team can check the generator (utils/levelGen) with the same tools.
+const DEAD_PREVIEW_ID = "dead-preview";
+const DEAD_PREVIEW_COUNT = 30;
+const deadSeed = ref(42);
+const deadPreview = computed(() => ({
+  id: DEAD_PREVIEW_ID,
+  title: `Dead Mode · seed ${deadSeed.value}`,
+  description: "",
+  levels: generateRun(Math.max(0, deadSeed.value || 0), DEAD_PREVIEW_COUNT),
+}));
+const activeSet = computed(() =>
+  selectedSetId.value === DEAD_PREVIEW_ID
+    ? deadPreview.value
+    : (levelSets.find((set) => set.id === selectedSetId.value) ?? levelSets[0]),
 );
 const languageTitle = computed(
   () => CODE_LANGUAGE_OPTIONS.find((o) => o.id === language.value)?.title ?? "",
@@ -250,6 +293,13 @@ function setLetter(index: number): string {
 
 function pad(id: number): string {
   return id.toString().padStart(2, "0");
+}
+
+/** Template + difficulty for generated levels (empty for hand-made ones). */
+function generatorInfo(level: RawLevel): string {
+  const info = (level as Partial<GeneratedLevel>).generator;
+  if (!info) return "";
+  return info.fallback ? "fallback" : `${info.template} · ${info.difficulty}`;
 }
 
 function tileAt(level: RawLevel, [row, col]: [number, number]): string {
@@ -337,6 +387,43 @@ function findIssues(level: RawLevel, solution: LevelSolution): string[] {
 .segmented button.on {
   background: #fff;
   color: var(--cv-blue);
+}
+
+.review-seed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.review-seed label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-seed input {
+  width: 120px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 8px;
+  background: #fff;
+  color: var(--cv-ink);
+  font: inherit;
+}
+
+.review-seed button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--cv-on-dark);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .review-filter,
@@ -472,12 +559,8 @@ function findIssues(level: RawLevel, solution: LevelSolution): string[] {
   background: var(--cv-navy-900);
 }
 
-.review-codi {
+.review-player {
   z-index: 3;
-}
-
-.review-codi .codi {
-  animation: none;
 }
 
 .review-dot {
