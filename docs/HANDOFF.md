@@ -147,3 +147,8 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Notice uses an opaque contrasting background, larger bold heading and readable white text. Wrong-input reason and notification headings now use the Thai dictionary. Runner error reasons and Dead Mode heart information remain available.
 - Board grid rows now explicitly use the same computed pixel size as columns and tiles, keeping square track dimensions consistent. Existing fit-to-space calculations, map structure and gameplay logic are unchanged.
 - Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport checks, per the standing build-only instruction. Diagnosis is based on source/layout inspection; the supplied recording was not decoded in this environment.
+
+## 2026-10-12 — Slightly quieter failure sound
+
+- Reduced the WAV generator's amplitude from 0.68 to 0.54 (about 21% lower signal amplitude, approximately −2dB) and regenerated `codi-failed.wav`. This affects the shared failure/manual-restart cue; note pitches, duration, timing, master gain, movement and level-clear sounds are unchanged.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live listening checks, per the standing build-only instruction.

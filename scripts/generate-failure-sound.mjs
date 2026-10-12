@@ -28,7 +28,7 @@ for (let index = 0; index < samples; index += 1) {
     const envelope = Math.min(1, localTime / .006, (.16 - localTime) / .035);
     const phase = 2 * Math.PI * notes[note] * localTime;
     // A buzzer with audible upper harmonics, distinct from the clear chime.
-    value = .68 * envelope * (Math.sin(phase) + .3 * Math.sin(phase * 3)) / 1.3;
+    value = .54 * envelope * (Math.sin(phase) + .3 * Math.sin(phase * 3)) / 1.3;
   }
   wav.writeInt16LE(Math.round(value * 32767), 44 + index * 2);
 }
