@@ -1906,7 +1906,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "while not v:\n  right()\n  while o:\n    up()\n  while v:\n    down()",
+    "code": "while not p:\n  right()\n  while o:\n    up()\n  while v:\n    down()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
