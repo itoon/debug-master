@@ -12,6 +12,10 @@
           <li>{{ t('tutorial.move') }}</li>
           <li>{{ t('tutorial.repeat') }}</li>
         </ol>
+        <ul class="tile-legend">
+          <li v-for="tile in tutorialTiles" :key="tile.name"><code>{{ tile.name }}</code><span>{{ t(tile.nameKey) }}</span></li>
+        </ul>
+        <p class="retry-note">{{ t('tutorial.tiles') }}</p>
         <p class="retry-note">{{ t('tutorial.retry') }}</p>
         <div class="session-actions">
           <button type="button" class="main-action" @click="emit('play')">{{ t('tutorial.start') }}</button>
@@ -57,6 +61,9 @@ import { formatClock, type RankingBoard } from "../utils/ranking";
 import { PLAYER_SPRITES } from "../utils/playerSprites";
 import { useGameI18n } from "../composables/useGameI18n";
 import { useScoreBoard } from "../composables/useScoreBoard";
+import { TILE_TYPES, tileDefinition } from "../data/tiles";
+
+const tutorialTiles = TILE_TYPES.map(tileDefinition);
 
 const props = defineProps<{
   stage: "tutorial" | "summary" | "ranking";
@@ -90,6 +97,9 @@ h1 { margin: 0; font-size: clamp(1.35rem, 3vw, 1.9rem); font-weight: 800; line-h
 .session-codi { width: 76px; height: 92px; object-fit: contain; justify-self: center; }
 .instructions { list-style: none; display: grid; gap: 10px; padding: 0; margin: 0; font-size: 1.05rem; }
 .retry-note, .result-player { margin: 0; color: #526079; }
+.tile-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 0; margin: 0; list-style: none; }
+.tile-legend li { display: flex; gap: 8px; align-items: baseline; font-size: .9rem; }
+.tile-legend code { font-weight: 700; color: #1a4d9c; }
 .result-player { text-align: center; }
 .summary-metrics { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; text-align: center; }
 .summary-metrics div { display: grid; gap: 8px; padding: 16px 8px; border-radius: 14px; background: #edf4ff; }

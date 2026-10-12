@@ -150,7 +150,7 @@
               ><strong>[{{ player.row }}, {{ player.col }}]</strong>
             </div>
             <div>
-              <span>Tile</span><strong>{{ currentTile }}</strong>
+              <span>{{ t('game.tile') }}</span><strong>{{ tileKindLabel(currentTile) }}</strong>
             </div>
             <div>
               <span>Step</span><strong>{{ executionSteps }}</strong>
@@ -386,7 +386,7 @@
 
 <script setup lang="ts">
 import { levelSets } from "../data/level-sets";
-import type { BoardSpace } from "../composables/useBoardPresentation";
+import { tileKindLabel, type BoardSpace } from "../composables/useBoardPresentation";
 import { useProgramParser } from "../composables/useProgramParser";
 import type {
   Direction,

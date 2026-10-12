@@ -1,12 +1,14 @@
 import { computed, type ComputedRef, type Ref } from "vue";
 import type { CodeSegment, LevelLike } from "../types/debug-game";
+import { TILE_CONDITION_NAMES, tileCode } from "../data/tiles";
 import {
   formatLevelCode,
   type CodeLanguage,
 } from "../utils/codeLanguage";
 
-const pythonConditionPattern = /\b(not\s+)?([bpgoyvnk])(?=\s*:)/g;
-const jsConditionPattern = /\((!?)([bpgoyvnk])\)/g;
+const tileConditionNames = TILE_CONDITION_NAMES.join("|");
+const pythonConditionPattern = new RegExp(`\\b(not\\s+)?(${tileConditionNames})(?=\\s*:)`, "g");
+const jsConditionPattern = new RegExp(`\\((!?)(${tileConditionNames})\\)`, "g");
 
 const pythonTokenPattern =
   /\b(def|repeat|if|elif|else|while|not)\b|\b([A-Za-z_][A-Za-z0-9_]*)(?=\()|\b(\d+)\b|[:()]/g;
@@ -65,7 +67,7 @@ export function parseCodeLineSegments(
     }
     segments.push({
       kind: "tile",
-      color: match[2],
+      color: tileCode(match[2]!),
       negate: Boolean(match[1]),
     });
     lastIndex = index + match[0].length;

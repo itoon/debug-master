@@ -13,6 +13,8 @@ import gem from "~/assets/sprites/gem.png";
 import rock from "~/assets/sprites/rock.png";
 import background from "~/assets/bg.png";
 import { PLAYER_SPRITES } from "../utils/playerSprites";
+import { tileDefinition } from "./tiles";
+import { th } from "../i18n/messages";
 
 export type AssetStatus = "in-use" | "css" | "wanted" | "spare";
 
@@ -177,25 +179,24 @@ export const assetGroups: AssetGroup[] = [
   {
     id: "tiles",
     title: "ช่องบนกระดาน (8 ชนิด)",
-    description:
-      "ตัวอักษรในโค้ด (n, b, y, …) คือชนิดช่อง ใช้เป็นเงื่อนไขใน if / while จึงต้องแยกกันออกชัด ตอนนี้วาดด้วย CSS ทั้งหมด ส่งเป็นรูปพื้นผิวมาแทนได้",
+    description: th["tile.assetsDescription"],
     common: TILE_SPEC,
     items: [
-      tile("floor", "n", "gray", "พื้นธรรมดา (floor)", "ช่องที่มากที่สุด (~1,000 ช่อง) ต้องเรียบที่สุด ให้ช่องเงื่อนไขเด่น", true),
-      tile("ice", "b", "cyan", "น้ำแข็ง (ice)", "ฟ้าขาวเงา มีแสงสะท้อน ต้องต่างจาก floor ชัด"),
-      tile("sand", "y", "yellow", "ทราย (sand)", "เหลืองทอง เม็ดทรายจางๆ"),
-      tile("green", "g", "green", "เขียว (green)", "สีเขียว + ต้นหญ้าเล็ก 3 กอที่มุม (SVG ใน CSS) ถ้าทำรูปมาแทน ต้องยังดูออกว่าเป็น 'สีเขียว' และตรงกลางโล่งให้ Codi ยืน"),
-      tile("pink", "p", "pink", "ชมพู (pink)", "สีชมพู + ดอกไม้เล็ก 3 ดอกที่มุม (SVG ใน CSS) ถ้าทำรูปมาแทน ต้องยังดูออกว่าเป็น 'สีชมพู' และตรงกลางโล่งให้ Codi ยืน"),
-      tile("orange", "o", "orange", "ส้ม (orange)", "สีส้ม ไม่สว่างจ้าตรงกลาง (Codi ยืนทับได้) มีฟองเล็กผุดด้วย CSS"),
+      tile("n", "gray", "ช่องที่มากที่สุด (~1,000 ช่อง) ต้องเรียบที่สุด ให้ช่องเงื่อนไขเด่น", true),
+      tile("b", "cyan", "ฟ้าขาวเงา มีแสงสะท้อน ต้องต่างจาก floor ชัด"),
+      tile("y", "yellow", "เหลืองทอง เม็ดทรายจางๆ"),
+      tile("g", "green", th["tile.grassArt"]),
+      tile("p", "pink", th["tile.flowerArt"]),
+      tile("o", "orange", th["tile.lavaArt"]),
       {
-        ...tile("gem", "v", "purple", "คริสตัล (gem)", "ม่วง + รูปคริสตัล"),
+        ...tile("v", "purple", "ม่วง + รูปคริสตัล"),
         status: "in-use",
         file: "app/assets/sprites/gem.png",
         spec: ["ตัวคริสตัล: PNG โปร่งใส 172 × 192 px วางกลางช่อง (พื้นม่วงยังเป็น CSS)"],
         swap: "ทับไฟล์ gem.png ได้เลย",
       },
       {
-        ...tile("rock", "k", "black", "หิน (rock)", "กรมท่า + รูปก้อนหิน"),
+        ...tile("k", "black", "กรมท่า + รูปก้อนหิน"),
         status: "in-use",
         file: "app/assets/sprites/rock.png",
         spec: ["ตัวหิน: PNG โปร่งใส 190 × 192 px วางกลางช่อง (พื้นกรมท่ายังเป็น CSS)"],
@@ -334,22 +335,22 @@ export const assetGroups: AssetGroup[] = [
 ];
 
 function tile(
-  name: string,
   letter: string,
   colorName: string,
-  title: string,
   note: string,
   alt = false,
 ): AssetItem {
+  const definition = tileDefinition(letter);
+  const translation = th[definition.nameKey];
   return {
-    id: `tile-${name}`,
-    name: `${title} · ${letter}`,
-    file: `app/assets/tiles/${name}.webp`,
+    id: `tile-${definition.name}`,
+    name: th["tile.assetTitle"].replace("{translation}", translation).replace("{name}", definition.name).replace("{code}", letter),
+    file: `app/assets/tiles/${definition.name}.webp`,
     status: "css",
     preview: { kind: "tile", colorName, letter, alt },
-    usedIn: `กระดาน + ไอคอนในโค้ด (if ${letter}:)`,
+    usedIn: th["tile.assetUsage"].replace("{name}", definition.name),
     spec: [note],
-    swap: TILE_SWAP.replace("<ชื่อ>", name),
+    swap: TILE_SWAP.replace("<ชื่อ>", definition.name),
   };
 }
 

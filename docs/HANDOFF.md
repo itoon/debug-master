@@ -92,3 +92,12 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Pending move, failure-animation and retry callbacks are now tracked and cleared when stopping/leaving/restarting a level, alongside the existing level-advance/score-popup timers. Their normal 80ms/0ms/760ms delays are unchanged, and an old callback cannot resume a previous run after exiting. Parser, runner, maps and scoring logic are unchanged.
 - The existing browser refresh/Back and idle-home reset policy remains separate; this change saves on the explicit in-game exit action, not as continuous autosave or refresh recovery.
 - Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live browser checks, per the build-only instruction.
+
+## 2026-10-12 — Canonical tile names
+
+- `app/data/tiles.ts` is the shared naming boundary: p → flower (ดอกไม้), k → rock (หิน), g → grass (หญ้า), o → lava (ลาวา), b → ice (น้ำแข็ง), v → gem (อัญมณี). `TILE_TYPES` exports these six primary names. Existing n/floor and y/sand are retained because Dev's puzzles use eight tile kinds.
+- Board accessibility labels/tooltips, Python and JavaScript code chips, the gameplay debug tile label, review solution labels and the elements/asset inventory use this registry. Thai translations and new explanatory text use the lightweight dictionary. Existing CSS colour identifiers remain internal to preserve all art.
+- The parser boundary accepts named conditions such as `if lava:`, `if not grass:` and `while ice:` by translating to the existing compact codes. The code view recognizes both named and original conditions. Dev's stored puzzle source/maps and generator output are not rewritten; the runner still compares compact tile codes. Future config/editor integrations should use `tileCode` when encoding named map tiles. This repo has review/elements pages, not a level editor, so no editor was introduced.
+- The short tutorial shows the six English/Thai names and explains that tiles are condition markers: rock is passable and lava does not cause failure. No obstacle, damage, movement, scoring or new tile behavior was added.
+- Asset inventory IDs and suggested future texture paths now use grass/flower/lava. These are CSS tiles without corresponding texture files today; existing sprite files and CSS selectors remain unchanged. The reference frontend repo was not edited.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests written/run or live browser checks, per the standing build-only instruction.

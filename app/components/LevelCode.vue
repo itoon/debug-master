@@ -36,8 +36,9 @@
       class="code-tile"
       :class="`tile-${tileColorName(segment.color)}`"
       role="img"
-      :aria-label="`${segment.negate ? 'not ' : ''}${tileKindLabel(segment.color)} (${segment.color})`"
-      :title="segment.color"
+      :aria-label="`${segment.negate ? 'not ' : ''}${tileDescription(segment.color)}`"
+      :title="tileDescription(segment.color)"
+      :data-tile="tileKindLabel(segment.color)"
     ><i class="code-tile-swatch" aria-hidden="true" /><span
       class="code-tile-label"
       aria-hidden="true"
@@ -58,6 +59,14 @@ import {
 import { useCodePresentation } from "../composables/useCodePresentation";
 import type { LevelLike } from "../types/debug-game";
 import type { CodeLanguage } from "../utils/codeLanguage";
+import { tileDefinition } from "../data/tiles";
+import { useGameI18n } from "../composables/useGameI18n";
+
+const { t } = useGameI18n();
+function tileDescription(value: string): string {
+  const tile = tileDefinition(value);
+  return t("tile.description", { name: tile.name, translation: t(tile.nameKey) });
+}
 
 const props = withDefaults(
   defineProps<{

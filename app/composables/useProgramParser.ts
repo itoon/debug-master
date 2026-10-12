@@ -1,4 +1,5 @@
 import type { Condition, Direction, IfNode, Node, Program } from "../types/debug-game";
+import { tileCode } from "../data/tiles";
 
 export const MOVE_NAMES = new Set(["up", "down", "left", "right"]);
 
@@ -27,9 +28,9 @@ function getSourceLines(code: string): SourceLine[] {
 function parseConditionText(raw: string): Condition {
   const text = raw.trim();
   if (text.startsWith("not ")) {
-    return { color: text.slice(4).trim(), negate: true };
+    return { color: tileCode(text.slice(4).trim()), negate: true };
   }
-  return { color: text, negate: false };
+  return { color: tileCode(text), negate: false };
 }
 
 export function useProgramParser(getLevelId: () => number) {
