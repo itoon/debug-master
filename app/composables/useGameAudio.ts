@@ -52,6 +52,12 @@ export function useGameAudio() {
       if (tone.endFrequency) voice.frequency.exponentialRampToValueAtTime(tone.endFrequency, end);
       envelope.gain.setValueAtTime(.0001, start);
       envelope.gain.linearRampToValueAtTime(tone.volume, start + .008);
+      if (tone.release !== undefined) {
+        // The old immediate exponential fade made brief step/bass cues faint.
+        // Sustain move/retry tones, then fade; clear keeps its original shape.
+        const releaseStart = Math.max(start + .008, end - tone.release);
+        envelope.gain.setValueAtTime(tone.volume, releaseStart);
+      }
       envelope.gain.exponentialRampToValueAtTime(.0001, end);
       voice.connect(envelope);
       envelope.connect(master);

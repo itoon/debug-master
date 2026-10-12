@@ -101,3 +101,11 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - The short tutorial shows the six English/Thai names and explains that tiles are condition markers: rock is passable and lava does not cause failure. No obstacle, damage, movement, scoring or new tile behavior was added.
 - Asset inventory IDs and suggested future texture paths now use grass/flower/lava. These are CSS tiles without corresponding texture files today; existing sprite files and CSS selectors remain unchanged. The reference frontend repo was not edited.
 - Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests written/run or live browser checks, per the standing build-only instruction.
+
+## 2026-10-12 — Make movement and retry audio more audible
+
+- User reports hearing only the level-clear chime. Code inspection confirms move and failure playback calls are present; the step was a 75ms low sine sweep with immediate exponential decay, and the failure sequence fell as low as 82Hz. These short/low fading cues can be difficult to hear on small speakers. Audibility on the user's device has not been measured.
+- Step now uses a 140ms mid-range triangle tone with higher gain and a sustained section before a 55ms fade. Failure uses three descending mid-range tones, with stronger gain and sustain before each 70ms fade; the whole cue lasts 420ms, inside the existing 760ms retry delay.
+- Added optional per-tone release duration to the audio envelope. Level-clear tone definitions and their existing envelope remain unchanged; mute, browser audio activation, hidden-tab handling and cleanup remain intact.
+- Manual Restart now also plays the retry cue. Automatic failure still plays once at failure; starting the retry does not play a duplicate cue. Movement, scoring and game transition delays are unchanged.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live listening/browser checks, per the build-only instruction.

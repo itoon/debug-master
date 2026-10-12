@@ -877,6 +877,7 @@ function beginLevel(): void {
 
 function restartLevel(): void {
   if (!campaignStarted.value) return;
+  playSound("wrong");
   beginLevel();
 }
 
