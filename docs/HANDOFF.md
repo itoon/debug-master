@@ -132,3 +132,10 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Buffer voices share mute, stop/Home, generation cancellation and unmount cleanup with oscillator voices. If the local file cannot load, the previous synthesized wrong cue remains a fallback. Audio errors now include action/context in console warnings instead of being swallowed; they never block gameplay.
 - Updated the elements inventory to mark the WAV as in use and explain the current sound implementations through dictionary text.
 - Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live listening/gameplay checks, per the build-only instruction. Audible behavior on the user's browser still requires their confirmation.
+
+## 2026-10-12 — WASD keyboard movement
+
+- Added W/up, A/left, S/down and D/right alongside the original arrow keys. Physical `KeyboardEvent.code` is preferred so WASD positions also work when the OS keyboard layout is Thai; character-key fallback handles lowercase/uppercase letters. All keys call the existing `controlMove`, preserving correct/wrong input, wrapping, sounds, scoring and repeat-key behavior.
+- Keyboard movement is ignored while setup/tutorial/summary/ranking is open, outside the playing state, during IME composition, for input/textarea/select/contenteditable/textbox targets, and for Ctrl/Meta/Alt shortcuts or already-handled events. On-screen direction buttons remain unchanged and now declare their keyboard shortcuts for accessibility.
+- Home, tutorial, gameplay instructions, legacy setup copy and fallback hints show WASD support through the lightweight dictionary. Original puzzle descriptions were not rewritten.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live keyboard checks, per the standing build-only instruction.

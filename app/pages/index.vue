@@ -116,10 +116,10 @@
                 </div>
               </LevelBoard>
               <div ref="controlsEl" class="touch-controls" :aria-label="t('game.controls')">
-                <button type="button" class="arrow up" :disabled="!canControl" :aria-label="t('game.up')" @click="controlMove('up')">▲</button>
-                <button type="button" class="arrow left" :disabled="!canControl" :aria-label="t('game.left')" @click="controlMove('left')">◀</button>
-                <button type="button" class="arrow down" :disabled="!canControl" :aria-label="t('game.down')" @click="controlMove('down')">▼</button>
-                <button type="button" class="arrow right" :disabled="!canControl" :aria-label="t('game.right')" @click="controlMove('right')">▶</button>
+                <button type="button" class="arrow up" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲</button>
+                <button type="button" class="arrow left" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀</button>
+                <button type="button" class="arrow down" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼</button>
+                <button type="button" class="arrow right" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶</button>
               </div>
             </div>
           </div>
@@ -209,7 +209,7 @@
             />
             <div>
               <h2 id="setup-title">ผจญภัยกับ Codi</h2>
-              <p>อ่าน {{ languageName }} แล้วกดลูกศรเดินตาม</p>
+              <p>{{ t('game.setupInstruction', { language: languageName }) }}</p>
             </div>
           </div>
 
@@ -628,7 +628,7 @@ const revealedHints = computed(() =>
   [
     `Concept: ${currentLevel.value.concept}`,
     currentLevel.value.learningObjective ||
-      "อ่าน code จากบนลงล่าง แล้วกดลูกศรตามคำสั่งที่โปรแกรมต้องการ",
+      t("game.readAndMove"),
     expectedMove.value
       ? `คำสั่งถัดไปคือ ${expectedMove.value.direction}()`
       : "ให้ดูว่าเงื่อนไขหรือ loop จะพาไปคำสั่ง move ใดต่อ",
@@ -876,7 +876,7 @@ function beginLevel(): void {
   boardShattering.value = false;
   scorePopup.value = null;
   status.value = "playing";
-  feedbackMessage.value = "เริ่มด่านแล้ว กดลูกศรตาม code";
+  feedbackMessage.value = t("game.startInstruction");
   advanceToMove();
 }
 
@@ -1121,19 +1121,29 @@ function isActiveRawLine(line: string): boolean {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  if (activeChallenge.value && (showTutorial.value || showSummary.value || showRanking.value)) return;
+  if (showSetup.value || showTutorial.value || showSummary.value || showRanking.value || status.value !== "playing") return;
+  if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+  const target = event.target;
+  if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return;
   const keys: Partial<Record<string, Direction>> = {
     ArrowUp: "up",
     ArrowDown: "down",
     ArrowLeft: "left",
     ArrowRight: "right",
+    KeyW: "up",
+    KeyA: "left",
+    KeyS: "down",
+    KeyD: "right",
+    w: "up",
+    a: "left",
+    s: "down",
+    d: "right",
   };
-  const direction = keys[event.key];
+  // Physical WASD positions also work with a Thai keyboard layout selected.
+  const direction = keys[event.code] ?? keys[event.key] ?? keys[event.key.toLowerCase()];
   if (!direction) return;
-  if (status.value === "playing") {
-    event.preventDefault();
-    controlMove(direction);
-  }
+  event.preventDefault();
+  controlMove(direction);
 }
 
 // /?set=set-02&level=12 (the review page's "เล่นด่านนี้" link) preselects
