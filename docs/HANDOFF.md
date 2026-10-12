@@ -73,3 +73,12 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Code panel aligns with the board/control area and caps its height at 780px. Gameplay opts into readable 16–20.8px code and 1.65 line spacing; long programs scroll inside the editor vertically/horizontally instead of shrinking into tiny text. Review/default LevelCode uses keep the previous sizing and syntax highlighting.
 - Desktop keeps two columns within a centered 1640px game frame. At 920px and below, board/controls and code stack with scrollable page overflow; controls and debug features stay available. Notifications, score popups and hints are preserved. New labels use the Thai dictionary; no html/body styles added.
 - Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport checks performed, per the standing build-only instruction. 1920×1080/laptop fit is designed for but not visually verified.
+
+## 2026-10-12 — Gameplay sound effects
+
+- Added three short, synthesized Web Audio effects: soft rising step tone on a correct move; ascending four-note chime on level completion; descending retry cue when a level fails. Failure cue plays once at failure, not again when the automatic retry begins. Manual Restart and mode timeout do not add extra cues.
+- Sound definitions/frequencies/durations/volumes live in `app/data/sound-effects.ts`; playback and cleanup are isolated in `useGameAudio.ts`. No audio download, external file, backend or dependency. These synthesized effects can later be replaced with the art team's audio assets.
+- Audio initializes/resumes from Start/tutorial start or another player gesture. Browser audio errors/unsupported APIs are ignored without affecting the run. Gameplay never waits for audio; movement, scoring, retries and level advance timing remain unchanged.
+- HUD has a keyboard-accessible, localized sound toggle with visible on/off text and pressed state. Sound starts enabled; this setting lives only in the mounted game page and is not persisted in storage. Muting or returning to Home stops current/queued sounds; unmount closes the audio context and releases voices.
+- Clear/failure cues replace overlapping step tones, and effect playback is skipped while the document is hidden. Normal effect durations finish before the existing auto-advance/retry delay.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or listening/browser checks, per the build-only instruction.

@@ -46,6 +46,11 @@
               <strong class="player-name" :title="playerName">{{ playerName || "Player" }}</strong>
               <span>{{ languageLabel }}</span>
               <span>{{ activeChallenge ? `${activeChallenge.id} · ${t(activeChallenge.nameKey)}` : modeLabel }}</span>
+              <button type="button" class="sound-toggle" :aria-pressed="soundEnabled" :aria-label="t('game.soundEffects')"
+                :title="t(soundEnabled ? 'game.mute' : 'game.unmute')" @click="toggleSound">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path v-if="soundEnabled" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path v-else d="m17 9 5 6m0-6-5 6" /></svg>
+                {{ t(soundEnabled ? 'game.soundOn' : 'game.soundOff') }}
+              </button>
             </div>
             <div class="header-menu">
               <span class="status" :class="`status-${status}`">{{
@@ -406,8 +411,10 @@ import { PLAYER_SPRITES, START_FACING } from "../utils/playerSprites";
 import { homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
+import { useGameAudio } from "../composables/useGameAudio";
 
 const { t } = useGameI18n();
+const { enabled: soundEnabled, unlockAudio, playSound, stopSounds, toggleSound } = useGameAudio();
 const repositories = createLocalRepositories();
 const activeChallenge = ref<ChallengeMode | null>(null);
 const currentPlayerId = ref("");
@@ -612,6 +619,7 @@ const revealedHints = computed(() =>
   ].slice(0, revealedHintCount.value),
 );
 function startGame(): void {
+  unlockAudio(); // Called from a player gesture; no autoplay on page load.
   // Copy setup modal values into live game state once, right before a run.
   playerName.value = playerNameDraft.value || "Player";
   playerAge.value = playerAgeDraft.value ?? undefined;
@@ -653,6 +661,7 @@ function backToStart(): void {
 }
 
 function openSetup(): void {
+  stopSounds();
   stopTimer();
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
@@ -858,6 +867,7 @@ function controlMove(direction: Direction): void {
   // Wrapping teleports to the far edge, so skip the slide across the board.
   playerWarped.value = result.wrapped;
   playerFacing.value = direction;
+  playSound("move");
   playerHop.value += 1;
   playerInputs.value += 1;
   totalInputs.value += 1;
@@ -872,6 +882,7 @@ function controlMove(direction: Direction): void {
 }
 
 function completeLevel(): void {
+  playSound("clear");
   const levelScore = calculateLevelScore();
   totalScore.value += levelScore.points;
   scorePopup.value = {
@@ -906,6 +917,7 @@ function completeLevel(): void {
 }
 
 function failLevel(reason: string): void {
+  playSound("wrong");
   status.value = "failed";
   expectedMove.value = null;
   comboStreak.value = 0;
@@ -1237,6 +1249,9 @@ summary:focus-visible {
 .game-header { flex: none; display: grid; grid-template-columns: minmax(220px, 1fr) auto minmax(290px, auto); align-items: center; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid rgba(150, 190, 255, .3); }
 .session-details { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; color: #c4d9ff; font-size: .75rem; }
 .player-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; }
+.sound-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 10px; border: 1px solid #759bd9; border-radius: 10px; background: #143574; color: #e4edff; font-size: .75rem; font-weight: 700; }
+.sound-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sound-toggle[aria-pressed="false"] { color: #b6c7e7; background: #102955; }
 .game-header .header-menu .small { min-width: 72px; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: .82rem; }
 
 .header-tools {
