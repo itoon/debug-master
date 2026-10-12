@@ -109,3 +109,10 @@ Preserve Dev's existing levels, parser, runner, scoring formula and old modes. N
 - Added optional per-tone release duration to the audio envelope. Level-clear tone definitions and their existing envelope remain unchanged; mute, browser audio activation, hidden-tab handling and cleanup remain intact.
 - Manual Restart now also plays the retry cue. Automatic failure still plays once at failure; starting the retry does not play a duplicate cue. Movement, scoring and game transition delays are unchanged.
 - Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live listening/browser checks, per the build-only instruction.
+
+## 2026-10-12 — Compact player setup popup
+
+- Reduced the popup's maximum width from 900px to 760px with explicit border-box sizing. At full width the inner age track still has room for all fourteen 5–18 ticks at their existing minimum 48px hit widths; narrower screens retain horizontal age scrolling and vertical dialog scrolling.
+- Mode badge now fits its text instead of spanning the form. Nickname/random-name row uses a narrower random button, still at least 52px tall. Start button and requirement/privacy text are centered; small screens retain the full-width Start button and stacked nickname row.
+- Reduced blank space above the age bar from 86px to 64px and scaled its Codi marker/age bubble to suit. Form spacing remains consistent. Only scoped CSS changed; form validation, blank initial age, random names, drag/keyboard selection, focus handling, storage and session flow are unchanged.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport checks, per the standing build-only instruction.

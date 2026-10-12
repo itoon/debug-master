@@ -138,20 +138,20 @@ onBeforeUnmount(() => dialog.value?.close());
 </script>
 
 <style scoped>
-.player-setup-dialog { width: min(900px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; margin: auto; overflow-y: auto; border: 1px solid #668eff; border-radius: 24px; background: #142f80; color: #fff; font-family: var(--cv-font); box-shadow: var(--cv-shadow-window); }
+.player-setup-dialog { box-sizing: border-box; width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; margin: auto; overflow-y: auto; border: 1px solid #668eff; border-radius: 24px; background: #142f80; color: #fff; font-family: var(--cv-font); box-shadow: var(--cv-shadow-window); }
 .player-setup-dialog::backdrop { background: rgba(3, 12, 40, .78); backdrop-filter: blur(5px); }
-.setup-form { display: grid; gap: 10px; padding: clamp(18px, 2vw, 24px); }
+.setup-form { display: grid; gap: 12px; padding: clamp(18px, 2vw, 24px); }
 .setup-header { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .setup-brand { margin: 0 0 5px; color: #b7d8ff; font-size: .8rem; font-weight: 800; }
 h2 { margin: 0; font-size: clamp(1.3rem, 3vw, 1.5rem); font-weight: 800; line-height: 1.3; }
 button, input { font: inherit; }
 button { cursor: pointer; }
 .close-button { flex: none; width: 48px; height: 48px; border: 1px solid #7d9cfa; border-radius: 12px; background: #0c225e; color: white; font-size: 1.7rem; }
-.selected-mode { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; border: 1px solid #668eff; border-radius: 14px; background: #0c225e; }
+.selected-mode { display: flex; align-items: center; justify-self: start; gap: 10px; min-height: 44px; padding: 6px 14px; border: 1px solid #668eff; border-radius: 12px; background: #0c225e; }
 .nickname-field { display: grid; gap: 5px; }
 .nickname-entry { display: flex; gap: 10px; }
 .nickname-entry input { flex: 1; min-width: 0; }
-.random-name-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; min-width: 132px; min-height: 52px; padding: 8px 14px; border: 2px solid #ffe889; border-radius: 14px; background: #ffdc53; color: #142854; font-weight: 800; }
+.random-name-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; min-width: 116px; min-height: 52px; padding: 8px 12px; border: 2px solid #ffe889; border-radius: 14px; background: #ffdc53; color: #142854; font-weight: 800; }
 .random-name-button svg { width: 22px; height: 22px; flex: none; }
 .random-name-button rect { fill: none; stroke: currentColor; stroke-width: 2; }
 .random-name-button circle { fill: currentColor; }
@@ -162,7 +162,7 @@ label, legend { font-weight: 800; }
 .age-field { margin: 0; padding: 0; border: 0; min-width: 0; }
 .age-hint, .age-current { margin: 5px 0 0; color: #d2e1ff; font-size: .85rem; }
 .age-current { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.age-scroll { overflow-x: auto; padding: 86px 12px 8px; }
+.age-scroll { overflow-x: auto; padding: 64px 12px 4px; }
 .age-track { position: relative; display: grid; grid-template-columns: repeat(var(--age-count), minmax(48px, 1fr)); min-width: calc(var(--age-count) * 48px); isolation: isolate; touch-action: none; user-select: none; }
 .age-rail { position: absolute; top: 22px; left: calc(100% / var(--age-count) / 2); right: calc(100% / var(--age-count) / 2); height: 10px; border-radius: 8px; background: #0b205c; box-shadow: inset 0 0 0 2px #5079e6; z-index: -1; }
 .age-progress { height: 100%; background: #ffd440; border-radius: inherit; }
@@ -171,17 +171,17 @@ label, legend { font-weight: 800; }
 .age-number { min-width: 32px; padding: 3px 6px; border-radius: 18px; font-size: 1rem; line-height: 1.4; }
 .age-step.selected .age-dot { background: #ffd440; border-color: #ffd440; box-shadow: 0 0 0 3px #163078; }
 .age-step.selected .age-number { color: #112760; background: #ffd440; }
-.age-marker { position: absolute; left: var(--age-position); bottom: calc(100% - 13px); transform: translateX(-50%); display: grid; justify-items: center; gap: 4px; pointer-events: none; }
-.age-marker span { white-space: nowrap; padding: 3px 10px; border: 2px solid #102252; border-radius: 12px; background: #fff; color: #1a1e1f; font-size: .85rem; font-weight: 800; }
-.age-marker img { width: 48px; height: 60px; object-fit: contain; }
+.age-marker { position: absolute; left: var(--age-position); bottom: calc(100% - 13px); transform: translateX(-50%); display: grid; justify-items: center; gap: 2px; pointer-events: none; }
+.age-marker span { white-space: nowrap; padding: 2px 8px; border: 2px solid #102252; border-radius: 10px; background: #fff; color: #1a1e1f; font-size: .8rem; font-weight: 800; }
+.age-marker img { width: 40px; height: 48px; object-fit: contain; }
 .age-scroll-hint { display: none; margin: 2px 0 0; font-size: .75rem; color: #c2d8ff; }
 .form-status, .privacy-note, .save-error { margin: 0; font-size: .8rem; }
-.form-status { color: #ffdc5a; }
-.privacy-note { color: #c2d8ff; }
+.form-status { color: #ffdc5a; text-align: center; }
+.privacy-note { color: #c2d8ff; text-align: center; }
 .save-error { color: #ffd1cb; }
-.confirm-button { justify-self: start; min-height: 52px; min-width: 190px; padding: 12px 24px; border: 0; border-radius: 14px; background: #ffd440; color: #112760; font-size: 1.1rem; font-weight: 800; }
+.confirm-button { justify-self: center; width: min(260px, 100%); min-height: 52px; padding: 12px 24px; border: 0; border-radius: 14px; background: #ffd440; color: #112760; font-size: 1.1rem; font-weight: 800; }
 .confirm-button:disabled { background: #667bad; color: #d5def3; cursor: not-allowed; }
 button:focus-visible, input:focus-visible { outline: 3px solid #ffdc5a; outline-offset: 3px; }
-@media (max-width: 760px) { .age-scroll-hint { display: block; } .confirm-button { justify-self: stretch; } }
+@media (max-width: 760px) { .age-scroll-hint { display: block; } .confirm-button { justify-self: stretch; width: 100%; } }
 @media (max-width: 420px) { .nickname-entry { flex-direction: column; } }
 </style>
