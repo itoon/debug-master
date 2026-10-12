@@ -332,11 +332,16 @@ export const assetGroups: AssetGroup[] = [
   {
     id: "sound",
     title: "เสียง — ไม่บังคับ",
-    description: "ตอนนี้เกมยังไม่มีเสียง",
+    description: th["asset.soundsDescription"],
     common: ["MP3 หรือ OGG สั้นไม่เกิน 1 วินาที (ยกเว้นเพลงจบ) ไฟล์ละไม่เกิน 50 KB ระดับเสียงเท่ากันทั้งชุด"],
     items: [
       sound("move", "เดินถูก", "ทุกครั้งที่กดถูก (ได้ยินบ่อยมาก ต้องเบาและสั้น)"),
-      sound("wrong", "กดผิด", "ตอนกระดานแตก"),
+      {
+        ...sound("wrong", th["asset.failureSound"], th["asset.failureSoundUsage"]),
+        file: "app/assets/sounds/codi-failed.wav",
+        status: "in-use",
+        spec: [th["asset.failureSoundSpec"]],
+      },
       sound("clear", "ผ่านด่าน", "ตอนคะแนนเด้ง"),
       sound("complete", "จบเกม", "ครบทุกด่าน / หมดเวลา (ยาวได้ 2–3 วินาที)"),
     ],

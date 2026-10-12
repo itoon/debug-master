@@ -1,5 +1,6 @@
 import { onBeforeUnmount, ref } from "vue";
 import { soundEffects, type SoundEffect } from "../data/sound-effects";
+import failureSound from "~/assets/sounds/codi-failed.wav";
 
 /** Browser audio belongs to presentation; gameplay never waits for playback. */
 export function useGameAudio() {
@@ -8,7 +9,12 @@ export function useGameAudio() {
   let master: GainNode | undefined;
   let generation = 0;
   let disposed = false;
-  const activeVoices = new Set<OscillatorNode>();
+  const activeVoices = new Set<OscillatorNode | AudioBufferSourceNode>();
+  let failureBuffer: Promise<AudioBuffer | undefined> | undefined;
+
+  function reportAudioError(action: string, error: unknown): void {
+    console.warn(`[Debug Master audio] ${action}`, error);
+  }
 
   function ensureContext(): AudioContext | undefined {
     if (disposed || !enabled.value || typeof window === "undefined") return;
@@ -21,15 +27,44 @@ export function useGameAudio() {
       master.gain.value = .28;
       master.connect(context.destination);
       return context;
-    } catch {
+    } catch (error) {
       // Unsupported/blocked audio must not interrupt gameplay.
+      reportAudioError("create context", error);
       return;
     }
   }
 
   function unlockAudio(): void {
     const audio = ensureContext();
-    if (audio?.state === "suspended") void audio.resume().catch(() => {});
+    if (audio?.state === "suspended") void audio.resume().catch((error) => reportAudioError("unlock", error));
+    if (audio) void loadFailureSound(audio);
+  }
+
+  function loadFailureSound(audio: AudioContext): Promise<AudioBuffer | undefined> {
+    if (!failureBuffer) {
+      failureBuffer = fetch(failureSound)
+        .then((response) => {
+          if (!response.ok) throw new Error(`Failure sound HTTP ${response.status}`);
+          return response.arrayBuffer();
+        })
+        .then((data) => audio.decodeAudioData(data))
+        .catch((error) => {
+          reportAudioError("load failure sound", error);
+          failureBuffer = undefined; // A later player gesture can retry loading.
+          return undefined;
+        });
+    }
+    return failureBuffer;
+  }
+
+  function playFailureBuffer(buffer: AudioBuffer, audio: AudioContext): void {
+    if (!master || audio.state !== "running") return;
+    const voice = audio.createBufferSource();
+    voice.buffer = buffer;
+    voice.connect(master);
+    activeVoices.add(voice);
+    voice.onended = () => { voice.disconnect(); activeVoices.delete(voice); };
+    voice.start();
   }
 
   function stopSounds(): void {
@@ -74,12 +109,23 @@ export function useGameAudio() {
     const audio = ensureContext();
     if (!audio) return;
     const currentGeneration = generation;
+    const canPlay = () => !disposed && enabled.value && !document.hidden && generation === currentGeneration;
     const play = () => {
-      if (disposed || !enabled.value || document.hidden || generation !== currentGeneration) return;
-      try { schedule(effect, audio); } catch { /* Audio errors never change game state. */ }
+      if (!canPlay()) return;
+      if (effect === "wrong") {
+        void loadFailureSound(audio).then((buffer) => {
+          if (!canPlay()) return;
+          try {
+            if (buffer) playFailureBuffer(buffer, audio);
+            else schedule(effect, audio); // Keep a fallback if the local asset cannot load.
+          } catch (error) { reportAudioError("play failure sound", error); }
+        });
+        return;
+      }
+      try { schedule(effect, audio); } catch (error) { reportAudioError(`play ${effect} (${audio.state})`, error); }
     };
     if (audio.state === "running") play();
-    else if (audio.state === "suspended") void audio.resume().then(play).catch(() => {});
+    else if (audio.state === "suspended") void audio.resume().then(play).catch((error) => reportAudioError(`resume ${effect}`, error));
   }
 
   function toggleSound(): void {
