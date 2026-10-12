@@ -1,6 +1,13 @@
 <template>
-  <div class="app-shell">
-    <main v-show="!showSetup" class="game">
+  <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || showSummary || showRanking) }">
+    <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
+      :repository="repositories.scores" :error="homeStorageError" @start="prepareChallenge" />
+    <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
+      :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
+      :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
+      :result="summaryScore" :saved="scoreSaved" :storage-error="scoreStorageError"
+      @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
+    <main v-show="!showSetup && !showTutorial && !(activeChallenge && (showSummary || showRanking))" class="game">
       <section class="board-panel">
         <header class="game-header">
           <div class="title-block">
@@ -16,7 +23,7 @@
             <div class="hud">
               <span>{{ playerName || "Player" }}</span>
               <span>{{ languageLabel }}</span>
-              <span>{{ modeLabel }}</span>
+              <span>{{ activeChallenge ? `${activeChallenge.id} · ${t(activeChallenge.nameKey)}` : modeLabel }}</span>
               <span v-if="isTimedMode">{{ formattedTime }}</span>
               <span>Score {{ totalScore }}</span>
               <span>Combo x{{ Math.max(1, comboStreak) }}</span>
@@ -190,7 +197,8 @@
       </section>
     </main>
 
-    <div v-if="showSetup" class="landing">
+    <!-- Dev's setup and four legacy modes stay available behind the config flag. -->
+    <div v-if="showSetup && !homeConfig.enabled" class="landing">
       <header class="landing-top">
         <p class="landing-brand">CodeVenture · Debug Master</p>
         <p class="landing-tagline">อ่านโค้ด · คิด · เดินไปกับ Codi</p>
@@ -367,7 +375,7 @@
     </div>
 
     <section
-      v-if="showRanking"
+      v-if="showRanking && !activeChallenge"
       class="overlay"
       role="dialog"
       aria-modal="true"
@@ -423,8 +431,24 @@ import {
 } from "../utils/levelGen";
 import { PLAYER_AGES, type RankingBoard } from "../utils/ranking";
 import { PLAYER_SPRITES, START_FACING } from "../utils/playerSprites";
+import { homeConfig, type ChallengeMode } from "../data/home-config";
+import { useGameI18n } from "../composables/useGameI18n";
+import { createLocalRepositories } from "../storage/LocalStorageAdapter";
 
-const STORAGE_KEY = "debug-runner-scores-v1";
+const { t } = useGameI18n();
+const repositories = createLocalRepositories();
+const activeChallenge = ref<ChallengeMode | null>(null);
+const currentPlayerId = ref("");
+const homeResetKey = ref(0);
+const showTutorial = ref(false);
+const showSummary = ref(false);
+const summaryScore = ref<Score | undefined>();
+const scoreSaved = ref(false);
+const homeStorageError = ref("");
+const scoreStorageError = ref(false);
+let lastInteractionAt = Date.now();
+let idleTimer: ReturnType<typeof setInterval> | undefined;
+let unsubscribeScores: (() => void) | undefined;
 
 const showSetup = ref(true);
 const showRanking = ref(false);
@@ -456,7 +480,9 @@ const deadRun = ref<{ seed: number; levels: GeneratedLevel[] } | null>(null);
 const DEAD_LIVES = 5;
 const livesLeft = ref(DEAD_LIVES);
 const activeLevels = computed(
-  () => deadRun.value?.levels ?? activeSet.value.levels,
+  () => deadRun.value?.levels ?? (activeChallenge.value
+    ? activeSet.value.levels.filter((level) => level.id >= activeChallenge.value!.levelRange[0] && level.id <= activeChallenge.value!.levelRange[1])
+    : activeSet.value.levels),
 );
 const currentLevel = computed(
   () => activeLevels.value[selectedLevelIndex.value] ?? activeLevels.value[0],
@@ -518,6 +544,7 @@ const languageName = computed(
   () => codeLanguageOptions.find((option) => option.id === selectedLanguageDraft.value)?.title,
 );
 const timeLimitSec = computed(() => {
+  if (activeChallenge.value) return activeChallenge.value.timeLimit;
   if (selectedMode.value === "ranking") return RANKING_SECONDS;
   if (selectedMode.value === "timer") return Math.max(1, customMinutes.value) * 60;
   return undefined;
@@ -525,6 +552,7 @@ const timeLimitSec = computed(() => {
 // Which leaderboard applies to the current choices (start screen and the
 // end-of-game dialog both show this one).
 const rankingBoard = computed<RankingBoard>(() => ({
+  challengeId: activeChallenge.value?.challengeId,
   setId: selectedMode.value === "dead" ? "dead" : selectedSetId.value,
   mode: selectedMode.value,
   timeLimitSec: timeLimitSec.value,
@@ -661,6 +689,93 @@ function openSetup(): void {
   showSetup.value = true;
   campaignStarted.value = false;
   status.value = "ready";
+  if (homeConfig.enabled) resetHomeSession();
+}
+
+/** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
+function prepareChallenge(profile: { nickname: string; age: number }, mode: ChallengeMode): void {
+  const nickname = profile.nickname.trim();
+  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age)) return;
+  const configuredMode = homeConfig.modes.find((item) => item.id === mode.id);
+  if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900) return;
+  const playerId = crypto.randomUUID();
+  try {
+    repositories.players.save({ id: playerId, nickname, age: profile.age });
+  } catch {
+    homeStorageError.value = t("storage.error");
+    return;
+  }
+  homeStorageError.value = "";
+  // Keep one same-URL history entry so browser Back exits a session to Home.
+  // Preserve Vue Router's state; session screens themselves are not routes.
+  if (!window.history.state?.debugMasterHomeV2Session) {
+    window.history.pushState({ ...window.history.state, debugMasterHomeV2Session: true }, "", window.location.href);
+  }
+  currentPlayerId.value = playerId;
+  playerNameDraft.value = nickname;
+  playerAgeDraft.value = profile.age;
+  activeChallenge.value = configuredMode;
+  selectedSetId.value = homeConfig.levelSetId;
+  selectedMode.value = "timer";
+  customMinutes.value = configuredMode.timeLimit / 60;
+  selectedLanguageDraft.value = "python";
+  debugModeDraft.value = false;
+  deadRun.value = null;
+  showSetup.value = false;
+  showTutorial.value = true;
+  lastInteractionAt = Date.now();
+}
+
+function playChallenge(): void {
+  if (!activeChallenge.value || !showTutorial.value) return;
+  showTutorial.value = false;
+  startGame(); // Timer starts after the tutorial, at the first gameplay level.
+}
+
+function showChallengeRanking(): void {
+  showSummary.value = false;
+  showRanking.value = true;
+  lastInteractionAt = Date.now();
+}
+
+function resetHomeSession(): void {
+  showSetup.value = true;
+  showTutorial.value = false;
+  showSummary.value = false;
+  showRanking.value = false;
+  playerNameDraft.value = "";
+  playerAgeDraft.value = null;
+  playerName.value = "";
+  playerAge.value = undefined;
+  currentPlayerId.value = "";
+  activeChallenge.value = null;
+  summaryScore.value = undefined;
+  scoreSaved.value = false;
+  scoreStorageError.value = false;
+  homeStorageError.value = "";
+  homeResetKey.value += 1; // Recreate the form; never hydrate a previous profile.
+  lastInteractionAt = Date.now();
+  try { repositories.players.clearCurrent(); } catch { /* Form still clears if storage is blocked. */ }
+}
+
+function recordInteraction(): void { lastInteractionAt = Date.now(); }
+function resetAfterBrowserNavigation(): void {
+  if (homeConfig.enabled) backToStart();
+}
+function refreshStoredScores(): void {
+  try { scores.value = repositories.scores.list(); }
+  catch { scores.value = []; }
+}
+
+function retryScoreSave(): void {
+  if (!summaryScore.value) return;
+  try {
+    repositories.scores.save(summaryScore.value);
+    scoreSaved.value = true;
+    scoreStorageError.value = false;
+  } catch {
+    scoreStorageError.value = true;
+  }
 }
 
 function beginTimer(): void {
@@ -862,6 +977,8 @@ function timeUp(): void {
 function saveScore(): void {
   const elapsedMs = Math.max(0, Date.now() - startedAt.value);
   const score: Score = {
+    challengeId: activeChallenge.value?.challengeId,
+    playerId: currentPlayerId.value || undefined,
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     name: playerName.value || "Player",
     setId: deadRun.value ? "dead" : activeSet.value.id,
@@ -882,8 +999,21 @@ function saveScore(): void {
     timeLimitSec: timeLimitSec.value,
   };
   lastScoreId.value = score.id;
-  scores.value = [...scores.value, score];
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(scores.value));
+  if (activeChallenge.value) {
+    stopTimer();
+    clearLevelAdvanceTimer();
+    clearScorePopupTimer();
+    campaignStarted.value = false;
+    expectedMove.value = null;
+    summaryScore.value = score;
+    scoreSaved.value = false;
+    retryScoreSave();
+    showSummary.value = true;
+    lastInteractionAt = Date.now();
+  } else {
+    repositories.scores.save(score);
+  }
+  refreshStoredScores();
 }
 
 function calculateLevelScore(): {
@@ -934,6 +1064,7 @@ function isActiveRawLine(line: string): boolean {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
+  if (activeChallenge.value && (showTutorial.value || showSummary.value || showRanking.value)) return;
   const keys: Partial<Record<string, Direction>> = {
     ArrowUp: "up",
     ArrowDown: "down",
@@ -967,14 +1098,26 @@ async function applyLevelFromQuery(): Promise<void> {
 function formatClock(seconds: number): string {
   const mins = Math.max(0, Math.floor(seconds / 60));
   const secs = Math.max(0, seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
+  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 }
 
 onMounted(async () => {
   // Load every facing up front so the first turn doesn't flash.
   for (const src of Object.values(PLAYER_SPRITES)) new Image().src = src;
-  scores.value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  await applyLevelFromQuery();
+  refreshStoredScores();
+  unsubscribeScores = repositories.scores.subscribe(refreshStoredScores);
+  if (homeConfig.enabled) {
+    resetHomeSession();
+    for (const event of ["pointerdown", "keydown", "input", "focusin"]) window.addEventListener(event, recordInteraction);
+    window.addEventListener("popstate", resetAfterBrowserNavigation);
+    window.addEventListener("pageshow", resetAfterBrowserNavigation);
+    idleTimer = setInterval(() => {
+      // No idle policy during gameplay (including level retries and transitions).
+      if ((showSetup.value || showTutorial.value || showSummary.value || showRanking.value) && Date.now() - lastInteractionAt >= homeConfig.idleTimeoutMs) backToStart();
+    }, 1000);
+  } else {
+    await applyLevelFromQuery();
+  }
   window.addEventListener("keydown", handleKeydown);
   if (boardWrapEl.value) {
     boardResizeObserver = new ResizeObserver(([entry]) => {
@@ -992,6 +1135,11 @@ watch(selectedSetId, () => {
 });
 
 onBeforeUnmount(() => {
+  unsubscribeScores?.();
+  clearInterval(idleTimer);
+  for (const event of ["pointerdown", "keydown", "input", "focusin"]) window.removeEventListener(event, recordInteraction);
+  window.removeEventListener("popstate", resetAfterBrowserNavigation);
+  window.removeEventListener("pageshow", resetAfterBrowserNavigation);
   window.removeEventListener("keydown", handleKeydown);
   boardResizeObserver?.disconnect();
   stopTimer();
@@ -1001,25 +1149,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-:global(*) {
-  box-sizing: border-box;
-}
-
-:global(html),
-:global(body),
-:global(#__nuxt) {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-}
-
-:global(body) {
-  background: var(--cv-navy-900);
-  color: var(--cv-on-dark);
-  font-family: var(--cv-font);
-}
-
 button,
 input {
   font: inherit;
@@ -1063,6 +1192,10 @@ summary:focus-visible {
   overflow: hidden;
   background: var(--cv-navy-900) url("~/assets/bg.png") center bottom / cover
     no-repeat;
+}
+
+.home-flow-shell {
+  overflow-y: auto;
 }
 
 .game {

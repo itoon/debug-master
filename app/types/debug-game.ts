@@ -59,6 +59,9 @@ export type Frame = {
 };
 
 export type Score = {
+  /** Home v2 boards use their own identity; legacy results never enter A/B/C. */
+  challengeId?: "A" | "B" | "C";
+  playerId?: string;
   id: string;
   name: string;
   setId: string;
