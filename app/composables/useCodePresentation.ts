@@ -1,15 +1,27 @@
-import { computed, type ComputedRef } from "vue";
+import { computed, type ComputedRef, type Ref } from "vue";
 import type { CodeSegment, LevelLike } from "../types/debug-game";
+import {
+  formatLevelCode,
+  type CodeLanguage,
+} from "../utils/codeLanguage";
 
-const conditionColorPattern = /\((!?)([bpgoyvnk])\)/g;
-const codeTokenPattern =
+const pythonConditionPattern = /\b(not\s+)?([bpgoyvnk])(?=\s*:)/g;
+const jsConditionPattern = /\((!?)([bpgoyvnk])\)/g;
+
+const pythonTokenPattern =
+  /\b(def|repeat|if|elif|else|while|not)\b|\b([A-Za-z_][A-Za-z0-9_]*)(?=\()|\b(\d+)\b|[:()]/g;
+const jsTokenPattern =
   /\b(function|if|else|while|repeat)\b|\b([A-Za-z_][A-Za-z0-9_]*)(?=\()|\b(\d+)\b|[{}();]/g;
 
-function tokenizeCodeText(text: string): CodeSegment[] {
+function tokenizeCodeText(
+  text: string,
+  language: CodeLanguage,
+): CodeSegment[] {
+  const pattern = language === "js" ? jsTokenPattern : pythonTokenPattern;
   const segments: CodeSegment[] = [];
   let lastIndex = 0;
 
-  for (const match of text.matchAll(codeTokenPattern)) {
+  for (const match of text.matchAll(pattern)) {
     const index = match.index ?? 0;
     if (index > lastIndex) {
       segments.push({ kind: "plain", text: text.slice(lastIndex, index) });
@@ -35,23 +47,32 @@ function tokenizeCodeText(text: string): CodeSegment[] {
   return segments;
 }
 
-export function parseCodeLineSegments(line: string): CodeSegment[] {
+export function parseCodeLineSegments(
+  line: string,
+  language: CodeLanguage = "python",
+): CodeSegment[] {
+  const conditionPattern =
+    language === "js" ? jsConditionPattern : pythonConditionPattern;
   const segments: CodeSegment[] = [];
   let lastIndex = 0;
 
-  for (const match of line.matchAll(conditionColorPattern)) {
+  for (const match of line.matchAll(conditionPattern)) {
     const index = match.index ?? 0;
     if (index > lastIndex) {
-      segments.push(...tokenizeCodeText(line.slice(lastIndex, index)));
+      segments.push(
+        ...tokenizeCodeText(line.slice(lastIndex, index), language),
+      );
     }
-    segments.push({ kind: "punct", text: "(" });
-    segments.push({ kind: "tile", color: match[2], negate: match[1] === "!" });
-    segments.push({ kind: "punct", text: ")" });
+    segments.push({
+      kind: "tile",
+      color: match[2],
+      negate: Boolean(match[1]),
+    });
     lastIndex = index + match[0].length;
   }
 
   if (lastIndex < line.length) {
-    segments.push(...tokenizeCodeText(line.slice(lastIndex)));
+    segments.push(...tokenizeCodeText(line.slice(lastIndex), language));
   }
   if (!segments.length) {
     segments.push({ kind: "plain", text: line || " " });
@@ -60,16 +81,23 @@ export function parseCodeLineSegments(line: string): CodeSegment[] {
   return segments;
 }
 
-export function useCodePresentation(currentLevel: ComputedRef<LevelLike>) {
+export function useCodePresentation(
+  currentLevel: ComputedRef<LevelLike>,
+  codeLanguage: Ref<CodeLanguage> | ComputedRef<CodeLanguage>,
+) {
   // Keep all code-view calculations together so the page component can stay
   // focused on gameplay flow instead of typography math.
-  const rawCodeLines = computed(() => currentLevel.value.code.split("\n"));
+  const displayCode = computed(() =>
+    formatLevelCode(currentLevel.value.code, codeLanguage.value),
+  );
+
+  const rawCodeLines = computed(() => displayCode.value.split("\n"));
 
   const codeLineEntries = computed(() =>
     rawCodeLines.value.map((line, index) => ({
       index,
       line,
-      segments: parseCodeLineSegments(line),
+      segments: parseCodeLineSegments(line, codeLanguage.value),
     })),
   );
 
@@ -79,8 +107,13 @@ export function useCodePresentation(currentLevel: ComputedRef<LevelLike>) {
     // program should feel large and welcoming, while a long program needs to
     // shrink enough to fit without clipping.
     const lines = rawCodeLines.value.length;
+    // A tile condition renders as a swatch + name chip (about 7 characters
+    // wide), not as its single letter, so count it at that width.
+    const conditionPattern =
+      codeLanguage.value === "js" ? jsConditionPattern : pythonConditionPattern;
     const longestLine = rawCodeLines.value.reduce(
-      (max, line) => Math.max(max, line.length),
+      (max, line) =>
+        Math.max(max, line.replace(conditionPattern, "       ").length),
       0,
     );
     const lineFactor = 18 / Math.max(lines, 12);
@@ -99,6 +132,7 @@ export function useCodePresentation(currentLevel: ComputedRef<LevelLike>) {
   });
 
   return {
+    displayCode,
     rawCodeLines,
     codeLineEntries,
     codeBoxStyle,

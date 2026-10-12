@@ -22,7 +22,7 @@
         0,
         0
       ],
-      "code": "right();\nright();\nright();",
+      "code": "right()\nright()\nright()",
       "difficulty": "easy",
       "concept": "Sequence warm-up",
       "learningObjective": "อ่านการเดินแนวนอนทีละคำสั่ง",
@@ -57,7 +57,7 @@
         0,
         0
       ],
-      "code": "down();\ndown();\ndown();",
+      "code": "down()\ndown()\ndown()",
       "difficulty": "easy",
       "concept": "Vertical trace",
       "learningObjective": "อ่านการเดินแนวตั้งทีละคำสั่ง",
@@ -98,7 +98,7 @@
         0,
         0
       ],
-      "code": "right();\nright();\nright();\ndown();\ndown();",
+      "code": "right()\nright()\nright()\ndown()\ndown()",
       "difficulty": "easy",
       "concept": "Turn once",
       "learningObjective": "เห็นการเปลี่ยนทิศทางกลางโปรแกรม",
@@ -130,7 +130,7 @@
         0,
         0
       ],
-      "code": "repeat(4) {\n  right();\n}",
+      "code": "repeat(4):\n  right()",
       "difficulty": "easy",
       "concept": "Repeat intro",
       "learningObjective": "มอง repeat เป็นคำสั่งย่อ",
@@ -169,7 +169,7 @@
         0,
         0
       ],
-      "code": "repeat(4) {\n  down();\n}",
+      "code": "repeat(4):\n  down()",
       "difficulty": "easy",
       "concept": "Repeat vertical",
       "learningObjective": "ใช้ repeat กับแนวตั้ง",
@@ -208,7 +208,7 @@
         0,
         0
       ],
-      "code": "repeat(2) {\n  right();\n  down();\n}",
+      "code": "repeat(2):\n  right()\n  down()",
       "difficulty": "easy",
       "concept": "Repeat pattern",
       "learningObjective": "มอง pattern ขวา-ลง ที่วนซ้ำ",
@@ -253,7 +253,7 @@
         0,
         0
       ],
-      "code": "repeat(2) {\n  right();\n  right();\n  down();\n}",
+      "code": "repeat(2):\n  right()\n  right()\n  down()",
       "difficulty": "normal",
       "concept": "Nested rhythm",
       "learningObjective": "trace pattern ที่ยาวขึ้น",
@@ -285,7 +285,7 @@
         0,
         2
       ],
-      "code": "repeat(3) {\n  right();\n}",
+      "code": "repeat(3):\n  right()",
       "difficulty": "normal",
       "concept": "Wrap awareness",
       "learningObjective": "เข้าใจว่าขอบกระดานพากลับอีกฝั่ง",
@@ -320,7 +320,7 @@
         2,
         0
       ],
-      "code": "repeat(3) {\n  down();\n}",
+      "code": "repeat(3):\n  down()",
       "difficulty": "normal",
       "concept": "Vertical wrap",
       "learningObjective": "ฝึก wrap ในแนวตั้ง",
@@ -364,7 +364,7 @@
         0,
         0
       ],
-      "code": "repeat(2) {\n  right();\n  right();\n  down();\n}\nright();\nright();",
+      "code": "repeat(2):\n  right()\n  right()\n  down()\nright()\nright()",
       "difficulty": "medium",
       "concept": "Multi-step repeat",
       "learningObjective": "มองบล็อกคำสั่งยาวสามคำสั่งต่อรอบ",
@@ -416,7 +416,7 @@
         0,
         0
       ],
-      "code": "repeat(3) {\n  right();\n}\nrepeat(3) {\n  down();\n}",
+      "code": "repeat(3):\n  right()\nrepeat(3):\n  down()",
       "difficulty": "medium",
       "concept": "Batch execution",
       "learningObjective": "แยกสองก้อนคำสั่งใหญ่ต่อกัน",
@@ -463,7 +463,7 @@
         0,
         0
       ],
-      "code": "repeat(2) {\n  down();\n  right();\n  right();\n}\nup();",
+      "code": "repeat(2):\n  down()\n  right()\n  right()\nup()",
       "difficulty": "medium",
       "concept": "Mixed repeat path",
       "learningObjective": "ตามเส้นทางที่เปลี่ยนทิศหลายครั้ง",
@@ -495,7 +495,7 @@
         0,
         0
       ],
-      "code": "if (p) {\n  right();\n}",
+      "code": "if p:\n  right()",
       "difficulty": "easy",
       "concept": "Single branch",
       "learningObjective": "รู้ว่าถ้าเงื่อนไขจริงจะเข้าบล็อกไหน",
@@ -524,7 +524,7 @@
         0,
         0
       ],
-      "code": "if (p) {\n  right();\n} else {\n  down();\n}",
+      "code": "if p:\n  right()\nelse:\n  down()",
       "difficulty": "easy",
       "concept": "If / else",
       "learningObjective": "เห็นเส้นทางเมื่อเงื่อนไขไม่จริง",
@@ -550,7 +550,7 @@
         0,
         0
       ],
-      "code": "if (!p) {\n  right();\n} else {\n  left();\n}",
+      "code": "if not p:\n  right()\nelse:\n  left()",
       "difficulty": "normal",
       "concept": "Negation intro",
       "learningObjective": "อ่าน ! เป็น not บนกระดานจริง",
@@ -579,7 +579,7 @@
         0,
         0
       ],
-      "code": "if (p) {\n  down();\n} else if (o) {\n  right();\n} else {\n  left();\n}",
+      "code": "if p:\n  down()\nelif o:\n  right()\nelse:\n  left()",
       "difficulty": "normal",
       "concept": "Else-if chain",
       "learningObjective": "ไล่ลำดับการเช็กสีทีละข้อ",
@@ -624,7 +624,7 @@
         0,
         0
       ],
-      "code": "repeat(4) {\n  if (p) {\n    right();\n  } else {\n    down();\n  }\n}",
+      "code": "repeat(4):\n  if p:\n    right()\n  else:\n    down()",
       "difficulty": "normal",
       "concept": "Repeat with branch",
       "learningObjective": "ใช้สีตัดสินใจในทุก iteration",
@@ -672,7 +672,7 @@
         0,
         0
       ],
-      "code": "repeat(4) {\n  if (g) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "code": "repeat(4):\n  if g:\n    down()\n  else:\n    right()",
       "difficulty": "normal",
       "concept": "Alternating branch",
       "learningObjective": "มอง branch ที่สลับผลลัพธ์ไปมา",
@@ -711,7 +711,7 @@
         0,
         0
       ],
-      "code": "if (p) {\n  right();\n}\nif (o) {\n  right();\n}\nif (n) {\n  down();\n}",
+      "code": "if p:\n  right()\nif o:\n  right()\nif n:\n  down()",
       "difficulty": "normal",
       "concept": "Sequential if",
       "learningObjective": "ตาม if หลายบรรทัดต่อเนื่องกัน",
@@ -758,7 +758,7 @@
         0,
         0
       ],
-      "code": "repeat(3) {\n  if (o) {\n    right();\n  } else if (y) {\n    down();\n  } else {\n    left();\n  }\n}",
+      "code": "repeat(3):\n  if o:\n    right()\n  elif y:\n    down()\n  else:\n    left()",
       "difficulty": "medium",
       "concept": "Else-if routing",
       "learningObjective": "ตัดสินใจสามทางจากสี",
@@ -787,7 +787,7 @@
         0,
         2
       ],
-      "code": "if (p) {\n  right();\n}\nif (n) {\n  right();\n}",
+      "code": "if p:\n  right()\nif n:\n  right()",
       "difficulty": "medium",
       "concept": "Branch with wrap",
       "learningObjective": "คิดเงื่อนไขพร้อมขอบ map",
@@ -827,7 +827,7 @@
         0,
         0
       ],
-      "code": "repeat(3) {\n  if (o) {\n    right();\n  } else if (g) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "code": "repeat(3):\n  if o:\n    right()\n  elif g:\n    down()\n  else:\n    right()",
       "difficulty": "medium",
       "concept": "Else-if in repeat",
       "learningObjective": "ไล่ branch ซ้ำหลายรอบ",
@@ -868,7 +868,7 @@
         0,
         0
       ],
-      "code": "if (p) {\n  down();\n}\nif (g) {\n  right();\n} else {\n  down();\n}\nif (o) {\n  right();\n}",
+      "code": "if p:\n  down()\nif g:\n  right()\nelse:\n  down()\nif o:\n  right()",
       "difficulty": "medium",
       "concept": "State update",
       "learningObjective": "เข้าใจว่า move แรกเปลี่ยนบริบทของ if ถัดไป",
@@ -915,7 +915,7 @@
         0,
         0
       ],
-      "code": "repeat(4) {\n  if (p) {\n    down();\n  } else if (o) {\n    right();\n  } else if (g) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "code": "repeat(4):\n  if p:\n    down()\n  elif o:\n    right()\n  elif g:\n    down()\n  else:\n    right()",
       "difficulty": "medium",
       "concept": "Multi-branch repeat",
       "learningObjective": "trace repeat ที่มี else-if หลายชั้น",
@@ -955,7 +955,7 @@
         0,
         0
       ],
-      "code": "while (b) {\n  right();\n}\ndown();",
+      "code": "while b:\n  right()\ndown()",
       "difficulty": "normal",
       "concept": "While stop color",
       "learningObjective": "เข้าใจว่า while หยุดเมื่อสีเปลี่ยน",
@@ -1000,7 +1000,7 @@
         0,
         0
       ],
-      "code": "while (!p) {\n  down();\n}\nright();",
+      "code": "while not p:\n  down()\nright()",
       "difficulty": "normal",
       "concept": "While vertical",
       "learningObjective": "ตาม loop ในแนวตั้งจนเจอสีเป้าหมาย",
@@ -1040,7 +1040,7 @@
         0,
         0
       ],
-      "code": "while (y) {\n  down();\n}\nright();",
+      "code": "while y:\n  down()\nright()",
       "difficulty": "normal",
       "concept": "While on color",
       "learningObjective": "ใช้ while กับสีบวกโดยตรง",
@@ -1078,7 +1078,7 @@
         0,
         0
       ],
-      "code": "while (!g) {\n  right();\n}\ndown();",
+      "code": "while not g:\n  right()\ndown()",
       "difficulty": "normal",
       "concept": "Negated while",
       "learningObjective": "หยุดเมื่อถึงสีเป้าหมาย",
@@ -1126,7 +1126,7 @@
         0,
         0
       ],
-      "code": "while (!k) {\n  if (g) {\n    right();\n  } else {\n    down();\n  }\n}",
+      "code": "while not k:\n  if g:\n    right()\n  else:\n    down()",
       "difficulty": "medium",
       "concept": "While with branch",
       "learningObjective": "ใช้ branch เพื่อนำทางภายใน loop",
@@ -1176,7 +1176,7 @@
         0,
         0
       ],
-      "code": "while (!k) {\n  if (o) {\n    down();\n  } else if (g) {\n    right();\n  } else {\n    down();\n  }\n}",
+      "code": "while not k:\n  if o:\n    down()\n  elif g:\n    right()\n  else:\n    down()",
       "difficulty": "medium",
       "concept": "Else-if in while",
       "learningObjective": "ใช้หลายสีพาไปถึง stop tile",
@@ -1225,7 +1225,7 @@
         0,
         0
       ],
-      "code": "repeat(2) {\n  while (b) {\n    right();\n  }\n  down();\n}",
+      "code": "repeat(2):\n  while b:\n    right()\n  down()",
       "difficulty": "medium",
       "concept": "Repeat of while blocks",
       "learningObjective": "มองว่ามี loop หลายก้อนต่อกัน",
@@ -1258,7 +1258,7 @@
         0,
         1
       ],
-      "code": "while (b) {\n  right();\n}\nleft();",
+      "code": "while b:\n  right()\nleft()",
       "difficulty": "medium",
       "concept": "While with wrap",
       "learningObjective": "เข้าใจว่าลูปยังทำงานข้ามขอบกระดาน",
@@ -1303,7 +1303,7 @@
         0,
         0
       ],
-      "code": "while (!k) {\n  if (g) {\n    right();\n  } else if (p) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "code": "while not k:\n  if g:\n    right()\n  elif p:\n    down()\n  else:\n    right()",
       "difficulty": "medium",
       "concept": "Looped routing",
       "learningObjective": "ตัดสินใจจากสีหลายชนิดใน while",
@@ -1344,7 +1344,7 @@
         0,
         0
       ],
-      "code": "while (v) {\n  right();\n}\ndown();\nwhile (y) {\n  left();\n}",
+      "code": "while v:\n  right()\ndown()\nwhile y:\n  left()",
       "difficulty": "hard",
       "concept": "Sequential while",
       "learningObjective": "ตามสองลูปคนละทิศทาง",
@@ -1387,7 +1387,7 @@
         1,
         0
       ],
-      "code": "while (!p) {\n  right();\n}",
+      "code": "while not p:\n  right()",
       "difficulty": "normal",
       "concept": "Short negation",
       "learningObjective": "ใช้ ! กับด่านสั้นมากให้จับหลักให้แม่น",
@@ -1433,7 +1433,7 @@
         0,
         0
       ],
-      "code": "while (b) {\n  right();\n}\ndown();\nwhile (!k) {\n  if (g) {\n    down();\n  } else {\n    right();\n  }\n}",
+      "code": "while b:\n  right()\ndown()\nwhile not k:\n  if g:\n    down()\n  else:\n    right()",
       "difficulty": "hard",
       "concept": "While + branch finale",
       "learningObjective": "รวม while สองช่วงกับ branch ที่สั้นแต่สำคัญ",
@@ -1464,7 +1464,7 @@
         0,
         0
       ],
-      "code": "go();\n\nfunction go() {\n  right();\n  right();\n  right();\n}",
+      "code": "go()\n\ndef go():\n  right()\n  right()\n  right()",
       "difficulty": "normal",
       "concept": "Function intro",
       "learningObjective": "รู้ว่าการเรียกฟังก์ชันคือกระโดดไปอ่านอีกบล็อก",
@@ -1499,7 +1499,7 @@
         0,
         0
       ],
-      "code": "drop();\n\nfunction drop() {\n  down();\n  down();\n  down();\n}",
+      "code": "drop()\n\ndef drop():\n  down()\n  down()\n  down()",
       "difficulty": "normal",
       "concept": "Function vertical",
       "learningObjective": "ย้ายความเข้าใจ function ไปใช้กับแนวตั้ง",
@@ -1540,7 +1540,7 @@
         0,
         0
       ],
-      "code": "across();\ndescend();\n\nfunction across() {\n  right();\n  right();\n}\n\nfunction descend() {\n  down();\n  down();\n}",
+      "code": "across()\ndescend()\n\ndef across():\n  right()\n  right()\n\ndef descend():\n  down()\n  down()",
       "difficulty": "normal",
       "concept": "Two helpers",
       "learningObjective": "มองโปรแกรมเป็นชิ้นย่อยสองก้อน",
@@ -1571,7 +1571,7 @@
         0,
         0
       ],
-      "code": "slide();\n\nfunction slide() {\n  repeat(4) {\n    right();\n  }\n}",
+      "code": "slide()\n\ndef slide():\n  repeat(4):\n    right()",
       "difficulty": "medium",
       "concept": "Function with repeat",
       "learningObjective": "ซ้อนแนวคิด function และ repeat",
@@ -1610,7 +1610,7 @@
         0,
         0
       ],
-      "code": "step();\nstep();\n\nfunction step() {\n  right();\n  down();\n}",
+      "code": "step()\nstep()\n\ndef step():\n  right()\n  down()",
       "difficulty": "medium",
       "concept": "Function reuse",
       "learningObjective": "เห็นการเรียก helper เดิมซ้ำสองรอบ",
@@ -1646,7 +1646,7 @@
         0,
         0
       ],
-      "code": "zig();\n\nfunction zig() {\n  right();\n  right();\n  finish();\n}\n\nfunction finish() {\n  right();\n  down();\n}",
+      "code": "zig()\n\ndef zig():\n  right()\n  right()\n  finish()\n\ndef finish():\n  right()\n  down()",
       "difficulty": "medium",
       "concept": "Nested calls",
       "learningObjective": "ตามลำดับการเรียก function ต่อ function",
@@ -1685,7 +1685,7 @@
         0,
         0
       ],
-      "code": "check();\n\nfunction check() {\n  if (p) {\n    down();\n  }\n  if (o) {\n    right();\n  }\n}",
+      "code": "check()\n\ndef check():\n  if p:\n    down()\n  if o:\n    right()",
       "difficulty": "medium",
       "concept": "Conditional helper",
       "learningObjective": "ใช้ if ภายใน function",
@@ -1723,7 +1723,7 @@
         0,
         0
       ],
-      "code": "sweep();\n\nfunction sweep() {\n  while (y) {\n    right();\n  }\n  down();\n}",
+      "code": "sweep()\n\ndef sweep():\n  while y:\n    right()\n  down()",
       "difficulty": "hard",
       "concept": "Looped helper",
       "learningObjective": "ใช้ while ภายใน function เดียว",
@@ -1766,7 +1766,7 @@
         0,
         0
       ],
-      "code": "corner();\n\nfunction corner() {\n  repeat(2) {\n    down();\n  }\n  repeat(3) {\n    right();\n  }\n}",
+      "code": "corner()\n\ndef corner():\n  repeat(2):\n    down()\n  repeat(3):\n    right()",
       "difficulty": "hard",
       "concept": "Two repeats in helper",
       "learningObjective": "อ่าน helper ที่มี repeat สองก้อนต่อกัน",
@@ -1815,7 +1815,7 @@
         0,
         0
       ],
-      "code": "drop();\nturn();\n\nfunction drop() {\n  repeat(3) {\n    down();\n  }\n}\n\nfunction turn() {\n  if (o) {\n    right();\n  }\n}",
+      "code": "drop()\nturn()\n\ndef drop():\n  repeat(3):\n    down()\n\ndef turn():\n  if o:\n    right()",
       "difficulty": "hard",
       "concept": "Composed helpers",
       "learningObjective": "ตาม helper สองตัวที่พึ่งพาตำแหน่งล่าสุด",
@@ -1857,7 +1857,7 @@
         0,
         0
       ],
-      "code": "walk();\n\nfunction walk() {\n  if (g) {\n    down();\n  }\n  turn();\n}\n\nfunction turn() {\n  if (o) {\n    right();\n    down();\n  }\n}",
+      "code": "walk()\n\ndef walk():\n  if g:\n    down()\n  turn()\n\ndef turn():\n  if o:\n    right()\n    down()",
       "difficulty": "hard",
       "concept": "Helper with branch chain",
       "learningObjective": "อ่าน function ที่ขยับแล้วจึง branch ต่อ",
@@ -1901,7 +1901,7 @@
         0,
         0
       ],
-      "code": "drop();\nslide();\n\nfunction drop() {\n  while (v) {\n    down();\n  }\n}\n\nfunction slide() {\n  repeat(4) {\n    right();\n  }\n}",
+      "code": "drop()\nslide()\n\ndef drop():\n  while v:\n    down()\n\ndef slide():\n  repeat(4):\n    right()",
       "difficulty": "expert",
       "concept": "Function + while + repeat",
       "learningObjective": "รวม helper, while และ repeat แบบอ่านได้",
@@ -1933,7 +1933,7 @@
         0,
         0
       ],
-      "code": "function crawl() {\n  right();\n  if (!p) {\n    crawl();\n  }\n}\n\ncrawl();",
+      "code": "def crawl():\n  right()\n  if not p:\n    crawl()\n\ncrawl()",
       "difficulty": "hard",
       "concept": "Recursion intro",
       "learningObjective": "เห็นการเรียกตัวเองจนถึง base case",
@@ -1968,7 +1968,7 @@
         0,
         0
       ],
-      "code": "function dive() {\n  down();\n  if (!p) {\n    dive();\n  }\n}\n\ndive();",
+      "code": "def dive():\n  down()\n  if not p:\n    dive()\n\ndive()",
       "difficulty": "hard",
       "concept": "Vertical recursion",
       "learningObjective": "ย้าย recursion ไปใช้ในแนวตั้ง",
@@ -2009,7 +2009,7 @@
         0,
         0
       ],
-      "code": "function stair() {\n  if (o) {\n    down();\n  }\n  if (g) {\n    right();\n    stair();\n  }\n}\n\nstair();",
+      "code": "def stair():\n  if o:\n    down()\n  if g:\n    right()\n    stair()\n\nstair()",
       "difficulty": "expert",
       "concept": "Recursive staircase",
       "learningObjective": "ใช้ recursion กับ path ที่ต้องเลี้ยว",
@@ -2054,7 +2054,7 @@
         0,
         0
       ],
-      "code": "run();\nturn();\n\nfunction run() {\n  while (y) {\n    right();\n  }\n}\n\nfunction turn() {\n  if (p) {\n    down();\n  }\n}",
+      "code": "run()\nturn()\n\ndef run():\n  while y:\n    right()\n\ndef turn():\n  if p:\n    down()",
       "difficulty": "hard",
       "concept": "While helper + branch helper",
       "learningObjective": "อ่าน helper สองตัวที่คนละบทบาท",
@@ -2084,7 +2084,7 @@
         0,
         3
       ],
-      "code": "function sweep() {\n  left();\n  if (!p) {\n    sweep();\n  }\n}\n\nsweep();",
+      "code": "def sweep():\n  left()\n  if not p:\n    sweep()\n\nsweep()",
       "difficulty": "hard",
       "concept": "Reverse recursion",
       "learningObjective": "ใช้ recursion ในทิศย้อนกลับ",
@@ -2131,7 +2131,7 @@
         0,
         0
       ],
-      "code": "march();\n\nfunction march() {\n  repeat(3) {\n    if (g) {\n      down();\n    } else {\n      right();\n    }\n  }\n}",
+      "code": "march()\n\ndef march():\n  repeat(3):\n    if g:\n      down()\n    else:\n      right()",
       "difficulty": "hard",
       "concept": "Repeat with branch in helper",
       "learningObjective": "ใช้ repeat และ if ภายใน function เดียว",
@@ -2170,7 +2170,7 @@
         0,
         0
       ],
-      "code": "function sweep() {\n  right();\n  if (!p) {\n    sweep();\n  }\n}\n\nfunction finish() {\n  down();\n}\n\nsweep();\nfinish();",
+      "code": "def sweep():\n  right()\n  if not p:\n    sweep()\n\ndef finish():\n  down()\n\nsweep()\nfinish()",
       "difficulty": "expert",
       "concept": "Recursion plus epilogue",
       "learningObjective": "เข้าใจว่า recursion จบแล้ว program ยังมีคำสั่งต่อ",
@@ -2213,7 +2213,7 @@
         0,
         0
       ],
-      "code": "route();\n\nfunction route() {\n  while (!k) {\n    if (o) {\n      down();\n    } else if (g) {\n      right();\n    } else if (p) {\n      down();\n    } else {\n      right();\n    }\n  }\n}",
+      "code": "route()\n\ndef route():\n  while not k:\n    if o:\n      down()\n    elif g:\n      right()\n    elif p:\n      down()\n    else:\n      right()",
       "difficulty": "expert",
       "concept": "While + else-if helper",
       "learningObjective": "ใช้ branch หลายสีใน helper เดียว",
@@ -2260,7 +2260,7 @@
         0,
         0
       ],
-      "code": "go();\n\nfunction go() {\n  if (b) {\n    down();\n  }\n  turn();\n}\n\nfunction turn() {\n  if (g) {\n    right();\n    go();\n  }\n}",
+      "code": "go()\n\ndef go():\n  if b:\n    down()\n  turn()\n\ndef turn():\n  if g:\n    right()\n    go()",
       "difficulty": "expert",
       "concept": "Mutual-style recursion feel",
       "learningObjective": "แม้ไม่ mutual recursion เต็มรูป แต่มีการเรียกตัวเองผ่าน helper chain",
@@ -2300,7 +2300,7 @@
         0,
         0
       ],
-      "code": "function sweep() {\n  right();\n  if (!p) {\n    sweep();\n  }\n}\n\nsweep();\ndown();",
+      "code": "def sweep():\n  right()\n  if not p:\n    sweep()\n\nsweep()\ndown()",
       "difficulty": "expert",
       "concept": "Long recursion",
       "learningObjective": "trace recursion ที่ยาวขึ้นแต่ concept เดิม",
@@ -2361,7 +2361,7 @@
         0,
         0
       ],
-      "code": "function stair() {\n  if (g) {\n    right();\n  } else {\n    down();\n  }\n}\n\nwhile (!p) {\n  stair();\n}\ndown();",
+      "code": "def stair():\n  if g:\n    right()\n  else:\n    down()\n\nwhile not p:\n  stair()\ndown()",
       "difficulty": "expert",
       "concept": "Function inside while",
       "learningObjective": "ใช้ function เดิมใน while เพื่อเดินตาม pattern",
@@ -2429,7 +2429,7 @@
         4,
         3
       ],
-      "code": "function rise() {\n  while (!g) {\n    up();\n  }\n}\n\nfunction dash() {\n  repeat(2) {\n    right();\n  }\n}\n\nrise();\nif (g) {\n  right();\n}\nif (p) {\n  dash();\n}",
+      "code": "def rise():\n  while not g:\n    up()\n\ndef dash():\n  repeat(2):\n    right()\n\nrise()\nif g:\n  right()\nif p:\n  dash()",
       "difficulty": "expert",
       "concept": "Final mixed control flow",
       "learningObjective": "รวม while, if และ repeat แบบอ่านได้จริง",

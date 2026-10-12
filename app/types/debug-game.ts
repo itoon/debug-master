@@ -1,4 +1,7 @@
 import type { RawLevel } from "../data/levels";
+import type { CodeLanguage } from "../utils/codeLanguage";
+
+export type { CodeLanguage } from "../utils/codeLanguage";
 
 export type Direction = "up" | "down" | "left" | "right";
 
@@ -61,6 +64,7 @@ export type Score = {
   setId: string;
   setTitle: string;
   mode: Mode;
+  language: CodeLanguage;
   debug: boolean;
   score: number;
   bestCombo: number;

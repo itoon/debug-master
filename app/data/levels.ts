@@ -30,7 +30,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "right();\nright();\nright();",
+    "code": "right()\nright()\nright()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -61,7 +61,7 @@ export const rawLevels = [
       1,
       1
     ],
-    "code": "up();\nleft();\ndown();\nright();",
+    "code": "up()\nleft()\ndown()\nright()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -101,7 +101,7 @@ export const rawLevels = [
       0,
       1
     ],
-    "code": "down();\nright();\nright();\nright();\nright();\ndown();",
+    "code": "down()\nright()\nright()\nright()\nright()\ndown()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -144,7 +144,7 @@ export const rawLevels = [
       2,
       1
     ],
-    "code": "up();\nrepeat(3) {\n  right();\n}\nup();",
+    "code": "up()\nrepeat(3):\n  right()\nup()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -190,7 +190,7 @@ export const rawLevels = [
       1,
       0
     ],
-    "code": "right();\nrepeat(9) {\n  down();\n}\nright();",
+    "code": "right()\nrepeat(9):\n  down()\nright()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -227,7 +227,7 @@ export const rawLevels = [
       2,
       4
     ],
-    "code": "repeat(4) {\n  up();\n  left();\n}\ndown();",
+    "code": "repeat(4):\n  up()\n  left()\ndown()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -297,7 +297,7 @@ export const rawLevels = [
       0,
       4
     ],
-    "code": "repeat(3) {\n  down();\n  left();\n}\nrepeat(2) {\n  right();\n  down();\n}\nrepeat(2) {\n  up();\n  right();\n}",
+    "code": "repeat(3):\n  down()\n  left()\nrepeat(2):\n  right()\n  down()\nrepeat(2):\n  up()\n  right()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -337,7 +337,7 @@ export const rawLevels = [
       1,
       1
     ],
-    "code": "repeat(4) {\n  up();\n}\nrepeat(4) {\n  right();\n}\nrepeat(4) {\n  down();\n}\nrepeat(4) {\n  left();\n}",
+    "code": "repeat(4):\n  up()\nrepeat(4):\n  right()\nrepeat(4):\n  down()\nrepeat(4):\n  left()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -377,7 +377,7 @@ export const rawLevels = [
       3,
       0
     ],
-    "code": "repeat(4) {\n  repeat(4) {\n    right();\n  }\n  up();\n}",
+    "code": "repeat(4):\n  repeat(4):\n    right()\n  up()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -447,7 +447,7 @@ export const rawLevels = [
       2,
       1
     ],
-    "code": "repeat(3) {\n  repeat(4) {\n    right();\n  }\n  repeat(4) {\n    left();\n  }\n}",
+    "code": "repeat(3):\n  repeat(4):\n    right()\n  repeat(4):\n    left()",
     "concept": "Sequence and repeat loops",
     "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
   },
@@ -471,7 +471,7 @@ export const rawLevels = [
       0,
       1
     ],
-    "code": "down();\nif (o) {\n  left();\n}\nup();",
+    "code": "down()\nif o:\n  left()\nup()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -505,7 +505,7 @@ export const rawLevels = [
       2,
       0
     ],
-    "code": "right();\nif (o) {\n  up();\n}\nright();\nif (o) {\n  up();\n}\nright();",
+    "code": "right()\nif o:\n  up()\nright()\nif o:\n  up()\nright()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -553,7 +553,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "repeat(4) {\n  if (o) {\n    down();\n  }\n  right();\n}",
+    "code": "repeat(4):\n  if o:\n    down()\n  right()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -601,7 +601,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "repeat(4) {\n  if (o) {\n    down();\n  }\n  right();\n}",
+    "code": "repeat(4):\n  if o:\n    down()\n  right()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -662,7 +662,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "repeat(5) {\n  right();\n  if (o) {\n    down();\n    down();\n  }\n}",
+    "code": "repeat(5):\n  right()\n  if o:\n    down()\n    down()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -692,7 +692,7 @@ export const rawLevels = [
       1,
       4
     ],
-    "code": "repeat(5) {\n  up();\n  if (o) {\n    left();\n  }\n}\ndown();",
+    "code": "repeat(5):\n  up()\n  if o:\n    left()\ndown()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -722,7 +722,7 @@ export const rawLevels = [
       1,
       2
     ],
-    "code": "repeat(22) {\n  if (o) {\n    right();\n  }\n}\nup();\nleft();",
+    "code": "repeat(22):\n  if o:\n    right()\nup()\nleft()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -754,7 +754,7 @@ export const rawLevels = [
       1,
       0
     ],
-    "code": "repeat(33) {\n  if (o) {\n    right();\n  }\n}\nup();\nleft();",
+    "code": "repeat(33):\n  if o:\n    right()\nup()\nleft()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -790,7 +790,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "repeat(5) {\n  if (o) {\n    repeat(4) {\n      left();\n    }\n  }\n  down();\n}",
+    "code": "repeat(5):\n  if o:\n    repeat(4):\n      left()\n  down()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -836,7 +836,7 @@ export const rawLevels = [
       0,
       3
     ],
-    "code": "repeat(5) {\n  right();\n  if (o) {\n    down();\n    down();\n  }\n}",
+    "code": "repeat(5):\n  right()\n  if o:\n    down()\n    down()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -867,7 +867,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "repeat(5) {\n  up();\n  if (o) {\n    left();\n  }\n  if (g) {\n    right();\n  }\n  down();\n}",
+    "code": "repeat(5):\n  up()\n  if o:\n    left()\n  if g:\n    right()\n  down()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -898,7 +898,7 @@ export const rawLevels = [
       2,
       2
     ],
-    "code": "up();\nif (o) {\n  left();\n  left();\n} else {\n  down();\n  down();\n}\nright();",
+    "code": "up()\nif o:\n  left()\n  left()\nelse:\n  down()\n  down()\nright()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -929,7 +929,7 @@ export const rawLevels = [
       1,
       1
     ],
-    "code": "if (g) {\n  left();\n  down();\n} else {\n  up();\n}\nif (o) {\n  down();\n  down();\n} else {\n  right();\n}\nup();",
+    "code": "if g:\n  left()\n  down()\nelse:\n  up()\nif o:\n  down()\n  down()\nelse:\n  right()\nup()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -960,7 +960,7 @@ export const rawLevels = [
       1,
       0
     ],
-    "code": "right();\nif (g) {\n  left();\n} else if (b) {\n  up();\n} else {\n  right();\n}\ndown();",
+    "code": "right()\nif g:\n  left()\nelif b:\n  up()\nelse:\n  right()\ndown()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -991,7 +991,7 @@ export const rawLevels = [
       1,
       0
     ],
-    "code": "right();\nif (g) {\n  down();\n} else if (b) {\n  right();\n} else {\n  left();\n}\nup();",
+    "code": "right()\nif g:\n  down()\nelif b:\n  right()\nelse:\n  left()\nup()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -1042,7 +1042,7 @@ export const rawLevels = [
       0,
       4
     ],
-    "code": "repeat(8) {\n  if (o) {\n    down();\n  } else {\n    left();\n  }\n}",
+    "code": "repeat(8):\n  if o:\n    down()\n  else:\n    left()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -1088,7 +1088,7 @@ export const rawLevels = [
       4,
       0
     ],
-    "code": "repeat(19) {\n  if (o) {\n    right();\n  } else if (b) {\n    left();\n  } else {\n    up();\n  }\n}",
+    "code": "repeat(19):\n  if o:\n    right()\n  elif b:\n    left()\n  else:\n    up()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -1139,7 +1139,7 @@ export const rawLevels = [
       4,
       1
     ],
-    "code": "repeat(5) {\n  if (o) {\n    left();\n  } else {\n    right();\n  }\n}\nup();",
+    "code": "repeat(5):\n  if o:\n    left()\n  else:\n    right()\nup()",
     "concept": "Conditionals",
     "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
@@ -1182,7 +1182,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "while (v) {\n  right();\n}\ndown();",
+    "code": "while v:\n  right()\ndown()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1253,7 +1253,7 @@ export const rawLevels = [
       1,
       6
     ],
-    "code": "while (v) {\n  left();\n  down();\n  left();\n}\nup();",
+    "code": "while v:\n  left()\n  down()\n  left()\nup()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1297,7 +1297,7 @@ export const rawLevels = [
       3,
       0
     ],
-    "code": "while (g) {\n  up();\n  if (v) {\n    right();\n  }\n}",
+    "code": "while g:\n  up()\n  if v:\n    right()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1343,7 +1343,7 @@ export const rawLevels = [
       0,
       3
     ],
-    "code": "while (g) {\n  left();\n  while (v) {\n    down();\n  }\n}",
+    "code": "while g:\n  left()\n  while v:\n    down()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1387,7 +1387,7 @@ export const rawLevels = [
       3,
       4
     ],
-    "code": "repeat(5) {\n  while (o) {\n    up();\n  }\n  while (v) {\n    down();\n  }\n  left();\n}",
+    "code": "repeat(5):\n  while o:\n    up()\n  while v:\n    down()\n  left()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1451,7 +1451,7 @@ export const rawLevels = [
       1,
       1
     ],
-    "code": "while (v) {\n  repeat(3) {\n    down();\n  }\n  right();\n}\nup();",
+    "code": "while v:\n  repeat(3):\n    down()\n  right()\nup()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1475,7 +1475,7 @@ export const rawLevels = [
       1,
       1
     ],
-    "code": "left();\nif (!p) {\n  up();\n}\nright();",
+    "code": "left()\nif not p:\n  up()\nright()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1509,7 +1509,7 @@ export const rawLevels = [
       2,
       3
     ],
-    "code": "left();\nif (!o) {\n  up();\n}\nleft();\nif (!o) {\n  up();\n}\nleft();",
+    "code": "left()\nif not o:\n  up()\nleft()\nif not o:\n  up()\nleft()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1557,7 +1557,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "repeat(3) {\n  if (!p) {\n    right();\n  }\n  down();\n}",
+    "code": "repeat(3):\n  if not p:\n    right()\n  down()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1589,7 +1589,7 @@ export const rawLevels = [
       0,
       5
     ],
-    "code": "repeat(33) {\n  if (!p) {\n    left();\n  }\n}\ndown();",
+    "code": "repeat(33):\n  if not p:\n    left()\ndown()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1621,7 +1621,7 @@ export const rawLevels = [
       1,
       5
     ],
-    "code": "while (!v) {\n  left();\n}\nup();",
+    "code": "while not v:\n  left()\nup()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1672,7 +1672,7 @@ export const rawLevels = [
       4,
       4
     ],
-    "code": "while (!v) {\n  up();\n  left();\n}",
+    "code": "while not v:\n  up()\n  left()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1723,7 +1723,7 @@ export const rawLevels = [
       0,
       4
     ],
-    "code": "repeat(5) {\n  left();\n  left();\n  if (!o) {\n    right();\n    right();\n  }\n  down();\n}",
+    "code": "repeat(5):\n  left()\n  left()\n  if not o:\n    right()\n    right()\n  down()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1774,7 +1774,7 @@ export const rawLevels = [
       0,
       4
     ],
-    "code": "repeat(8) {\n  if (!o) {\n    down();\n  } else {\n    left();\n  }\n}",
+    "code": "repeat(8):\n  if not o:\n    down()\n  else:\n    left()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1862,7 +1862,7 @@ export const rawLevels = [
       1,
       2
     ],
-    "code": "while (!v) {\n  if (p) {\n    left();\n  } else if (g) {\n    up();\n  } else if (o) {\n    right();\n  } else if (y) {\n    down();\n    right();\n  } else {\n    down();\n  }\n}",
+    "code": "while not v:\n  if p:\n    left()\n  elif g:\n    up()\n  elif o:\n    right()\n  elif y:\n    down()\n    right()\n  else:\n    down()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1906,7 +1906,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "while (!v) {\n  right();\n  while (o) {\n    up();\n  }\n  while (v) {\n    down();\n  }\n}",
+    "code": "while not v:\n  right()\n  while o:\n    up()\n  while v:\n    down()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -1957,7 +1957,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "repeat(4) {\n  repeat(4) {\n    if (!p) {\n      up();\n    } else {\n      down();\n    }\n  }\n  right();\n}",
+    "code": "repeat(4):\n  repeat(4):\n    if not p:\n      up()\n    else:\n      down()\n  right()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -2021,7 +2021,7 @@ export const rawLevels = [
       5,
       5
     ],
-    "code": "repeat(6) {\n  while (!o) {\n    left();\n  }\n  while (!p) {\n    right();\n  }\n  up();\n}",
+    "code": "repeat(6):\n  while not o:\n    left()\n  while not p:\n    right()\n  up()",
     "concept": "While loops and negation",
     "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
   },
@@ -2043,7 +2043,7 @@ export const rawLevels = [
       0,
       0
     ],
-    "code": "toTheRight();\n\nfunction toTheRight() {\n  right();\n  right();\n  right();\n}",
+    "code": "toTheRight()\n\ndef toTheRight():\n  right()\n  right()\n  right()",
     "concept": "Functions and decomposition",
     "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
   },
@@ -2065,7 +2065,7 @@ export const rawLevels = [
       0,
       1
     ],
-    "code": "left();\ntoTheRight();\n\nfunction toTheRight() {\n  right();\n  right();\n  right();\n}",
+    "code": "left()\ntoTheRight()\n\ndef toTheRight():\n  right()\n  right()\n  right()",
     "concept": "Functions and decomposition",
     "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
   },
@@ -2087,7 +2087,7 @@ export const rawLevels = [
       0,
       1
     ],
-    "code": "function toTheRight() {\n  right();\n  right();\n  right();\n}\n\nleft();\ntoTheRight();",
+    "code": "def toTheRight():\n  right()\n  right()\n  right()\n\nleft()\ntoTheRight()",
     "concept": "Functions and decomposition",
     "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
   },
@@ -2127,7 +2127,7 @@ export const rawLevels = [
       2,
       2
     ],
-    "code": "left();\nsquare();\nright();\nsquare();\n\nfunction square() {\n  up();\n  left();\n  down();\n  right();\n}",
+    "code": "left()\nsquare()\nright()\nsquare()\n\ndef square():\n  up()\n  left()\n  down()\n  right()",
     "concept": "Functions and decomposition",
     "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
   },
@@ -2197,7 +2197,7 @@ export const rawLevels = [
       3,
       0
     ],
-    "code": "function jump() {\n  up();\n  right();\n  right();\n  down();\n}\n\nfunction run() {\n  right();\n  right();\n}\n\nrun();\njump();\nrun();",
+    "code": "def jump():\n  up()\n  right()\n  right()\n  down()\n\ndef run():\n  right()\n  right()\n\nrun()\njump()\nrun()",
     "concept": "Functions and decomposition",
     "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
   },
@@ -2267,7 +2267,7 @@ export const rawLevels = [
       2,
       5
     ],
-    "code": "function ping() {\n  repeat(4) {\n    left();\n  }\n}\n\nfunction pong() {\n  repeat(4) {\n    right();\n  }\n}\n\nrepeat(3) {\n  ping();\n  pong();\n}",
+    "code": "def ping():\n  repeat(4):\n    left()\n\ndef pong():\n  repeat(4):\n    right()\n\nrepeat(3):\n  ping()\n  pong()",
     "concept": "Functions and decomposition",
     "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
   },
@@ -2304,7 +2304,7 @@ export const rawLevels = [
       1,
       1
     ],
-    "code": "function shake() {\n  left();\n  right();\n  left();\n  right();\n}\n\nfunction dance() {\n  shake();\n  right();\n}\n\ndance();\ndance();\ndance();",
+    "code": "def shake():\n  left()\n  right()\n  left()\n  right()\n\ndef dance():\n  shake()\n  right()\n\ndance()\ndance()\ndance()",
     "concept": "Functions and decomposition",
     "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
   },
@@ -2341,7 +2341,7 @@ export const rawLevels = [
       1,
       3
     ],
-    "code": "function shake() {\n  if (p) {\n    left();\n  }\n  right();\n  left();\n  right();\n  if (y) {\n    left();\n  }\n}\n\nfunction choreography() {\n  shake();\n  left();\n  shake();\n  right();\n}\n\nchoreography();\nchoreography();\nchoreography();",
+    "code": "def shake():\n  if p:\n    left()\n  right()\n  left()\n  right()\n  if y:\n    left()\n\ndef choreography():\n  shake()\n  left()\n  shake()\n  right()\n\nchoreography()\nchoreography()\nchoreography()",
     "concept": "Functions and decomposition",
     "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
   },
@@ -2392,7 +2392,7 @@ export const rawLevels = [
       0,
       2
     ],
-    "code": "function road() {\n  down();\n  down();\n  if (g) {\n    bypass();\n  } else {\n    road();\n  }\n}\n\nfunction bypass() {\n  left();\n  left();\n  down();\n  down();\n}\n\nroad();",
+    "code": "def road():\n  down()\n  down()\n  if g:\n    bypass()\n  else:\n    road()\n\ndef bypass():\n  left()\n  left()\n  down()\n  down()\n\nroad()",
     "concept": "Recursion and advanced control flow",
     "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
   },
@@ -2463,7 +2463,7 @@ export const rawLevels = [
       0,
       8
     ],
-    "code": "function road() {\n  left();\n  left();\n  if (p) {\n    bypass();\n  }\n  if (k) {\n    road();\n  }\n}\n\nfunction bypass() {\n  down();\n  down();\n}\n\nroad();",
+    "code": "def road():\n  left()\n  left()\n  if p:\n    bypass()\n  if k:\n    road()\n\ndef bypass():\n  down()\n  down()\n\nroad()",
     "concept": "Recursion and advanced control flow",
     "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
   },
@@ -2524,7 +2524,7 @@ export const rawLevels = [
       2,
       2
     ],
-    "code": "function shake() {\n  left();\n  right();\n  left();\n  right();\n}\n\nfunction dance() {\n  shake();\n  right();\n}\n\nfunction choreography() {\n  if (v) {\n    right();\n    dance();\n  } else {\n    left();\n  }\n  left();\n  left();\n}\n\nrepeat(3) {\n  choreography();\n}",
+    "code": "def shake():\n  left()\n  right()\n  left()\n  right()\n\ndef dance():\n  shake()\n  right()\n\ndef choreography():\n  if v:\n    right()\n    dance()\n  else:\n    left()\n  left()\n  left()\n\nrepeat(3):\n  choreography()",
     "concept": "Recursion and advanced control flow",
     "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
   },
@@ -2657,7 +2657,7 @@ export const rawLevels = [
       4,
       8
     ],
-    "code": "function choice() {\n  if (k) {\n    fromBelow();\n  }\n  if (p) {\n    fromAbove();\n  }\n}\n\nfunction fromAbove() {\n  up();\n  left();\n  left();\n  down();\n  right();\n  choice();\n}\n\nfunction fromBelow() {\n  down();\n  left();\n  left();\n  up();\n  right();\n  choice();\n}\n\nchoice();",
+    "code": "def choice():\n  if k:\n    fromBelow()\n  if p:\n    fromAbove()\n\ndef fromAbove():\n  up()\n  left()\n  left()\n  down()\n  right()\n  choice()\n\ndef fromBelow():\n  down()\n  left()\n  left()\n  up()\n  right()\n  choice()\n\nchoice()",
     "concept": "Recursion and advanced control flow",
     "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
   },
@@ -2823,7 +2823,7 @@ export const rawLevels = [
       5,
       7
     ],
-    "code": "function choice() {\n  if (y) {\n    while (!g) {\n      left();\n      down();\n    }\n    choice();\n  } else {\n    while (!y) {\n      down();\n      right();\n    }\n  }\n  right();\n}\n\nchoice();",
+    "code": "def choice():\n  if y:\n    while not g:\n      left()\n      down()\n    choice()\n  else:\n    while not y:\n      down()\n      right()\n  right()\n\nchoice()",
     "concept": "Recursion and advanced control flow",
     "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
   },
@@ -3007,7 +3007,7 @@ export const rawLevels = [
       7,
       5
     ],
-    "code": "function fall() {\n  while (!p) {\n    down();\n  }\n}\n\nfunction eye() {\n  repeat(2) {\n    right();\n    if (k) {\n      fall();\n    }\n  }\n}\n\nwhile (!v) {\n  up();\n}\n\nrepeat(3) {\n  left();\n  if (v) {\n    down();\n    right();\n    eye();\n  }\n}",
+    "code": "def fall():\n  while not p:\n    down()\n\ndef eye():\n  repeat(2):\n    right()\n    if k:\n      fall()\n\nwhile not v:\n  up()\n\nrepeat(3):\n  left()\n  if v:\n    down()\n    right()\n    eye()",
     "concept": "Recursion and advanced control flow",
     "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
   }
