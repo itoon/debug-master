@@ -31,7 +31,7 @@
 
     <footer class="home-footer"><span>{{ t('home.rules') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink></span></footer>
     <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :error="error" :busy="busy || motionPhase === 'leaving'"
-      @close="closeSetup" @start="launch" />
+      @close="closeSetup" @start="launch" @popup="emit('sound', 'popup')" />
   </main>
 </template>
 
@@ -40,9 +40,10 @@ import { homeConfig, type ChallengeMode, type ChallengeId } from "../data/home-c
 import { useGameI18n } from "../composables/useGameI18n";
 import type { ScoreRepository, PlayerSetupInput } from "../storage/contracts";
 import { formatClock, type RankingBoard } from "../utils/ranking";
+import type { UiSoundEffect } from "../data/sound-effects";
 
 const props = defineProps<{ repository: ScoreRepository; error?: string; busy?: boolean }>();
-const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resetError: [] }>();
+const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
 const { t } = useGameI18n();
 const setupMode = ref<ChallengeMode | null>(null);
 const selectedMode = ref<ChallengeMode | null>(null);
@@ -136,6 +137,8 @@ function boardFor(mode: ChallengeMode): RankingBoard {
 }
 async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   if (props.busy || motionPhase.value !== "idle") return;
+  emit("unlockAudio"); // Unlock on the original pointer/keyboard gesture.
+  emit("sound", "select");
   const snapshots = snapshotCards();
   const token = ++motionToken;
   emit("resetError");
@@ -144,6 +147,7 @@ async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   motionPhase.value = "entering";
   await nextTick();
   if (disposed || token !== motionToken) return;
+  emit("sound", "transition");
   positionCards(mode, snapshots);
   await waitForCardMotion(token);
   if (disposed || token !== motionToken || motionPhase.value !== "entering") return;
@@ -167,6 +171,7 @@ async function closeSetup() {
   setupMode.value = null;
   await nextTick();
   if (disposed || token !== motionToken) return;
+  emit("sound", "transitionBack");
   if (!reducedMotion()) {
     cardsReturning = true;
     reverseCards();

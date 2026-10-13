@@ -1,27 +1,37 @@
 <template>
   <component :is="stage === 'summary' ? 'dialog' : 'main'" ref="panel" class="session-panel"
-    :class="{ 'summary-dialog': stage === 'summary' }" :aria-labelledby="headingId" @cancel.prevent>
+    :class="{ 'summary-dialog': stage === 'summary', 'tutorial-panel': stage === 'tutorial' }" :aria-labelledby="headingId" @cancel.prevent>
     <section class="session-card" :aria-labelledby="headingId">
       <p class="session-brand">{{ t('brand') }}</p>
       <h1 :id="headingId" ref="heading" tabindex="-1">{{ t(stage === 'tutorial' ? 'tutorial.title' : stage === 'summary' ? 'summary.title' : 'home.today') }}</h1>
       <p class="session-mode">{{ mode.id }} · {{ t(mode.nameKey) }} · {{ t('home.levels', { from: mode.levelRange[0], to: mode.levelRange[1] }) }} · {{ t('home.limit', { time: formatClock(mode.timeLimit * 1000) }) }}</p>
 
       <template v-if="stage === 'tutorial'">
-        <img class="session-codi" :src="PLAYER_SPRITES.down" alt="Codi" draggable="false" />
-        <ol class="instructions">
-          <li>{{ t('tutorial.read') }}</li>
-          <li>{{ t('tutorial.move') }}</li>
-          <li>{{ t('tutorial.repeat') }}</li>
-        </ol>
-        <ul class="tile-legend">
-          <li v-for="tile in tutorialTiles" :key="tile.name"><code>{{ tile.name }}</code><span>{{ t(tile.nameKey) }}</span></li>
-        </ul>
-        <p class="retry-note">{{ t('tutorial.tiles') }}</p>
-        <p class="retry-note">{{ t('tutorial.retry') }}</p>
+        <TutorialDemo />
+        <details class="tutorial-tips">
+          <summary>{{ t('tutorial.more') }}</summary>
+          <div class="tutorial-tips-content">
+            <p>{{ t('tutorial.controls') }}</p>
+            <p>{{ t('tutorial.repeatHint') }}</p>
+            <ul class="tile-legend">
+              <li v-for="tile in tutorialTiles" :key="tile.name">
+                <i class="code-tile-swatch" :class="`tile-${tile.name}`" aria-hidden="true" />
+                <code>{{ tile.name }}</code><span>{{ t(tile.nameKey) }}</span>
+              </li>
+            </ul>
+            <p>{{ t('tutorial.tiles') }}</p>
+            <p>{{ t('tutorial.retry') }}</p>
+          </div>
+        </details>
         <div class="session-actions">
-          <button type="button" class="main-action" @click="emit('play')">{{ t('tutorial.start') }}</button>
-          <button type="button" class="text-action" @click="emit('play')">{{ t('tutorial.skip') }}</button>
-          <button type="button" class="text-action" @click="emit('home')">{{ t('flow.home') }}</button>
+          <button type="button" class="text-action" @click="emit('home')">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16" /></svg>
+            {{ t('tutorial.back') }}
+          </button>
+          <button type="button" class="main-action" @click="emit('play')">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z" /></svg>
+            {{ t('tutorial.start') }}
+          </button>
         </div>
       </template>
 
@@ -60,7 +70,6 @@ import type { ChallengeMode } from "../data/home-config";
 import type { ScoreRepository } from "../storage/contracts";
 import type { Score } from "../types/debug-game";
 import { formatClock, type RankingBoard } from "../utils/ranking";
-import { PLAYER_SPRITES } from "../utils/playerSprites";
 import { useGameI18n } from "../composables/useGameI18n";
 import { useScoreBoard } from "../composables/useScoreBoard";
 import { TILE_TYPES, tileDefinition } from "../data/tiles";
@@ -104,10 +113,8 @@ onBeforeUnmount(() => { if (panel.value instanceof HTMLDialogElement) panel.valu
 .session-brand { margin: 0; font-size: .85rem; font-weight: 800; color: #2564c9; }
 h1 { margin: 0; font-size: clamp(1.35rem, 3vw, 1.9rem); font-weight: 800; line-height: 1.3; }
 .session-mode, .ranking-rules { margin: 0; font-size: .9rem; color: #526079; }
-.session-codi { width: 76px; height: 92px; object-fit: contain; justify-self: center; }
 .session-avatar { width: 92px; height: 92px; border: 3px solid #8db7ff; border-radius: 50%; background: #d8eaff; object-fit: contain; justify-self: center; }
-.instructions { list-style: none; display: grid; gap: 10px; padding: 0; margin: 0; font-size: 1.05rem; }
-.retry-note, .result-player { margin: 0; color: #526079; }
+.result-player { margin: 0; color: #526079; }
 .tile-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 0; margin: 0; list-style: none; }
 .tile-legend li { display: flex; gap: 8px; align-items: baseline; font-size: .9rem; }
 .tile-legend code { font-weight: 700; color: #1a4d9c; }
@@ -122,6 +129,25 @@ button { min-height: 48px; padding: 12px 20px; border-radius: 12px; font: inheri
 .text-action { border: 1px solid #bdd2f1; color: #1a4d9c; background: #edf4ff; }
 button:focus-visible { outline: 3px solid #ffc83d; outline-offset: 3px; }
 .session-error { margin: 0; color: #a32d30; }
+.tutorial-panel .session-card { box-sizing: border-box; width: min(1040px, 100%); gap: 14px; padding: clamp(20px, 2.5vw, 30px); background: linear-gradient(145deg, #193c87f5, #0b224ef5); color: #fff; border-color: #85b2ff; }
+.tutorial-panel .session-brand, .tutorial-panel .session-mode { color: #bed9ff; }
+.tutorial-panel h1 { font-size: clamp(1.4rem, 2.2vw, 1.8rem); }
+.tutorial-panel .session-actions { justify-content: flex-end; }
+.tutorial-panel .session-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 156px; transition: background 150ms, transform 150ms; }
+.tutorial-panel .session-actions svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tutorial-panel .main-action { color: #102754; background: #ffe36b; box-shadow: 0 3px 0 #bc8e22; }
+.tutorial-panel .main-action:hover { background: #ffec9b; }
+.tutorial-panel .text-action { color: #e3eeff; background: #133165; border-color: #85b2ff66; }
+.tutorial-panel .text-action:hover { background: #214682; }
+.tutorial-panel .session-actions button:active { transform: translateY(2px); }
+.tutorial-tips { color: #bed9ff; font-size: .85rem; }
+.tutorial-tips summary { cursor: pointer; padding: 8px 0; }
+.tutorial-tips summary:focus-visible { outline: 3px solid #ffe36b; outline-offset: 3px; border-radius: 6px; }
+.tutorial-tips-content { display: grid; gap: 10px; padding: 8px 0; }
+.tutorial-tips-content p { margin: 0; }
+.tutorial-panel .tile-legend li { align-items: center; gap: 6px; }
+.tutorial-panel .tile-legend code { color: #ffe36b; }
+.tutorial-panel .tile-legend .code-tile-swatch { display: inline-block; flex: 0 0 22px; width: 22px; height: 22px; }
 .summary-dialog { box-sizing: border-box; width: min(640px, calc(100% - 32px)); max-width: none; min-height: 0; max-height: calc(100dvh - 32px); overflow-y: auto; margin: auto; padding: 0; border: 0; border-radius: 24px; background: transparent; }
 .summary-dialog::backdrop { background: #03102bb3; backdrop-filter: blur(6px); }
 .summary-dialog .session-card { box-sizing: border-box; position: relative; width: 100%; overflow: hidden; gap: 14px; padding: clamp(22px, 3vw, 32px); border: 1px solid #7faaff; background: linear-gradient(155deg, #19387b, #0b214a); color: #fff; animation: summary-arrive 380ms cubic-bezier(.2, .8, .2, 1) both; }
@@ -141,6 +167,6 @@ button:focus-visible { outline: 3px solid #ffc83d; outline-offset: 3px; }
 @keyframes summary-arrive { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes avatar-celebrate { 0% { transform: scale(.8); } 55% { transform: scale(1.08) rotate(-4deg); } 100% { transform: none; } }
 @keyframes spark-rise { 20% { opacity: .8; } to { opacity: 0; transform: translateY(-100px) rotate(90deg); } }
-@media (prefers-reduced-motion: reduce) { .summary-dialog .session-card, .summary-dialog .session-avatar, .result-sparks span { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .summary-dialog .session-card, .summary-dialog .session-avatar, .result-sparks span { animation: none; } .tutorial-panel .session-actions button { transition: none; } }
 @media (max-width: 500px) { .summary-metrics { grid-template-columns: 1fr; } .session-actions { flex-direction: column; } }
 </style>

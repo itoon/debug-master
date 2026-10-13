@@ -2,6 +2,25 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Animated tutorial with original level example
+
+- Replaced the tutorial's white text-heavy card with a blue space-game surface: original Set 01 level 1 board and Python code side by side, a visual arrow/WASD key layout, and three short read → press → move instructions. All modes use this explicitly labelled common example; their selected set/range/time remain displayed above it.
+- Added presentation-only `TutorialDemo.vue`, reusing `LevelBoard`, `LevelCode`, the existing parser and `solveLevel`. The authored three `right()` commands, original map/start and existing Codi sprites are unchanged. The one-pass preview highlights each source line, presses →/D and advances Codi over about 4.2 seconds, then settles with a completion label. No live input, gameplay state, scoring, timer, audio or repository is changed by the demo.
+- Extended the existing optional `LevelCode.isActiveLine` callback to also receive the zero-based source index so identical lines highlight individually. Existing one-argument gameplay callbacks keep working. No syntax formatting or code execution changes.
+- Preview suspends while the document is hidden, disconnects its resize observer and clears its timer/listeners on unmount. Reduced-motion uses a static final position and explicit three-keypress explanation. Narrow layouts stack board/code; expanded item/control/repeat/retry guidance uses a native disclosure and the existing item artwork.
+- Removed the skip action. Tutorial now has exactly two action buttons, “ย้อนกลับ” (existing Home/reset handler) and “เริ่มเล่น” (existing play handler), with decorative arrow/play icons. Timer still starts through `playChallenge()` after the tutorial. New copy uses the lightweight Thai dictionary; `DESIGN.md` documents the shared presentation owners.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete issues in phase/highlight synchronization, lifecycle cleanup, shared callback compatibility or button wiring. No tests or browser/viewport checks; rendered appearance and live animation remain unverified. No git add/commit, branch changes or reference-frontend edits. Prior setup/audio/motion changes remain in the working tree.
+
+## 2026-10-13 — Selection sounds, bouncy popup and setup details
+
+- Home emits selection, forward-slide, backward-slide and popup cues into the page's existing `useGameAudio` instance. Audio unlock happens synchronously on the original card click/keyboard activation. These short synthesized UI effects share the gameplay mute state and master gain; no separate audio context or media dependency was added.
+- UI click/slide cues may overlap so the transition does not cut off the selection click. Gameplay clear/failure/completion keeps its prior voice interruption behaviour. Playback still observes muted/hidden/disposed guards and existing cleanup. Score-list reading does not emit card-selection sounds; repeat selection/close guards remain.
+- Player popup entrance is now a 380ms zoom from 0.72 → 1.035 → 0.985 → 1 with one gentle overshoot and a matching short boing cue. Closing zooms out from the current computed opacity/transform, so early Escape remains continuous. Card/exit durations stay 420/180ms. Reduced-motion skips visual movement; sound remains governed by the mute setting.
+- Removed the offset, incomplete profile arc. The portrait now has a full 4px circular white border fitted to its existing 104px frame, a thin dark outline and the same lower-right 48px refresh badge. Avatar assets/selection/storage are unchanged.
+- Removed the decorative Codi image from the age marker. The numeric age tooltip remains, with reduced reserved space and placement above the selected step. Age 5–18, no default selection, tap/keyboard/drag and form validation are unchanged.
+- Added root `DESIGN.md` as durable context for the established space-game identity, canonical UI/audio owners and runtime-token mapping, following the frontend-design skills. Existing CSS variables remain the palette/font source; no new global theme or dependency. User build-only requirements override skill audit/lint/browser defaults.
+- Verification: `pnpm build` and `git diff --check` passed. No tests, skill audit/lint commands, browser motion checks or live listening checks were run. Changes remain unstaged on `feature/home-v2`; no `git add`, commit, merge, branch switch or reference-frontend change.
+
 ## 2026-10-13 — Mode card and setup popup motion
 
 - Added an idle → entering → open → leaving UI sequence in `HomeV2.vue`. Selecting a cover/card measures the existing positions, moves the selected card to the visible center, and slides/fades the other cards offscreen; only after card motion finishes does the existing player setup dialog open. The grid itself never reorders or collapses.

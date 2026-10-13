@@ -48,7 +48,6 @@
             <div class="age-rail" aria-hidden="true"><div v-if="age !== null" class="age-progress" :style="{ width: `${progress}%` }" /></div>
             <div v-if="age !== null" class="age-marker" aria-hidden="true">
               <span>{{ t('home.years', { age }) }}</span>
-              <img :src="PLAYER_SPRITES.down" alt="" draggable="false" />
             </div>
             <button v-for="(option, index) in homeConfig.ages" :key="option" type="button" class="age-step"
               :class="{ selected: age === option }" :aria-pressed="age === option"
@@ -71,13 +70,12 @@
 <script setup lang="ts">
 import { homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
-import { PLAYER_SPRITES } from "../utils/playerSprites";
 import { PLAYER_AVATARS } from "../data/player-avatars";
 import { usePlayerAvatar } from "../composables/usePlayerAvatar";
 import type { PlayerSetupInput } from "../storage/contracts";
 
 const props = defineProps<{ mode: ChallengeMode; error?: string; busy?: boolean }>();
-const emit = defineEmits<{ close: []; start: [player: PlayerSetupInput] }>();
+const emit = defineEmits<{ close: []; start: [player: PlayerSetupInput]; popup: [] }>();
 const { t } = useGameI18n();
 const titleId = useId();
 const dialog = ref<HTMLDialogElement | null>(null);
@@ -91,7 +89,7 @@ function reducedMotion(): boolean {
 async function animatePopup(frames: Keyframe[], duration: number): Promise<void> {
   popupAnimation?.cancel();
   if (!dialog.value || reducedMotion() || typeof dialog.value.animate !== "function") return;
-  const animation = dialog.value.animate(frames, { duration, easing: "cubic-bezier(.22, .8, .25, 1)", fill: "both" });
+  const animation = dialog.value.animate(frames, { duration, easing: frames.length > 2 ? "linear" : "cubic-bezier(.22, .8, .25, 1)", fill: "both" });
   popupAnimation = animation;
   await animation.finished.catch(() => {});
   if (popupAnimation === animation && !isClosing.value) { animation.cancel(); popupAnimation = undefined; }
@@ -105,7 +103,7 @@ async function closeWithMotion(): Promise<void> {
   isClosing.value = true;
   await animatePopup([
     { opacity, transform },
-    { opacity: 0, transform: "translateY(14px) scale(.92)" },
+    { opacity: 0, transform: "scale(.68)" },
   ], homeConfig.modeMotion.popupOutMs);
   if (!disposed) dialog.value?.close();
 }
@@ -187,9 +185,12 @@ onMounted(() => {
   avatarIndex.value = Math.floor(Math.random() * PLAYER_AVATARS.length);
   dialog.value?.showModal();
   void animatePopup([
-    { opacity: 0, transform: "translateY(18px) scale(.94)" },
-    { opacity: 1, transform: "none" },
+    { offset: 0, opacity: 0, transform: "scale(.72)", easing: "cubic-bezier(.2, .8, .2, 1)" },
+    { offset: .65, opacity: 1, transform: "scale(1.035)", easing: "ease-in-out" },
+    { offset: .85, opacity: 1, transform: "scale(.985)", easing: "ease-in-out" },
+    { offset: 1, opacity: 1, transform: "none" },
   ], homeConfig.modeMotion.popupInMs);
+  emit("popup");
   nicknameInput.value?.focus();
 });
 onBeforeUnmount(() => { disposed = true; popupAnimation?.cancel(); dialog.value?.close(); });
@@ -214,8 +215,7 @@ button { cursor: pointer; }
 .player-identity { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: center; gap: 20px; }
 .profile-choice { display: grid; justify-items: center; gap: 8px; }
 .profile-choice p { margin: 0; font-size: .85rem; font-weight: 800; }
-.avatar-preview { position: relative; isolation: isolate; width: 104px; height: 104px; margin-bottom: 8px; border: 3px solid #092852; border-radius: 50%; background: #cceaff; }
-.avatar-preview::before { content: ""; position: absolute; inset: -7px; border: 4px solid #fff; border-top-color: transparent; border-radius: inherit; transform: translateY(3px); pointer-events: none; z-index: 0; }
+.avatar-preview { position: relative; isolation: isolate; width: 104px; height: 104px; margin-bottom: 8px; border: 4px solid #fff; border-radius: 50%; background: #cceaff; box-shadow: 0 0 0 2px #092852; }
 .avatar-preview img { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: inherit; object-fit: contain; }
 .avatar-cycle { position: absolute; bottom: -8px; right: -8px; z-index: 2; display: grid; place-items: center; width: 48px; height: 48px; padding: 9px; border: 3px solid #fff; border-radius: 50%; background: linear-gradient(145deg, #fff, #dfcbff); color: #17356b; box-shadow: 0 0 0 1px #5a4489, 0 3px 0 #493270, 0 4px 8px #0c205866; transition: transform 150ms ease, filter 150ms ease; }
 .avatar-cycle svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 1px 0 #43ddcf); }
@@ -236,7 +236,7 @@ label, legend { font-weight: 800; }
 .age-field { margin: 0; padding: 0; border: 0; min-width: 0; }
 .age-hint, .age-current { margin: 5px 0 0; color: #d2e1ff; font-size: .85rem; }
 .age-current { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.age-scroll { overflow-x: auto; padding: 64px 12px 4px; }
+.age-scroll { overflow-x: auto; padding: 40px 12px 4px; }
 .age-track { position: relative; display: grid; grid-template-columns: repeat(var(--age-count), minmax(48px, 1fr)); min-width: calc(var(--age-count) * 48px); isolation: isolate; touch-action: none; user-select: none; }
 .age-rail { position: absolute; top: 22px; left: calc(100% / var(--age-count) / 2); right: calc(100% / var(--age-count) / 2); height: 10px; border-radius: 8px; background: #0b205c; box-shadow: inset 0 0 0 2px #5079e6; z-index: -1; }
 .age-progress { height: 100%; background: #ffd440; border-radius: inherit; }
@@ -245,9 +245,8 @@ label, legend { font-weight: 800; }
 .age-number { min-width: 32px; padding: 3px 6px; border-radius: 18px; font-size: 1rem; line-height: 1.4; }
 .age-step.selected .age-dot { background: #ffd440; border-color: #ffd440; box-shadow: 0 0 0 3px #163078; }
 .age-step.selected .age-number { color: #112760; background: #ffd440; }
-.age-marker { position: absolute; left: var(--age-position); bottom: calc(100% - 13px); transform: translateX(-50%); display: grid; justify-items: center; gap: 2px; pointer-events: none; }
+.age-marker { position: absolute; left: var(--age-position); bottom: calc(100% + 2px); transform: translateX(-50%); display: grid; justify-items: center; pointer-events: none; }
 .age-marker span { white-space: nowrap; padding: 2px 8px; border: 2px solid #102252; border-radius: 10px; background: #fff; color: #1a1e1f; font-size: .8rem; font-weight: 800; }
-.age-marker img { width: 40px; height: 48px; object-fit: contain; }
 .age-scroll-hint { display: none; margin: 2px 0 0; font-size: .75rem; color: #c2d8ff; }
 .form-status, .privacy-note, .save-error { margin: 0; font-size: .8rem; }
 .form-status { color: #ffdc5a; text-align: center; }

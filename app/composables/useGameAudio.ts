@@ -1,5 +1,5 @@
 import { onBeforeUnmount, ref } from "vue";
-import { soundEffects, type SoundEffect } from "../data/sound-effects";
+import { soundEffects, UI_SOUND_EFFECTS, type SoundEffect } from "../data/sound-effects";
 import failureSound from "~/assets/sounds/codi-failed.wav";
 
 /** Browser audio belongs to presentation; gameplay never waits for playback. */
@@ -105,7 +105,9 @@ export function useGameAudio() {
 
   function playSound(effect: SoundEffect): void {
     if (!enabled.value || typeof document === "undefined" || document.hidden) return;
-    if (effect !== "move") stopSounds();
+    // A selection click and its soft slide cue may play together.
+    // Gameplay failure/clear/completion retains its existing interruption rule.
+    if (effect !== "move" && !(UI_SOUND_EFFECTS as readonly SoundEffect[]).includes(effect)) stopSounds();
     const audio = ensureContext();
     if (!audio) return;
     const currentGeneration = generation;

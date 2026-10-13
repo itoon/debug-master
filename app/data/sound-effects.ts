@@ -1,4 +1,6 @@
-export type SoundEffect = "move" | "clear" | "wrong" | "complete";
+export const UI_SOUND_EFFECTS = ["select", "transition", "transitionBack", "popup"] as const;
+export type UiSoundEffect = (typeof UI_SOUND_EFFECTS)[number];
+export type SoundEffect = "move" | "clear" | "wrong" | "complete" | UiSoundEffect;
 export type EffectTone = {
   frequency: number;
   endFrequency?: number;
@@ -12,6 +14,20 @@ export type EffectTone = {
 
 // Synthesized placeholders; mid-range move/retry tones work on small speakers.
 export const soundEffects: Record<SoundEffect, readonly EffectTone[]> = {
+  select: [
+    { frequency: 880, endFrequency: 1046.5, delay: 0, duration: .09, volume: .18, wave: "sine", release: .04 },
+  ],
+  transition: [
+    { frequency: 440, endFrequency: 880, delay: .025, duration: .26, volume: .1, wave: "sine", release: .09 },
+  ],
+  transitionBack: [
+    { frequency: 880, endFrequency: 440, delay: 0, duration: .26, volume: .1, wave: "sine", release: .09 },
+  ],
+  popup: [
+    { frequency: 350, endFrequency: 900, delay: 0, duration: .11, volume: .16, wave: "sine", release: .05 },
+    { frequency: 760, endFrequency: 500, delay: .11, duration: .16, volume: .13, wave: "triangle", release: .08 },
+    { frequency: 600, endFrequency: 660, delay: .26, duration: .11, volume: .09, wave: "sine", release: .06 },
+  ],
   complete: [
     { frequency: 523.25, delay: 0, duration: .18, volume: .18, wave: "triangle" },
     { frequency: 659.25, delay: .12, duration: .18, volume: .18, wave: "triangle" },

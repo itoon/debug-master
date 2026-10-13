@@ -13,7 +13,7 @@
       v-for="entry in codeLineEntries"
       :key="`${level.id}-${entry.index}`"
       class="code-line"
-      :class="{ active: isActiveLine?.(entry.line) }"
+      :class="{ active: isActiveLine?.(entry.line, entry.index) }"
     ><span
       v-if="lineNumbers"
       class="code-line-number"
@@ -77,7 +77,7 @@ const props = withDefaults(
     /** Gameplay keeps readable text and scrolls instead of shrinking long code. */
     readable?: boolean;
     /** Highlights a source line (the game uses it in Debug Mode). */
-    isActiveLine?: (line: string) => boolean;
+    isActiveLine?: (line: string, index: number) => boolean;
   }>(),
   {
     language: "python",

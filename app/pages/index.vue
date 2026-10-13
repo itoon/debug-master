@@ -1,7 +1,8 @@
 <template>
   <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }">
     <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
-      :repository="repositories.scores" :error="homeStorageError" @start="prepareChallenge" @reset-error="homeStorageError = ''" />
+      :repository="repositories.scores" :error="homeStorageError" @start="prepareChallenge" @reset-error="homeStorageError = ''"
+      @unlock-audio="unlockAudio" @sound="playSound" />
     <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
       :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
