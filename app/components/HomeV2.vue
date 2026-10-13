@@ -4,8 +4,9 @@
 
     <div class="mode-boards">
       <section v-for="mode in homeConfig.modes" :key="mode.id" class="mode-board" :class="`mode-${mode.id}`"
+        :data-mode-card="mode.id"
         :aria-labelledby="`mode-${mode.id}-title`" :aria-busy="busy"
-        @click="openModeSetup(mode, $event)" @mouseenter="hoveredMode = mode.id" @mouseleave="hoveredMode = null"
+        @click="openModeSetup(mode, $event)"
         @focusin="focusedMode = mode.id" @focusout="leaveCardFocus($event)">
         <!-- Keyboard target for the whole card; there is no visible Start button. -->
         <button type="button" class="card-launch-target" :disabled="busy" aria-haspopup="dialog" :data-mode-launch="mode.id"
@@ -23,7 +24,7 @@
           </figcaption>
         </figure>
         <ChallengeRanking class="card-ranking" :repository="repository" :board="boardFor(mode)" variant="space" podium credits
-          :paused="setupMode !== null || hoveredMode === mode.id || focusedMode === mode.id" />
+          :paused="setupMode !== null || focusedMode === mode.id" @viewport-removed="clearDetachedFocus(mode.id)" />
         <p class="card-hint">{{ t('home.cardHint') }} <span aria-hidden="true">↗</span></p>
       </section>
     </div>
@@ -37,14 +38,13 @@
 <script setup lang="ts">
 import { homeConfig, type ChallengeMode, type ChallengeId } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
-import type { ScoreRepository } from "../storage/contracts";
+import type { ScoreRepository, PlayerSetupInput } from "../storage/contracts";
 import { formatClock, type RankingBoard } from "../utils/ranking";
 
 const props = defineProps<{ repository: ScoreRepository; error?: string; busy?: boolean }>();
-const emit = defineEmits<{ start: [player: { nickname: string; age: number }, mode: ChallengeMode]; resetError: [] }>();
+const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resetError: [] }>();
 const { t } = useGameI18n();
 const setupMode = ref<ChallengeMode | null>(null);
-const hoveredMode = ref<ChallengeId | null>(null);
 const focusedMode = ref<ChallengeId | null>(null);
 const baseURL = useRuntimeConfig().app.baseURL;
 let launchButton: HTMLButtonElement | null = null;
@@ -63,12 +63,16 @@ function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
 function leaveCardFocus(event: FocusEvent) {
   if (!(event.relatedTarget instanceof Node) || !(event.currentTarget as HTMLElement).contains(event.relatedTarget)) focusedMode.value = null;
 }
+function clearDetachedFocus(modeId: ChallengeId) {
+  const activeCard = document.activeElement?.closest("[data-mode-card]");
+  if (focusedMode.value === modeId && activeCard?.getAttribute("data-mode-card") !== modeId) focusedMode.value = null;
+}
 async function closeSetup() {
   setupMode.value = null;
   await nextTick();
   launchButton?.focus();
 }
-function launch(player: { nickname: string; age: number }) {
+function launch(player: PlayerSetupInput) {
   if (setupMode.value) emit("start", player, setupMode.value);
 }
 </script>

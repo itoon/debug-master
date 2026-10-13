@@ -417,6 +417,8 @@ import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprit
 import { homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
+import type { PlayerSetupInput } from "../storage/contracts";
+import { isPlayerAvatarId } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
 
 const { t } = useGameI18n();
@@ -424,6 +426,7 @@ const { enabled: soundEnabled, unlockAudio, playSound, stopSounds, toggleSound }
 const repositories = createLocalRepositories();
 const activeChallenge = ref<ChallengeMode | null>(null);
 const currentPlayerId = ref("");
+const currentAvatarId = ref<string | undefined>(undefined);
 const homeResetKey = ref(0);
 const showTutorial = ref(false);
 const showSummary = ref(false);
@@ -725,14 +728,14 @@ function exitGame(): void {
 }
 
 /** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
-function prepareChallenge(profile: { nickname: string; age: number }, mode: ChallengeMode): void {
+function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode): void {
   const nickname = profile.nickname.trim();
-  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age)) return;
+  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return;
   const configuredMode = homeConfig.modes.find((item) => item.id === mode.id);
   if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900) return;
   const playerId = crypto.randomUUID();
   try {
-    repositories.players.save({ id: playerId, nickname, age: profile.age });
+    repositories.players.save({ id: playerId, nickname, age: profile.age, avatarId: profile.avatarId });
   } catch {
     homeStorageError.value = t("storage.error");
     return;
@@ -744,6 +747,7 @@ function prepareChallenge(profile: { nickname: string; age: number }, mode: Chal
     window.history.pushState({ ...window.history.state, debugMasterHomeV2Session: true }, "", window.location.href);
   }
   currentPlayerId.value = playerId;
+  currentAvatarId.value = profile.avatarId;
   playerNameDraft.value = nickname;
   playerAgeDraft.value = profile.age;
   activeChallenge.value = configuredMode;
@@ -780,6 +784,7 @@ function resetHomeSession(): void {
   playerName.value = "";
   playerAge.value = undefined;
   currentPlayerId.value = "";
+  currentAvatarId.value = undefined;
   activeChallenge.value = null;
   summaryScore.value = undefined;
   scoreSaved.value = false;
@@ -1032,6 +1037,7 @@ function createScoreSnapshot(): Score {
   return {
     challengeId: activeChallenge.value?.challengeId,
     playerId: currentPlayerId.value || undefined,
+    avatarId: currentAvatarId.value,
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     name: playerName.value || "Player",
     setId: deadRun.value ? "dead" : activeSet.value.id,

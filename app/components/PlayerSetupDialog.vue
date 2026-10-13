@@ -9,6 +9,17 @@
         <button type="button" class="close-button" :aria-label="t('home.closeSetup')" @click="emit('close')">×</button>
       </header>
       <div class="selected-mode"><ModeBadge :mode="mode.id" /><strong>{{ t(mode.nameKey) }}</strong></div>
+      <div class="player-identity">
+        <div class="profile-choice">
+          <p>{{ t('home.avatar') }}</p>
+          <div class="avatar-preview">
+            <img :src="avatarSrc(selectedAvatar)" :alt="t('home.selectedAvatar', { number: avatarIndex + 1, total: PLAYER_AVATARS.length })" draggable="false" />
+            <button type="button" class="avatar-cycle" :disabled="busy" :aria-label="t('home.nextAvatar')" :title="t('home.nextAvatar')" @click="nextAvatar">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M18 17a7 7 0 0 1-12 1l-2-3" /></svg>
+            </button>
+          </div>
+          <span class="sr-only" role="status">{{ t('home.selectedAvatar', { number: avatarIndex + 1, total: PLAYER_AVATARS.length }) }}</span>
+        </div>
       <div class="nickname-field">
         <label for="setup-nickname">{{ t('home.nickname') }}</label>
         <div class="nickname-entry">
@@ -23,6 +34,7 @@
         </div>
         <span class="sr-only" role="status">{{ generatedAnnouncement }}</span>
         <small id="nickname-note">{{ t('home.nicknameLimit', { max: homeConfig.nicknameMaxLength }) }}</small>
+      </div>
       </div>
       <fieldset class="age-field">
         <legend>{{ t('home.age') }}</legend>
@@ -58,15 +70,22 @@
 import { homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { PLAYER_SPRITES } from "../utils/playerSprites";
+import { PLAYER_AVATARS } from "../data/player-avatars";
+import { usePlayerAvatar } from "../composables/usePlayerAvatar";
+import type { PlayerSetupInput } from "../storage/contracts";
 
 defineProps<{ mode: ChallengeMode; error?: string; busy?: boolean }>();
-const emit = defineEmits<{ close: []; start: [player: { nickname: string; age: number }] }>();
+const emit = defineEmits<{ close: []; start: [player: PlayerSetupInput] }>();
 const { t } = useGameI18n();
 const titleId = useId();
 const dialog = ref<HTMLDialogElement | null>(null);
 const nicknameInput = ref<HTMLInputElement | null>(null);
 const ageTrack = ref<HTMLDivElement | null>(null);
 const nickname = ref("");
+const avatarSrc = usePlayerAvatar();
+const avatarIndex = ref(0);
+const selectedAvatar = computed(() => PLAYER_AVATARS[avatarIndex.value]!);
+function nextAvatar() { avatarIndex.value = (avatarIndex.value + 1) % PLAYER_AVATARS.length; }
 const generatedAnnouncement = ref("");
 const randomNameKeys = ["nickname.star", "nickname.comet", "nickname.rocket", "nickname.captain", "nickname.explorer", "nickname.moon", "nickname.cosmo", "nickname.spark"] as const;
 const age = ref<number | null>(null);
@@ -131,9 +150,9 @@ function handleAgeKey(event: KeyboardEvent, index: number) {
   button?.focus();
 }
 function launch() {
-  if (valid.value && age.value !== null) emit("start", { nickname: normalizedName.value, age: age.value });
+  if (valid.value && age.value !== null) emit("start", { nickname: normalizedName.value, age: age.value, avatarId: selectedAvatar.value });
 }
-onMounted(() => { dialog.value?.showModal(); nicknameInput.value?.focus(); });
+onMounted(() => { avatarIndex.value = Math.floor(Math.random() * PLAYER_AVATARS.length); dialog.value?.showModal(); nicknameInput.value?.focus(); });
 onBeforeUnmount(() => dialog.value?.close());
 </script>
 
@@ -149,6 +168,13 @@ button { cursor: pointer; }
 .close-button { flex: none; width: 48px; height: 48px; border: 1px solid #7d9cfa; border-radius: 12px; background: #0c225e; color: white; font-size: 1.7rem; }
 .selected-mode { display: flex; align-items: center; justify-self: start; gap: 10px; min-height: 44px; padding: 6px 14px; border: 1px solid #668eff; border-radius: 12px; background: #0c225e; }
 .nickname-field { display: grid; gap: 5px; }
+.player-identity { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: center; gap: 20px; }
+.profile-choice { display: grid; justify-items: center; gap: 8px; }
+.profile-choice p { margin: 0; font-size: .85rem; font-weight: 800; }
+.avatar-preview { position: relative; width: 104px; height: 104px; border: 3px solid #87bbff; border-radius: 50%; background: radial-gradient(circle at top, #91caff, #2b59b5); }
+.avatar-preview img { width: 100%; height: 100%; border-radius: inherit; object-fit: contain; }
+.avatar-cycle { position: absolute; top: -10px; right: -10px; display: grid; place-items: center; width: 48px; height: 48px; padding: 9px; border: 2px solid #ffe889; border-radius: 50%; background: #153779; color: #ffe17a; box-shadow: 0 3px 8px #0c2058; }
+.avatar-cycle svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .nickname-entry { display: flex; gap: 10px; }
 .nickname-entry input { flex: 1; min-width: 0; }
 .random-name-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; min-width: 116px; min-height: 52px; padding: 8px 12px; border: 2px solid #ffe889; border-radius: 14px; background: #ffdc53; color: #142854; font-weight: 800; }
@@ -184,4 +210,5 @@ label, legend { font-weight: 800; }
 button:focus-visible, input:focus-visible { outline: 3px solid #ffdc5a; outline-offset: 3px; }
 @media (max-width: 760px) { .age-scroll-hint { display: block; } .confirm-button { justify-self: stretch; width: 100%; } }
 @media (max-width: 420px) { .nickname-entry { flex-direction: column; } }
+@media (max-width: 560px) { .player-identity { grid-template-columns: 1fr; gap: 16px; } }
 </style>

@@ -47,7 +47,8 @@ function validScores(value: unknown): value is Score[] {
     ["campaign", "timer", "ranking", "dead"].includes(score.mode) &&
     Number.isFinite(score.score) && Number.isFinite(score.elapsedMs) && score.elapsedMs >= 0 &&
     typeof score.createdAt === "string" && Number.isFinite(Date.parse(score.createdAt)) &&
-    (score.challengeId === undefined || ["A", "B", "C"].includes(score.challengeId)),
+    (score.challengeId === undefined || ["A", "B", "C"].includes(score.challengeId)) &&
+    (score.avatarId === undefined || typeof score.avatarId === "string"),
   );
 }
 

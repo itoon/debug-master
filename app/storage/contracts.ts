@@ -1,7 +1,8 @@
 import type { Score } from "../types/debug-game";
 import type { RankingBoard } from "../utils/ranking";
 
-export type PlayerProfile = { id: string; nickname: string; age: number };
+export type PlayerProfile = { id: string; nickname: string; age: number; avatarId?: string };
+export type PlayerSetupInput = Omit<PlayerProfile, "id"> & { avatarId: string };
 
 export interface PlayerRepository {
   save(player: PlayerProfile): void;

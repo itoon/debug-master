@@ -25,7 +25,7 @@
       </template>
 
       <template v-else-if="stage === 'summary' && result">
-        <img class="session-codi" :src="PLAYER_SPRITES.down" alt="Codi" draggable="false" />
+        <img class="session-avatar" :src="avatarSrc(result.avatarId)" :alt="t('home.avatar')" draggable="false" />
         <p class="result-player">{{ result.name }} · {{ t('summary.levels', { count: result.levelsCompleted }) }}</p>
         <dl class="summary-metrics">
           <div><dt>{{ t('summary.score') }}</dt><dd>{{ result.score.toLocaleString('th-TH') }}</dd></div>
@@ -62,8 +62,10 @@ import { PLAYER_SPRITES } from "../utils/playerSprites";
 import { useGameI18n } from "../composables/useGameI18n";
 import { useScoreBoard } from "../composables/useScoreBoard";
 import { TILE_TYPES, tileDefinition } from "../data/tiles";
+import { usePlayerAvatar } from "../composables/usePlayerAvatar";
 
 const tutorialTiles = TILE_TYPES.map(tileDefinition);
+const avatarSrc = usePlayerAvatar();
 
 const props = defineProps<{
   stage: "tutorial" | "summary" | "ranking";
@@ -95,6 +97,7 @@ watch(() => props.stage, async () => { await nextTick(); heading.value?.focus();
 h1 { margin: 0; font-size: clamp(1.35rem, 3vw, 1.9rem); font-weight: 800; line-height: 1.3; }
 .session-mode, .ranking-rules { margin: 0; font-size: .9rem; color: #526079; }
 .session-codi { width: 76px; height: 92px; object-fit: contain; justify-self: center; }
+.session-avatar { width: 92px; height: 92px; border: 3px solid #8db7ff; border-radius: 50%; background: #d8eaff; object-fit: contain; justify-self: center; }
 .instructions { list-style: none; display: grid; gap: 10px; padding: 0; margin: 0; font-size: 1.05rem; }
 .retry-note, .result-player { margin: 0; color: #526079; }
 .tile-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 0; margin: 0; list-style: none; }
