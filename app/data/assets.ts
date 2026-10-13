@@ -9,8 +9,6 @@ import codiDizzy from "~/assets/sprites/cody-dizzy.webp";
 import codiHappy from "~/assets/sprites/cody-happy.webp";
 import codiIdle from "~/assets/sprites/cody-idle.webp";
 import beacon from "~/assets/sprites/beacon.png";
-import gem from "~/assets/sprites/gem.png";
-import rock from "~/assets/sprites/rock.png";
 import background from "~/assets/bg.png";
 import { PLAYER_SPRITES, PLAYER_POSES } from "../utils/playerSprites";
 import { tileDefinition } from "./tiles";
@@ -197,20 +195,8 @@ export const assetGroups: AssetGroup[] = [
       tile("g", th["tile.grassArt"]),
       tile("p", th["tile.flowerArt"]),
       tile("o", th["tile.honeyArt"]),
-      {
-        ...tile("v", "ม่วง + รูปคริสตัล"),
-        status: "in-use",
-        file: "app/assets/sprites/gem.png",
-        spec: ["ตัวคริสตัล: PNG โปร่งใส 172 × 192 px วางกลางช่อง (พื้นม่วงยังเป็น CSS)"],
-        swap: "ทับไฟล์ gem.png ได้เลย",
-      },
-      {
-        ...tile("k", "กรมท่า + รูปก้อนหิน"),
-        status: "in-use",
-        file: "app/assets/sprites/rock.png",
-        spec: ["ตัวหิน: PNG โปร่งใส 190 × 192 px วางกลางช่อง (พื้นกรมท่ายังเป็น CSS)"],
-        swap: "ทับไฟล์ rock.png ได้เลย",
-      },
+      tile("v", th["tile.gemArt"]),
+      tile("k", th["tile.rockArt"]),
     ],
   },
   {
