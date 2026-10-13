@@ -1,26 +1,13 @@
 import { computed, type ComputedRef, type Ref } from "vue";
-import { colorMeta, type LevelLike, type VisibleTile } from "../types/debug-game";
+import type { LevelLike, VisibleTile } from "../types/debug-game";
+import { tileDefinition } from "../data/tiles";
 
-export function tileColorName(color: string): string {
-  return colorMeta[color]?.name ?? "gray";
+export function tileKind(color: string): string {
+  return tileDefinition(color).name;
 }
 
-// Name of each tile letter, shown in the code view next to a mini swatch.
-// Textured / sprite tiles use what they look like (ice, sand, gem, rock);
-// plain colour tiles use their colour, matching the letter (g = green).
-const tileKinds: Record<string, string> = {
-  n: "floor",
-  b: "ice",
-  y: "sand",
-  g: "green",
-  p: "pink",
-  o: "orange",
-  v: "gem",
-  k: "rock",
-};
-
 export function tileKindLabel(color: string): string {
-  return tileKinds[color] ?? "floor";
+  return tileDefinition(color).name;
 }
 
 // Must match the .board CSS: gap = max(5px, 0.14 * cell),
@@ -42,6 +29,7 @@ export function fitCellSize(
   cols: number,
   rows: number,
   space?: BoardSpace,
+  maxCellSize = MAX_CELL,
 ): number {
   const safeCols = Math.max(1, cols);
   const safeRows = Math.max(1, rows);
@@ -52,7 +40,7 @@ export function fitCellSize(
       Math.min(54, Math.floor(Math.min(520 / safeCols, 500 / safeRows))),
     );
   }
-  let cell = MAX_CELL;
+  let cell = Math.max(MIN_CELL, Math.floor(maxCellSize));
   while (
     cell > MIN_CELL &&
     (boardLength(safeCols, cell) > space.width ||
@@ -68,6 +56,7 @@ export type BoardSpace = { width: number; height: number };
 export function useBoardPresentation(
   currentLevel: ComputedRef<LevelLike>,
   boardSpace?: Ref<BoardSpace | undefined>,
+  maxCellSize?: Ref<number>,
 ) {
   const visibleTiles = computed<VisibleTile[]>(() =>
     currentLevel.value.map.flatMap((row, rowIndex) =>
@@ -75,17 +64,18 @@ export function useBoardPresentation(
         row: rowIndex,
         col: colIndex,
         raw: color,
-        colorName: tileColorName(color),
-        symbol: colorMeta[color]?.symbol ?? "",
+        kind: tileKind(color),
+        symbol: "",
       })),
     ),
   );
 
   const boardStyle = computed(() => {
     const { cols, rows } = currentLevel.value;
-    const cell = fitCellSize(cols, rows, boardSpace?.value);
+    const cell = fitCellSize(cols, rows, boardSpace?.value, maxCellSize?.value);
     return {
       gridTemplateColumns: `repeat(${cols}, ${cell}px)`,
+      gridTemplateRows: `repeat(${rows}, ${cell}px)`,
       "--cell-size": `${cell}px`,
     };
   });

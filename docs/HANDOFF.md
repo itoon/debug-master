@@ -1,0 +1,442 @@
+# Debug Master — M3 / Home v2
+
+Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
+
+## 2026-10-13 — Remove practice picker checkmark
+
+- Removed the selected-level checkmark and its unused CSS from `PracticeLevelDialog.vue`. Level number, yellow selection highlight, aria-current, initial focus and select handlers are unchanged. Updated `DESIGN.md` to match.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests/live browser checks, git add/commit, branch changes or reference-frontend edits. Existing user changes/staging preserved.
+
+## 2026-10-13 — Retain SuperHint dots for repeated visits
+
+- Supersedes the earlier remove-on-first-visit behaviour. `BoardSuperHint` now consumes the isolated solver's route in order using the existing per-attempt `levelCorrectInputs` count. The first path coordinate is standing, not a move; each correct direction consumes one destination. A cell stays marked while any later visit remains, including wrapping or returning to the starting cell. Its dot and endpoint ring disappear only after its last required visit.
+- Repeated destinations add concentric blinking red outline rings around the ordinary dot, reducing as visits are consumed. Extra rings are capped at three and sized within the cell for visual density; the underlying remaining-visit count is uncapped. For a two-visit cell, the first arrival removes one extra ring and retains the dot, and the second removes the dot. Arrow direction and teaching code highlights are unchanged.
+- Removed the coordinate-only visited Set from the page. The existing correct-input count already updates even when hints are off and resets in `beginLevel`, so toggling SuperHint retains accurate progress and retry/manual selection/new levels restore the route. Wrong input consumes no destination. Practice summary statistics, live game runner, scoring, timers, assets and storage are unchanged.
+- Updated the Thai hint guidance and `DESIGN.md`. Verification: `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review found no actionable issue in repeat/wrap/start-cell visits, consumption, resets, toggles or marker bounds. No tests/live viewport checks, git add/commit, branch changes or reference-frontend edits; existing user work/staging preserved.
+
+## 2026-10-13 — Equal podium numbers, top alignment
+
+- `ChallengeRanking.vue` now uses one shared 2rem size (32px at the default root size) for podium numbers 1/2/3, removing rank 3's separate size override. Numbers are centered horizontally and top-aligned within each podium face. Retains gold/silver/bronze colours, original block heights/widths and compact centered podium spacing.
+- Updated `DESIGN.md`. No ranking data, sorting, scrolling, avatars, game flow or score logic changes. Existing user work/staging is preserved.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. Source inspection confirms all three podium numbers share the same typography/alignment rules. No tests/live viewport checks, git add/commit, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Practice exit summary without scores
+
+- Practice Exit keeps its confirmation dialog. Confirming “ออกและกลับหน้าแรก” now opens `PracticeSummaryDialog` before returning Home. The blue summary uses existing Codi artwork, entrance motion and the existing completion cue (respecting mute); it shows elapsed `MM:SS`, passed levels and wrong-move count, with a single Home action. It has no score, ranking, profile requirement or persistence. All new text uses the Thai dictionary.
+- Per the user's answers, elapsed time and mistakes cover the whole practice visit from the first level launch until confirmed exit, including map selection, retry/restart and confirmation time. Passed levels count unique level IDs; replaying a cleared level does not increase that count. Only wrong directional input increments mistakes, not interpreter errors or manual restarts. Separate transient counters survive the legacy `startGame` resets on map selection. No live timer or elapsed-time label is added to the practice HUD.
+- Confirmed exit freezes a result snapshot, cancels pending move/retry/next-level callbacks and stops gameplay before opening the modal. Keyboard/movement/map/exit guards prevent background actions; native dialog focuses its heading, bounds overflow and hides the scrollbar, and respects reduced motion. Home/browser navigation clears the practice totals and result. The existing 90-second summary idle return applies; live practice remains exempt.
+- Original 60-level progression, controls, SuperHint, three competitive summaries/scoring/timers and repository schemas are preserved. Practice results never call Player/Score save. Existing user edits/staging are preserved.
+- Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review found no actionable issue in counting, reset/freeze paths, timer cleanup, storage exclusion or nonpractice flow. No tests/browser/audio checks, agent git add/commit, branch changes or reference-frontend edits. Live presentation remains unverified under the build-only instruction.
+
+## 2026-10-13 — Remove reached SuperHint dots
+
+- Practice now keeps a reactive, attempt-local set of successful move destinations keyed by row/column. `BoardSuperHint.visitedCells` filters reached cells out of the full-route overlay, including their endpoint ring. A coordinate stays hidden if a loop later returns to it; the existing arrow and exact code-line highlight continue to guide those moves. Merely standing at the initial position does not add a visited destination.
+- Records destinations even while SuperHint is off, so enabling/re-enabling it does not restore already-reached dots. Wrong input returns before recording a cell; wrapping records the actual wrapped destination. `beginLevel` resets the set for manual restart, auto retry and the next level; Home also clears it. No localStorage/repository changes or persistent tracking.
+- Only marker presentation changes. Board tiles, movement/runner timing, scoring/progress, sounds, arrow and highlight behavior are unchanged. Updated the Thai hint guidance to describe unvisited cells. Existing user edits and staging are preserved.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no actionable issue in reactive Set updates, wrap/loop destinations, wrong input, toggles or reset paths. Live presentation remains unverified. No tests/browser checks, git add/commit by the agent, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Teaching code highlight with practice SuperHint
+
+- Practice/tour-through-original-60 SuperHint now enables the existing yellow code-line highlight alongside its full path and next-move arrow. Uses the live `activeNode`, retaining the same wait/input/80ms advance rhythm as original debug presentation; no automatic movement or interpreter timing was added. Turning SuperHint off removes the highlight. Switching/restarting levels uses the new level's active command; no practice debug metrics or text-hint panel is restored.
+- Added optional 1-based `sourceLine` presentation metadata to node types and the parser's if/elif, repeat, while, move and call nodes. It references the original physical line number, including blank lines. Repeated `right()`/`up()` commands highlight one exact occurrence rather than all text matches. Parser grammar, ID generation/evaluation order, interpreter rules, puzzles, scoring and storage are unchanged. Metadata is not persisted in score/player records.
+- `LevelCode.followActiveLine` is opt-in and defaults false. Practice SuperHint marks the active line with `aria-current=step` and follows an offscreen line by changing only the code box's scrollTop. Its post-render update checks follow state, level identity, active index and connected DOM before scrolling, avoiding stale updates after toggle/reset/unmount. Other game modes/review/tutorial keep existing behavior; legacy Debug still uses its original matching function.
+- Updated the picker guidance through the Thai dictionary to explain both route and code highlights. Existing staged user work is preserved; the agent did not restage files.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no actionable issue in duplicate/blank-line mapping, branch/loop/function source positions, internal scrolling or nonpractice behavior. Live highlight/scroll appearance remains unverified. No tests/browser checks, git add/commit by the agent, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Practice level progress and score-free success
+
+- Practice/tour-through-original-60 mode now uses `currentLevel.id` as one presentation value for both progress text and bar. Selecting level 11 immediately shows 11/60 and the bar at 11/60; jumps, restarts and automatic next levels follow the current ID. Original completed-level counting remains for ranked and hidden legacy modes.
+- Practice no longer calculates/adds level points or increments combo/best-combo. It does not create score popups or score-popup timers, and their display is additionally guarded. The existing row above the board instead displays a green check and dictionary text “ผ่านด่านแล้ว” during success and final completion, without changing board dimensions. Original clear sound, 520ms advance/retry behavior, movement and score-storage guards remain intact. Ranked scoring/combo formulas and popups are unchanged.
+- Enlarged SuperHint directional arrows exactly 2×: size clamp changes from 12px / 25% cell / 30px to 24px / 50% cell / 60px. Arrow centers now sit at their tile edges to keep them close to Codi; four directions, 3px nudge, visibility guards and reduced-motion/hidden-tab behavior are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete issue in progress mapping, practice-only score/combo exclusions, transition/final/restart behavior or doubled arrow geometry. Rendered appearance remains unverified. No tests/browser checks, git add/commit by the agent, branch changes or reference-frontend edits; existing user edits preserved.
+
+## 2026-10-13 — Supplied MP3 for button clicks
+
+- Copied the user's `D:/07-Steamming/sound-effect/pops-4.mp3` unchanged (10,029 bytes) into `app/assets/sounds/pops-4.mp3`. Source file is untouched. Nuxt's bundled asset import supplies the URL, including deployment base-path handling; no external runtime file path or dependency is introduced.
+- Replaced primary `click` playback with that MP3. `useGameAudio` preloads/decodes click and failure assets on audio unlock, caching promises per effect. Both file voices use the same AudioContext/master gain (0.28), active-voice cleanup and generation/hidden/mute/disposed guards. Load/decode failure clears that effect's cache for a later retry and falls back to its existing synth cue; no synth layer is played when the MP3 succeeds.
+- General UI click event routing remains unchanged, including keyboard activation. Movement controls, card selection/transition/popup and mute retain their existing dedicated behavior. Failure WAV and other cues are unchanged; only their common file-loading/playback helper is shared. The Elements inventory now lists the supplied click asset as in use, with Thai dictionary text.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed; build output includes the bundled `pops-4` MP3. Read-only review found no concrete issue in cache/resume/mute/stop/unmount/hidden handling or duplicate playback. Audibility and live timing remain unverified. No tests/browser/listening checks, git add/commit by the agent, branch changes or reference-frontend edits. Existing user edits are preserved.
+
+## 2026-10-13 — Concept groups in the practice picker
+
+- Replaced the single 60-button grid with category sections derived from each original level's `concept`, using a copied array sorted by ID. All 60 original levels stay selectable once: Sequence/Repeat 1–10 (10), Conditionals 11–28 (18), While/Negation 29–46 (18), Functions 47–54 (8), Recursion 55–60 (6). No ranges or puzzle memberships are hardcoded in the component.
+- `practice-concepts.ts` supplies emoji/name-key presentation metadata: 🔁 Sequence and repeat loops, 🧭 Conditionals · If / Else, 🔄 While loops and negation, 🛠️ Functions and decomposition, 🌀 Recursion and advanced control flow. Category headings and counts use the dictionary; unknown concepts keep their original title with 🧩.
+- Category cards show counts, numbered buttons with subtle depth/hover/press feedback, and a yellow checkmark/current-group outline. Grid adapts from 10 to 5 to 3 columns, retaining 48px buttons. A bounded 940px native dialog scrolls only its category body, retaining header/close/help outside that scroll region. Selected-level focus, Escape/cancel, busy guards and original launch behavior stay intact; reduced motion removes button movement. Gameplay, hints, score/storage and assets are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review confirmed groups of 10/18/18/8/6, no missing/duplicate levels, and consistent focus/busy/scroll structure. Rendered overflow remains unverified. No tests/browser checks, git add/commit by the agent, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Emoji suffixes for random nicknames
+
+- Replaced the random 00–99 suffix with one of 12 child-friendly emoji in `homeConfig.nicknameEmojis` (🎮 🔥 🚀 ✨ 😎 ⚡ 🌟 🤖 🐱 🦖 🍀 🍉). Existing eight Thai bases and ten Gen Alpha gaming descriptors remain; dictionary format is now `{name}{emoji}`, e.g. น้องบั๊กตัวตึง🔥 or โคดิสุดเฟี้ยว🎮.
+- Generate complete base/vibe/emoji candidates, filter against the existing 24 UTF-16-unit limit and current normalized name, then choose randomly. Emoji strings are never truncated; an immediate repeat is excluded. Manual editing, trim/age/avatar validation and blank-form resets remain unchanged. Existing saved names/scores retain their previous numeric suffixes; no migration or storage rewrite.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete issue in full-string handling, length filtering or no-repeat behavior. No tests/browser checks, git add/commit by the agent, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Practice HUD, red path hints and directional cue
+
+- Practice `GameHud` variant now shows level/title/concept/Python at the upper-left, progress in the center, and map/SuperHint buttons at the upper-right; the progress bar spans below. Removed the separate dropdown/previous/next/restart/hint toolbar as requested. The map button opens the existing 60-level dialog mid-practice; selecting any level starts it, including the current one for restart. Normal A/B/C and legacy HUD still render their original profile/score/time information.
+- The picker highlights and focuses the actual selected/current level, not the first button matched by a grouped selector. Native dialog retains Cancel/Escape, focus return and pending-launch guards. Arrow inputs/cues are disabled while the picker is open. Existing automatic next-level/retry timing is unchanged; a pending automatic transition may complete behind the modal, whose current-level highlight updates accordingly.
+- Path circles use the shared red `--cv-red` instead of blue, with pulse opacity increased from 0.2–0.5 to 0.4–0.7. The endpoint retains its extra ring; reduced-motion circles stay at 0.55. Full-route computation, deduplication, blink offsets and no-ranking safeguards remain intact.
+- Added `NextMoveHint.vue`, a white triangular arrow with a dark outline outside Codi's current tile, only while practice SuperHint is enabled and the existing `expectedMove` is actionable. Its side/orientation follows that live direction; left/right nudge along X and up/down along Y, by 3px over an 850ms loop. It rides inside the original actor container so movement/wrap positioning stays aligned. It does not move Codi, run commands or intercept input. Hidden tabs pause; reduced motion removes the nudge; failure/finish/modal/no-pending-move hides the cue. Visibility listeners clean up on unmount.
+- Hint guidance moves to a screen-reader status so it adds no layout height; hint errors use the existing board notice overlay. New map/next-move text uses Thai dictionary keys. Assets, puzzles, core runner, scoring formulas and timer logic are unchanged. Existing user edits, including `ChallengeRanking.vue`, are preserved.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete issue in practice HUD isolation, arrow direction/position/lifecycle or modal guards. Rendered layout and motion were not checked in a browser. No tests, git add/commit by the agent, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Smaller right-aligned practice entry and visual SuperHint
+
+- Moved Home's practice button to the lower-right footer after the team/ranking information, including on narrow stacked layouts. Reduced height from 48px to 36px, icon from 22px to 18px, padding and text size. Existing launch, busy state, focus ring and level picker stay intact; no fixed positioning overlaps cards.
+- User selected a full-level route. Read the reference frontend's `game/helper/GameHelper.ts` SuperHint and `components/Sandbox/SolutionSuperHint.vue` without editing that project. Reused its two-circle visual idea, path blue `#81b1ff`, endpoint primary blue, and 500ms opacity rise (0.2→0.5) followed by a 500ms return. Debug Master uses a CSS/Vue overlay, with 120ms offsets per first-visited cell for a moving blink pattern; no Phaser/dependency was added.
+- Practice toolbar now has one coding-icon SuperHint toggle instead of Debug and progressively revealed text hints. `BoardSuperHint.vue` renders the complete route from an independent `solveLevel(currentLevel, parseProgram(code))` invocation; live runner state, player movement, timer and score formulas are untouched. Supports existing branch/while/function/wrap rules through that same solver. Repeated cells render once; the endpoint also has a distinct ring. Initial path entry is excluded as in the reference, but later returns to that cell are retained.
+- Marks inherit board padding/pitch/cell sizing, occupy no grid tracks and remain under Codi with pointer events disabled. The status line reserves height. Hint paths with parser/solver errors do not show a misleading partial route; localized retry guidance appears instead. Toggle persists while changing/advancing/retrying practice levels, resets at Home/new practice, and never becomes available in ranked A/B/C sessions. Existing hidden Dev debug controls remain unchanged.
+- CSS animation loops indefinitely, pauses in hidden tabs, becomes static for reduced motion, and disappears with the component on failure/exit; visibility listeners are cleaned up. The path stays visible during level success and on the final completed practice board so the enabled toggle/status remains truthful. No hint animation timers or RAF were introduced. New copy uses the Thai dictionary; original 60 puzzles and assets are unchanged.
+- Verification: final `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found a completed-board visibility mismatch, now fixed by retaining the overlay through success/completed states; no other actionable findings. Blink phase follows forward path order, wraps within the one-second cycle and is active immediately without an initial delayed reveal. No tests/browser/audio checks, git add/commit, branch changes or reference-frontend edits. Prior uncommitted player-management/practice work is preserved.
+
+## 2026-10-13 — Team player management
+
+- Added `/players` under Home's “สำหรับทีม” links and shared `DocShell` navigation. Lists all saved runs in the current namespaced repository (newest first), searchable by nickname, with profile, age, mode/set, score/time and Bangkok date. The repository stores historical names inside score snapshots; this is one row per saved run, not a separate child directory or a name-based bulk deletion.
+- Delete opens a native confirmation showing name, score, mode and date, with Cancel focused first. User explicitly approved removing both the name and score of the selected record. Deletion uses its exact score ID and removes the matching current PlayerRepository profile only when its player ID matches. Same-name records, other scores and old Dev keys remain untouched. Cancel changes nothing; failure stays in the dialog for retry; duplicate confirm is disabled while pending. Focus returns to the row action or search after removal. Ranking subscribers refresh automatically.
+- Repository mutation contracts now return `Promise<void>`. LocalStorageAdapter queues all profile/score mutations under an origin-wide Web Lock per namespaced key, covering both save and delete so another tab's write is not overwritten by a stale read. Callers await mutations and normal game setup/save/retry expose pending states with session-token guards. Reads remain synchronous. Requires Web Locks (localhost/HTTPS in supporting browsers); unsupported contexts fail through existing storage errors instead of unsafe writes. No dependencies, schema/key changes or migration. Profile cleanup and score deletion are sequential operations, not a multi-key transaction; a failed score deletion remains retryable.
+- Deletion is a team feature on this standalone local app; no backend/authentication was added. No actual user storage records were removed during implementation. Read-only review identified the cross-tab race and the implementation above addresses it.
+- Pending profile start disables setup close/Escape. Pending score saves disable Home/Next and defer browser Back/Home resets until success; failed writes retain the snapshot and retry UI. Idle reset is suspended only while storage is pending. Read-only follow-up review confirmed both async reset findings are resolved, with no remaining concrete issues.
+- Verification: final `pnpm build` passed (exit 0), including the corrected roster retry label; `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Original 60-level practice mode
+
+- Added “ฝึกซ้อม 60 ด่าน” at Home's lower-left footer. Native picker exposes every original Set 01 level (1–60), configured by `homeConfig.practice.levelSetId`; new Beginner/Intermediate/Pro tier packs stay separate. The local original level data is authoritative and unchanged; the supplied external review URL could not be read in this environment.
+- Choosing a level enters the existing campaign runner without a nickname/age/profile form or time limit. Practice toolbar supports any-level selection, previous/next, restart, Hint and Debug. Existing hints, execution-line highlighting and debug position/steps/input information are reused; no new puzzles/parser/movement/scoring formulas or assets were added.
+- Score calculations may appear in the live HUD, but practice never calls PlayerRepository.save or ScoreRepository.save and never opens a ranking or ranked summary. Completing a level uses the existing automatic next-level flow; after level 60 the toolbar lets the player choose/restart. Exit confirmation explains that practice is not saved and returns to blank Home. Back/refresh/cleanup invalidate pending launch work and cancel run timers. The existing 90-second Home idle policy includes the picker; gameplay remains excluded.
+- Original hidden Dev modes stay intact. Practice is a separate explicit session flag; later A/B/C entry restores its original timed challenge setup and normal score persistence. New UI copy uses the lightweight Thai dictionary, without reference-frontend edits or dependencies.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review found no actionable issue in level selection, hints/debug, score guards or exit/Back reset. No tests/browser checks, git add/commit or branch changes.
+
+## 2026-10-13 — Upper title and stronger cover shading
+
+- Full-thumbnail Home cards now place the mode title/badge at the upper-left corner and retain difficulty/range/time at the bottom. Two stronger navy gradients shade the top and bottom edges, with additional title shadow; the center of the thumbnail remains clear.
+- CSS applies only to empty-board full covers shown in the reference. Populated card headers/leaderboards, card dimensions, selection/hover animation and click/keyboard launch remain unchanged. No asset replacement or text changes.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing user edits are preserved.
+
+## 2026-10-13 — Distinct general UI click sound
+
+- Added a separate `click` effect: a 32ms high square-wave tick (2200 → 1400Hz) layered with a 55ms low sine tap (180 → 120Hz). It differs in duration, waveform and pitch from existing movement, selection, transition, popup, clear/failure/completion cues. No new dependency or audio asset was added.
+- An app-shell bubbling click listener plays it for enabled buttons, links, radio/checkbox controls and guidance disclosures, including nickname/avatar/age and popup actions. Native mouse/touch/keyboard clicks use the same route; background/input-text clicks, disabled/inert controls and leaderboard reading do not trigger it. Movement buttons and mode launch retain only their dedicated cues; the sound toggle stays silent.
+- Cue uses the existing `useGameAudio` context, master gain, mute/hidden/disposed guards and async-resume protection. Its UI classification allows it to overlap without interrupting gameplay sounds. The listener runs after control handlers so resetting Home can stop old voices before the new tap plays. No gameplay, storage, timer or scoring changes.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete issues in click filtering, event ordering, voice overlap or audio lifecycle guards. Acoustic distinctness and live playback remain unverified; no tests/browser/listening checks, git add/commit, branch changes or reference-frontend edits. Prior nickname and user thumbnail edits are preserved.
+
+## 2026-10-13 — Playful Gen Alpha-style random nicknames
+
+- Replaced the eight fixed space-themed nickname stems with a combination pool: eight Thai bases (น้องบั๊ก, โคดิ, จรวด, แมวอวกาศ, กัปตัน, ดาวจิ๋ว, เป็ดน้อย, แพนด้า) × ten playful gaming descriptors (ตัวตึง, สายชิล, สุดเฟี้ยว, สายแบก, โหมดเทพ, ติดบูสต์, แอบเก่ง, พลังล้น, ขี้เล่น, สปีดไว).
+- Base words, descriptors and combination formatting use the lightweight dictionary. The existing random 00–99 suffix, 24-character candidate filter and fallback when a click matches the current name are retained. Examples: น้องบั๊กตัวตึง36, โคดิสุดเฟี้ยว08, จรวดสายชิล59.
+- Only the setup random-name pool changes. Manual names, avatar selection, blank-form reset, player validation/storage and existing leaderboard records remain intact. User-modified thumbnails are preserved.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Remove Home card launch hint
+
+- Removed “แตะการ์ดเพื่อเริ่มภารกิจ” and its decorative arrow from every mode card, including full-thumbnail empty cards. Removed the unused dictionary key and hint styling.
+- Removed the footer grid row and extra cover-caption spacing reserved for that hint. Card launch via click/keyboard, accessible labels, thumbnails, hover/selection motion and leaderboard behaviour are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing edits are preserved.
+
+## 2026-10-13 — Hidden summary scrollbar
+
+- Hid the summary dialog's scrollbar with `scrollbar-width: none` and the WebKit scrollbar selector. Kept `overflow-y: auto` and the viewport-height cap, so wheel/touch/keyboard scrolling still reaches content and buttons on small screens.
+- Changes apply only to `SessionPanel.vue`'s summary dialog. Summary data, navigation, focus, animations and other scroll regions are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing edits are preserved.
+
+## 2026-10-13 — Full thumbnail for empty Home mode cards
+
+- Home cards with no scores on today's mode board now fill the card with their existing thumbnail. Mode/title/range/time and the card-launch hint remain overlaid; the empty ranking heading, Codi panel and “ยังไม่มีอันดับวันนี้…” message are absent. Populated cards retain the podium/list layout.
+- `ChallengeRanking` has an opt-in `hideEmpty` presentation and reports confirmed emptiness to Home. `useScoreBoard.loaded` distinguishes a completed read from initial loading; errors remain visible rather than triggering the full-cover state. The ranking component stays mounted and subscribed, so writes, other-tab updates and Bangkok day refresh restore/remove rankings automatically. No duplicate repository read loop or component localStorage access was added.
+- Card click/keyboard launch, selection motion/audio, leaderboard reading/credits and other ranking screens are unchanged. Existing staged/unstaged work is preserved.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete issues in empty/populated/error transitions, subscriptions, responsive cover sizing or card interaction/motion. Rendered appearance remains unverified; no tests/browser checks, git add/commit, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Left Combo and HUD divider
+
+- Aligned Combo to the left above the board and only render its text when `comboStreak > 1`. Keep its measured row height reserved so appearing/disappearing text does not resize or shift the board. Scoring and the streak counter are unchanged.
+- Added a thin blue divider beneath the left player/score/time HUD group, aligned with the bottom of the right-hand progress bar on desktop. Responsive layout and action handlers are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing edits are preserved.
+
+## 2026-10-13 — Clearer floor versus ice tiles
+
+- Added an explicit deeper-blue `.tile-floor` gradient (`#57a4e4` → `#2d78bf`) and darker bevel in shared `board.css`. Its alternating variant is also darker (`#4b98d9` → `#246bad`); ice retains its existing pale gradient and diagonal reflection streaks.
+- Shared tile variables apply consistently to gameplay/review/tutorial boards and condition swatches. Maps, compact tile codes, names, other item assets and gameplay behaviour are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing staged and unstaged changes are preserved.
+
+## 2026-10-13 — Smaller and clearer profile refresh badge
+
+- Reduced the profile-change badge from 48px to 36px, with a thinner 2px border and smaller shadow. It remains at the portrait's lower-right; a transparent 6px extension preserves a 48px pointer target without covering more of the image visually.
+- Replaced the ambiguous hooked icon with two circular arcs and distinct filled triangular arrowheads at 22px. Removed the coloured icon shadow for a crisp silhouette. Avatar cycling, labels, disabled/hover/focus behaviour and saved data are unchanged.
+- Verification: final `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits; existing user-staged changes are preserved.
+
+## 2026-10-13 — Gameplay layout following the revised screenshot
+
+- Reordered `GameHud.vue` to match the two gameplay columns: a larger player portrait/name at upper left, Score then Time beside it, and game/level/title/concept/language/difficulty on the right with the progress count at its far edge. Progress now has a wide bar directly above the code panel and still uses the existing completed/total values. Legacy Dead Mode hearts remain visible.
+- Moved Combo out of the score card to a yellow label above the board at the right. Removed the visible movement instruction above the board. Game title and Combo display use dictionary keys; no new puzzle or asset changes.
+- Moved the original sound and Exit buttons into the lower-left board footer, alongside a centered D-pad. Footer is part of normal grid flow; below 620px the D-pad and action row stack. Exit confirmation, summary, sound state, WASD and movement handlers/disabled conditions are retained. Start only renders before a run starts; the challenge flow still starts through the tutorial as before.
+- Board sizing reserves the complete measured footer and Combo heights rather than the D-pad alone. On short phones the stage minimum height also includes those measured reservations plus the existing board's minimum cell/gap/padding dimensions, preventing multi-row boards from overlapping the stacked footer. The same presentation observer, square-tile layout and board/code components remain; runner, scoring, timer and program execution are unchanged. Header columns match the board/code column ratio and collapse with it below 920px.
+- Verification: final `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found a short-touch-screen footer overlap risk and confirmed the measured minimum-stage-height fix; no further concrete issues remain. Rendered layout at target resolutions remains unverified because no browser checks were performed. Existing uncommitted tutorial edits remain intact. No tests, git add/commit, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Looping tutorial and viewport-height layout
+
+- Tutorial now repeats the authored three-move example: 4.2-second synchronized read/key/move sequence, 1.2-second completion hold, then an immediate reset to the starting cell. Reset disables the actor's movement transition so it does not teach an unshown backwards instruction. Hidden tabs pause scheduling; reduced-motion remains static and cleanup removes the timer/observer/listeners.
+- Removed the requested “นี่คือภาพสาธิต…” sentence and its unused dictionary key. The reduced-motion three-keypress explanation is provided as the preview's accessible label rather than an extra height-consuming paragraph. Shortened supplemental control/repeat/item guidance through i18n without changing gameplay behaviour.
+- Tutorial card uses the available shell height, capped at 660px, with a flexible lesson row and visible footer actions. Board sizing observes both available dimensions; code, key layout, gaps and headings compact for shorter screens. Narrow layouts stack board/code with explicit minimum space for all three code lines; short phones use a one-row key diagram and omit redundant captions/story. Start/Back remain side by side on phones.
+- Opening the native supplemental guidance disclosure replaces the demo instead of adding a long block below it. Two native radio tabs divide controls/repeat/retry from item/passability guidance. Closing it mounts a fresh looping demo. This avoids increasing the card height and keeps the two main action buttons available. Summary/ranking presentation and handlers are unchanged.
+- Verification: final `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review identified insufficient code width/height, oversized expanded guidance and an extra reduced-motion paragraph on small screens; stacked minimum rows, compact headings, split guidance and removal of that extra row address these. Final review found no remaining concrete issues. No tests/browser checks; rendered viewport fit and live motion remain unverified. No agent git add/commit. User committed independently to `77532a0` during work; later edits remain unstaged. No branch or reference-frontend changes.
+
+## 2026-10-13 — Animated tutorial with original level example
+
+- Replaced the tutorial's white text-heavy card with a blue space-game surface: original Set 01 level 1 board and Python code side by side, a visual arrow/WASD key layout, and three short read → press → move instructions. All modes use this explicitly labelled common example; their selected set/range/time remain displayed above it.
+- Added presentation-only `TutorialDemo.vue`, reusing `LevelBoard`, `LevelCode`, the existing parser and `solveLevel`. The authored three `right()` commands, original map/start and existing Codi sprites are unchanged. The one-pass preview highlights each source line, presses →/D and advances Codi over about 4.2 seconds, then settles with a completion label. No live input, gameplay state, scoring, timer, audio or repository is changed by the demo.
+- Extended the existing optional `LevelCode.isActiveLine` callback to also receive the zero-based source index so identical lines highlight individually. Existing one-argument gameplay callbacks keep working. No syntax formatting or code execution changes.
+- Preview suspends while the document is hidden, disconnects its resize observer and clears its timer/listeners on unmount. Reduced-motion uses a static final position and explicit three-keypress explanation. Narrow layouts stack board/code; expanded item/control/repeat/retry guidance uses a native disclosure and the existing item artwork.
+- Removed the skip action. Tutorial now has exactly two action buttons, “ย้อนกลับ” (existing Home/reset handler) and “เริ่มเล่น” (existing play handler), with decorative arrow/play icons. Timer still starts through `playChallenge()` after the tutorial. New copy uses the lightweight Thai dictionary; `DESIGN.md` documents the shared presentation owners.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete issues in phase/highlight synchronization, lifecycle cleanup, shared callback compatibility or button wiring. No tests or browser/viewport checks; rendered appearance and live animation remain unverified. No git add/commit, branch changes or reference-frontend edits. Prior setup/audio/motion changes remain in the working tree.
+
+## 2026-10-13 — Selection sounds, bouncy popup and setup details
+
+- Home emits selection, forward-slide, backward-slide and popup cues into the page's existing `useGameAudio` instance. Audio unlock happens synchronously on the original card click/keyboard activation. These short synthesized UI effects share the gameplay mute state and master gain; no separate audio context or media dependency was added.
+- UI click/slide cues may overlap so the transition does not cut off the selection click. Gameplay clear/failure/completion keeps its prior voice interruption behaviour. Playback still observes muted/hidden/disposed guards and existing cleanup. Score-list reading does not emit card-selection sounds; repeat selection/close guards remain.
+- Player popup entrance is now a 380ms zoom from 0.72 → 1.035 → 0.985 → 1 with one gentle overshoot and a matching short boing cue. Closing zooms out from the current computed opacity/transform, so early Escape remains continuous. Card/exit durations stay 420/180ms. Reduced-motion skips visual movement; sound remains governed by the mute setting.
+- Removed the offset, incomplete profile arc. The portrait now has a full 4px circular white border fitted to its existing 104px frame, a thin dark outline and the same lower-right 48px refresh badge. Avatar assets/selection/storage are unchanged.
+- Removed the decorative Codi image from the age marker. The numeric age tooltip remains, with reduced reserved space and placement above the selected step. Age 5–18, no default selection, tap/keyboard/drag and form validation are unchanged.
+- Added root `DESIGN.md` as durable context for the established space-game identity, canonical UI/audio owners and runtime-token mapping, following the frontend-design skills. Existing CSS variables remain the palette/font source; no new global theme or dependency. User build-only requirements override skill audit/lint/browser defaults.
+- Verification: `pnpm build` and `git diff --check` passed. No tests, skill audit/lint commands, browser motion checks or live listening checks were run. Changes remain unstaged on `feature/home-v2`; no `git add`, commit, merge, branch switch or reference-frontend change.
+
+## 2026-10-13 — Mode card and setup popup motion
+
+- Added an idle → entering → open → leaving UI sequence in `HomeV2.vue`. Selecting a cover/card measures the existing positions, moves the selected card to the visible center, and slides/fades the other cards offscreen; only after card motion finishes does the existing player setup dialog open. The grid itself never reorders or collapses.
+- Closing the popup or pressing Escape fades/scales the dialog out, closes it, reverses the same card animations, and restores focus to the selected launch target without scrolling. A new selection recreates the blank nickname/age form and initial random profile as before.
+- Durations live in `homeConfig.modeMotion`: cards 420ms, popup entrance 260ms, popup exit 180ms. The popup backdrop also fades. Reduced-motion uses immediate card states and skips popup/backdrop motion.
+- While entering/open/leaving, card interactions are inert and credits pause; repeated selection/close and form submission while closing are guarded. Reading clicks in the leaderboard keep their original stop-propagation behaviour. Resize while the popup is open remeasures natural responsive positions; selected tall cards scale to fit the visible viewport. Unmount/idle reset cancels animations and invalidates pending work so no late popup appears.
+- Read-only review found two visual interruption issues and both were addressed: early popup close now starts from its current opacity/transform (including backdrop opacity), and resize during popup exit/card return remeasures the grid while preserving return progress. The completion wait follows replacement animations so resize cancellation cannot end the return early.
+- No game, storage, asset or text changes. Existing repository/form validation/error handling and native dialog focus are retained. User commit `16ebeb1` contains the previous UI work; this task changes only Home/setup motion and its config/documentation.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests, browser/viewport execution or live motion checks, per the build-only instruction. Changes remain unstaged; no `git add`, commit, merge or branch switch was performed.
+
+## 2026-10-13 — Codi horizontal alignment
+
+- Gave `.actor` and `.hop` an explicit `minmax(0, 1fr)` horizontal grid track. This keeps the track at tile width while the 105%-wide sprite is centered with equal overflow, correcting the slight rightward placement in gameplay and review without a pixel offset that changes with tile size.
+- Sprite assets/size, vertical offset, idle/hop/failure animation and logical row/column movement are unchanged. Earlier UI edits remain in the working tree.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests or live browser/visual checks. No `git add` or commit; changes remain unstaged.
+
+## 2026-10-13 — Profile frame and lower-right avatar button
+
+- Player setup profile uses a dark inner outline with an offset white outer arc, following the supplied reference. The 48px avatar-cycle button overlaps the lower-right of the portrait with a white/lavender badge and the existing refresh icon; added space below keeps the badge clear of adjacent fields.
+- Avatar assets, random initial selection, next-avatar handler, form validation and saved IDs are unchanged. Added hover/press/disabled styling; reduced-motion removes transitions. Earlier HUD/dialog/podium edits remain in the working tree.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests or live visual/browser checks. No `git add` or commit; changes remain unstaged.
+
+## 2026-10-13 — Centered, narrower ranking podium group
+
+- Set the entire podium group to 80% of its previous available width and centered it with automatic inline margins. This brings the three ranks, profiles and names closer together in the middle; individual blocks keep their existing 90% slot width, so their width also decreases by approximately another 20%.
+- Podium heights, medal colours, avatar sizes and leaderboard list/scroll behaviour are preserved. Changes from the preceding HUD/dialog task remain in the working tree.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests or live visual/browser checks. No `git add` or commit; changes remain unstaged.
+
+## 2026-10-13 — Compact gameplay HUD and end-of-session dialogs
+
+- Starting checkout was clean at user commit `2f66246` (add new level). Extracted presentation into `GameHud.vue`: left game/level/concept with language and difficulty together, center compact time/score/progress with combo, right a visible saved profile/name and one row of 44px Sound/Start/Exit actions. Tier appears once through the level title; removed the Control status and Restart button from the HUD as requested. Start retains its original handler/disabled condition; sound and D-pad retain their existing handlers.
+- Reduced board-panel padding/gaps and the space between gameplay columns. Board remains on the left with the centered D-pad below; the existing Python editor fills the right column with internal scrolling. Removed obsolete scoped header/HUD CSS after extraction. No board, tile, character, background or Python editor asset/functionality changes.
+- Added native `ExitConfirmDialog.vue`: cancel/Escape continues the run, confirm uses the existing exit snapshot path. Timer keeps running while the dialog is open; modal keyboard guarding blocks movement without changing the movement system. Timeout closes confirmation and presents the final result. Home/back/session resets close the confirmation too.
+- For the A/B/C challenge flow, confirmed exit, time-up and all-level completion now share `presentSummary()` with a frozen Score snapshot and existing repository retry. Summary is a native modal in `SessionPanel.vue` over the finished board, showing avatar/name, score, elapsed time and the mode's daily rank. Returning Home is the primary action; viewing ranking remains available. Storage errors remain visible and retry reuses the same score ID. The hidden legacy modes keep their existing terminal ranking path.
+- Summary has short arrival/avatar/star animations and a new synthesized `complete` cue through the existing audio composable, mute switch and voice cleanup. Movement/clear/failure sounds and their assets are unchanged. Reduced-motion disables the new animation; no dependency or media asset was added.
+- The existing 90-second idle policy still resets summary/ranking to blank Home; no idle timeout is added during gameplay or exit confirmation. Scoring formula, timer interval, runner/programs and input mapping are unchanged. New UI messages use the lightweight dictionary.
+- Verification: final `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete Critical/Important/Minor issues in event wiring, dialog lifecycle, timeout/exit overlap, snapshot retries or HUD styles. No tests, browser/viewport execution or live listening checks, per the build-only instruction; exact rendered dimensions/audio remain unverified.
+- All changes remain unstaged on `feature/home-v2`; no `git add`, commit, merge, branch switch or reference-frontend edit was performed.
+
+## 2026-10-13 — Beginner / Intermediate / Pro sets (current state)
+
+- Selectively imported `challenge-levels.json`, `challenge-groups.ts` and `conceptFeatures.ts` from `feat/add-level-set` at `e327540`. The JSON matches the source blob exactly. Each tier retains its authored order: 20 Set 01 originals interleaved with 30 new lessons, renumbered 1–50. New source IDs remain 101–130, 201–230 and 301–330.
+- Original Set 01 and Set 02 remain separate sets of 60 levels. Read-only comparisons confirm IDs, dimensions, maps, starts and programs are unchanged. Their text describing colours was updated to describe tile kinds.
+- A/B/C now display Beginner / Intermediate / Pro through dictionary keys and select `challenge-beginner`, `challenge-intermediate`, `challenge-pro`. Each mode has its own `levelSetId`, displayed range 1–50 and the existing 900-second limit. Gameplay uses the complete ordered group and starts at play level 1, without the former 20-level filter.
+- `/review` retains the original sets and Dead Mode preview and adds three tier tabs, source badges for original/new lessons, and feature-ceiling diagnostics using the existing parser/runner. No tests or generator/check scripts were executed.
+- Read-only review found a missing challenge option in the legacy setup dropdown. It now lists original and challenge sets together so a challenge selected by a review query is displayed correctly and can be selected again; legacy gameplay internals are unchanged.
+- Card boards and score snapshots use the challenge set. Ranking matching checks challenge ID together with set ID, mode and time limit so old Set 01 A/B/C scores cannot mix into new boards. Old stored data, repository namespace and schema are preserved without migration or deletion.
+- Core movement/scoring, legacy mode internals, profiles, WASD, audio and kiosk reset/idle flow are preserved. The unchanged scoring formula now uses each tier's play IDs 1–50, rather than the former 21/41 starts or raw source IDs 201/301.
+- Existing limitation: `/review` play links return to Home when the Home flag is enabled; query setup works in the legacy flow only. This import does not add a staff preview/deep-link flow. JSON generator provenance points to scripts on the source branch; those scripts were not imported.
+
+## 2026-10-13 — Item tiles and yellow honey
+
+- `data/tiles.ts` is the canonical registry for parser aliases, labels and asset previews. Internal `o` now means `honey`; `y` remains `sand`. Existing letter conditions still work; the full name `honey` resolves to `o` through the parser boundary.
+- Board/code/asset previews use semantic CSS classes. Merged only tile artwork from source CSS: central grass, flower and honey pot/honeycomb, with honey's background adjusted to yellow/gold. Sand retains its separate pale grain texture. Board size fitting, square grid tracks, Codi failure art/animation and code readability are preserved.
+- Dictionary, tooltips, tutorial and asset catalog use the new names consistently; no original puzzle map/program was rewritten.
+
+## 2026-10-13 — Narrower ranking podium
+
+- Each podium block is 90% of its slot width (10% narrower), centered under the existing profile/name. Medal colours, heights, leaderboard rows and scrolling remain unchanged.
+- Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. No tests, live browser or visual checks, per the build-only instruction. Read-only review checks data order, set separation and integration.
+- Changes remain unstaged on `feature/home-v2`. No `git add`, commit, merge or branch switch was performed, per the user's standing instruction. Older dated sections below describe the previous versions.
+
+## 2026-10-12 — Config, i18n and storage boundary
+
+- `app/data/home-config.ts`: schemaVersion 1, Set 01; A 1–20, B 21–40, C 41–60; all time limits are **900 seconds (15:00), placeholders**. Mode names in the Thai dictionary are now A “นักบินฝึกหัด”, B “นักสำรวจ”, C “ผู้บัญชาการ”, per the user's reference. Ages 5–18, nickname maximum 24, idle timeout 90 seconds.
+- Lightweight Thai dictionary and `useGameI18n`, no new dependency. Step 2 can replace the composable with the frontend's i18n.
+- Standalone document language is `th` through Nuxt head configuration.
+- `PlayerRepository` / `ScoreRepository` interfaces and `LocalStorageAdapter`. Keys use `codeventure:debug-master:home-v2:v1:` and each value has `schemaVersion: 1`. No migration, deletion, or writes to Dev's old `debug-runner-scores-v1` key.
+- Pure ranking helpers now accept challengeId; legacy scores cannot enter A/B/C boards. Bangkok day, score descending then elapsed time ascending are unchanged.
+- Validation: `pnpm build` passed (exit 0). No tests written or run, as requested.
+
+## Scope boundaries
+
+Preserve Dev's existing levels, parser, runner, scoring formula and old modes. No edits to `D:/CodeVenture/codeventure-mvp-frontend`. No new puzzles, stars, video, backend, or full per-mode scoring logic in this task.
+
+## 2026-10-12 — Three boards and player setup
+
+- `HomeV2.vue`: three boards with an enabled “เริ่มเกม” button under each column. The button opens `PlayerSetupDialog.vue` for that mode; nickname and age are no longer displayed inline on Home. No separate mode picker or time picker. The dialog's confirm/start button requires a trimmed nickname and an explicitly selected age. Names support Thai and are limited to 24 characters; no initial age selection or profile restoration.
+- `ChallengeRanking.vue` and `useScoreBoard`: reads through ScoreRepository only. Top 10 for each A/B/C challenge today in Asia/Bangkok, ordered by score then elapsed time. Top 3 have numbered and distinct highlighted rows. Empty state uses Dev's Codi asset.
+- Auto-refresh: repository notifications for same-tab writes, browser storage events for other tabs, and a 15-second refresh for Bangkok day rollover. No backend.
+- Wide layout reserves space for three boards with ten rows and their start buttons at 1366×768 and 1920×1080. Narrow screens stack the boards; the setup dialog and its age strip can scroll when necessary. No screenshot/browser validation was performed because the requested verification is build only.
+
+## 2026-10-12 — Session flow and kiosk lifecycle
+
+- Flow: Home → selected mode's nickname/age popup → skippable text tutorial → existing gameplay → summary → challenge leaderboard → next player/Home. Tutorial and popup time are excluded from the game timer.
+- A/B/C use the existing timed gameplay path with the configured time limit, filtered Set 01 levels (first level 1/21/41; stop at 20/40/60), and the existing scoring formula. The parser, runner, generation, puzzles and scoring formula are unchanged. No stars or distinct difficulty/scoring rules were added.
+- Summary saves once with `challengeId` and `playerId` through ScoreRepository, shows score, elapsed MM:SS and rank among all today's entries on that challenge (even outside the top 10). Failed storage writes show a retry action; retry upserts the same result ID.
+- Session end clears pending level advances and stops gameplay input, preventing a late level transition from resuming behind summary.
+- Idle timeout: 90 seconds on Home (including the setup popup; closes it and clears fields), tutorial, summary and ranking. Disabled during gameplay and level retries. Pointer/key/input/focus interactions renew the timeout.
+- Home return clears both draft/live player fields and the current player record, and remounts the form. A same-URL history entry makes browser Back from a session return to Home. Mount/refresh and pageshow (including browser cache restoration) reset to Home with blank fields.
+- `homeConfig.enabled = false` restores Dev's original setup with campaign, timer, ranking 5 minutes and Dead Mode, including the review query preselection. New Home does not expose legacy settings. Review links in Home v2 open Home; direct level preselection remains a legacy feature.
+- **Dead Mode**: Dev's seeded endless level generator creates each next level on demand; starts with five hearts, a wrong input loses one heart and retries the level, and the run ends when all hearts are gone.
+- Document-level html/body/box sizing styles moved from index.vue to the standalone global stylesheet `assets/css/tailwind.css`. Existing global layout rules are retained. Step 2 should import gameplay/component CSS without these standalone document rules.
+- Game HUD now pads minutes to MM:SS as leaderboard already did. Existing Dev gameplay text remains as-is; all new Home/tutorial/summary/ranking text is in the Thai dictionary.
+- Validation: `pnpm build` passed (exit 0) after wiring Home and session flow. Final GitHub Pages build with `/debug-master/` also passed (exit 0) through Nuxt's build API with a temporary `nitro.prerender.concurrency: 1` override; all 11 static routes generated. The temporary build runner was removed.
+- Windows build limitation: the standard GitHub Pages preset on this installed Nuxt 4.5.1 produced `EPERM` in Nuxt's atomic payload-cache rename when crawling prefixed/unprefixed routes concurrently. Retrying outside the sandbox produced the same error; serial prerender succeeded. No dependency or persistent deployment/build-concurrency configuration was changed. Ordinary `pnpm build` is unaffected; deployment CI runs on Linux.
+- No tests written or run. No visual/responsive/browser interaction checks performed, as requested; the build does not establish the actual rendered fit at target screen sizes or prove browser-history/idle behavior in a live kiosk.
+- Git history: the original stage request was rejected in the previous session. This follow-up began on a clean `feature/home-v2` at `d15f8c0`, where the previous Home v2 files were already tracked. No attempt was made to restore or recreate that history.
+
+## 2026-10-12 — User-requested popup and stepped age bar
+
+- User clarified that each leaderboard column has its own “เริ่มเกม” button and opens that mode's popup. This supersedes the original requirement to show the form directly on Home.
+- `ModeBadge.vue`: code-native wing/rank badges inspired by the supplied image, shown beside the three confirmed mode names. No new raster asset or dependency.
+- `PlayerSetupDialog.vue`: native modal dialog with focus containment, Escape/close handling, nickname focus on open, and focus return to the column button on close. Closing/reopening creates a fresh blank form; idle/Home reset also destroys the dialog.
+- Age selector uses the existing configured 5–18 range (the image supplies the bar style, not a new age specification). Discrete tick buttons along a rail support tap, pointer dragging in whole steps, and keyboard arrows/Home/End. Selected age shows a yellow fill/dot/number with a Codi marker and age bubble; no age is selected initially. Each tick has a target at least 48px wide and 80px tall. Narrow screens can scroll the strip horizontally.
+- Player persistence and tutorial are invoked only after valid popup confirmation; repository/gameplay/scoring rules are unchanged.
+- Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. No tests or browser/visual checks, as requested.
+
+## 2026-10-12 — Home visual theme from Signal Lost reference
+
+- Reference: https://codeventure-signal-lost.innovasive.workers.dev/ — inspected in the browser for visual direction only. The entry page uses a blue space scene, navy cards, Codi illustrations on pale blue grid panels, white headings and rounded yellow buttons with a raised edge.
+- Home now uses a larger Codi greeting/header, navy mode cards with blue/gold borders, compact difficulty/level/time metadata, and yellow pill-shaped “เริ่มเกม” buttons with a pressed/hover treatment. Existing `bg.png`, `cody-happy.webp`, fonts and rank badges are reused; no new dependency or downloaded asset.
+- `ChallengeRanking` has an optional `space` presentation variant used only by Home. Ranking rows stay readable on the dark cards, with numbered gold/silver/bronze top-three highlights. Empty boards show Codi above a landing pad on a light blue grid, with a white message bubble. Summary's default light ranking stays intact.
+- Three boards and their popup launch buttons remain the same flow; mode names, player form, age selection, scores/repository, idle policy and gameplay are unchanged. The only new text is the Codi greeting in the Thai dictionary.
+- Wide layout still uses three columns and compact top-ten rows; narrow screens stack cards. Component styles do not touch html/body. Actual target-size rendering was not checked: only the external reference was inspected, and product verification remains build only.
+- Verification: `pnpm build` passed (exit 0), and `git diff --check` passed. No tests written or run.
+
+## 2026-10-12 — Random nickname button
+
+- Added a “สุ่มชื่อ” dice button beside the nickname field in the player popup. Clicking fills an editable Thai space-themed nickname with a two-digit suffix; consecutive clicks always change the current name. This does not imply names are globally unique.
+- Button text, generated-name format, name pool and screen-reader announcement use the Thai dictionary. Candidates respect the configured nickname length. Small screens stack the input and button.
+- Popup still opens blank; randomization is opt-in. Age remains unselected and required, and player data is saved only on valid confirmation. Existing idle/reset behavior is unchanged.
+- Verification: `pnpm build` passed (exit 0), and `git diff --check` passed. No tests written or run.
+
+## 2026-10-12 — Gameplay layout and hierarchy
+
+- User requested an actual two-column gameplay composition: board with attached D-pad on the left, readable code on the right, with a compact top HUD. Existing space background, tiles, Codi, font and palette are retained.
+- `index.vue`: Level/concept/stage title, player/language/mode, status, timer, score, combo, progress and Dead Mode hearts are grouped in the top HUD. Timer and score are larger focal metrics; Start/Restart/Menu remain together with their original handlers and disabled conditions.
+- D-pad moved inside the left board group, immediately below the rendered board. Up remains above Left/Down/Right. A short contextual instruction sits above the board; the concept is shown beside the level in the HUD, replacing the separate full-width instruction bar.
+- Board area is measured with instruction/control heights reserved, so the board and D-pad share one centered group with 12px spacing. Gameplay opts into a 160px maximum tile size (previously 88px); actual tiles still shrink to fit the available width/height. Review and other LevelBoard uses retain the 88px default. No map/grid structure, tile values, Codi positioning, movement, parser or runner changes.
+- Code panel aligns with the board/control area and caps its height at 780px. Gameplay opts into readable 16–20.8px code and 1.65 line spacing; long programs scroll inside the editor vertically/horizontally instead of shrinking into tiny text. Review/default LevelCode uses keep the previous sizing and syntax highlighting.
+- Desktop keeps two columns within a centered 1640px game frame. At 920px and below, board/controls and code stack with scrollable page overflow; controls and debug features stay available. Notifications, score popups and hints are preserved. New labels use the Thai dictionary; no html/body styles added.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport checks performed, per the standing build-only instruction. 1920×1080/laptop fit is designed for but not visually verified.
+
+## 2026-10-12 — Gameplay sound effects
+
+- Added three short, synthesized Web Audio effects: soft rising step tone on a correct move; ascending four-note chime on level completion; descending retry cue when a level fails. Failure cue plays once at failure, not again when the automatic retry begins. Manual Restart and mode timeout do not add extra cues.
+- Sound definitions/frequencies/durations/volumes live in `app/data/sound-effects.ts`; playback and cleanup are isolated in `useGameAudio.ts`. No audio download, external file, backend or dependency. These synthesized effects can later be replaced with the art team's audio assets.
+- Audio initializes/resumes from Start/tutorial start or another player gesture. Browser audio errors/unsupported APIs are ignored without affecting the run. Gameplay never waits for audio; movement, scoring, retries and level advance timing remain unchanged.
+- HUD has a keyboard-accessible, localized sound toggle with visible on/off text and pressed state. Sound starts enabled; this setting lives only in the mounted game page and is not persisted in storage. Muting or returning to Home stops current/queued sounds; unmount closes the audio context and releases voices.
+- Clear/failure cues replace overlapping step tones, and effect playback is skipped while the document is hidden. Normal effect durations finish before the existing auto-advance/retry delay.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or listening/browser checks, per the build-only instruction.
+
+## 2026-10-12 — Exit during gameplay and save latest score
+
+- During an active run, the HUD's Menu action now reads “ออกเกม”. Clicking captures the current score/time/progress/player/mode, saves through ScoreRepository, then returns to Home with a blank player form. A/B/C results keep the active challengeId and appear on that challenge's existing daily board; legacy modes keep their board metadata.
+- The saved score is the latest cumulative score shown in the HUD. The scoring formula is unchanged; an unfinished level does not receive additional completion points. Exiting before the first clear still saves the current zero score.
+- Snapshot creation is shared with normal end-of-run saving. Exiting does not also create a summary or a second final result. Repeated save attempts reuse the same snapshot ID (repository upsert), with elapsed time frozen at the first exit click.
+- If storage rejects the write, gameplay/timer/audio stop and the frozen result stays in memory. A localized error and “ลองบันทึกและออก” action allow retry; Start/Restart are disabled while that result is pending. Home is entered only after a successful write via this exit action.
+- Pending move, failure-animation and retry callbacks are now tracked and cleared when stopping/leaving/restarting a level, alongside the existing level-advance/score-popup timers. Their normal 80ms/0ms/760ms delays are unchanged, and an old callback cannot resume a previous run after exiting. Parser, runner, maps and scoring logic are unchanged.
+- The existing browser refresh/Back and idle-home reset policy remains separate; this change saves on the explicit in-game exit action, not as continuous autosave or refresh recovery.
+- Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live browser checks, per the build-only instruction.
+
+## 2026-10-12 — Canonical tile names
+
+- `app/data/tiles.ts` is the shared naming boundary: p → flower (ดอกไม้), k → rock (หิน), g → grass (หญ้า), o → lava (ลาวา), b → ice (น้ำแข็ง), v → gem (อัญมณี). `TILE_TYPES` exports these six primary names. Existing n/floor and y/sand are retained because Dev's puzzles use eight tile kinds.
+- Board accessibility labels/tooltips, Python and JavaScript code chips, the gameplay debug tile label, review solution labels and the elements/asset inventory use this registry. Thai translations and new explanatory text use the lightweight dictionary. Existing CSS colour identifiers remain internal to preserve all art.
+- The parser boundary accepts named conditions such as `if lava:`, `if not grass:` and `while ice:` by translating to the existing compact codes. The code view recognizes both named and original conditions. Dev's stored puzzle source/maps and generator output are not rewritten; the runner still compares compact tile codes. Future config/editor integrations should use `tileCode` when encoding named map tiles. This repo has review/elements pages, not a level editor, so no editor was introduced.
+- The short tutorial shows the six English/Thai names and explains that tiles are condition markers: rock is passable and lava does not cause failure. No obstacle, damage, movement, scoring or new tile behavior was added.
+- Asset inventory IDs and suggested future texture paths now use grass/flower/lava. These are CSS tiles without corresponding texture files today; existing sprite files and CSS selectors remain unchanged. The reference frontend repo was not edited.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests written/run or live browser checks, per the standing build-only instruction.
+
+## 2026-10-12 — Make movement and retry audio more audible
+
+- User reports hearing only the level-clear chime. Code inspection confirms move and failure playback calls are present; the step was a 75ms low sine sweep with immediate exponential decay, and the failure sequence fell as low as 82Hz. These short/low fading cues can be difficult to hear on small speakers. Audibility on the user's device has not been measured.
+- Step now uses a 140ms mid-range triangle tone with higher gain and a sustained section before a 55ms fade. Failure uses three descending mid-range tones, with stronger gain and sustain before each 70ms fade; the whole cue lasts 420ms, inside the existing 760ms retry delay.
+- Added optional per-tone release duration to the audio envelope. Level-clear tone definitions and their existing envelope remain unchanged; mute, browser audio activation, hidden-tab handling and cleanup remain intact.
+- Manual Restart now also plays the retry cue. Automatic failure still plays once at failure; starting the retry does not play a duplicate cue. Movement, scoring and game transition delays are unchanged.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live listening/browser checks, per the build-only instruction.
+
+## 2026-10-12 — Compact player setup popup
+
+- Reduced the popup's maximum width from 900px to 760px with explicit border-box sizing. At full width the inner age track still has room for all fourteen 5–18 ticks at their existing minimum 48px hit widths; narrower screens retain horizontal age scrolling and vertical dialog scrolling.
+- Mode badge now fits its text instead of spanning the form. Nickname/random-name row uses a narrower random button, still at least 52px tall. Start button and requirement/privacy text are centered; small screens retain the full-width Start button and stacked nickname row.
+- Reduced blank space above the age bar from 86px to 64px and scaled its Codi marker/age bubble to suit. Form spacing remains consistent. Only scoped CSS changed; form validation, blank initial age, random names, drag/keyboard selection, focus handling, storage and session flow are unchanged.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport checks, per the standing build-only instruction.
+
+## 2026-10-12 — User-supplied Codi failure pose
+
+- Copied the supplied `Frame 637508.png` unchanged into `app/assets/sprites/codi-failed.png` (128×128 RGBA PNG). Added `PLAYER_POSES.failed` alongside the existing directional sprite registry, without replacing the walking assets.
+- The board actor now selects the failure pose while status is `failed` or `timeup`; when the existing retry starts and status becomes `playing`, it returns to the directional sprite. Existing failure animation, sound and 760ms retry timing remain unchanged. In Home V2, timeout already switches to summary, so the board pose is only visible while the board is rendered.
+- Preloads the new pose with the walking sprites. Sprite rendering uses `object-fit: contain` to preserve asset proportions. The elements inventory lists the pose as in use, with new text in the Thai dictionary.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live visual checks, per the standing build-only instruction.
+
+## 2026-10-12 — Local WAV cue for wrong movement / retry
+
+- User confirmed the failure pose appears but its sound is still inaudible after the earlier synthesized-tone adjustment. The correct repo's Nuxt dev process is running. Source inspection confirms `failLevel` already invokes the wrong cue before changing the pose; no immediate audio-stop call was found in the automatic retry. The user's browser is not connected to the browser tool, so the exact runtime cause remains unconfirmed.
+- Added `app/assets/sounds/codi-failed.wav`: a distinct descending three-note buzzer, 0.52 seconds, 22,976 bytes, mono PCM. It is generated locally by `scripts/generate-failure-sound.mjs`, with no downloaded media or new dependency.
+- Start/unmute preloads and decodes the file. The existing wrong-input callback now plays that buffer through the existing master gain/context, together with the failure pose, instead of relying on the synthesized oscillator envelope. Manual Restart uses the same cue. Failure animation and automatic retry remain at their existing 760ms timing; no duplicate cue is played on automatic restart. Walking/clear cues remain unchanged.
+- Buffer voices share mute, stop/Home, generation cancellation and unmount cleanup with oscillator voices. If the local file cannot load, the previous synthesized wrong cue remains a fallback. Audio errors now include action/context in console warnings instead of being swallowed; they never block gameplay.
+- Updated the elements inventory to mark the WAV as in use and explain the current sound implementations through dictionary text.
+- Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live listening/gameplay checks, per the build-only instruction. Audible behavior on the user's browser still requires their confirmation.
+
+## 2026-10-12 — WASD keyboard movement
+
+- Added W/up, A/left, S/down and D/right alongside the original arrow keys. Physical `KeyboardEvent.code` is preferred so WASD positions also work when the OS keyboard layout is Thai; character-key fallback handles lowercase/uppercase letters. All keys call the existing `controlMove`, preserving correct/wrong input, wrapping, sounds, scoring and repeat-key behavior.
+- Keyboard movement is ignored while setup/tutorial/summary/ranking is open, outside the playing state, during IME composition, for input/textarea/select/contenteditable/textbox targets, and for Ctrl/Meta/Alt shortcuts or already-handled events. On-screen direction buttons remain unchanged and now declare their keyboard shortcuts for accessibility.
+- Home, tutorial, gameplay instructions, legacy setup copy and fallback hints show WASD support through the lightweight dictionary. Original puzzle descriptions were not rewritten.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live keyboard checks, per the standing build-only instruction.
+
+## 2026-10-12 — Stable board layout during failure notifications
+
+- User reports the failure message appears below the visible area and squeezes the board. Source confirms the conditionally mounted notification was a normal flex child below gameplay/debug in the fixed-height board panel, reducing the measured play area whenever it appeared.
+- Moved the notification into the board area's positioned container as an absolute overlay, centered near its top. It no longer participates in panel/board sizing or introduces an extra flex gap. Pointer events pass through; existing controls, failure sound/pose, shatter animation and 760ms retry remain unchanged.
+- Notice uses an opaque contrasting background, larger bold heading and readable white text. Wrong-input reason and notification headings now use the Thai dictionary. Runner error reasons and Dead Mode heart information remain available.
+- Board grid rows now explicitly use the same computed pixel size as columns and tiles, keeping square track dimensions consistent. Existing fit-to-space calculations, map structure and gameplay logic are unchanged.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport checks, per the standing build-only instruction. Diagnosis is based on source/layout inspection; the supplied recording was not decoded in this environment.
+
+## 2026-10-12 — Slightly quieter failure sound
+
+- Reduced the WAV generator's amplitude from 0.68 to 0.54 (about 21% lower signal amplitude, approximately −2dB) and regenerated `codi-failed.wav`. This affects the shared failure/manual-restart cue; note pitches, duration, timing, master gain, movement and level-clear sounds are unchanged.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live listening checks, per the standing build-only instruction.
+
+## 2026-10-12 — Thumbnail mode cards, podium and scrolling rankings
+
+- Home now uses `thumbnail-game-1.png`, `thumbnail-game-2.png`, `thumbnail-game-3.png` for A/B/C respectively, configured in `home-config.ts`. The supplied PNGs were already committed by the user in `5651fd2` during this task and are used unchanged. Public asset URLs respect Nuxt's app baseURL, including `/debug-master/` deployment.
+- Removed the visible Codi/brand/greeting/title hero and the separate yellow Start buttons. Three tall cards fill the desktop area; mode names, level ranges and 15:00 limit overlay their cover images. Rules/team links move into a compact footer. Narrow screens stack cards with page scrolling.
+- Clicking a card opens that mode's existing blank nickname/age popup. A transparent semantic button supplies Enter/Space activation and focus return without adding a visible Start button. Busy state prevents launch. Card/cover hover raises the card, zooms the image slightly and sweeps a soft highlight; reduced-motion users get static styling.
+- Home opts into a 2–1–3 podium below the cover, with Codi avatars, gold/silver/bronze rings, a crown for first place, names and scores. Vacant top-three places show a waiting label rather than invented player data. The same daily top 10 remain below with age bands, elapsed time and highlighted top-three rows. Empty boards retain Codi; summary keeps its default light ranking without the Home podium/motion.
+- `useLeaderboardCredits` scrolls a single list upward only when it overflows, at 18px/sec, pausing briefly at the top/bottom before cycling. Fractional position accumulation avoids rounding away small per-frame movement. No duplicate score rows or direct storage reads are introduced.
+- Motion pauses on card hover/focus, while a setup dialog is open, with the explicit Stop scrolling control, and while the document is hidden. Wheel/touch input pauses scrolling temporarily and preserves manual position. Reduced-motion disables automatic movement. RAF, observers and listeners are cleaned up on unmount; settings live in `home-config.ts`. Automatic scroll does not simulate kiosk activity.
+- Gameplay, repositories, Bangkok date/order/top-10 rules, form validation, random nickname, age range and idle policy are unchanged. All new UI text uses the Thai dictionary; no new dependency or reference-frontend edit.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests or live viewport/browser checks, per the standing build-only instruction. Desktop dimensions are designed for 1366×768/1920×1080 but not visually verified.
+- Read-only code review checked card activation/focus, pause-button event handling, scroll lifecycle and overflow layout; no concrete Critical/Important/Minor issues found. No tests or UI execution were used in that review.
+
+## 2026-10-13 — Selectable player profile and score persistence
+
+- Copied the exact 17 selectable SVG avatars listed in the reference frontend's `Dashboard/Profile/EditProfileModal.vue` into this project's `public/student-avatar`, preserving names/subdirectories. Source assets and frontend files are read-only and were not modified. `player-avatars.ts` lists the permitted IDs; `usePlayerAvatar` resolves local URLs using Nuxt baseURL, with standard Codi for absent/unknown IDs.
+- Player setup displays one profile beside the nickname field. Each fresh popup starts with a random profile; a 48px refresh-icon target at its upper-right cycles to the next profile and wraps. There is no avatar grid. On narrow screens profile/name sections stack. Nickname and age remain blank initially; the existing validation/random-name/age bar behavior is unchanged.
+- `PlayerSetupInput` carries the chosen avatar into the existing PlayerRepository boundary and session state. Score snapshots include optional `avatarId`, including explicit Exit saves and normal completion; summary displays the selected profile. Home/idle/next-player resets clear the active avatar with the player, without restoring a previous popup profile.
+- Player/score contracts extend additively with optional avatar IDs. The current schemaVersion 1 envelope/namespace remains compatible with all existing scores; no migration/deletion of old data. Stored avatar IDs must be strings if present; render paths use the whitelist and cannot become arbitrary remote/local URLs. The incoming setup avatar is checked against the manifest.
+- New text uses the Thai dictionary. Gameplay Codi sprites, movement, scoring, legacy modes and timer logic are unchanged. The following leaderboard commit renders these profiles in podiums/rows and completes focus/scroll interactions.
+- Verification: combined working-tree `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review confirmed avatar contracts/storage flow and default handling. No tests, live browser or visual checks, per the standing build-only instruction.
+
+## 2026-10-13 — Leaderboard reading, slow return and medal colours
+
+- Removed the Stop/Automatic scrolling controls. Clicking the ranking list focuses it for reading without opening setup; cover/other card areas still open that mode's player popup. Keyboard users can focus the scroll region and use native scrolling keys. Hover art remains, while automatic-motion pause now follows focus/dialog state rather than hover.
+- Automatic scrolling moves entries upward at 18px/sec until the last row, pauses, then returns down slowly at 12px/sec instead of snapping to the top. On leaving card focus, movement resumes only after 3 seconds; wheel/touch interaction also gives a 3-second pause while retaining normal native scrolling.
+- Mouse dragging the list uses pointer capture and updates its scroll position directly. Native scrollbar-thumb dragging and touch pan/inertia remain native; reading/drag clicks cannot open the setup popup. Reduced-motion and hidden-document stops remain supported.
+- Podium faces/top facets now use gold, silver and bronze for ranks 1/2/3, preserving the 2–1–3 placement. Podium and list rows display the avatar saved with each score, with standard Codi for old/unknown IDs.
+- Scrollbar CSS reproduces the reference `BaseEditor.vue` / `_gameScrollbar.scss` style: 6px rounded semi-transparent grey thumb, transparent track/corner, hidden arrow buttons. Chromium uses the custom pseudo-elements; Firefox uses thin scrollbar properties. The reference files were read only.
+- Review found a drag-state edge when a viewport is removed during a repository refresh. Drag state now keeps the original capture element and is cleared on viewport replacement/unmount; disposed guards prevent queued callbacks restarting motion. Home clears stale reading focus after viewport removal only when actual focus is no longer inside that card.
+- Verification: final combined working-tree `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review and the follow-up spot-check found no remaining concrete issues. No tests, live browser or visual checks, per the standing build-only instruction.

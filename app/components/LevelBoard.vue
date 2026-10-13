@@ -11,7 +11,7 @@
       :key="`${tile.row}-${tile.col}`"
       class="tile"
       :class="[
-        `tile-${tile.colorName}`,
+        `tile-${tile.kind}`,
         {
           alt: (tile.row + tile.col) % 2 === 1,
           start:
@@ -20,7 +20,9 @@
       ]"
       :style="tileStyle(tile)"
       role="gridcell"
-      :aria-label="`row ${tile.row}, col ${tile.col}, ${tileKindLabel(tile.raw)}`"
+      :aria-label="t('tile.cell', { row: tile.row + 1, col: tile.col + 1, name: tileKindLabel(tile.raw), translation: t(tileDefinition(tile.raw).nameKey) })"
+      :title="t('tile.description', { name: tileKindLabel(tile.raw), translation: t(tileDefinition(tile.raw).nameKey) })"
+      :data-tile="tileKindLabel(tile.raw)"
     />
     <!-- Actors (Codi, markers) use .actor with --x / --y grid coordinates. -->
     <slot />
@@ -36,19 +38,26 @@ import {
   type BoardSpace,
 } from "../composables/useBoardPresentation";
 import type { LevelLike } from "../types/debug-game";
+import { tileDefinition } from "../data/tiles";
+import { useGameI18n } from "../composables/useGameI18n";
+
+const { t } = useGameI18n();
 
 const props = withDefaults(
   defineProps<{
     level: LevelLike;
     /** Space the board may fill; tiles scale to fit it. */
     space?: BoardSpace;
+    /** Presentation only: gameplay can use larger tiles than review cards. */
+    maxCellSize?: number;
     shattering?: boolean;
   }>(),
-  { space: undefined, shattering: false },
+  { space: undefined, shattering: false, maxCellSize: 88 },
 );
 
 const { visibleTiles, boardStyle, tileStyle } = useBoardPresentation(
   computed(() => props.level),
   toRef(props, "space"),
+  toRef(props, "maxCellSize"),
 );
 </script>

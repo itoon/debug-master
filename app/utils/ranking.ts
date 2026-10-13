@@ -21,6 +21,7 @@ export function ageBand(age?: number): string {
 
 /** Scores compete only with the same set, mode and time limit. */
 export type RankingBoard = {
+  challengeId?: "A" | "B" | "C";
   setId: string;
   mode: Mode;
   /** Ranking and timer modes only. */
@@ -44,6 +45,7 @@ function timeLimitOf(score: Score): number | undefined {
 }
 
 export function isOnBoard(score: Score, board: RankingBoard): boolean {
+  if (board.challengeId ? score.challengeId !== board.challengeId : !!score.challengeId) return false;
   if (score.setId !== board.setId || score.mode !== board.mode) return false;
   if (board.mode === "ranking" || board.mode === "timer") {
     return timeLimitOf(score) === board.timeLimitSec;
