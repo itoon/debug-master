@@ -58,7 +58,7 @@ The summary dialog hides its scrollbar as requested, while retaining overflow sc
 
 ## Shapes
 
-Global control/container radii map to `--cv-radius` (12px) and `--cv-radius-xl` (24px). Player portraits use a full circular white border fitted to the image, with a 36px refresh badge overlapping the lower-right and a transparent extension for a 48px pointer target. Its 22px circular-arrow icon has filled arrowheads so the direction is recognizable. Portrait geometry belongs to `PlayerSetupDialog.vue`, not a second global theme.
+Global control/container radii map to `--cv-radius` (12px) and `--cv-radius-xl` (24px). Player portraits use a full circular white border fitted to the image. The setup popup is a character-select screen: a live player card (large portrait on a landing pad, name plate and age chip, tinted with the mode accent) beside the avatar grid, nickname and age steps; every avatar is visible as a radio option, preselected at random so boards stay varied. Portrait geometry belongs to `PlayerSetupDialog.vue`, not a second global theme.
 
 ## Components
 
@@ -90,7 +90,7 @@ Mode selection moves one card to center and slides others away, then opens the d
 
 Ordinary UI controls use the supplied local `app/assets/sounds/pops-4.mp3` click cue through the app shell's delegated bubbling listener. `useGameAudio` caches/decodes it on audio unlock and plays it through the existing master gain/context; the synthesized click remains only a load-error fallback. Delegation runs after control handlers so a Home reset does not immediately cut it off. Disabled controls, background/text clicks and leaderboard reading stay silent. Movement buttons and mode-card selection keep their dedicated cues without an added generic tap; the mute switch itself stays silent. Mouse/touch and native keyboard button activation share the same path.
 
-Age selection remains explicit 5–18 with tap/keyboard/drag alternatives and a numeric tooltip. No Codi image floats over the age bar. Keep the blank-form kiosk reset, repository retry and modal focus contracts. New UI text uses the dictionary/composable.
+Age selection remains explicit 5–18 (nothing preselected) as a 7×2 grid of large radio buttons; arrow keys move within the group. No drag slider. No Codi image floats over the age bar. Keep the blank-form kiosk reset, repository retry and modal focus contracts. New UI text uses the dictionary/composable.
 
 Random nicknames combine eight playful Thai character/space bases with ten gaming-style descriptors and one emoji instead of numeric suffixes. The words and formatting use dictionary keys; the 12-emoji pool belongs to `homeConfig.nicknameEmojis`. The tone is child-friendly and informal (for example น้องบั๊กตัวตึง🔥 or โคดิสุดเฟี้ยว🎮). Filter each complete candidate using the existing 24 UTF-16-unit limit, preserving whole emoji strings. Keep editable manual names, explicit age selection and no-repeat-on-immediate-click behaviour. Previously stored names are not rewritten.
 
