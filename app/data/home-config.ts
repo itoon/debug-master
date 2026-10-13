@@ -17,7 +17,7 @@ export const homeConfig = {
   idleTimeoutMs: 90_000,
   nicknameMaxLength: 24,
   ages: Array.from({ length: 14 }, (_, index) => index + 5),
-  leaderboardScroll: { pixelsPerSecond: 18, startPauseMs: 1400, endPauseMs: 1800, interactionPauseMs: 3000 },
+  leaderboardScroll: { pixelsPerSecond: 18, returnPixelsPerSecond: 12, startPauseMs: 1400, endPauseMs: 1800, interactionPauseMs: 3000 },
   modes: [
     { id: "A", nameKey: "mode.A", levelRange: [1, 20], timeLimit: 900, challengeId: "A", thumbnail: "thumbnail-game-1.png" },
     { id: "B", nameKey: "mode.B", levelRange: [21, 40], timeLimit: 900, challengeId: "B", thumbnail: "thumbnail-game-2.png" },
