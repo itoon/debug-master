@@ -17,9 +17,12 @@ export type Mode = "campaign" | "timer" | "ranking" | "dead";
 
 export type Condition = { color: string; negate: boolean };
 
-export type MoveNode = { id: string; type: "move"; direction: Direction };
+/** Optional 1-based source position for UI hints; execution ignores it. */
+type SourceLocation = { sourceLine?: number };
 
-export type IfNode = {
+export type MoveNode = SourceLocation & { id: string; type: "move"; direction: Direction };
+
+export type IfNode = SourceLocation & {
   id: string;
   type: "if";
   condition: Condition;
@@ -27,21 +30,21 @@ export type IfNode = {
   elseBody: Node[];
 };
 
-export type RepeatNode = {
+export type RepeatNode = SourceLocation & {
   id: string;
   type: "repeat";
   count: number;
   body: Node[];
 };
 
-export type WhileNode = {
+export type WhileNode = SourceLocation & {
   id: string;
   type: "while";
   condition: Condition;
   body: Node[];
 };
 
-export type CallNode = { id: string; type: "call"; name: string };
+export type CallNode = SourceLocation & { id: string; type: "call"; name: string };
 
 export type Node = MoveNode | IfNode | RepeatNode | WhileNode | CallNode;
 
@@ -82,6 +85,13 @@ export type Score = {
   age?: number;
   /** Ranking / timer modes: the run's time limit, so boards don't mix. */
   timeLimitSec?: number;
+};
+
+/** Transient practice results; never stored in the score repository. */
+export type PracticeSummary = {
+  elapsedMs: number;
+  levelsCompleted: number;
+  mistakes: number;
 };
 
 export type ScorePopup = {

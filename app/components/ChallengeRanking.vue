@@ -401,7 +401,8 @@ function ageRange(age?: number): string {
   position: relative;
   isolation: isolate;
   display: grid;
-  place-items: center;
+  align-items: start;
+  justify-items: center;
   width: 90%;
   height: 68px;
   margin-top: 9px;
@@ -426,7 +427,7 @@ function ageRange(age?: number): string {
 }
 .podium-block span {
   color: #fff;
-  font-size: 2.8rem;
+  font-size: 2rem;
   line-height: 1;
   font-weight: 800;
   text-shadow: 0 2px 3px rgba(48, 34, 17, 0.7);
@@ -436,9 +437,6 @@ function ageRange(age?: number): string {
 }
 .podium-place-3 .podium-block {
   height: 34px;
-}
-.podium-place-3 .podium-block span {
-  font-size: 2rem;
 }
 .space.with-podium .challenge-rows {
   gap: 6px;

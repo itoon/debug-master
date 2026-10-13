@@ -11,19 +11,20 @@
 
 <script setup lang="ts">
 // Presentation only. Coordinates come from an isolated solveLevel preview.
-const props = defineProps<{ path: readonly (readonly [number, number])[] }>();
+const props = defineProps<{ path: readonly (readonly [number, number])[]; visitedCells?: ReadonlySet<string> }>();
 const hidden = ref(false);
 function syncVisibility(): void { hidden.value = document.hidden; }
 onMounted(() => { syncVisibility(); document.addEventListener('visibilitychange', syncVisibility); });
 onBeforeUnmount(() => document.removeEventListener('visibilitychange', syncVisibility));
 const markers = computed(() => {
   const end = props.path.at(-1);
-  const visited = new Map<string, { row: number; col: number; step: number; end: boolean }>();
+  const byCell = new Map<string, { row: number; col: number; step: number; end: boolean }>();
   props.path.slice(1).forEach(([row, col], step) => {
     const key = `${row}-${col}`;
-    if (!visited.has(key)) visited.set(key, { row, col, step, end: row === end?.[0] && col === end?.[1] });
+    if (props.visitedCells?.has(key)) return;
+    if (!byCell.has(key)) byCell.set(key, { row, col, step, end: row === end?.[0] && col === end?.[1] });
   });
-  return [...visited.values()];
+  return [...byCell.values()];
 });
 </script>
 

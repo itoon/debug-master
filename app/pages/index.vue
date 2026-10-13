@@ -4,6 +4,7 @@
       :repository="repositories.scores" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @reset-error="homeStorageError = ''"
       @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" />
     <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
+    <PracticeSummaryDialog v-if="practiceSummary" :result="practiceSummary" @home="backToStart" />
     <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
       :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
@@ -54,7 +55,7 @@
                 :max-cell-size="160"
                 :shattering="boardShattering"
               >
-                <BoardSuperHint v-if="practiceSuperHint && practiceActive && !practiceStarting && ['playing', 'success', 'completed'].includes(status) && !practiceHintSolution?.error" :key="currentLevel.id" :path="practiceHintSolution?.path ?? []" />
+                <BoardSuperHint v-if="practiceSuperHint && practiceActive && !practiceStarting && ['playing', 'success', 'completed'].includes(status) && !practiceHintSolution?.error" :key="currentLevel.id" :path="practiceHintSolution?.path ?? []" :visited-cells="practiceVisitedCells" />
                 <div
                   class="actor"
                   :class="[`actor-${status}`, { warp: playerWarped }]"
@@ -101,7 +102,8 @@
             :language="displayLanguage"
             :title="t('game.readCode', { language: languageLabel })"
             :readable="true"
-            :is-active-line="(line) => debugMode && isActiveRawLine(line)"
+            :is-active-line="isGameCodeLineActive"
+            :follow-active-line="practiceActive && practiceSuperHint"
           />
         </div>
 
@@ -358,6 +360,7 @@ import type {
   Mode,
   MoveNode,
   Node,
+  PracticeSummary,
   Score,
   ScorePopup,
 } from "../types/debug-game";
@@ -401,6 +404,11 @@ const practiceActive = ref(false);
 const showPracticePicker = ref(false);
 const practiceStarting = ref(false);
 const practiceSuperHint = ref(false);
+const practiceVisitedCells = ref(new Set<string>());
+const practiceSummary = ref<PracticeSummary | undefined>();
+const practiceSessionStartedAt = ref<number | null>(null);
+const practicePassedLevels = ref(new Set<number>());
+const practiceMistakes = ref(0);
 const homeStarting = ref(false);
 const scoreSaving = ref(false);
 const exitSaving = ref(false);
@@ -582,7 +590,7 @@ const notificationTitle = computed(() => {
   return t("game.notificationTitle");
 });
 const canControl = computed(
-  () => !showPracticePicker.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
+  () => !showPracticePicker.value && !practiceSummary.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
 );
 const codiSprite = computed(() =>
   status.value === "failed" || status.value === "timeup"
@@ -696,7 +704,7 @@ function openSetup(): void {
 }
 
 function requestExit(): void {
-  if (exitSaving.value) return;
+  if (exitSaving.value || practiceSummary.value) return;
   if (campaignStarted.value && !pendingExitScore.value) showExitConfirm.value = true;
   else exitGame();
 }
@@ -710,7 +718,7 @@ function confirmExit(): void {
 async function exitGame(): Promise<void> {
   if (exitSaving.value) return;
   if (practiceActive.value) {
-    openSetup();
+    presentPracticeSummary();
     return;
   }
   if (!pendingExitScore.value && (!campaignStarted.value || showSummary.value || showRanking.value)) {
@@ -752,6 +760,35 @@ async function exitGame(): Promise<void> {
   lastScoreId.value = score.id;
   refreshStoredScores();
   openSetup();
+}
+
+function presentPracticeSummary(): void {
+  if (practiceSummary.value || practiceSessionStartedAt.value === null) return;
+  const finishedAt = Date.now();
+  const result: PracticeSummary = {
+    elapsedMs: Math.max(0, finishedAt - practiceSessionStartedAt.value),
+    levelsCompleted: practicePassedLevels.value.size,
+    mistakes: practiceMistakes.value,
+  };
+  // End the live run before opening the dialog. Pending move/retry/next-level
+  // callbacks cannot change the result, which never enters a repository.
+  practiceLaunchToken += 1;
+  showPracticePicker.value = false;
+  practiceStarting.value = false;
+  showExitConfirm.value = false;
+  stopTimer();
+  stopSounds();
+  clearPendingRunTimers();
+  clearLevelAdvanceTimer();
+  clearScorePopupTimer();
+  scorePopup.value = null;
+  campaignStarted.value = false;
+  expectedMove.value = null;
+  activeNode.value = null;
+  status.value = "ready";
+  practiceSummary.value = result;
+  lastInteractionAt = finishedAt;
+  playSound("complete");
 }
 
 /** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
@@ -798,7 +835,7 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode):
 }
 
 function openPracticePicker(): void {
-  if ((!showSetup.value && !practiceActive.value) || showPracticePicker.value || homeStarting.value || practiceStarting.value || showExitConfirm.value) return;
+  if ((!showSetup.value && !practiceActive.value) || showPracticePicker.value || practiceSummary.value || homeStarting.value || practiceStarting.value || showExitConfirm.value) return;
   practiceLaunchButton = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   showPracticePicker.value = true;
   lastInteractionAt = Date.now();
@@ -810,7 +847,7 @@ async function closePracticePicker(): Promise<void> {
   if (practiceLaunchButton?.isConnected) practiceLaunchButton.focus({ preventScroll: true });
 }
 async function startPracticeLevel(levelId: number): Promise<void> {
-  if (practiceStarting.value || !practiceLevels.some((level) => level.id === levelId) || (!practiceActive.value && !showPracticePicker.value)) return;
+  if (practiceStarting.value || practiceSummary.value || !practiceLevels.some((level) => level.id === levelId) || (!practiceActive.value && !showPracticePicker.value)) return;
   const token = ++practiceLaunchToken;
   sessionToken += 1;
   const alreadyPracticing = practiceActive.value;
@@ -836,6 +873,13 @@ async function startPracticeLevel(levelId: number): Promise<void> {
   if (!window.history.state?.debugMasterHomeV2Session) window.history.pushState({ ...window.history.state, debugMasterHomeV2Session: true }, '', window.location.href);
   showPracticePicker.value = false;
   practiceStarting.value = false;
+  if (!alreadyPracticing) {
+    // Map selections/restarts reset Dev's run counters; practice summary
+    // intentionally retains its own totals for the whole visit.
+    practiceSessionStartedAt.value = Date.now();
+    practicePassedLevels.value = new Set<number>();
+    practiceMistakes.value = 0;
+  }
   startGame();
 }
 function playChallenge(): void {
@@ -858,6 +902,11 @@ function resetHomeSession(): void {
   exitSaving.value = false;
   practiceLaunchToken += 1;
   practiceActive.value = false;
+  practiceSummary.value = undefined;
+  practiceSessionStartedAt.value = null;
+  practicePassedLevels.value = new Set<number>();
+  practiceMistakes.value = 0;
+  practiceVisitedCells.value = new Set<string>();
   practiceSuperHint.value = false;
   practiceStarting.value = false;
   showPracticePicker.value = false;
@@ -968,6 +1017,7 @@ function clearPendingRunTimers(): void {
 }
 
 function beginLevel(): void {
+  practiceVisitedCells.value = new Set<string>();
   clearPendingRunTimers();
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
@@ -1036,6 +1086,7 @@ function controlMove(direction: Direction): void {
   );
   player.row = result.row;
   player.col = result.col;
+  if (practiceActive.value) practiceVisitedCells.value.add(`${result.row}-${result.col}`);
   // Wrapping teleports to the far edge, so skip the slide across the board.
   playerWarped.value = result.wrapped;
   playerFacing.value = direction;
@@ -1076,6 +1127,7 @@ function completeLevel(): void {
   } else {
     clearScorePopupTimer();
     scorePopup.value = null;
+    practicePassedLevels.value.add(currentLevel.value.id);
   }
   completedLevels.value += 1;
   status.value = "success";
@@ -1103,7 +1155,10 @@ function failLevel(reason: string): void {
   status.value = "failed";
   expectedMove.value = null;
   comboStreak.value = 0;
-  if (reason === "Wrong key") reason = t("game.wrongMove");
+  if (reason === "Wrong key") {
+    if (practiceActive.value) practiceMistakes.value += 1;
+    reason = t("game.wrongMove");
+  }
   if (deadRun.value) {
     livesLeft.value = Math.max(0, livesLeft.value - 1);
     reason = `${reason} · เหลือ ${livesLeft.value} หัวใจ`;
@@ -1241,6 +1296,13 @@ function showNextHint(): void {
   revealedHintCount.value = Math.min(revealedHintCount.value + 1, 3);
 }
 
+function isGameCodeLineActive(line: string, index: number): boolean {
+  if (practiceActive.value) {
+    return practiceSuperHint.value && !practiceStarting.value && displayLanguage.value === "python" && activeNode.value?.sourceLine === index + 1;
+  }
+  return debugMode.value && isActiveRawLine(line);
+}
+
 function isActiveRawLine(line: string): boolean {
   if (!activeNode.value) return false;
   const text = line.trim();
@@ -1268,7 +1330,7 @@ function isActiveRawLine(line: string): boolean {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  if (showSetup.value || showTutorial.value || showSummary.value || showRanking.value || showExitConfirm.value || showPracticePicker.value || practiceStarting.value || status.value !== "playing") return;
+  if (showSetup.value || showTutorial.value || showSummary.value || practiceSummary.value || showRanking.value || showExitConfirm.value || showPracticePicker.value || practiceStarting.value || status.value !== "playing") return;
   if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
   const target = event.target;
   if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return;
@@ -1327,7 +1389,7 @@ onMounted(async () => {
     window.addEventListener("pageshow", resetAfterBrowserNavigation);
     idleTimer = setInterval(() => {
       // No idle policy during gameplay (including level retries and transitions).
-      if (!homeStarting.value && !scoreSaving.value && !exitSaving.value && (showSetup.value || showTutorial.value || showSummary.value || showRanking.value) && Date.now() - lastInteractionAt >= homeConfig.idleTimeoutMs) backToStart();
+      if (!homeStarting.value && !scoreSaving.value && !exitSaving.value && (showSetup.value || showTutorial.value || showSummary.value || practiceSummary.value || showRanking.value) && Date.now() - lastInteractionAt >= homeConfig.idleTimeoutMs) backToStart();
     }, 1000);
   } else {
     await applyLevelFromQuery();

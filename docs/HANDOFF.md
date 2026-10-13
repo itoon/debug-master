@@ -2,6 +2,35 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Equal podium numbers, top alignment
+
+- `ChallengeRanking.vue` now uses one shared 2rem size (32px at the default root size) for podium numbers 1/2/3, removing rank 3's separate size override. Numbers are centered horizontally and top-aligned within each podium face. Retains gold/silver/bronze colours, original block heights/widths and compact centered podium spacing.
+- Updated `DESIGN.md`. No ranking data, sorting, scrolling, avatars, game flow or score logic changes. Existing user work/staging is preserved.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. Source inspection confirms all three podium numbers share the same typography/alignment rules. No tests/live viewport checks, git add/commit, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Practice exit summary without scores
+
+- Practice Exit keeps its confirmation dialog. Confirming “ออกและกลับหน้าแรก” now opens `PracticeSummaryDialog` before returning Home. The blue summary uses existing Codi artwork, entrance motion and the existing completion cue (respecting mute); it shows elapsed `MM:SS`, passed levels and wrong-move count, with a single Home action. It has no score, ranking, profile requirement or persistence. All new text uses the Thai dictionary.
+- Per the user's answers, elapsed time and mistakes cover the whole practice visit from the first level launch until confirmed exit, including map selection, retry/restart and confirmation time. Passed levels count unique level IDs; replaying a cleared level does not increase that count. Only wrong directional input increments mistakes, not interpreter errors or manual restarts. Separate transient counters survive the legacy `startGame` resets on map selection. No live timer or elapsed-time label is added to the practice HUD.
+- Confirmed exit freezes a result snapshot, cancels pending move/retry/next-level callbacks and stops gameplay before opening the modal. Keyboard/movement/map/exit guards prevent background actions; native dialog focuses its heading, bounds overflow and hides the scrollbar, and respects reduced motion. Home/browser navigation clears the practice totals and result. The existing 90-second summary idle return applies; live practice remains exempt.
+- Original 60-level progression, controls, SuperHint, three competitive summaries/scoring/timers and repository schemas are preserved. Practice results never call Player/Score save. Existing user edits/staging are preserved.
+- Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review found no actionable issue in counting, reset/freeze paths, timer cleanup, storage exclusion or nonpractice flow. No tests/browser/audio checks, agent git add/commit, branch changes or reference-frontend edits. Live presentation remains unverified under the build-only instruction.
+
+## 2026-10-13 — Remove reached SuperHint dots
+
+- Practice now keeps a reactive, attempt-local set of successful move destinations keyed by row/column. `BoardSuperHint.visitedCells` filters reached cells out of the full-route overlay, including their endpoint ring. A coordinate stays hidden if a loop later returns to it; the existing arrow and exact code-line highlight continue to guide those moves. Merely standing at the initial position does not add a visited destination.
+- Records destinations even while SuperHint is off, so enabling/re-enabling it does not restore already-reached dots. Wrong input returns before recording a cell; wrapping records the actual wrapped destination. `beginLevel` resets the set for manual restart, auto retry and the next level; Home also clears it. No localStorage/repository changes or persistent tracking.
+- Only marker presentation changes. Board tiles, movement/runner timing, scoring/progress, sounds, arrow and highlight behavior are unchanged. Updated the Thai hint guidance to describe unvisited cells. Existing user edits and staging are preserved.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no actionable issue in reactive Set updates, wrap/loop destinations, wrong input, toggles or reset paths. Live presentation remains unverified. No tests/browser checks, git add/commit by the agent, branch changes or reference-frontend edits.
+
+## 2026-10-13 — Teaching code highlight with practice SuperHint
+
+- Practice/tour-through-original-60 SuperHint now enables the existing yellow code-line highlight alongside its full path and next-move arrow. Uses the live `activeNode`, retaining the same wait/input/80ms advance rhythm as original debug presentation; no automatic movement or interpreter timing was added. Turning SuperHint off removes the highlight. Switching/restarting levels uses the new level's active command; no practice debug metrics or text-hint panel is restored.
+- Added optional 1-based `sourceLine` presentation metadata to node types and the parser's if/elif, repeat, while, move and call nodes. It references the original physical line number, including blank lines. Repeated `right()`/`up()` commands highlight one exact occurrence rather than all text matches. Parser grammar, ID generation/evaluation order, interpreter rules, puzzles, scoring and storage are unchanged. Metadata is not persisted in score/player records.
+- `LevelCode.followActiveLine` is opt-in and defaults false. Practice SuperHint marks the active line with `aria-current=step` and follows an offscreen line by changing only the code box's scrollTop. Its post-render update checks follow state, level identity, active index and connected DOM before scrolling, avoiding stale updates after toggle/reset/unmount. Other game modes/review/tutorial keep existing behavior; legacy Debug still uses its original matching function.
+- Updated the picker guidance through the Thai dictionary to explain both route and code highlights. Existing staged user work is preserved; the agent did not restage files.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no actionable issue in duplicate/blank-line mapping, branch/loop/function source positions, internal scrolling or nonpractice behavior. Live highlight/scroll appearance remains unverified. No tests/browser checks, git add/commit by the agent, branch changes or reference-frontend edits.
+
 ## 2026-10-13 — Practice level progress and score-free success
 
 - Practice/tour-through-original-60 mode now uses `currentLevel.id` as one presentation value for both progress text and bar. Selecting level 11 immediately shows 11/60 and the bar at 11/60; jumps, restarts and automatic next levels follow the current ID. Original completed-level counting remains for ranked and hidden legacy modes.

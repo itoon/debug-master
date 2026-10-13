@@ -80,6 +80,7 @@ export function useProgramParser(getLevelId: () => number) {
 
       return {
         id: nextId("if"),
+        sourceLine: line.number,
         type: "if",
         condition,
         body,
@@ -113,6 +114,7 @@ export function useProgramParser(getLevelId: () => number) {
       if (repeatMatch) {
         return {
           id: nextId("repeat"),
+          sourceLine: line.number,
           type: "repeat",
           count: Number(repeatMatch[1]),
           body: parseBlock(line.indent),
@@ -123,6 +125,7 @@ export function useProgramParser(getLevelId: () => number) {
       if (whileMatch) {
         return {
           id: nextId("while"),
+          sourceLine: line.number,
           type: "while",
           condition: parseConditionText(whileMatch[1]),
           body: parseBlock(line.indent),
@@ -144,12 +147,13 @@ export function useProgramParser(getLevelId: () => number) {
       if (MOVE_NAMES.has(name)) {
         return {
           id: nextId("move"),
+          sourceLine: line.number,
           type: "move",
           direction: name as Direction,
         };
       }
 
-      return { id: nextId("call"), type: "call", name };
+      return { id: nextId("call"), sourceLine: line.number, type: "call", name };
     };
 
     const main: Node[] = [];

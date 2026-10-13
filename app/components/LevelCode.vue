@@ -6,6 +6,7 @@
     </div>
 
     <pre
+      ref="codeBox"
       class="code-box"
       :style="codeBoxStyle"
       :aria-label="`Level ${level.id} code`"
@@ -14,6 +15,7 @@
       :key="`${level.id}-${entry.index}`"
       class="code-line"
       :class="{ active: isActiveLine?.(entry.line, entry.index) }"
+      :aria-current="followActiveLine && isActiveLine?.(entry.line, entry.index) ? 'step' : undefined"
     ><span
       v-if="lineNumbers"
       class="code-line-number"
@@ -78,6 +80,8 @@ const props = withDefaults(
     readable?: boolean;
     /** Highlights a source line (the game uses it in Debug Mode). */
     isActiveLine?: (line: string, index: number) => boolean;
+    /** Follow teaching hints within the code viewport only. */
+    followActiveLine?: boolean;
   }>(),
   {
     language: "python",
@@ -85,6 +89,7 @@ const props = withDefaults(
     lineNumbers: false,
     readable: false,
     isActiveLine: undefined,
+    followActiveLine: false,
   },
 );
 
@@ -92,6 +97,26 @@ const { codeLineEntries, codeBoxStyle } = useCodePresentation(
   computed(() => props.level),
   computed(() => props.language),
 );
+const codeBox = ref<HTMLPreElement | null>(null);
+const activeLineIndex = computed(() => props.followActiveLine
+  ? codeLineEntries.value.findIndex(entry => props.isActiveLine?.(entry.line, entry.index))
+  : -1);
+watch([() => props.followActiveLine, () => props.level, activeLineIndex], async () => {
+  const index = activeLineIndex.value;
+  const level = props.level;
+  if (!props.followActiveLine || index < 0) return;
+  await nextTick();
+  if (!props.followActiveLine || props.level !== level || activeLineIndex.value !== index) return;
+  const box = codeBox.value;
+  const line = box?.querySelectorAll<HTMLElement>('.code-line')[index];
+  if (!box?.isConnected || !line) return;
+  const viewport = box.getBoundingClientRect();
+  const position = line.getBoundingClientRect();
+  if (position.top < viewport.top || position.bottom > viewport.bottom) {
+    // Instant internal scroll avoids moving the game page or queued motion.
+    box.scrollTop = Math.max(0, box.scrollTop + position.top - viewport.top - box.clientHeight / 2 + position.height / 2);
+  }
+}, { flush: 'post', immediate: true });
 </script>
 
 <style scoped>
