@@ -7,12 +7,21 @@
       <p class="session-mode">{{ mode.id }} · {{ t(mode.nameKey) }} · {{ t('home.levels', { from: mode.levelRange[0], to: mode.levelRange[1] }) }} · {{ t('home.limit', { time: formatClock(mode.timeLimit * 1000) }) }}</p>
 
       <template v-if="stage === 'tutorial'">
-        <TutorialDemo />
-        <details class="tutorial-tips">
+        <div class="tutorial-lesson">
+        <TutorialDemo v-if="!tipsOpen" />
+        <details class="tutorial-tips" @toggle="tipsOpen = ($event.target as HTMLDetailsElement).open">
           <summary>{{ t('tutorial.more') }}</summary>
           <div class="tutorial-tips-content">
+            <div class="guidance-tabs" role="group" :aria-label="t('tutorial.more')">
+              <label><input v-model="guideTab" type="radio" :name="guideName" value="controls" />{{ t('tutorial.controlsTab') }}</label>
+              <label><input v-model="guideTab" type="radio" :name="guideName" value="items" />{{ t('tutorial.itemsTab') }}</label>
+            </div>
+            <template v-if="guideTab === 'controls'">
             <p>{{ t('tutorial.controls') }}</p>
             <p>{{ t('tutorial.repeatHint') }}</p>
+            <p>{{ t('tutorial.retry') }}</p>
+            </template>
+            <template v-else>
             <ul class="tile-legend">
               <li v-for="tile in tutorialTiles" :key="tile.name">
                 <i class="code-tile-swatch" :class="`tile-${tile.name}`" aria-hidden="true" />
@@ -20,9 +29,10 @@
               </li>
             </ul>
             <p>{{ t('tutorial.tiles') }}</p>
-            <p>{{ t('tutorial.retry') }}</p>
+            </template>
           </div>
         </details>
+        </div>
         <div class="session-actions">
           <button type="button" class="text-action" @click="emit('home')">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16" /></svg>
@@ -92,6 +102,9 @@ const { t } = useGameI18n();
 const headingId = useId();
 const heading = ref<HTMLElement | null>(null);
 const panel = ref<HTMLElement | null>(null);
+const tipsOpen = ref(false);
+const guideTab = ref('controls');
+const guideName = useId();
 const { rows, error } = useScoreBoard(props.repository, computed(() => props.board), Infinity);
 const rank = computed(() => {
   if (!props.saved || !props.result) return undefined;
@@ -129,7 +142,9 @@ button { min-height: 48px; padding: 12px 20px; border-radius: 12px; font: inheri
 .text-action { border: 1px solid #bdd2f1; color: #1a4d9c; background: #edf4ff; }
 button:focus-visible { outline: 3px solid #ffc83d; outline-offset: 3px; }
 .session-error { margin: 0; color: #a32d30; }
-.tutorial-panel .session-card { box-sizing: border-box; width: min(1040px, 100%); gap: 14px; padding: clamp(20px, 2.5vw, 30px); background: linear-gradient(145deg, #193c87f5, #0b224ef5); color: #fff; border-color: #85b2ff; }
+.tutorial-panel { height: 100%; min-height: 0; padding: clamp(6px, 1.5dvh, 12px); }
+.tutorial-panel .session-card { box-sizing: border-box; width: min(1040px, 100%); height: min(660px, 100%); min-height: 0; grid-template-rows: auto auto auto minmax(0, 1fr) auto; gap: clamp(6px, 1.5dvh, 12px); padding: clamp(12px, 2.5dvh, 24px); background: linear-gradient(145deg, #193c87f5, #0b224ef5); color: #fff; border-color: #85b2ff; }
+.tutorial-lesson { display: flex; flex-direction: column; min-height: 0; gap: 6px; }
 .tutorial-panel .session-brand, .tutorial-panel .session-mode { color: #bed9ff; }
 .tutorial-panel h1 { font-size: clamp(1.4rem, 2.2vw, 1.8rem); }
 .tutorial-panel .session-actions { justify-content: flex-end; }
@@ -140,11 +155,17 @@ button:focus-visible { outline: 3px solid #ffc83d; outline-offset: 3px; }
 .tutorial-panel .text-action { color: #e3eeff; background: #133165; border-color: #85b2ff66; }
 .tutorial-panel .text-action:hover { background: #214682; }
 .tutorial-panel .session-actions button:active { transform: translateY(2px); }
-.tutorial-tips { color: #bed9ff; font-size: .85rem; }
+.tutorial-tips { color: #bed9ff; font-size: .85rem; min-height: 0; }
+.tutorial-tips[open] { flex: 1; }
 .tutorial-tips summary { cursor: pointer; padding: 8px 0; }
 .tutorial-tips summary:focus-visible { outline: 3px solid #ffe36b; outline-offset: 3px; border-radius: 6px; }
 .tutorial-tips-content { display: grid; gap: 10px; padding: 8px 0; }
 .tutorial-tips-content p { margin: 0; }
+.guidance-tabs { grid-column: 1 / -1; display: flex; gap: 8px; }
+.guidance-tabs label { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; padding: 6px 10px; border-radius: 10px; border: 1px solid #85b2ff66; cursor: pointer; }
+.guidance-tabs label:has(:checked) { color: #ffe36b; background: #214682; border-color: #ffe36b; }
+.guidance-tabs label:has(:focus-visible) { outline: 3px solid #ffe36b; outline-offset: 2px; }
+.guidance-tabs input { accent-color: #ffe36b; }
 .tutorial-panel .tile-legend li { align-items: center; gap: 6px; }
 .tutorial-panel .tile-legend code { color: #ffe36b; }
 .tutorial-panel .tile-legend .code-tile-swatch { display: inline-block; flex: 0 0 22px; width: 22px; height: 22px; }
@@ -169,4 +190,29 @@ button:focus-visible { outline: 3px solid #ffc83d; outline-offset: 3px; }
 @keyframes spark-rise { 20% { opacity: .8; } to { opacity: 0; transform: translateY(-100px) rotate(90deg); } }
 @media (prefers-reduced-motion: reduce) { .summary-dialog .session-card, .summary-dialog .session-avatar, .result-sparks span { animation: none; } .tutorial-panel .session-actions button { transition: none; } }
 @media (max-width: 500px) { .summary-metrics { grid-template-columns: 1fr; } .session-actions { flex-direction: column; } }
+@media (max-width: 500px) {
+  .tutorial-panel .session-brand { display: none; }
+  .tutorial-panel .session-card { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+  .tutorial-panel h1 { font-size: 1.25rem; }
+  .tutorial-panel .session-actions { flex-direction: row; }
+  .tutorial-panel .session-actions button { flex: 1; min-width: 0; padding-inline: 10px; }
+  .tutorial-panel .session-mode { font-size: .8rem; }
+}
+@media (max-height: 650px) {
+  .tutorial-tips-content { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 8px 16px; font-size: .8rem; }
+  .tutorial-panel .tile-legend { gap: 4px 10px; }
+  .tutorial-panel .tile-legend li { font-size: .8rem; }
+}
+@media (max-width: 500px) and (min-height: 481px) {
+  .tutorial-tips-content { grid-template-columns: 1fr; gap: 8px; font-size: .8rem; }
+  .tutorial-panel .tile-legend { gap: 4px 10px; }
+  .tutorial-panel .tile-legend li { font-size: .8rem; }
+}
+@media (max-height: 480px) {
+  .tutorial-panel .session-brand { display: none; }
+  .tutorial-panel .session-card { grid-template-rows: auto auto minmax(0, 1fr) auto; padding: 10px; gap: 6px; }
+  .tutorial-panel h1 { font-size: 1.1rem; }
+  .tutorial-panel .session-mode { font-size: .75rem; }
+  .tutorial-tips summary { padding-block: 3px; font-size: .75rem; }
+}
 </style>

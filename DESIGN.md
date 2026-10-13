@@ -44,7 +44,7 @@ The canonical global palette lives in `app/assets/css/tailwind.css`: primary →
 
 ## Layout
 
-Home uses three cards up to 1640px, stacking below 1100px. Game HUD uses compact level/context, score/time/progress and visible player identity; the board/D-pad and existing code panel share the main area. Popups have bounded viewport height and internal scrolling. Components do not style html/body. Leaderboard read/scroll regions remain separate from card launch targets.
+Home uses three cards up to 1640px, stacking below 1100px. Game HUD aligns with the two gameplay columns: player identity at upper left, score/time beside it, and level/context/progress at upper right over the existing code panel. A wide progress bar sits below the level information; Combo appears above the board. Sound/Exit sit at the lower left in the board footer, with the D-pad centered on that same footer. Footer controls reflow below the D-pad on small screens; they never float over tiles. Popups have bounded viewport height and internal scrolling. Components do not style html/body. Leaderboard read/scroll regions remain separate from card launch targets.
 
 ## Elevation & Depth
 
@@ -58,7 +58,7 @@ Global control/container radii map to `--cv-radius` (12px) and `--cv-radius-xl` 
 
 Canonical owners are `HomeV2.vue` for mode selection, `PlayerSetupDialog.vue` for nickname/age/profile input, `GameHud.vue` for gameplay information, `SessionPanel.vue` for tutorial/result/ranking, and the existing repositories for local data. `docs/HANDOFF.md` records behavioural agreements and verification history.
 
-Tutorial uses the same blue game surface and shared `LevelBoard`/`LevelCode` in `TutorialDemo.vue`. Its brief, one-pass preview reads the original Set 01 level 1, synchronizes the source-line highlight with the displayed key and Codi, then settles. It never updates the live run, score, timer or repository. Reduced motion uses a static explanation; hidden tabs suspend the preview. Only Start/Back are primary tutorial actions, with icons and text; additional control/item guidance stays in a disclosure.
+Tutorial uses the same blue game surface and shared `LevelBoard`/`LevelCode` in `TutorialDemo.vue`. Its repeating preview reads the original Set 01 level 1, synchronizes the source-line highlight with the displayed key and Codi, pauses for 1.2 seconds at completion, then resets without a backwards move. It never updates the live run, score, timer or repository. Reduced motion uses a static explanation; hidden tabs suspend the preview. Only Start/Back are primary tutorial actions, with icons and text. The tutorial card fits the available viewport height, adapting board/code space and compacting short screens. Narrow screens reserve enough space for the three code lines and stack the board above the code. Additional control/item guidance replaces the demo area while its disclosure is open and uses two radio tabs so content does not extend the card.
 
 Mode selection moves one card to center and slides others away, then opens the dialog. Closing reverses the sequence. Durations live in `homeConfig.modeMotion`; popup entrance is a single gentle zoom/overshoot/settle. Reduced motion skips movement. Early close, resize, idle and unmount must cancel or continue from the current state without stale UI work.
 

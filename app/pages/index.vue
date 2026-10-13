@@ -15,22 +15,9 @@
           :difficulty="activeChallenge ? t(`difficulty.${activeChallenge.id}`) : modeLabel"
           :player-name="playerName" :avatar-id="currentAvatarId"
           :timed="isTimedMode" :time="formattedTime" :score="totalScore"
-          :combo="Math.max(1, comboStreak)" :progress="progressLabel"
+          :progress="progressLabel"
           :completed-levels="completedLevels" :total-levels="deadRun ? 0 : activeLevels.length"
-          :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES">
-          <template #actions>
-            <button type="button" class="hud-action sound-toggle" :aria-pressed="soundEnabled" :aria-label="t('game.soundEffects')"
-              :title="t(soundEnabled ? 'game.mute' : 'game.unmute')" @click="toggleSound">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path v-if="soundEnabled" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path v-else d="m17 9 5 6m0-6-5 6" /></svg>
-            </button>
-            <button type="button" class="hud-action primary-button small"
-              :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
-              @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
-            <button type="button" class="hud-action soft-button small exit-action"
-              :title="campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
-              @click="requestExit">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</button>
-          </template>
-        </GameHud>
+          :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES" />
 
         <div v-if="exitSaveError" class="exit-save-error" role="alert">
           <p>{{ t('game.exitSaveError') }}</p>
@@ -38,7 +25,10 @@
         </div>
 
         <div class="play-cluster">
-          <div ref="boardWrapEl" class="board-wrap">
+          <div ref="boardWrapEl" class="board-wrap" :style="{
+            '--minimum-board-height': `${currentLevel.rows * 24 + Math.max(0, currentLevel.rows - 1) * 5 + 24}px`,
+            '--board-reserved-height': `${boardReservedHeight}px`,
+          }">
             <div
               v-if="notificationMessage && status !== 'success'"
               class="notification"
@@ -49,7 +39,7 @@
               <p>{{ notificationMessage }}</p>
             </div>
             <div class="board-and-controls">
-              <p ref="instructionEl" class="objective">{{ t('game.instruction') }}</p>
+              <p ref="instructionEl" class="board-combo">{{ t('game.comboDisplay', { count: Math.max(1, comboStreak) }) }}</p>
               <LevelBoard
                 :level="currentLevel"
                 :space="boardSpace"
@@ -72,11 +62,25 @@
                   </div>
                 </div>
               </LevelBoard>
-              <div ref="controlsEl" class="touch-controls" :aria-label="t('game.controls')">
+              <div ref="controlsEl" class="board-footer">
+                <nav class="game-actions" :aria-label="t('game.actions')">
+                  <button type="button" class="hud-action sound-toggle" :aria-pressed="soundEnabled" :aria-label="t('game.soundEffects')"
+                    :title="t(soundEnabled ? 'game.mute' : 'game.unmute')" @click="toggleSound">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path v-if="soundEnabled" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path v-else d="m17 9 5 6m0-6-5 6" /></svg>
+                  </button>
+                  <button v-if="!campaignStarted" type="button" class="hud-action primary-button small"
+                    :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
+                    @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
+                  <button type="button" class="hud-action soft-button small exit-action"
+                    :title="campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
+                    @click="requestExit">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</button>
+                </nav>
+                <div class="touch-controls" :aria-label="t('game.controls')">
                 <button type="button" class="arrow up" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲</button>
                 <button type="button" class="arrow left" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀</button>
                 <button type="button" class="arrow down" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼</button>
                 <button type="button" class="arrow right" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶</button>
+                </div>
               </div>
             </div>
           </div>
@@ -432,6 +436,7 @@ const boardWrapEl = ref<HTMLElement | null>(null);
 const controlsEl = ref<HTMLElement | null>(null);
 const instructionEl = ref<HTMLElement | null>(null);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
+const boardReservedHeight = ref(0);
 let boardResizeObserver: ResizeObserver | null = null;
 
 // Junior note:
@@ -1178,11 +1183,12 @@ onMounted(async () => {
     boardResizeObserver = new ResizeObserver(() => {
       const area = boardWrapEl.value;
       if (!area) return;
-      // Measure the available stage, then reserve the real control/instruction
+      // Measure the available stage, then reserve the real footer/combo
       // heights and two 12px gaps. The board remains adjacent to the D-pad.
+      boardReservedHeight.value = (controlsEl.value?.offsetHeight ?? 0) + (instructionEl.value?.offsetHeight ?? 0) + 24 + 12;
       boardSpace.value = {
         width: Math.max(0, area.clientWidth - 12),
-        height: Math.max(0, area.clientHeight - (controlsEl.value?.offsetHeight ?? 0) - (instructionEl.value?.offsetHeight ?? 0) - 24 - 12),
+        height: Math.max(0, area.clientHeight - boardReservedHeight.value),
       };
     });
     boardResizeObserver.observe(boardWrapEl.value);
@@ -1359,12 +1365,13 @@ h2 {
   letter-spacing: 0.04em;
 }
 
-.objective {
-  max-width: min(100%, 520px);
+.board-combo {
+  width: 100%;
   margin: 0;
-  color: #dbe9ff;
-  text-align: center;
-  font-size: .85rem;
+  color: var(--cv-yellow);
+  text-align: right;
+  font-size: clamp(1rem, 1.4vw, 1.4rem);
+  font-weight: 800;
   line-height: 1.4;
 }
 
@@ -1381,7 +1388,10 @@ h2 {
   padding: 6px;
 }
 
-.board-and-controls { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; min-width: 0; }
+.board-and-controls { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.board-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: end; width: 100%; }
+.game-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.board-footer .touch-controls { grid-column: 2; }
 
 .score-popup {
   position: absolute;
@@ -2046,6 +2056,14 @@ h2 {
 
   .board-wrap { height: clamp(340px, 65dvh, 580px); }
   .play-cluster .code-card { height: clamp(300px, 55dvh, 560px); }
+}
+@media (max-width: 620px) {
+  /* fitCellSize keeps 24px cells, 5px gaps, 10px padding and 2px borders.
+     Reserve that minimum board plus the measured footer on short phones. */
+  .board-wrap { min-height: calc(var(--minimum-board-height) + var(--board-reserved-height)); }
+  .board-footer { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .board-footer .touch-controls { grid-column: 1; grid-row: 1; }
+  .game-actions { grid-column: 1; grid-row: 2; }
 }
 
 @media (hover: none) and (pointer: coarse) {
