@@ -46,7 +46,7 @@ Tile surfaces are owned by `app/assets/css/board.css`. Plain floor uses a deeper
 
 ## Layout
 
-Home uses three cards up to 1640px, stacking below 1100px. Game HUD aligns with the two gameplay columns: player identity at upper left, score/time beside it, and level/context/progress at upper right over the existing code panel. A wide progress bar sits below the level information; Combo appears above the board. Sound/Exit sit at the lower left in the board footer, with the D-pad centered on that same footer. Footer controls reflow below the D-pad on small screens; they never float over tiles. Popups have bounded viewport height and internal scrolling. Components do not style html/body. Leaderboard read/scroll regions remain separate from card launch targets.
+Home uses three cards up to 1640px, stacking below 1100px. Game HUD aligns with the two gameplay columns: player identity at upper left, score/time beside it, and level/context/progress at upper right over the existing code panel. A wide progress bar sits below the level information, with a thin divider below the left player/score group. Combo appears above the board at the left only when greater than ×1; its row stays reserved to avoid board resizing. Sound/Exit sit at the lower left in the board footer, with the D-pad centered on that same footer. Footer controls reflow below the D-pad on small screens; they never float over tiles. Popups have bounded viewport height and internal scrolling. Components do not style html/body. Leaderboard read/scroll regions remain separate from card launch targets.
 
 ## Elevation & Depth
 

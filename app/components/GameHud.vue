@@ -46,7 +46,7 @@ const avatarSrc = usePlayerAvatar();
 
 <style scoped>
 .game-hud { flex: none; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); align-items: start; gap: 16px; min-width: 0; }
-.pilot-info { display: flex; justify-content: space-between; align-items: center; min-width: 0; gap: 12px; }
+.pilot-info { display: flex; justify-content: space-between; align-items: center; align-self: stretch; min-width: 0; gap: 12px; padding-bottom: 17px; border-bottom: 1px solid #9ac5ff80; }
 .mission-info { min-width: 0; display: grid; gap: 8px; }
 .mission-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width: 0; }
 .level-info { min-width: 0; display: grid; gap: 5px; }

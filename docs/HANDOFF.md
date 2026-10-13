@@ -2,6 +2,12 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Left Combo and HUD divider
+
+- Aligned Combo to the left above the board and only render its text when `comboStreak > 1`. Keep its measured row height reserved so appearing/disappearing text does not resize or shift the board. Scoring and the streak counter are unchanged.
+- Added a thin blue divider beneath the left player/score/time HUD group, aligned with the bottom of the right-hand progress bar on desktop. Responsive layout and action handlers are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing edits are preserved.
+
 ## 2026-10-13 — Clearer floor versus ice tiles
 
 - Added an explicit deeper-blue `.tile-floor` gradient (`#57a4e4` → `#2d78bf`) and darker bevel in shared `board.css`. Its alternating variant is also darker (`#4b98d9` → `#246bad`); ice retains its existing pale gradient and diagonal reflection streaks.

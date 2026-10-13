@@ -39,7 +39,7 @@
               <p>{{ notificationMessage }}</p>
             </div>
             <div class="board-and-controls">
-              <p ref="instructionEl" class="board-combo">{{ t('game.comboDisplay', { count: Math.max(1, comboStreak) }) }}</p>
+              <p ref="instructionEl" class="board-combo"><span v-if="comboStreak > 1">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
               <LevelBoard
                 :level="currentLevel"
                 :space="boardSpace"
@@ -1367,9 +1367,10 @@ h2 {
 
 .board-combo {
   width: 100%;
+  min-height: 1.4em;
   margin: 0;
   color: var(--cv-yellow);
-  text-align: right;
+  text-align: left;
   font-size: clamp(1rem, 1.4vw, 1.4rem);
   font-weight: 800;
   line-height: 1.4;
