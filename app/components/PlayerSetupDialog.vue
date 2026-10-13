@@ -1,7 +1,7 @@
 <template>
   <dialog ref="dialog" class="player-setup-dialog" :class="{ 'is-closing': isClosing }"
     :style="{ '--popup-in-ms': `${homeConfig.modeMotion.popupInMs}ms`, '--popup-out-ms': `${homeConfig.modeMotion.popupOutMs}ms` }"
-    :aria-labelledby="titleId" @cancel.prevent="emit('close')">
+    :aria-labelledby="titleId" @cancel.prevent="!busy && emit('close')">
     <form class="setup-form" @submit.prevent="launch">
       <header class="setup-header">
         <div>
@@ -142,16 +142,12 @@ const trackStyle = computed(() => ({
 function randomizeNickname(): void {
   const names = nicknameBaseKeys.flatMap((nameKey) =>
     nicknameVibeKeys.map((vibeKey) => t("nickname.combined", { name: t(nameKey), vibe: t(vibeKey) })),
-  ).filter((name) =>
-    t("nickname.generated", { name, number: "00" }).length <= homeConfig.nicknameMaxLength,
   );
-  if (!names.length) return;
-  const name = names[Math.floor(Math.random() * names.length)]!;
-  const number = Math.floor(Math.random() * 100);
-  const candidate = t("nickname.generated", { name, number: number.toString().padStart(2, "0") });
-  nickname.value = candidate === normalizedName.value
-    ? t("nickname.generated", { name, number: ((number + 1) % 100).toString().padStart(2, "0") })
-    : candidate;
+  const candidates = names.flatMap((name) => homeConfig.nicknameEmojis.map((emoji) =>
+    t("nickname.generated", { name, emoji }),
+  )).filter((candidate) => candidate.length <= homeConfig.nicknameMaxLength && candidate !== normalizedName.value);
+  if (!candidates.length) return;
+  nickname.value = candidates[Math.floor(Math.random() * candidates.length)]!;
   generatedAnnouncement.value = t("home.randomNameReady", { name: nickname.value });
 }
 

@@ -335,6 +335,13 @@ export const assetGroups: AssetGroup[] = [
     description: th["asset.soundsDescription"],
     common: ["MP3 หรือ OGG สั้นไม่เกิน 1 วินาที (ยกเว้นเพลงจบ) ไฟล์ละไม่เกิน 50 KB ระดับเสียงเท่ากันทั้งชุด"],
     items: [
+      {
+        ...sound("click", th["asset.clickSound"], th["asset.clickSoundUsage"]),
+        file: "app/assets/sounds/pops-4.mp3",
+        status: "in-use",
+        preview: { kind: "glyph", text: "🔊" },
+        spec: [th["asset.clickSoundSpec"]],
+      },
       sound("move", "เดินถูก", "ทุกครั้งที่กดถูก (ได้ยินบ่อยมาก ต้องเบาและสั้น)"),
       {
         ...sound("wrong", th["asset.failureSound"], th["asset.failureSoundUsage"]),

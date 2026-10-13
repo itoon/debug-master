@@ -1,6 +1,7 @@
 import { onBeforeUnmount, ref } from "vue";
 import { soundEffects, UI_SOUND_EFFECTS, type SoundEffect } from "../data/sound-effects";
 import failureSound from "~/assets/sounds/codi-failed.wav";
+import clickSound from "~/assets/sounds/pops-4.mp3";
 
 /** Browser audio belongs to presentation; gameplay never waits for playback. */
 export function useGameAudio() {
@@ -10,7 +11,8 @@ export function useGameAudio() {
   let generation = 0;
   let disposed = false;
   const activeVoices = new Set<OscillatorNode | AudioBufferSourceNode>();
-  let failureBuffer: Promise<AudioBuffer | undefined> | undefined;
+  const fileBuffers = new Map<"wrong" | "click", Promise<AudioBuffer | undefined>>();
+  const soundFiles = { wrong: failureSound, click: clickSound };
 
   function reportAudioError(action: string, error: unknown): void {
     console.warn(`[Debug Master audio] ${action}`, error);
@@ -37,27 +39,32 @@ export function useGameAudio() {
   function unlockAudio(): void {
     const audio = ensureContext();
     if (audio?.state === "suspended") void audio.resume().catch((error) => reportAudioError("unlock", error));
-    if (audio) void loadFailureSound(audio);
+    if (audio) {
+      void loadFileSound("wrong", audio);
+      void loadFileSound("click", audio);
+    }
   }
 
-  function loadFailureSound(audio: AudioContext): Promise<AudioBuffer | undefined> {
-    if (!failureBuffer) {
-      failureBuffer = fetch(failureSound)
+  function loadFileSound(effect: "wrong" | "click", audio: AudioContext): Promise<AudioBuffer | undefined> {
+    let buffer = fileBuffers.get(effect);
+    if (!buffer) {
+      buffer = fetch(soundFiles[effect])
         .then((response) => {
-          if (!response.ok) throw new Error(`Failure sound HTTP ${response.status}`);
+          if (!response.ok) throw new Error(`${effect} sound HTTP ${response.status}`);
           return response.arrayBuffer();
         })
         .then((data) => audio.decodeAudioData(data))
         .catch((error) => {
-          reportAudioError("load failure sound", error);
-          failureBuffer = undefined; // A later player gesture can retry loading.
+          reportAudioError(`load ${effect} sound`, error);
+          fileBuffers.delete(effect); // A later player gesture can retry loading.
           return undefined;
         });
+      fileBuffers.set(effect, buffer);
     }
-    return failureBuffer;
+    return buffer;
   }
 
-  function playFailureBuffer(buffer: AudioBuffer, audio: AudioContext): void {
+  function playBuffer(buffer: AudioBuffer, audio: AudioContext): void {
     if (!master || audio.state !== "running") return;
     const voice = audio.createBufferSource();
     voice.buffer = buffer;
@@ -114,13 +121,13 @@ export function useGameAudio() {
     const canPlay = () => !disposed && enabled.value && !document.hidden && generation === currentGeneration;
     const play = () => {
       if (!canPlay()) return;
-      if (effect === "wrong") {
-        void loadFailureSound(audio).then((buffer) => {
+      if (effect === "wrong" || effect === "click") {
+        void loadFileSound(effect, audio).then((buffer) => {
           if (!canPlay()) return;
           try {
-            if (buffer) playFailureBuffer(buffer, audio);
+            if (buffer) playBuffer(buffer, audio);
             else schedule(effect, audio); // Keep a fallback if the local asset cannot load.
-          } catch (error) { reportAudioError("play failure sound", error); }
+          } catch (error) { reportAudioError(`play ${effect} sound`, error); }
         });
         return;
       }

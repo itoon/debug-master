@@ -3,7 +3,7 @@
     <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
       :repository="repositories.scores" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @reset-error="homeStorageError = ''"
       @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" />
-    <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
+    <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
     <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
       :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
@@ -13,26 +13,23 @@
     <main v-show="!showSetup && !showTutorial && !(activeChallenge && showRanking && !showSummary)" class="game">
       <section class="board-panel">
         <GameHud :level="currentLevel" :language="languageLabel"
-          :difficulty="activeChallenge ? t(`difficulty.${activeChallenge.id}`) : modeLabel"
+          :practice="practiceActive" :difficulty="practiceActive ? t('practice.badge') : activeChallenge ? t(`difficulty.${activeChallenge.id}`) : modeLabel"
           :player-name="playerName" :avatar-id="currentAvatarId"
           :timed="isTimedMode" :time="formattedTime" :score="totalScore"
           :progress="progressLabel"
-          :completed-levels="completedLevels" :total-levels="deadRun ? 0 : activeLevels.length"
-          :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES" />
+          :completed-levels="hudProgressValue" :total-levels="deadRun ? 0 : activeLevels.length"
+          :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES">
+          <template #actions>
+            <button type="button" class="practice-map-button soft-button small" :disabled="practiceStarting" aria-haspopup="dialog" @click="openPracticePicker"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15" /></svg>{{ t('practice.chooseButton', { count: practiceLevels.length }) }}</button>
+            <button type="button" class="soft-button small superhint-button" :class="{ 'hint-enabled': practiceSuperHint }" :disabled="practiceStarting" :aria-pressed="practiceSuperHint" :aria-label="t(practiceSuperHint ? 'practice.hidePath' : 'practice.showPath')" @click="practiceSuperHint = !practiceSuperHint"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5M13 5l-2 14" /></svg>{{ t('practice.superHint') }}<span class="hint-check" aria-hidden="true">{{ practiceSuperHint ? '✓' : '' }}</span></button>
+          </template>
+        </GameHud>
+        <p v-if="practiceActive" class="sr-only" role="status">{{ t(practiceSuperHint ? practiceHintSolution?.error ? 'practice.pathError' : 'practice.pathGuide' : status === 'completed' ? 'practice.completed' : 'practice.noRanking') }}<template v-if="practiceSuperHint && canControl && expectedMove"> · {{ t('practice.nextMove', { direction: t(`game.${expectedMove.direction}`) }) }}</template></p>
 
         <div v-if="exitSaveError" class="exit-save-error" role="alert">
           <p>{{ t('game.exitSaveError') }}</p>
           <button type="button" class="soft-button small" :disabled="exitSaving" @click="exitGame">{{ t('game.retryExit') }}</button>
         </div>
-
-        <section v-if="practiceActive" class="practice-toolbar" :aria-label="t('practice.badge')">
-          <label>{{ t('practice.level') }}<select :value="currentLevel.id" :disabled="practiceStarting" @change="startPracticeLevel(Number(($event.target as HTMLSelectElement).value))"><option v-for="level in practiceLevels" :key="level.id" :value="level.id">{{ level.id.toString().padStart(2, '0') }} · {{ level.concept }}</option></select></label>
-          <button type="button" class="soft-button small" :disabled="practiceStarting || currentLevel.id <= 1" @click="startPracticeLevel(currentLevel.id - 1)">{{ t('practice.previous') }}</button>
-          <button type="button" class="soft-button small" :disabled="practiceStarting || currentLevel.id >= practiceLevels.length" @click="startPracticeLevel(currentLevel.id + 1)">{{ t('practice.next') }}</button>
-          <button type="button" class="soft-button small" :disabled="practiceStarting" @click="startPracticeLevel(currentLevel.id)">{{ t('practice.restart') }}</button>
-          <button type="button" class="soft-button small superhint-button" :class="{ 'hint-enabled': practiceSuperHint }" :disabled="practiceStarting" :aria-pressed="practiceSuperHint" :aria-label="t(practiceSuperHint ? 'practice.hidePath' : 'practice.showPath')" @click="practiceSuperHint = !practiceSuperHint"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5M13 5l-2 14" /></svg>{{ t('practice.superHint') }}</button>
-          <p class="practice-note" role="status">{{ t(practiceSuperHint ? practiceHintSolution?.error ? 'practice.pathError' : 'practice.pathGuide' : status === 'completed' ? 'practice.completed' : 'practice.noRanking') }}</p>
-        </section>
 
         <div class="play-cluster">
           <div ref="boardWrapEl" class="board-wrap" :style="{
@@ -48,8 +45,9 @@
               <strong>{{ notificationTitle }}</strong>
               <p>{{ notificationMessage }}</p>
             </div>
+            <p v-if="practiceSuperHint && practiceActive && practiceHintSolution?.error && !notificationMessage" class="notification" role="alert">{{ t('practice.pathError') }}</p>
             <div class="board-and-controls">
-              <p ref="instructionEl" class="board-combo"><span v-if="comboStreak > 1">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
+              <p ref="instructionEl" class="board-combo" :role="practiceActive ? 'status' : undefined"><span v-if="practiceActive && (status === 'success' || status === 'completed')" class="practice-passed">✓ {{ t('practice.passed') }}</span><span v-else-if="!practiceActive && comboStreak > 1">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
               <LevelBoard
                 :level="currentLevel"
                 :space="boardSpace"
@@ -71,6 +69,7 @@
                       draggable="false"
                     />
                   </div>
+                  <NextMoveHint v-if="practiceActive && practiceSuperHint && canControl && !showExitConfirm && expectedMove" :direction="expectedMove.direction" />
                 </div>
               </LevelBoard>
               <div ref="controlsEl" class="board-footer">
@@ -107,7 +106,7 @@
         </div>
 
         <transition name="score-pop">
-          <div v-if="scorePopup" class="score-popup" role="status" aria-live="polite">
+          <div v-if="scorePopup && !practiceActive" class="score-popup" role="status" aria-live="polite">
             <strong>+{{ scorePopup.points }}</strong>
             <span
               >Speed {{ scorePopup.speedMultiplier.toFixed(2) }} x Combo
@@ -544,10 +543,11 @@ const lastScoreId = ref("");
 const isTimedMode = computed(
   () => selectedMode.value === "timer" || selectedMode.value === "ranking",
 );
+const hudProgressValue = computed(() => practiceActive.value ? currentLevel.value.id : completedLevels.value);
 const progressLabel = computed(() =>
   deadRun.value
     ? `ผ่าน ${completedLevels.value} ด่าน`
-    : `${completedLevels.value}/${activeLevels.value.length}`,
+    : `${hudProgressValue.value}/${activeLevels.value.length}`,
 );
 const modeLabel = computed(() => {
   if (selectedMode.value === "dead") return "Dead Mode";
@@ -582,7 +582,7 @@ const notificationTitle = computed(() => {
   return t("game.notificationTitle");
 });
 const canControl = computed(
-  () => !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
+  () => !showPracticePicker.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
 );
 const codiSprite = computed(() =>
   status.value === "failed" || status.value === "timeup"
@@ -798,7 +798,7 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode):
 }
 
 function openPracticePicker(): void {
-  if (!showSetup.value || showPracticePicker.value || homeStarting.value) return;
+  if ((!showSetup.value && !practiceActive.value) || showPracticePicker.value || homeStarting.value || practiceStarting.value || showExitConfirm.value) return;
   practiceLaunchButton = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   showPracticePicker.value = true;
   lastInteractionAt = Date.now();
@@ -1044,8 +1044,10 @@ function controlMove(direction: Direction): void {
   playerInputs.value += 1;
   totalInputs.value += 1;
   levelCorrectInputs.value += 1;
-  comboStreak.value += 1;
-  bestCombo.value = Math.max(bestCombo.value, comboStreak.value);
+  if (!practiceActive.value) {
+    comboStreak.value += 1;
+    bestCombo.value = Math.max(bestCombo.value, comboStreak.value);
+  }
   expectedMove.value = null;
   feedbackMessage.value = result.wrapped
     ? `ถูกต้อง และ wrap ไปอีกฝั่ง`
@@ -1058,18 +1060,23 @@ function controlMove(direction: Direction): void {
 
 function completeLevel(): void {
   playSound("clear");
-  const levelScore = calculateLevelScore();
-  totalScore.value += levelScore.points;
-  scorePopup.value = {
-    levelId: currentLevel.value.id,
-    points: levelScore.points,
-    speedMultiplier: levelScore.speedMultiplier,
-    comboMultiplier: levelScore.comboMultiplier,
-  };
-  clearScorePopupTimer();
-  scorePopupTimer = setTimeout(() => {
+  if (!practiceActive.value) {
+    const levelScore = calculateLevelScore();
+    totalScore.value += levelScore.points;
+    scorePopup.value = {
+      levelId: currentLevel.value.id,
+      points: levelScore.points,
+      speedMultiplier: levelScore.speedMultiplier,
+      comboMultiplier: levelScore.comboMultiplier,
+    };
+    clearScorePopupTimer();
+    scorePopupTimer = setTimeout(() => {
+      scorePopup.value = null;
+    }, 1400);
+  } else {
+    clearScorePopupTimer();
     scorePopup.value = null;
-  }, 1400);
+  }
   completedLevels.value += 1;
   status.value = "success";
   notificationMessage.value = "";
@@ -1471,14 +1478,11 @@ summary:focus-visible {
 .board-panel .hud-action.sound-toggle { min-width: 44px; width: 44px; padding: 0; }
 .board-panel .hud-action.exit-action { color: #c4d9ff; background: #122b5744; border-color: #759bd94d; }
 .exit-save-error { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border: 1px solid #f3bc76; border-radius: 12px; background: #412d36; color: #ffe2c1; font-size: .9rem; }
-.practice-toolbar { display: flex; align-items: center; flex-wrap: wrap; flex: none; gap: 8px; padding: 10px; border: 1px solid #82b0ff55; border-radius: 12px; background: #092658b3; }
-.practice-toolbar label { display: flex; align-items: center; gap: 8px; font-size: .8rem; }
-.practice-toolbar select { max-width: min(300px, 100%); min-height: 44px; padding: 8px; border: 1px solid #85b2ff66; border-radius: 8px; background: #102d64; color: #fff; font: inherit; }
-.superhint-button { display: inline-flex; align-items: center; gap: 6px; }
-.superhint-button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.superhint-button.hint-enabled { background: #1f75ff; color: #fff; border-color: #a8c9ff; }
-.practice-note { width: 100%; min-height: 2.6em; margin: 0; font-size: .75rem; color: #bed9ff; }
-.practice-toolbar button:focus-visible, .practice-toolbar select:focus-visible { outline: 3px solid #ffe36b; outline-offset: 3px; }
+.board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { display: inline-flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: .85rem; white-space: nowrap; }
+.practice-map-button svg, .superhint-button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.board-panel .superhint-button.hint-enabled { background: var(--cv-blue); color: #fff; border-color: #a8c9ff; }
+.hint-check { width: 1em; }
+.practice-map-button:focus-visible, .superhint-button:focus-visible { outline: 3px solid #ffe36b; outline-offset: 3px; }
 
 /* ---------- Typography ---------- */
 
@@ -1534,6 +1538,8 @@ h2 {
 }
 
 /* ---------- Board ---------- */
+
+.practice-passed { color: var(--cv-green); }
 
 .board-wrap {
   min-height: 0;

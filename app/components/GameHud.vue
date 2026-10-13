@@ -1,6 +1,6 @@
 <template>
-  <header class="game-hud">
-    <div class="pilot-info">
+  <header class="game-hud" :class="{ 'practice-hud': practice }">
+    <div v-if="!practice" class="pilot-info">
       <div class="player-profile"><img :src="avatarSrc(avatarId)" alt="" draggable="false" /><div><span>{{ t('game.player') }}</span><strong :title="playerName">{{ playerName || t('game.playerFallback') }}</strong></div></div>
       <div class="metrics">
         <div class="metric score"><span>{{ t('game.score') }}</span><strong>{{ score.toLocaleString('th-TH') }}</strong></div>
@@ -16,6 +16,7 @@
           <p class="level-context"><span class="concept" :title="level.concept">{{ level.concept }}</span><span>{{ language }}</span><span>{{ difficulty }}</span></p>
         </div>
         <div class="metric progress-info"><span>{{ t('game.progress') }}</span><strong>{{ progress }}</strong></div>
+        <nav v-if="practice" class="practice-actions" :aria-label="t('game.actions')"><slot name="actions" /></nav>
       </div>
       <progress v-if="totalLevels" :value="completedLevels" :max="totalLevels" :aria-label="t('game.progress')" />
     </div>
@@ -39,6 +40,7 @@ defineProps<{
   totalLevels: number;
   lives?: number;
   maxLives: number;
+  practice?: boolean;
 }>();
 const { t } = useGameI18n();
 const avatarSrc = usePlayerAvatar();
@@ -77,7 +79,16 @@ progress::-moz-progress-bar { background: #87dfff; }
 .hearts { align-self: center; display: flex; gap: 2px; color: #ff6980; }
 .hearts i { font-style: normal; }
 .hearts .lost { color: #ffffff40; }
+.game-hud.practice-hud { grid-template-columns: minmax(0, 1fr); }
+.practice-hud .mission-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; }
+.practice-hud .progress-info { text-align: center; min-height: 72px; }
+.practice-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 @media (max-width: 1200px) { .player-profile { padding: 6px 8px; gap: 8px; } .player-profile img { width: 48px; height: 48px; } .metric { min-width: 78px; min-height: 68px; padding: 8px 10px; } .player-profile strong { font-size: 1.1rem; } }
 @media (max-width: 920px) { .game-hud { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
 @media (max-width: 480px) { .pilot-info { flex-wrap: wrap; gap: 8px; } .player-profile { width: 100%; } .metrics { width: 100%; } .metrics .metric { flex: 1; } .metric { min-height: 60px; } .mission-heading { gap: 8px; } .progress-info { min-width: 70px; } .level-context { font-size: .65rem; } }
+@media (max-width: 760px) {
+  .practice-hud .mission-heading { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+  .practice-actions { grid-column: 1 / -1; }
+  .practice-hud .progress-info { min-height: 60px; }
+}
 </style>

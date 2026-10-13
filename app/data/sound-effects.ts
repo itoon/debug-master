@@ -14,7 +14,7 @@ export type EffectTone = {
 
 // Synthesized placeholders; mid-range move/retry tones work on small speakers.
 export const soundEffects: Record<SoundEffect, readonly EffectTone[]> = {
-  // A dry two-layer tap, distinct from movement tones and melodic UI cues.
+  // Fallback only: ordinary clicks use the supplied pops-4.mp3 asset.
   click: [
     { frequency: 2200, endFrequency: 1400, delay: 0, duration: .032, volume: .09, wave: "square", release: .016 },
     { frequency: 180, endFrequency: 120, delay: 0, duration: .055, volume: .16, wave: "sine", release: .025 },

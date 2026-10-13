@@ -137,12 +137,13 @@
           v-if="!saved"
           type="button"
           class="text-action"
+          :disabled="saving"
           @click="emit('retry')"
         >
-          {{ t('storage.retry') }}
+          {{ t(saving ? 'storage.saving' : 'storage.retry') }}
         </button>
         <div class="session-actions">
-          <button type="button" class="main-action" @click="emit('home')">
+          <button type="button" class="main-action" :disabled="saving" @click="emit('home')">
             {{ t('flow.home') }}
           </button>
           <button type="button" class="text-action" @click="emit('ranking')">
@@ -165,12 +166,13 @@
           v-if="!saved"
           type="button"
           class="text-action"
+          :disabled="saving"
           @click="emit('retry')"
         >
-          {{ t('storage.retry') }}
+          {{ t(saving ? 'storage.saving' : 'storage.retry') }}
         </button>
         <div class="session-actions">
-          <button type="button" class="main-action" @click="emit('home')">
+          <button type="button" class="main-action" :disabled="saving" @click="emit('home')">
             {{ t('flow.nextPlayer') }}
           </button>
         </div>
@@ -199,6 +201,7 @@ const props = defineProps<{
   board: RankingBoard
   result?: Score
   saved: boolean
+  saving: boolean
   storageError: boolean
 }>()
 const emit = defineEmits<{ play: []; home: []; ranking: []; retry: [] }>()
@@ -358,6 +361,10 @@ button {
 button:focus-visible {
   outline: 3px solid #ffc83d;
   outline-offset: 3px;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 .session-error {
   margin: 0;
