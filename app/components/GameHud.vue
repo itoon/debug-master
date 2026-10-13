@@ -3,8 +3,8 @@
     <div v-if="!practice" class="pilot-info">
       <div class="player-profile"><img :src="avatarSrc(avatarId)" alt="" draggable="false" /><div><span>{{ t('game.player') }}</span><strong :title="playerName">{{ playerName || t('game.playerFallback') }}</strong></div></div>
       <div class="metrics">
-        <div class="metric score"><span>{{ t('game.score') }}</span><strong>{{ score.toLocaleString('th-TH') }}</strong></div>
-        <div v-if="timed" class="metric time"><span>{{ t('game.timer') }}</span><strong>{{ time }}</strong></div>
+        <div class="metric score"><span>{{ t('game.score') }}</span><strong :key="scoreBumps" :class="{ bump: scoreBumps > 0 }">{{ shownScore.toLocaleString('th-TH') }}</strong></div>
+        <div v-if="timed" class="metric time" :class="{ 'time-low': timeLow }"><span>{{ t('game.timer') }}</span><strong :key="timeLow ? time : 'steady'">{{ time }}</strong></div>
         <span v-if="lives !== undefined" class="hearts" role="img" :aria-label="t('game.lives', { count: lives })"><i v-for="heart in maxLives" :key="heart" :class="{ lost: heart > lives }" aria-hidden="true">♥</i></span>
       </div>
     </div>
@@ -18,7 +18,9 @@
         <div class="metric progress-info"><span>{{ t('game.progress') }}</span><strong>{{ progress }}</strong></div>
         <nav v-if="practice" class="practice-actions" :aria-label="t('game.actions')"><slot name="actions" /></nav>
       </div>
-      <progress v-if="totalLevels" :value="completedLevels" :max="totalLevels" :aria-label="t('game.progress')" />
+      <div v-if="totalLevels" class="progress-track" role="progressbar" :aria-valuenow="completedLevels" aria-valuemin="0" :aria-valuemax="totalLevels" :aria-label="t('game.progress')">
+        <span class="progress-fill" :style="{ transform: `scaleX(${Math.min(1, completedLevels / totalLevels)})` }"><i :key="completedLevels" class="progress-glint" /></span>
+      </div>
     </div>
   </header>
 </template>
@@ -26,7 +28,8 @@
 <script setup lang="ts">
 import { useGameI18n } from "../composables/useGameI18n";
 import { usePlayerAvatar } from "../composables/usePlayerAvatar";
-defineProps<{
+import { useCountUp } from "../composables/useCountUp";
+const props = defineProps<{
   level: { id: number; title?: string; concept: string };
   language: string;
   difficulty: string;
@@ -41,9 +44,15 @@ defineProps<{
   lives?: number;
   maxLives: number;
   practice?: boolean;
+  /** Last stretch of a timed run: the clock pulses once per second. */
+  timeLow?: boolean;
 }>();
 const { t } = useGameI18n();
 const avatarSrc = usePlayerAvatar();
+const shownScore = useCountUp(toRef(props, "score"), { duration: 700 });
+// Re-keys the score so its bump replays on every gain, not on resets.
+const scoreBumps = ref(0);
+watch(() => props.score, (next, previous) => { if (next > previous) scoreBumps.value += 1; });
 </script>
 
 <style scoped>
@@ -72,10 +81,24 @@ h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-h
 .score strong { color: #ffdb58; }
 .progress-info { flex: none; }
 .progress-info strong { color: #87dfff; }
-progress { appearance: none; width: 100%; height: 8px; padding: 2px; border: 1px solid #82aeef55; border-radius: 8px; overflow: hidden; background: #071e49b8; accent-color: #87dfff; }
-progress::-webkit-progress-bar { background: #6688cc44; }
-progress::-webkit-progress-value { background: #87dfff; border-radius: 4px; }
-progress::-moz-progress-bar { background: #87dfff; }
+.progress-track { box-sizing: border-box; width: 100%; height: 8px; padding: 2px; border: 1px solid #82aeef55; border-radius: 8px; overflow: hidden; background: #071e49b8; }
+.progress-fill { position: relative; display: block; height: 100%; overflow: hidden; border-radius: 4px; background: #87dfff; transform-origin: left center; transition: transform 520ms cubic-bezier(.16, 1, .3, 1); }
+/* A light sweep across the filled part each time a level is added. */
+.progress-glint { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, #fff 50%, transparent 70%); transform: translateX(-100%); animation: progress-glint 700ms 180ms ease-out both; }
+.score strong { display: inline-block; transform-origin: left center; }
+.score strong.bump { animation: score-bump 420ms cubic-bezier(.34, 1.56, .64, 1); }
+.time-low { border-color: #ff8a8a99; background: #4a1b33cc; }
+.time-low strong { display: inline-block; color: #ffb3b3; animation: time-tick 1s ease-out; }
+.hearts i { display: inline-block; }
+.hearts .lost { animation: heart-break 520ms ease-out; }
+@keyframes progress-glint { to { transform: translateX(100%); } }
+@keyframes score-bump { 0% { transform: scale(1); } 35% { transform: scale(1.28); color: #fff3b8; text-shadow: 0 0 14px #ffdb58aa; } 100% { transform: scale(1); } }
+@keyframes time-tick { 0% { transform: scale(1.18); color: #fff; } 40% { transform: scale(1); } }
+@keyframes heart-break { 0% { transform: scale(1.5); color: #ff6980; } 30% { transform: scale(1.2) rotate(-14deg); } 55% { transform: scale(.9) rotate(10deg); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill { transition: none; }
+  .progress-glint, .score strong.bump, .time-low strong, .hearts .lost { animation: none; }
+}
 .player-profile { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 12px 4px 4px; border-radius: 999px; background: #071e4980; }
 .player-profile img { flex: none; width: 36px; height: 36px; border: 2px solid #dbeaff; border-radius: 50%; background: #dbeaff; object-fit: contain; }
 .player-profile div { display: grid; gap: 1px; min-width: 0; }
@@ -113,7 +136,7 @@ progress::-moz-progress-bar { background: #87dfff; }
   .metric { gap: 6px; min-width: 78px; min-height: 68px; padding: 8px 10px; border-radius: 14px; }
   .metric > span { font-size: .75rem; }
   .metric strong { font-size: clamp(1.45rem, 1.9vw, 2rem); }
-  progress { height: 10px; }
+  .progress-track { height: 10px; }
   .player-profile { padding: 6px 8px; border-radius: 16px; }
   .player-profile img { width: 48px; height: 48px; border-width: 3px; }
   .player-profile span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }

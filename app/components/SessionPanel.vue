@@ -5,7 +5,8 @@
     class="session-panel"
     :class="{
       'summary-dialog': stage === 'summary',
-      'tutorial-panel': stage === 'tutorial'
+      'tutorial-panel': stage === 'tutorial',
+      'ranking-panel': stage === 'ranking'
     }"
     :aria-labelledby="headingId"
     @cancel.prevent
@@ -117,7 +118,7 @@
         <dl class="summary-metrics">
           <div>
             <dt>{{ t('summary.score') }}</dt>
-            <dd>{{ result.score.toLocaleString('th-TH') }}</dd>
+            <dd>{{ shownResultScore.toLocaleString('th-TH') }}</dd>
           </div>
           <div>
             <dt>{{ t('summary.time') }}</dt>
@@ -153,28 +154,38 @@
       </template>
 
       <template v-else-if="stage === 'ranking'">
-        <p class="ranking-rules">{{ t('home.rules') }}</p>
         <ChallengeRanking
+          class="stage-ranking"
           :repository="repository"
           :board="board"
           :highlight-id="saved ? result?.id : undefined"
+          variant="space"
+          podium
+          placeholder
+          split
         />
-        <p v-if="storageError" class="session-error" role="alert">
-          {{ t('storage.error') }}
-        </p>
-        <button
-          v-if="!saved"
-          type="button"
-          class="text-action"
-          :disabled="saving"
-          @click="emit('retry')"
-        >
-          {{ t(saving ? 'storage.saving' : 'storage.retry') }}
-        </button>
-        <div class="session-actions">
-          <button type="button" class="main-action" :disabled="saving" @click="emit('home')">
-            {{ t('flow.nextPlayer') }}
-          </button>
+        <div class="ranking-footer">
+          <p class="ranking-rules">{{ t('home.rules') }}</p>
+          <p v-if="storageError" class="session-error" role="alert">
+            {{ t('storage.error') }}
+          </p>
+          <div class="session-actions">
+            <button
+              v-if="!saved"
+              type="button"
+              class="text-action"
+              :disabled="saving"
+              @click="emit('retry')"
+            >
+              {{ t(saving ? 'storage.saving' : 'storage.retry') }}
+            </button>
+            <button type="button" class="main-action" :disabled="saving" @click="emit('home')">
+              {{ t('flow.nextPlayer') }}
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="m13 5 7 7-7 7M20 12H4" />
+              </svg>
+            </button>
+          </div>
         </div>
       </template>
     </section>
@@ -190,6 +201,7 @@ import { useGameI18n } from '../composables/useGameI18n'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { TILE_TYPES, tileDefinition } from '../data/tiles'
 import { usePlayerAvatar } from '../composables/usePlayerAvatar'
+import { useCountUp } from '../composables/useCountUp'
 
 const tutorialTiles = TILE_TYPES.map(tileDefinition)
 const avatarSrc = usePlayerAvatar()
@@ -205,6 +217,8 @@ const props = defineProps<{
   storageError: boolean
 }>()
 const emit = defineEmits<{ play: []; home: []; ranking: []; retry: [] }>()
+// The final score rolls up from zero once its tile has popped in.
+const shownResultScore = useCountUp(computed(() => props.result?.score ?? 0), { from: 0, delay: 420, duration: 1100 })
 const { t } = useGameI18n()
 const headingId = useId()
 const heading = ref<HTMLElement | null>(null)
@@ -369,6 +383,130 @@ button:disabled {
 .session-error {
   margin: 0;
   color: #a32d30;
+}
+/* After the summary: same night-blue card, with the podium beside the full board. */
+.ranking-panel {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: clamp(8px, 2dvh, 16px);
+}
+.ranking-panel .session-card {
+  box-sizing: border-box;
+  width: min(980px, 100%);
+  height: min(640px, 100%);
+  min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: clamp(8px, 1.6dvh, 14px);
+  padding: clamp(16px, 3dvh, 28px) clamp(16px, 3vw, 32px);
+  border-color: #7faaff;
+  background: linear-gradient(155deg, #19387b, #0b214a);
+  color: #fff;
+  animation: summary-arrive 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+/* The heading already names the screen; the brand line only repeats it. */
+.ranking-panel .session-brand {
+  display: none;
+}
+.ranking-panel h1 {
+  color: #ffdc58;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.2;
+}
+.ranking-panel .session-mode {
+  margin-top: -4px;
+  color: #bdd8ff;
+  font-size: 0.95rem;
+}
+.stage-ranking {
+  min-height: 0;
+  margin-top: 4px;
+}
+.ranking-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  padding-top: clamp(8px, 1.6dvh, 14px);
+  border-top: 1px solid #86b5ff33;
+}
+.ranking-panel .ranking-rules {
+  flex: 1 1 260px;
+  color: #9fbde9;
+  font-size: 0.85rem;
+  text-wrap: balance;
+}
+.ranking-panel .session-error {
+  flex-basis: 100%;
+  order: -1;
+  color: #ffc7bb;
+}
+.ranking-panel .session-actions {
+  flex-wrap: nowrap;
+}
+.ranking-panel .session-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition:
+    background 150ms,
+    transform 150ms;
+}
+.ranking-panel .main-action {
+  min-width: 220px;
+  min-height: 52px;
+  color: #102754;
+  background: #ffdc58;
+  box-shadow: 0 3px 0 #bc8e22;
+  font-size: 1.05rem;
+}
+.ranking-panel .main-action:hover {
+  background: #ffe88f;
+}
+.ranking-panel .main-action svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 150ms;
+}
+.ranking-panel .main-action:hover svg {
+  transform: translateX(3px);
+}
+.ranking-panel .session-actions button:active {
+  transform: translateY(2px);
+}
+.ranking-panel .text-action {
+  border-color: #799bd466;
+  background: #203f76;
+  color: #e0ecff;
+}
+@media (max-width: 720px) {
+  .ranking-panel {
+    height: auto;
+    min-height: 100%;
+  }
+  .ranking-panel .session-card {
+    height: auto;
+  }
+  .ranking-footer {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .ranking-panel .ranking-rules {
+    flex-basis: auto;
+  }
+  .ranking-panel .session-actions {
+    flex-direction: column;
+  }
+  .ranking-panel .main-action {
+    width: 100%;
+  }
 }
 .tutorial-panel {
   height: 100%;
@@ -563,6 +701,22 @@ button:disabled {
 .summary-dialog .summary-metrics div {
   border: 1px solid #86b5ff33;
   background: #071a3c80;
+  animation: metric-pop 420ms calc(var(--metric, 0) * 110ms + 260ms) cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+.summary-dialog .summary-metrics div:nth-child(2) {
+  --metric: 1;
+}
+.summary-dialog .summary-metrics div:nth-child(3) {
+  --metric: 2;
+}
+.summary-dialog .summary-metrics div:first-child dd {
+  font-variant-numeric: tabular-nums;
+}
+@keyframes metric-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.85);
+  }
 }
 .summary-dialog dt {
   color: #bed7ff;
@@ -634,10 +788,14 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   .summary-dialog .session-card,
   .summary-dialog .session-avatar,
-  .result-sparks span {
+  .summary-dialog .summary-metrics div,
+  .result-sparks span,
+  .ranking-panel .session-card {
     animation: none;
   }
-  .tutorial-panel .session-actions button {
+  .tutorial-panel .session-actions button,
+  .ranking-panel .session-actions button,
+  .ranking-panel .main-action svg {
     transition: none;
   }
 }

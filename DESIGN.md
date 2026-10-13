@@ -94,6 +94,18 @@ Age selection remains explicit 5–18 (nothing preselected) as a 7×2 grid of la
 
 Random nicknames combine eight playful Thai character/space bases with ten gaming-style descriptors and one emoji instead of numeric suffixes. The words and formatting use dictionary keys; the 12-emoji pool belongs to `homeConfig.nicknameEmojis`. The tone is child-friendly and informal (for example น้องบั๊กตัวตึง🔥 or โคดิสุดเฟี้ยว🎮). Filter each complete candidate using the existing 24 UTF-16-unit limit, preserving whole emoji strings. Keep editable manual names, explicit age selection and no-repeat-on-immediate-click behaviour. Previously stored names are not rewritten.
 
+## Motion
+
+Motion makes the game feel physical without slowing play; nothing gates input or extends the existing timings. The focal moment is a level clear: a yellow shock ring and eight yellow/blue sparks burst from Codi (≤480ms, finished before the 520ms advance), the score card springs in with its points landing a beat later, the HUD score rolls up (`useCountUp`, exponential ease-out; decreases snap) and bumps, the progress fill (`role="progressbar"`, scaleX) slides with one light glint, and the next round's tiles settle diagonally from the top-left (24ms per diagonal, capped at 300ms). `LevelBoard` is re-keyed per `beginLevel`, so starts, retries after a shatter and new levels all assemble the same way; `cascade` is opt-in so review/tutorial boards stay static.
+
+Edge wraps read as one ordinary step: within the same 260ms, a copy of Codi slides out past the edge it left while Codi slides in from one pitch beyond the opposite edge, both fading (`translate`, composed with the hop). Reduced motion keeps the instant snap.
+
+Feedback: every accepted move presses the matching D-pad key (keyboard included) and leaves a dust puff and ring under Codi when the hop lands. A wrong key shakes that D-pad key red and jolts the board during the existing shatter. Combo text punches in on each step and runs hot (orange glow) from ×5. Timed runs pulse the clock red once per second in the last 30 seconds. A lost Dead-mode heart breaks. Notifications pop in; the practice "passed" check pops.
+
+Home deals the cards in left to right once enabled modes are known (backwards fill only, so hover and selection motion keep ownership of transform). The setup popup pops step pips and draws their checks, charges the landing pad on avatar change, flips the name plate on dice rolls (not on typing), pops the age plate, and sweeps the Start button once when the form becomes valid. Leaderboards raise the podium third→second→first, drop each player onto their block, pop the crown, slide rows in (capped stagger) and glow the player's own row twice. Summaries pop their metric tiles in sequence and roll the final score up from zero.
+
+Every effect has a reduced-motion path: travel and scale are removed while colour feedback (red wrong key, D-pad tint, clear glow, own-row glow) stays.
+
 ## Do's and Don'ts
 
 - Reuse the existing assets, Thai typography and canonical components.

@@ -56,7 +56,7 @@ p, h1, dl, dd { margin: 0; }
 h1 { align-self: flex-start; color: #ffda53; font-size: clamp(1.5rem, 3vw, 2rem); }
 .summary-codi { width: 104px; height: 104px; object-fit: contain; animation: codi-arrive 650ms ease-out both; }
 .summary-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; }
-.summary-metrics > div { min-width: 0; padding: 20px 8px; border: 1px solid #426493; border-radius: 16px; background: #091c3f66; text-align: center; }
+.summary-metrics > div { animation: metric-pop 420ms 260ms cubic-bezier(.34, 1.56, .64, 1) backwards; min-width: 0; padding: 20px 8px; border: 1px solid #426493; border-radius: 16px; background: #091c3f66; text-align: center; }
 dt { color: #d5e4ff; }
 dd { margin-top: 12px; font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 900; }
 .summary-note { color: #c9ddff; text-align: center; font-size: .85rem; }
@@ -65,9 +65,12 @@ dd { margin-top: 12px; font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 900;
 .home-action:hover { filter: brightness(1.08); }
 .home-action:active { transform: translateY(1px); }
 .home-action:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.summary-metrics > div:nth-child(2) { animation-delay: 370ms; }
+.summary-metrics > div:nth-child(3) { animation-delay: 480ms; }
+@keyframes metric-pop { from { opacity: 0; transform: translateY(14px) scale(.85); } }
 @keyframes summary-arrive { from { opacity: 0; transform: translateY(16px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes codi-arrive { 0% { transform: translateY(10px) scale(.85); } 55% { transform: translateY(-8px) scale(1.06); } 100% { transform: none; } }
 @media (max-width: 480px) { .summary-card { gap: 14px; } .summary-metrics { gap: 6px; } .summary-metrics > div { padding: 14px 4px; } dt { font-size: .8rem; } dd { font-size: 1.15rem; } }
 @media (max-height: 560px) { .summary-card { gap: 12px; padding: 18px; } .summary-codi { width: 64px; height: 64px; } .summary-metrics > div { padding: 12px 8px; } dd { margin-top: 6px; } }
-@media (prefers-reduced-motion: reduce) { .summary-card, .summary-codi { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .summary-card, .summary-codi, .summary-metrics > div { animation: none; } }
 </style>

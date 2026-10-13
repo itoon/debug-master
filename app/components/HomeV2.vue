@@ -3,8 +3,8 @@
     <h1 class="sr-only">{{ t('brand') }}</h1>
 
     <div ref="modeBoards" class="mode-boards" :class="[`count-${enabledModes.length}`, { 'modes-loading': !modesLoaded }]" :inert="motionPhase !== 'idle'">
-      <section v-for="mode in enabledModes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id, 'empty-board': emptyBoards[mode.id] && !singleMode }]"
-        :data-mode-card="mode.id"
+      <section v-for="(mode, index) in enabledModes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id, 'empty-board': emptyBoards[mode.id] && !singleMode }]"
+        :data-mode-card="mode.id" :style="{ '--deal': index }"
         :aria-labelledby="`mode-${mode.id}-title`" :aria-busy="busy || motionPhase === 'entering' || motionPhase === 'leaving'"
         @click="openModeSetup(mode, $event)"
         @focusin="focusedMode = mode.id" @focusout="leaveCardFocus($event)">
@@ -211,6 +211,10 @@ onBeforeUnmount(() => {
 .mode-boards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; min-height: 0; }
 .mode-board { --mode-accent: #ffdc53; position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; min-width: 0; min-height: 0; padding: 0 14px 12px; border: 2px solid #5c86db; border-radius: 24px; color: #fff; background: linear-gradient(165deg, #183985, #0c2056); box-shadow: 0 14px 30px rgba(3, 15, 56, .35); cursor: pointer; transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease; }
 .mode-A { border-color: #e3bd4b; }
+/* Cards are dealt in left to right once the enabled modes are known. Backwards
+   fill only, so hover lift and the selection motion own transform afterwards. */
+.mode-boards:not(.modes-loading) .mode-board { animation: card-deal 620ms cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--deal, 0) * 90ms); }
+@keyframes card-deal { from { opacity: 0; transform: translateY(36px) scale(.94) rotate(calc((var(--deal, 0) - 1) * -1.5deg)); } }
 .home-v2:not([data-motion="idle"]) .mode-boards { overflow: clip; }
 .home-v2:not([data-motion="idle"]) .mode-board { transform: none; transition: none; }
 .mode-board.selected-card { z-index: 2; }
@@ -270,6 +274,7 @@ onBeforeUnmount(() => {
 .practice-button:disabled { opacity: .55; cursor: wait; }
 .home-footer a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+@keyframes card-fade { from { opacity: 0; } }
 @keyframes cover-sweep { to { transform: translateX(120%); } }
 @keyframes start-nudge { 50% { transform: translateX(3px); } }
 @media (max-width: 1100px) {
@@ -298,6 +303,7 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mode-board, .cover-image { transition: none; }
+  .mode-boards:not(.modes-loading) .mode-board { animation: card-fade 200ms ease backwards; }
   .mode-board:hover, .mode-board:focus-within, .mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: none; }
   .mode-board:hover .cover-sheen, .mode-board:hover .start-cta svg { animation: none; }
   .start-cta, .mode-board:hover .start-cta { transform: translate(-50%, -50%); transition: opacity 120ms linear; }

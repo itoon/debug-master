@@ -19,7 +19,8 @@
           :timed="isTimedMode" :time="formattedTime" :score="totalScore"
           :progress="progressLabel"
           :completed-levels="hudProgressValue" :total-levels="deadRun ? 0 : activeLevels.length"
-          :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES">
+          :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES"
+          :time-low="isTimedMode && campaignStarted && timerRemaining > 0 && timerRemaining <= 30">
           <template #actions>
             <button type="button" class="practice-map-button soft-button small" :disabled="practiceStarting" aria-haspopup="dialog" @click="openPracticePicker"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15" /></svg>{{ t('practice.chooseButton', { count: practiceLevels.length }) }}</button>
             <button type="button" class="soft-button small superhint-button" :class="{ 'hint-enabled': practiceSuperHint }" :disabled="practiceStarting" :aria-pressed="practiceSuperHint" :aria-label="t(practiceSuperHint ? 'practice.hidePath' : 'practice.showPath')" @click="practiceSuperHint = !practiceSuperHint"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5M13 5l-2 14" /></svg>{{ t('practice.superHint') }}<span class="hint-check" aria-hidden="true">{{ practiceSuperHint ? '✓' : '' }}</span></button>
@@ -48,21 +49,36 @@
             </div>
             <p v-if="practiceSuperHint && practiceActive && practiceHintSolution?.error && !notificationMessage" class="notification" role="alert">{{ t('practice.pathError') }}</p>
             <div class="board-and-controls">
-              <p ref="instructionEl" class="board-combo" :role="practiceActive ? 'status' : undefined"><span v-if="practiceActive && (status === 'success' || status === 'completed')" class="practice-passed">✓ {{ t('practice.passed') }}</span><span v-else-if="!practiceActive && comboStreak > 1">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
+              <p ref="instructionEl" class="board-combo" :role="practiceActive ? 'status' : undefined"><span v-if="practiceActive && (status === 'success' || status === 'completed')" class="practice-passed">✓ {{ t('practice.passed') }}</span><span v-else-if="!practiceActive && comboStreak > 1" :key="comboStreak" class="combo-pop" :class="{ 'combo-hot': comboStreak >= 5 }">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
               <LevelBoard
+                :key="boardRound"
                 :level="currentLevel"
                 :space="boardSpace"
                 :max-cell-size="160"
                 :shattering="boardShattering"
+                cascade
               >
                 <BoardSuperHint v-if="practiceSuperHint && practiceActive && !practiceStarting && ['playing', 'success', 'completed'].includes(status) && !practiceHintSolution?.error" :key="currentLevel.id" :path="practiceHintSolution?.path ?? []" :completed-moves="levelCorrectInputs" />
+                <div
+                  v-if="wrapExit"
+                  :key="`exit-${wrapExit.id}`"
+                  class="actor wrap-exit"
+                  :style="{ '--x': wrapExit.col, '--y': wrapExit.row, '--wrap-dx': wrapExit.dx, '--wrap-dy': wrapExit.dy }"
+                  aria-hidden="true"
+                  @animationend.self="wrapExit = null"
+                >
+                  <img class="player-sprite" :src="codiSprite" alt="" draggable="false" />
+                </div>
                 <div
                   class="actor"
                   :class="[`actor-${status}`, { warp: playerWarped }]"
                   :style="actorStyle"
                   aria-hidden="true"
                 >
-                  <div :key="playerHop" class="hop">
+                  <span v-if="playerHop" :key="`dust-${playerHop}`" class="landing-dust"><i /><i /></span>
+                  <span v-if="status === 'success' || status === 'completed'" class="clear-burst"><i v-for="ray in 8" :key="ray" :style="{ '--ray': ray }" /></span>
+                  <div :key="playerHop" class="hop" :class="{ 'wrap-in': wrapExit }"
+                    :style="wrapExit ? { '--wrap-dx': wrapExit.dx, '--wrap-dy': wrapExit.dy } : undefined">
                     <img
                       class="player-sprite"
                       :src="codiSprite"
@@ -480,7 +496,12 @@ const player = reactive({
 });
 // Codi (the board actor) only reads `player`; these refs drive its animation.
 const playerHop = ref(0);
+// Remounts the board each round so its tiles cascade in after a start, retry or clear.
+const boardRound = ref(0);
 const playerWarped = ref(false);
+// Edge wrap: a copy of Codi slides out past the edge it left while the real
+// actor slides in from the opposite edge, so a wrap reads as one ordinary step.
+const wrapExit = ref<{ id: number; row: number; col: number; dx: number; dy: number } | null>(null);
 const playerFacing = ref<Direction>(START_FACING);
 const status = ref<GameStatus>("ready");
 const campaignStarted = ref(false);
@@ -1021,9 +1042,11 @@ function beginLevel(): void {
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
   runState = createRunState(parseProgram(currentLevel.value.code));
+  boardRound.value += 1;
   player.row = currentLevel.value.start[0];
   player.col = currentLevel.value.start[1];
   playerWarped.value = true;
+  wrapExit.value = null;
   playerFacing.value = START_FACING;
   expectedMove.value = null;
   activeNode.value = null;
@@ -1074,6 +1097,7 @@ function controlMove(direction: Direction): void {
   if (!canControl.value || !expectedMove.value) return;
   const expected = expectedMove.value.direction;
   if (direction !== expected) {
+    pulseArrow(direction, true);
     failLevel("Wrong key");
     return;
   }
@@ -1083,12 +1107,22 @@ function controlMove(direction: Direction): void {
     currentLevel.value.rows,
     currentLevel.value.cols,
   );
+  wrapExit.value = result.wrapped
+    ? {
+        id: playerHop.value + 1,
+        row: player.row,
+        col: player.col,
+        dx: direction === "left" ? -1 : direction === "right" ? 1 : 0,
+        dy: direction === "up" ? -1 : direction === "down" ? 1 : 0,
+      }
+    : null;
   player.row = result.row;
   player.col = result.col;
   // Wrapping teleports to the far edge, so skip the slide across the board.
   playerWarped.value = result.wrapped;
   playerFacing.value = direction;
   playSound("move");
+  pulseArrow(direction, false);
   playerHop.value += 1;
   playerInputs.value += 1;
   totalInputs.value += 1;
@@ -1105,6 +1139,33 @@ function controlMove(direction: Direction): void {
     stepTimer = null;
     advanceToMove();
   }, 80);
+}
+
+// Keyboard and touch input both press the matching D-pad key; a wrong key flashes red.
+function pulseArrow(direction: Direction, wrong: boolean): void {
+  const button = controlsEl.value?.querySelector<HTMLElement>(`.arrow.${direction}`);
+  if (!button || typeof button.animate !== "function") return;
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (wrong) {
+    const red = { backgroundColor: "#ffd6d6", borderColor: "#ff6b6b", color: "#c62f3c" };
+    button.animate(still
+      ? [red, { ...red, offset: .7 }, {}]
+      : [
+          { ...red, transform: "translateX(0)" },
+          { transform: "translateX(-5px) rotate(-3deg)", offset: .2 },
+          { transform: "translateX(5px) rotate(3deg)", offset: .45 },
+          { ...red, transform: "translateX(-3px)", offset: .7 },
+          {},
+        ], { duration: 420, easing: "ease-out" });
+    return;
+  }
+  button.animate(still
+    ? [{ backgroundColor: "#dcebff" }, {}]
+    : [
+        { transform: "translateY(3px) scale(.92)", boxShadow: "inset 0 -1px 0 rgba(6, 26, 56, .12)", backgroundColor: "#dcebff" },
+        { transform: "translateY(-1px) scale(1.04)", offset: .6 },
+        {},
+      ], { duration: 220, easing: "cubic-bezier(.16, 1, .3, 1)" });
 }
 
 function completeLevel(): void {
@@ -1613,7 +1674,13 @@ h2 {
 
 /* ---------- Board ---------- */
 
-.practice-passed { color: var(--cv-green); }
+.practice-passed { display: inline-block; color: var(--cv-green); animation: passed-pop 420ms cubic-bezier(.34, 1.56, .64, 1) both; }
+
+/* Combo: each step punches in; from ×5 it runs hot. */
+.combo-pop { display: inline-block; transform-origin: left center; animation: combo-punch 360ms cubic-bezier(.34, 1.56, .64, 1); }
+.combo-hot { color: #ffb347; text-shadow: 0 0 12px #ff8a3d88, 0 2px 0 #7a2e0a; }
+@keyframes combo-punch { 0% { transform: scale(.6); opacity: 0; } 45% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes passed-pop { from { transform: scale(.5); opacity: 0; } }
 
 /* fitCellSize keeps 24px cells, 5px gaps, 10px padding and 2px borders:
    never squeeze the board below that plus the measured footer; the game
@@ -1850,20 +1917,44 @@ h2 {
   box-shadow: 0 8px 24px rgba(3, 10, 40, .45);
   pointer-events: none;
 }
+.notification { animation: notice-pop 320ms cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes notice-pop { from { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.86); } }
 .notification strong { display: block; font-size: 1.1rem; font-weight: 800; }
 .notification p { margin: 3px 0 0; font-size: .95rem; }
 
-.score-pop-enter-active,
-.score-pop-leave-active {
+.score-pop-enter-active {
   transition:
-    opacity 220ms ease,
-    transform 220ms ease;
+    opacity 160ms ease,
+    transform 440ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.score-pop-enter-from,
+.score-pop-leave-active {
+  transition:
+    opacity 180ms ease-in,
+    transform 220ms ease-in;
+}
+
+.score-pop-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(18px) scale(0.7);
+}
+
 .score-pop-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(12px) scale(0.92);
+  transform: translateX(-50%) translateY(-22px) scale(0.9);
+}
+
+/* The points land a beat after the card, like a coin dropping in. */
+.score-popup strong {
+  display: inline-block;
+  animation: points-land 520ms 90ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes points-land {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(1.6);
+  }
 }
 
 .notification-failed,

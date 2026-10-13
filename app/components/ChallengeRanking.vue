@@ -6,7 +6,8 @@
       space: variant === 'space',
       'with-podium': podium,
       'with-credits': credits,
-      'with-placeholder': placeholder
+      'with-placeholder': placeholder,
+      split
     }"
     :aria-labelledby="headingId"
   >
@@ -87,6 +88,7 @@
           <li
             v-for="(score, index) in rows"
             :key="score.id"
+            :style="{ '--row': index }"
             :class="[
               { podium: index < 3, mine: score.id === highlightId },
               `place-${index + 1}`
@@ -124,6 +126,7 @@
           <li
             v-for="rank in openRanks"
             :key="`open-${rank}`"
+            :style="{ '--row': rank - 1 }"
             class="open-place"
             :class="[{ podium: rank <= 3 }, `place-${rank}`]"
             aria-hidden="true"
@@ -173,6 +176,8 @@ const props = withDefaults(
     hideEmpty?: boolean
     /** Show the podium and open places even before anyone has played today. */
     placeholder?: boolean
+    /** Podium and list side by side; the parent supplies the visible heading. */
+    split?: boolean
   }>(),
   {
     variant: 'light',
@@ -180,7 +185,8 @@ const props = withDefaults(
     credits: false,
     paused: false,
     hideEmpty: false,
-    placeholder: false
+    placeholder: false,
+    split: false
   }
 )
 const emit = defineEmits<{
@@ -236,6 +242,20 @@ const {
   // Open places fit the board; auto-scrolling through them would only show empty rows.
   computed(() => props.credits && openRanks.value.length === 0),
   computed(() => props.paused)
+)
+// A split board scrolls on its own, so bring the highlighted run into view.
+watch(
+  [rows, () => props.highlightId],
+  () => {
+    const viewport = creditsViewport.value
+    const mine = creditsContent.value?.querySelector<HTMLElement>('li.mine')
+    if (!props.split || !viewport || !mine) return
+    const top = mine.offsetTop
+    const bottom = top + mine.offsetHeight
+    if (top >= viewport.scrollTop && bottom <= viewport.scrollTop + viewport.clientHeight) return
+    viewport.scrollTop = top - (viewport.clientHeight - mine.offsetHeight) / 2
+  },
+  { flush: 'post' }
 )
 function ageRange(age?: number): string {
   if (!age) return ''
@@ -772,6 +792,228 @@ h3 {
   }
   .challenge-rows li {
     min-height: 40px;
+  }
+}
+
+/* Split: the podium gets its own lit stage, the full board scrolls beside it. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  column-gap: clamp(14px, 2.4vw, 24px);
+  row-gap: 0;
+}
+.split .ranking-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.split .placeholder-note,
+.split .board-error {
+  grid-column: 1 / -1;
+  margin-bottom: 10px;
+}
+.split .rank-podium {
+  grid-row: 2;
+  align-self: stretch;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 36px clamp(10px, 2vw, 22px) 0;
+  overflow: hidden;
+  border: 1px solid #86b5ff33;
+  border-radius: 18px;
+  background:
+    radial-gradient(60% 55% at 50% 100%, rgba(255, 220, 88, 0.22), transparent 70%),
+    linear-gradient(180deg, #0b1f49, #12306c);
+}
+.split .podium-avatar {
+  width: clamp(52px, 7dvh, 68px);
+  height: clamp(52px, 7dvh, 68px);
+}
+.split .podium-place-1 .podium-avatar {
+  width: clamp(60px, 8.5dvh, 80px);
+  height: clamp(60px, 8.5dvh, 80px);
+}
+.split .winner-crown {
+  left: 50%;
+  translate: -50% 0;
+}
+.split .podium-name {
+  font-size: 0.95rem;
+}
+.split .podium-points {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.split .podium-block {
+  height: clamp(60px, 12dvh, 96px);
+}
+.split .podium-place-2 .podium-block {
+  height: clamp(42px, 8.5dvh, 68px);
+}
+.split .podium-place-3 .podium-block {
+  height: clamp(30px, 6dvh, 48px);
+}
+.split .credits-viewport {
+  grid-row: 2;
+  position: relative;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 6px 2px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #86b5ff66 transparent;
+}
+.space.split .challenge-rows {
+  gap: 6px;
+}
+.space.split .challenge-rows li {
+  min-height: 52px;
+  padding: 6px 12px;
+  gap: 10px;
+}
+.space.split .row-avatar {
+  width: 36px;
+  height: 36px;
+}
+.space.split .who {
+  display: grid;
+  gap: 2px;
+}
+.space.split .who strong {
+  font-size: 1rem;
+}
+.space.split .who small,
+.space.split .result small {
+  font-size: 0.75rem;
+}
+.space.split .result {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+.space.split .result strong {
+  font-size: 1.05rem;
+}
+.space.split .challenge-rows li.mine {
+  outline: 2px solid #ffdc58;
+  outline-offset: -2px;
+}
+.space.split .you {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #ffdc58;
+  color: #102754;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+@media (max-width: 720px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    row-gap: 12px;
+  }
+  .split .rank-podium,
+  .split .credits-viewport {
+    grid-row: auto;
+  }
+  .split .rank-podium {
+    height: auto;
+    padding-top: 40px;
+  }
+  .split .credits-viewport {
+    overflow: visible;
+  }
+  /* The podium already shows open places; keep the button within reach. */
+  .split .open-place {
+    display: none;
+  }
+  .space.split .challenge-rows li {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+  .space.split .row-avatar {
+    width: 30px;
+    height: 30px;
+  }
+  .space.split .you {
+    padding: 2px 7px;
+  }
+}
+
+/* Podium rises third, second, then first; each player drops onto their
+   block after it lands and the winner's crown pops last. */
+.podium-slot { --rise-delay: 240ms; }
+.podium-place-2 { --rise-delay: 120ms; }
+.podium-place-3 { --rise-delay: 0ms; }
+.podium-block {
+  transform-origin: center bottom;
+  animation: podium-rise 560ms var(--rise-delay) cubic-bezier(0.34, 1.3, 0.64, 1) backwards;
+}
+.podium-avatar,
+.podium-name,
+.podium-points {
+  animation: podium-drop 460ms calc(var(--rise-delay) + 260ms) cubic-bezier(0.34, 1.5, 0.64, 1) backwards;
+}
+.winner-crown {
+  transform-origin: 50% 100%;
+  animation: crown-pop 520ms 820ms cubic-bezier(0.34, 1.8, 0.64, 1) backwards;
+}
+/* Rows slide in as a list; the delay is capped so long boards stay quick. */
+.challenge-rows li {
+  animation: row-in 380ms min(calc(var(--row, 0) * 45ms + 150ms), 600ms) cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.challenge-rows li.mine {
+  animation:
+    row-in 380ms min(calc(var(--row, 0) * 45ms + 150ms), 600ms) cubic-bezier(0.16, 1, 0.3, 1) backwards,
+    mine-glow 900ms 700ms ease-in-out 2;
+}
+@keyframes podium-rise {
+  from {
+    transform: scaleY(0.05);
+  }
+}
+@keyframes podium-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-22px);
+  }
+}
+@keyframes crown-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.3) rotate(-30deg);
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+}
+@keyframes mine-glow {
+  50% {
+    box-shadow: 0 0 0 4px rgba(31, 117, 255, 0.35), 0 0 18px rgba(31, 117, 255, 0.45);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .podium-block,
+  .podium-avatar,
+  .podium-name,
+  .podium-points,
+  .winner-crown,
+  .challenge-rows li {
+    animation: none;
+  }
+  .challenge-rows li.mine {
+    animation: mine-glow 900ms ease-in-out 2;
   }
 }
 </style>

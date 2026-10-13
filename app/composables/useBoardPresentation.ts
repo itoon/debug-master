@@ -94,6 +94,8 @@ export function useBoardPresentation(
       "--burst-x": `${(dx / length) * distance}px`,
       "--burst-y": `${(dy / length) * distance}px`,
       "--burst-r": `${(dx + dy) * 9}deg`,
+      // Diagonal order from the top-left corner for the entrance cascade.
+      "--tile-order": `${tile.row + tile.col}`,
     };
   }
 

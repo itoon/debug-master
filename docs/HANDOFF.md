@@ -2,6 +2,25 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — Smooth edge-wrap motion
+
+- A wrapping move previously snapped Codi to the far side with no motion (`.actor.warp` disables the slide), which read as a hitch. `index.vue` now records a transient `wrapExit` (origin cell + direction) on wrapped moves: a non-interactive copy of Codi slides one pitch past the edge it left and fades (`.wrap-exit`), while the real actor's keyed `.hop` slides in from one pitch beyond the opposite edge (`.hop.wrap-in`), both 260ms ease-out like an ordinary step. The copy removes itself on `animationend`; `beginLevel` and the next non-wrap move clear it. Wrapping onto the goal keeps the slide-in alongside the party animation. Reduced motion keeps the instant snap.
+- No change to movement rules, input gating, timings, scoring or SuperHint. Updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. Live feel not checked in a browser under the build-only instruction.
+
+## 2026-10-14 — Setup popup spacing rhythm
+
+- `PlayerSetupDialog.vue`: step titles now sit 12px above their control for all three steps (rendered `<legend>`s were outside the fieldset grid and got 0px; the nickname label got 8px). Steps are 26px apart; the nickname note sits 8px under the input. The avatar grid drops its 6px side inset so avatars align with the nickname field and age grid (4px block padding keeps the selected ring off the title). Footer starts 28px below the steps; the privacy note clears the Start button's 6px base shadow.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No browser measurement under the build-only instruction.
+
+## 2026-10-14 — Game-feel micro animations and motion
+
+- Per the user's choice (game screen + Home/popup + summary/ranking, "game-like but not distracting"), added presentation-only motion. No gameplay, scoring, timer, storage or audio changes; existing advance/retry timings are unchanged and nothing blocks input.
+- Game: diagonal tile cascade per round (`LevelBoard` re-keyed by a new `boardRound` counter in `beginLevel`, opt-in `cascade` prop, `--tile-order` from `useBoardPresentation`); board jolt with the shatter; landing dust/ring and level-clear spark burst inside the actor (`board.css`); WAAPI D-pad press/wrong-red pulse for keyboard and touch (`pulseArrow`); combo punch/hot state; springier score popup; notification/passed pops. `GameHud`: score count-up + bump via new `useCountUp`, last-30-second clock pulse (`timeLow` prop), heart break, and `<progress>` replaced by a `role="progressbar"` track with a scaleX fill and glint.
+- Home card deal-in; setup popup pip/check, landing pad, dice name-plate flip, age pop and Start sheen/nudge; podium rise, avatar drop, crown pop, row slide-in and own-row glow in `ChallengeRanking`; summary metric stagger and score roll-up in `SessionPanel`/`PracticeSummaryDialog`.
+- All new effects have reduced-motion alternatives. Updated `DESIGN.md` (new Motion section).
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests/browser checks under the build-only instruction; live motion, timing feel and performance remain unverified. No git add/commit, branch changes or reference-frontend edits.
+
 ## 2026-10-13 — Remove practice picker checkmark
 
 - Removed the selected-level checkmark and its unused CSS from `PracticeLevelDialog.vue`. Level number, yellow selection highlight, aria-current, initial focus and select handlers are unchanged. Updated `DESIGN.md` to match.

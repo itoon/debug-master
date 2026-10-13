@@ -22,10 +22,10 @@
         <aside class="player-card" aria-hidden="true">
           <div class="hero-stage">
             <img :key="selectedAvatar" class="hero-avatar" :src="avatarSrc(selectedAvatar)" alt="" draggable="false" />
-            <span class="landing-pad" />
+            <span :key="`pad-${selectedAvatar}`" class="landing-pad" />
           </div>
-          <p class="name-plate" :class="{ empty: !normalizedName }">{{ normalizedName || t('home.namePlatePlaceholder') }}</p>
-          <p class="age-plate" :class="{ empty: age === null }">{{ age === null ? t('home.ageUnselected') : t('home.years', { age }) }}</p>
+          <p :key="nameRolls" class="name-plate" :class="{ empty: !normalizedName, rolled: nameRolls > 0 }">{{ normalizedName || t('home.namePlatePlaceholder') }}</p>
+          <p :key="age ?? 'none'" class="age-plate" :class="{ empty: age === null }">{{ age === null ? t('home.ageUnselected') : t('home.years', { age }) }}</p>
         </aside>
 
         <div class="steps">
@@ -129,6 +129,8 @@ const avatarSrc = usePlayerAvatar();
 // Starts on a random character so the leaderboard stays varied; the player can pick any other.
 const selectedAvatar = ref<string>(PLAYER_AVATARS[0]);
 const generatedAnnouncement = ref("");
+// Re-keys the name plate so each dice roll flips it in; typing does not.
+const nameRolls = ref(0);
 const nicknameBaseKeys = [
   "nickname.base.bug", "nickname.base.codi", "nickname.base.rocket", "nickname.base.cat",
   "nickname.base.captain", "nickname.base.star", "nickname.base.duck", "nickname.base.panda",
@@ -152,6 +154,7 @@ function randomizeNickname(): void {
   )).filter((candidate) => candidate.length <= homeConfig.nicknameMaxLength && candidate !== normalizedName.value);
   if (!candidates.length) return;
   nickname.value = candidates[Math.floor(Math.random() * candidates.length)]!;
+  nameRolls.value += 1;
   generatedAnnouncement.value = t("home.randomNameReady", { name: nickname.value });
 }
 
@@ -210,23 +213,35 @@ h2 { margin: 0; font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 800; line-h
   linear-gradient(180deg, #0a1c52, #0e2a72); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 10px 24px rgba(3, 12, 40, .35); }
 .hero-stage { position: relative; display: grid; place-items: center; width: 100%; height: 190px; }
 .hero-avatar { position: relative; z-index: 1; width: 156px; height: 156px; margin-bottom: 18px; border: 5px solid #fff; border-radius: 50%; background: #cceaff; object-fit: contain; box-shadow: 0 0 0 3px color-mix(in srgb, var(--mode-accent) 70%, #0b1f57), 0 14px 26px rgba(2, 10, 36, .5); animation: hero-in 420ms cubic-bezier(.16, 1, .3, 1) both; }
-.landing-pad { position: absolute; bottom: 4px; width: 170px; height: 34px; border: 2px solid #123981; border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, #6aa2ff, #2f6ff0 60%); box-shadow: 0 5px 0 #124da8, 0 0 28px color-mix(in srgb, var(--mode-accent) 45%, transparent); }
+.landing-pad { animation: pad-charge 520ms ease-out; position: absolute; bottom: 4px; width: 170px; height: 34px; border: 2px solid #123981; border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, #6aa2ff, #2f6ff0 60%); box-shadow: 0 5px 0 #124da8, 0 0 28px color-mix(in srgb, var(--mode-accent) 45%, transparent); }
+@keyframes pad-charge { 0% { filter: brightness(1.8); transform: scale(1.12); } 100% { filter: none; transform: none; } }
 @keyframes hero-in { from { opacity: .4; transform: translateY(-14px) scale(.86); } to { opacity: 1; transform: none; } }
 .name-plate, .age-plate { max-width: 100%; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
 .name-plate { padding: 8px 16px; border: 2px solid #fff; border-radius: 14px; background: #fff; color: #112760; font-size: 1.15rem; font-weight: 800; box-shadow: 0 4px 0 #0a1c52; }
+.name-plate.rolled { animation: plate-flip 420ms cubic-bezier(.34, 1.56, .64, 1); }
+.age-plate:not(.empty) { animation: plate-pop 340ms cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes plate-flip { 0% { transform: rotateX(90deg); } 100% { transform: none; } }
+@keyframes plate-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.15); } }
 .name-plate.empty { border-style: dashed; border-color: #8fb0e6; background: transparent; color: #b5cdfa; box-shadow: none; font-weight: 700; }
 .age-plate { padding: 3px 12px; border-radius: 999px; background: var(--mode-accent); color: #0c2056; font-size: .85rem; font-weight: 800; }
 .age-plate.empty { background: rgba(140, 182, 255, .15); color: #b5cdfa; font-weight: 700; }
 
 /* Steps: avatar, nickname and age, each with a pip that lights when done. */
-.steps { display: grid; gap: 18px; min-width: 0; align-content: start; }
-.step { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
+/* One rhythm: 12px from a step title to its control, 26px between steps. */
+.steps { display: grid; gap: 26px; min-width: 0; align-content: start; }
+.step { display: grid; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+/* A rendered legend sits outside the fieldset's grid, so gap never reaches it. */
+legend.step-title { margin-bottom: 12px; }
 .step-title { display: flex; align-items: center; gap: 8px; padding: 0; color: #fff; font-size: 1rem; font-weight: 800; }
 .step-pip { display: grid; place-items: center; width: 22px; height: 22px; flex: none; border: 2px solid #5f86e8; border-radius: 50%; color: transparent; transition: background 200ms ease, border-color 200ms ease, color 200ms ease; }
 .step-pip svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.step-pip.done { border-color: #ffd440; background: #ffd440; color: #112760; }
+.step-pip.done { border-color: #ffd440; background: #ffd440; color: #112760; animation: pip-pop 380ms cubic-bezier(.34, 1.56, .64, 1); }
+.step-pip.done path { stroke-dasharray: 16; animation: pip-check 300ms 120ms ease-out backwards; }
+@keyframes pip-pop { 0% { transform: scale(.5); } 60% { transform: scale(1.25); } }
+@keyframes pip-check { from { stroke-dashoffset: 16; } }
 
-.avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 10px; padding: 6px 6px 4px; }
+/* Flush with the nickname and age edges; block padding only keeps the selected ring off the title. */
+.avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 10px; padding: 4px 0; }
 .avatar-option { position: relative; display: grid; place-items: center; aspect-ratio: 1; border: 3px solid transparent; border-radius: 50%; background: #cceaff; box-shadow: 0 0 0 1px #3d63c9; cursor: pointer; transition: transform 160ms cubic-bezier(.16, 1, .3, 1), border-color 160ms ease, box-shadow 160ms ease; }
 .avatar-option img { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; pointer-events: none; }
 .avatar-option:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px #8db7ff, 0 6px 12px rgba(3, 12, 40, .4); }
@@ -235,7 +250,7 @@ h2 { margin: 0; font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 800; line-h
 .avatar-option:has(input:focus-visible), .age-option:has(input:focus-visible) { outline: 3px solid #fff; outline-offset: 3px; }
 .avatar-option:has(input:disabled), .age-option:has(input:disabled) { opacity: .55; cursor: not-allowed; }
 
-.nickname-field { gap: 8px; }
+.nickname-field small { margin-top: -4px; }
 .nickname-entry { display: flex; gap: 10px; }
 .nickname-entry input { flex: 1; min-width: 0; min-height: 54px; padding: 10px 16px; border: 2px solid #8db7ff; border-radius: 14px; background: #fff; color: #172b52; font-size: 1.1rem; font-weight: 700; caret-color: #1f75ff; }
 .nickname-entry input::placeholder { color: #6a7da3; font-weight: 400; }
@@ -254,13 +269,21 @@ h2 { margin: 0; font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 800; line-h
 .age-option.selected { border-color: #ffe889; background: #ffd440; color: #112760; box-shadow: 0 3px 0 #c59a1c; }
 
 /* Footer: status, then the launch button. */
-.setup-footer { display: grid; justify-items: center; gap: 10px; padding-top: 4px; }
+.setup-footer { display: grid; justify-items: center; gap: 10px; padding-top: 10px; }
 .form-status, .privacy-note, .save-error { margin: 0; font-size: .85rem; text-align: center; }
 .form-status { color: #ffdc5a; font-weight: 700; }
 .form-status.ready { color: #9ff0b8; }
-.privacy-note { color: #b5cdfa; font-size: .78rem; }
+/* Clears the button's 6px base shadow so it sits as far below as the status sits above. */
+.privacy-note { margin-top: 6px; color: #b5cdfa; font-size: .78rem; }
 .save-error { color: #ffd1cb; }
 .confirm-button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: min(360px, 100%); min-height: 60px; padding: 12px 28px; border: 2px solid #ffe889; border-radius: 18px; background: #ffd440; color: #112760; font-size: 1.3rem; font-weight: 800; box-shadow: 0 6px 0 #c59a1c, 0 14px 24px rgba(3, 12, 40, .35); transition: transform 120ms ease, box-shadow 120ms ease, filter 150ms ease; }
+/* Ready to launch: one light sweep the moment every step is complete. */
+.confirm-button { position: relative; overflow: hidden; }
+.confirm-button::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .7) 50%, transparent 65%); transform: translateX(-110%); pointer-events: none; }
+.confirm-button:not(:disabled)::after { animation: confirm-sheen 750ms 80ms ease-out both; }
+.confirm-button:not(:disabled) svg { animation: confirm-nudge 1.4s 900ms ease-in-out infinite; }
+@keyframes confirm-sheen { to { transform: translateX(110%); } }
+@keyframes confirm-nudge { 0%, 60%, 100% { transform: none; } 30% { transform: translateX(4px); } }
 .confirm-button svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .confirm-button:not(:disabled):hover { filter: brightness(1.05); }
 .confirm-button:not(:disabled):active { transform: translateY(4px); box-shadow: 0 2px 0 #c59a1c, 0 6px 12px rgba(3, 12, 40, .3); }
@@ -281,10 +304,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid #ffdc5a; outline-
   .nickname-entry { flex-direction: column; }
   .age-grid { gap: 6px; }
   .age-option { min-height: 48px; font-size: 1.1rem; }
-  .avatar-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding: 6px 4px 4px; }
+  .avatar-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding: 4px 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-avatar { animation: none; }
+  .hero-avatar, .landing-pad, .step-pip.done, .step-pip.done path, .name-plate.rolled, .age-plate:not(.empty), .confirm-button:not(:disabled)::after, .confirm-button:not(:disabled) svg { animation: none; }
   .avatar-option, .age-option, .confirm-button, .random-name-button, .step-pip, .close-button { transition: none; }
   .avatar-option:hover, .avatar-option.selected { transform: none; }
 }

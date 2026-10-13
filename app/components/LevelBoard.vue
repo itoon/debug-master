@@ -1,7 +1,7 @@
 <template>
   <div
     class="board"
-    :class="{ shattering }"
+    :class="{ shattering, cascade }"
     :style="boardStyle"
     role="grid"
     :aria-label="`Level ${level.id} board`"
@@ -51,8 +51,10 @@ const props = withDefaults(
     /** Presentation only: gameplay can use larger tiles than review cards. */
     maxCellSize?: number;
     shattering?: boolean;
+    /** Tiles settle in diagonally when the board mounts (gameplay rounds). */
+    cascade?: boolean;
   }>(),
-  { space: undefined, shattering: false, maxCellSize: 88 },
+  { space: undefined, shattering: false, cascade: false, maxCellSize: 88 },
 );
 
 const { visibleTiles, boardStyle, tileStyle } = useBoardPresentation(
