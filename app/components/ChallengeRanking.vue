@@ -110,7 +110,7 @@ function ageRange(age?: number): string {
 .winner-crown { position: absolute; width: 30px; height: 24px; top: -27px; left: 8px; fill: #ffda4b; stroke: #b27f21; stroke-width: 1.5; filter: drop-shadow(0 2px 2px #101d46); }
 .podium-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font-size: .8rem; line-height: 1.2; }
 .podium-points { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--medal); font-size: .65rem; line-height: 1.2; }
-.podium-block { position: relative; isolation: isolate; display: grid; place-items: center; width: 100%; height: 68px; margin-top: 9px; border: 1px solid var(--podium-edge); border-radius: 9px 9px 3px 3px; background: var(--podium-face); box-shadow: inset -8px 0 0 rgba(36, 30, 19, .16), 0 6px 10px #061638; }
+.podium-block { position: relative; isolation: isolate; display: grid; place-items: center; width: 90%; height: 68px; margin-top: 9px; border: 1px solid var(--podium-edge); border-radius: 9px 9px 3px 3px; background: var(--podium-face); box-shadow: inset -8px 0 0 rgba(36, 30, 19, .16), 0 6px 10px #061638; }
 .podium-block::before { content: ""; position: absolute; left: -1px; right: -1px; top: -10px; height: 13px; border-radius: 5px 5px 0 0; clip-path: polygon(9% 0, 91% 0, 100% 100%, 0 100%); background: var(--podium-top); z-index: -1; }
 .podium-block span { color: #fff; font-size: 2.8rem; line-height: 1; font-weight: 800; text-shadow: 0 2px 3px rgba(48, 34, 17, .7); }
 .podium-place-2 .podium-block { height: 47px; }

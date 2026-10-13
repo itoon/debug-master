@@ -554,7 +554,7 @@
       "difficulty": "normal",
       "concept": "Negation intro",
       "learningObjective": "อ่าน ! เป็น not บนกระดานจริง",
-      "whyHard": "เด็กมักพลาดเพราะเห็นสีที่ไม่ต้องการแล้วตกใจ",
+      "whyHard": "เด็กมักพลาดเพราะเห็นช่องที่ไม่ต้องการแล้วตกใจ",
       "expectedMoves": [
         "right"
       ],
@@ -582,7 +582,7 @@
       "code": "if p:\n  down()\nelif o:\n  right()\nelse:\n  left()",
       "difficulty": "normal",
       "concept": "Else-if chain",
-      "learningObjective": "ไล่ลำดับการเช็กสีทีละข้อ",
+      "learningObjective": "ไล่ลำดับการเช็กชนิดช่องทีละข้อ",
       "whyHard": "ถ้าเช็กผิดลำดับจะไปผิดทิศทันที",
       "expectedMoves": [
         "right"
@@ -627,8 +627,8 @@
       "code": "repeat(4):\n  if p:\n    right()\n  else:\n    down()",
       "difficulty": "normal",
       "concept": "Repeat with branch",
-      "learningObjective": "ใช้สีตัดสินใจในทุก iteration",
-      "whyHard": "ต้องเช็กสีใหม่ทุกครั้ง ไม่ใช่จำคำตอบเดิม",
+      "learningObjective": "ใช้ชนิดช่องตัดสินใจในทุก iteration",
+      "whyHard": "ต้องเช็กช่องใหม่ทุกครั้ง ไม่ใช่จำคำตอบเดิม",
       "expectedMoves": [
         "right",
         "down",
@@ -761,7 +761,7 @@
       "code": "repeat(3):\n  if o:\n    right()\n  elif y:\n    down()\n  else:\n    left()",
       "difficulty": "medium",
       "concept": "Else-if routing",
-      "learningObjective": "ตัดสินใจสามทางจากสี",
+      "learningObjective": "ตัดสินใจสามทางจากชนิดช่อง",
       "whyHard": "มีทางเลือกมากขึ้นแต่ยังยุติธรรม",
       "expectedMoves": [
         "right",
@@ -957,8 +957,8 @@
       ],
       "code": "while b:\n  right()\ndown()",
       "difficulty": "normal",
-      "concept": "While stop color",
-      "learningObjective": "เข้าใจว่า while หยุดเมื่อสีเปลี่ยน",
+      "concept": "While stop tile",
+      "learningObjective": "เข้าใจว่า while หยุดเมื่อชนิดช่องเปลี่ยน",
       "whyHard": "ต่างจาก repeat เพราะไม่รู้จำนวนรอบล่วงหน้า",
       "expectedMoves": [
         "right",
@@ -1003,7 +1003,7 @@
       "code": "while not p:\n  down()\nright()",
       "difficulty": "normal",
       "concept": "While vertical",
-      "learningObjective": "ตาม loop ในแนวตั้งจนเจอสีเป้าหมาย",
+      "learningObjective": "ตาม loop ในแนวตั้งจนเจอช่องเป้าหมาย",
       "whyHard": "ต้องเช็กเงื่อนไขทุกครั้งที่ลงมา",
       "expectedMoves": [
         "down",
@@ -1042,8 +1042,8 @@
       ],
       "code": "while y:\n  down()\nright()",
       "difficulty": "normal",
-      "concept": "While on color",
-      "learningObjective": "ใช้ while กับสีบวกโดยตรง",
+      "concept": "While on tile",
+      "learningObjective": "ใช้ while กับเงื่อนไขช่องแบบตรงๆ (ไม่มี not)",
       "whyHard": "ดูคล้าย repeat แต่ termination มาจาก map",
       "expectedMoves": [
         "down",
@@ -1081,8 +1081,8 @@
       "code": "while not g:\n  right()\ndown()",
       "difficulty": "normal",
       "concept": "Negated while",
-      "learningObjective": "หยุดเมื่อถึงสีเป้าหมาย",
-      "whyHard": "มีสีหลอกก่อนถึงจุดจบ",
+      "learningObjective": "หยุดเมื่อถึงช่องเป้าหมาย",
+      "whyHard": "มีช่องหลอกก่อนถึงจุดจบ",
       "expectedMoves": [
         "right",
         "right",
@@ -1179,7 +1179,7 @@
       "code": "while not k:\n  if o:\n    down()\n  elif g:\n    right()\n  else:\n    down()",
       "difficulty": "medium",
       "concept": "Else-if in while",
-      "learningObjective": "ใช้หลายสีพาไปถึง stop tile",
+      "learningObjective": "ใช้ช่องหลายชนิดพาไปถึง stop tile",
       "whyHard": "ต้องไม่ลืมว่า while เช็กที่ต้นรอบ",
       "expectedMoves": [
         "down",
@@ -1306,7 +1306,7 @@
       "code": "while not k:\n  if g:\n    right()\n  elif p:\n    down()\n  else:\n    right()",
       "difficulty": "medium",
       "concept": "Looped routing",
-      "learningObjective": "ตัดสินใจจากสีหลายชนิดใน while",
+      "learningObjective": "ตัดสินใจจากช่องหลายชนิดใน while",
       "whyHard": "เริ่มเข้าใกล้รูปแบบโจทย์จริงของ chapter นี้",
       "expectedMoves": [
         "right",
@@ -1819,7 +1819,7 @@
       "difficulty": "hard",
       "concept": "Composed helpers",
       "learningObjective": "ตาม helper สองตัวที่พึ่งพาตำแหน่งล่าสุด",
-      "whyHard": "helper ที่สองมีความหมายเพราะ helper แรกพามาถึงสีใหม่",
+      "whyHard": "helper ที่สองมีความหมายเพราะ helper แรกพามาถึงช่องชนิดใหม่",
       "expectedMoves": [
         "down",
         "down",
@@ -1937,7 +1937,7 @@
       "difficulty": "hard",
       "concept": "Recursion intro",
       "learningObjective": "เห็นการเรียกตัวเองจนถึง base case",
-      "whyHard": "จุดสำคัญคือหยุดเมื่อเจอสีเป้าหมาย",
+      "whyHard": "จุดสำคัญคือหยุดเมื่อเจอช่องเป้าหมาย",
       "expectedMoves": [
         "right",
         "right",
@@ -2013,7 +2013,7 @@
       "difficulty": "expert",
       "concept": "Recursive staircase",
       "learningObjective": "ใช้ recursion กับ path ที่ต้องเลี้ยว",
-      "whyHard": "เริ่มต้องคิด call stack พร้อม state สี",
+      "whyHard": "เริ่มต้องคิด call stack พร้อม state ของช่อง",
       "expectedMoves": [
         "down",
         "right",
@@ -2135,7 +2135,7 @@
       "difficulty": "hard",
       "concept": "Repeat with branch in helper",
       "learningObjective": "ใช้ repeat และ if ภายใน function เดียว",
-      "whyHard": "มีหลาย state แต่ไอเดียยังคงชัดว่าเดินตามสี",
+      "whyHard": "มีหลาย state แต่ไอเดียยังคงชัดว่าเดินตามชนิดช่อง",
       "expectedMoves": [
         "down",
         "right",
@@ -2216,7 +2216,7 @@
       "code": "route()\n\ndef route():\n  while not k:\n    if o:\n      down()\n    elif g:\n      right()\n    elif p:\n      down()\n    else:\n      right()",
       "difficulty": "expert",
       "concept": "While + else-if helper",
-      "learningObjective": "ใช้ branch หลายสีใน helper เดียว",
+      "learningObjective": "ใช้ branch หลายชนิดช่องใน helper เดียว",
       "whyHard": "เป็นโจทย์ routing แบบ compact",
       "expectedMoves": [
         "down",

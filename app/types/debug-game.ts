@@ -105,7 +105,7 @@ export type VisibleTile = {
   row: number;
   col: number;
   raw: string;
-  colorName: string;
+  kind: string;
   symbol: string;
 };
 
@@ -113,14 +113,3 @@ export type LevelLike = Pick<
   RawLevel,
   "id" | "rows" | "cols" | "map" | "start" | "code" | "concept" | "learningObjective"
 >;
-
-export const colorMeta: Record<string, TileMeta> = {
-  b: { name: "cyan", symbol: "B" },
-  p: { name: "pink", symbol: "P" },
-  g: { name: "green", symbol: "G" },
-  o: { name: "orange", symbol: "O" },
-  y: { name: "yellow", symbol: "Y" },
-  v: { name: "purple", symbol: "V" },
-  n: { name: "gray", symbol: "" },
-  k: { name: "black", symbol: "K" },
-};

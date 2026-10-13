@@ -45,8 +45,7 @@ function timeLimitOf(score: Score): number | undefined {
 }
 
 export function isOnBoard(score: Score, board: RankingBoard): boolean {
-  if (board.challengeId) return score.challengeId === board.challengeId;
-  if (score.challengeId) return false;
+  if (board.challengeId ? score.challengeId !== board.challengeId : !!score.challengeId) return false;
   if (score.setId !== board.setId || score.mode !== board.mode) return false;
   if (board.mode === "ranking" || board.mode === "timer") {
     return timeLimitOf(score) === board.timeLimitSec;

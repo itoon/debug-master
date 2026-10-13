@@ -22,7 +22,7 @@ export type AssetPreview =
   | { kind: "image"; src: string; backdrop?: "tile" | "dark" | "light" }
   | {
       kind: "tile";
-      colorName: string;
+      tileKind: string;
       letter: string;
       /** Also show the checker (alt) shade. */
       alt?: boolean;
@@ -191,21 +191,21 @@ export const assetGroups: AssetGroup[] = [
     description: th["tile.assetsDescription"],
     common: TILE_SPEC,
     items: [
-      tile("n", "gray", "ช่องที่มากที่สุด (~1,000 ช่อง) ต้องเรียบที่สุด ให้ช่องเงื่อนไขเด่น", true),
-      tile("b", "cyan", "ฟ้าขาวเงา มีแสงสะท้อน ต้องต่างจาก floor ชัด"),
-      tile("y", "yellow", "เหลืองทอง เม็ดทรายจางๆ"),
-      tile("g", "green", th["tile.grassArt"]),
-      tile("p", "pink", th["tile.flowerArt"]),
-      tile("o", "orange", th["tile.lavaArt"]),
+      tile("n", "ช่องที่มากที่สุด (~1,000 ช่อง) ต้องเรียบที่สุด ให้ช่องเงื่อนไขเด่น", true),
+      tile("b", "ฟ้าขาวเงา มีแสงสะท้อน ต้องต่างจาก floor ชัด"),
+      tile("y", "เหลืองทอง เม็ดทรายจางๆ"),
+      tile("g", th["tile.grassArt"]),
+      tile("p", th["tile.flowerArt"]),
+      tile("o", th["tile.honeyArt"]),
       {
-        ...tile("v", "purple", "ม่วง + รูปคริสตัล"),
+        ...tile("v", "ม่วง + รูปคริสตัล"),
         status: "in-use",
         file: "app/assets/sprites/gem.png",
         spec: ["ตัวคริสตัล: PNG โปร่งใส 172 × 192 px วางกลางช่อง (พื้นม่วงยังเป็น CSS)"],
         swap: "ทับไฟล์ gem.png ได้เลย",
       },
       {
-        ...tile("k", "black", "กรมท่า + รูปก้อนหิน"),
+        ...tile("k", "กรมท่า + รูปก้อนหิน"),
         status: "in-use",
         file: "app/assets/sprites/rock.png",
         spec: ["ตัวหิน: PNG โปร่งใส 190 × 192 px วางกลางช่อง (พื้นกรมท่ายังเป็น CSS)"],
@@ -223,7 +223,7 @@ export const assetGroups: AssetGroup[] = [
         name: "จุดเริ่ม (START)",
         file: "app/assets/css/board.css → .tile.start",
         status: "css",
-        preview: { kind: "tile", colorName: "gray", letter: "n", start: true },
+        preview: { kind: "tile", tileKind: "floor", letter: "n", start: true },
         usedIn: "ช่องเริ่มของทุกด่าน",
         spec: [
           "ตอนนี้เป็นเส้นประสีเขียวรอบช่อง ต้องเห็นชัดบนทุกชนิดช่อง",
@@ -350,7 +350,6 @@ export const assetGroups: AssetGroup[] = [
 
 function tile(
   letter: string,
-  colorName: string,
   note: string,
   alt = false,
 ): AssetItem {
@@ -361,7 +360,7 @@ function tile(
     name: th["tile.assetTitle"].replace("{translation}", translation).replace("{name}", definition.name).replace("{code}", letter),
     file: `app/assets/tiles/${definition.name}.webp`,
     status: "css",
-    preview: { kind: "tile", colorName, letter, alt },
+    preview: { kind: "tile", tileKind: definition.name, letter, alt },
     usedIn: th["tile.assetUsage"].replace("{name}", definition.name),
     spec: [note],
     swap: TILE_SWAP.replace("<ชื่อ>", definition.name),

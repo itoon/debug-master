@@ -279,7 +279,7 @@
           <label v-if="selectedMode !== 'dead'" class="field narrow">
             <span>ชุดโจทย์</span>
             <select id="level-set" v-model="selectedSetId">
-              <option v-for="set in levelSets" :key="set.id" :value="set.id">
+              <option v-for="set in allSets" :key="set.id" :value="set.id">
                 {{ set.title }}
               </option>
             </select>
@@ -386,6 +386,7 @@
 
 <script setup lang="ts">
 import { levelSets } from "../data/level-sets";
+import { challengeSets } from "../data/challenge-groups";
 import { tileKindLabel, type BoardSpace } from "../composables/useBoardPresentation";
 import { useProgramParser } from "../composables/useProgramParser";
 import type {
@@ -424,6 +425,7 @@ import { useGameAudio } from "../composables/useGameAudio";
 const { t } = useGameI18n();
 const { enabled: soundEnabled, unlockAudio, playSound, stopSounds, toggleSound } = useGameAudio();
 const repositories = createLocalRepositories();
+const allSets = [...levelSets, ...challengeSets];
 const activeChallenge = ref<ChallengeMode | null>(null);
 const currentPlayerId = ref("");
 const currentAvatarId = ref<string | undefined>(undefined);
@@ -461,7 +463,7 @@ const displayLanguage = computed(() =>
 const selectedLevelIndex = ref(0);
 const selectedLevelDraft = ref(1);
 const activeSet = computed(
-  () => levelSets.find((set) => set.id === selectedSetId.value) ?? levelSets[0],
+  () => allSets.find((set) => set.id === selectedSetId.value) ?? levelSets[0],
 );
 // Dead Mode: levels are generated one at a time while the run goes on
 // (utils/levelGen). Every other mode plays the selected level set.
@@ -470,9 +472,7 @@ const deadRun = ref<{ seed: number; levels: GeneratedLevel[] } | null>(null);
 const DEAD_LIVES = 5;
 const livesLeft = ref(DEAD_LIVES);
 const activeLevels = computed(
-  () => deadRun.value?.levels ?? (activeChallenge.value
-    ? activeSet.value.levels.filter((level) => level.id >= activeChallenge.value!.levelRange[0] && level.id <= activeChallenge.value!.levelRange[1])
-    : activeSet.value.levels),
+  () => deadRun.value?.levels ?? activeSet.value.levels,
 );
 const currentLevel = computed(
   () => activeLevels.value[selectedLevelIndex.value] ?? activeLevels.value[0],
@@ -732,7 +732,7 @@ function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode): void 
   const nickname = profile.nickname.trim();
   if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return;
   const configuredMode = homeConfig.modes.find((item) => item.id === mode.id);
-  if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900) return;
+  if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900 || !challengeSets.some((set) => set.id === configuredMode.levelSetId)) return;
   const playerId = crypto.randomUUID();
   try {
     repositories.players.save({ id: playerId, nickname, age: profile.age, avatarId: profile.avatarId });
@@ -751,7 +751,9 @@ function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode): void 
   playerNameDraft.value = nickname;
   playerAgeDraft.value = profile.age;
   activeChallenge.value = configuredMode;
-  selectedSetId.value = homeConfig.levelSetId;
+  selectedSetId.value = configuredMode.levelSetId;
+  selectedLevelIndex.value = 0;
+  selectedLevelDraft.value = 1;
   selectedMode.value = "timer";
   customMinutes.value = configuredMode.timeLimit / 60;
   selectedLanguageDraft.value = "python";
@@ -1157,7 +1159,7 @@ function handleKeydown(event: KeyboardEvent): void {
 // that set and starting level in the setup dialog.
 async function applyLevelFromQuery(): Promise<void> {
   const query = useRoute().query;
-  const set = levelSets.find((item) => item.id === query.set);
+  const set = allSets.find((item) => item.id === query.set);
   if (set) {
     selectedSetId.value = set.id;
     await nextTick(); // let the set watcher reset the level first

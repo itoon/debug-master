@@ -1,4 +1,5 @@
 export type RawLevel = {
+  source?: string;
   id: number;
   title: string;
   image?: string;
@@ -473,7 +474,7 @@ export const rawLevels = [
     ],
     "code": "down()\nif o:\n  left()\nup()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 12,
@@ -507,7 +508,7 @@ export const rawLevels = [
     ],
     "code": "right()\nif o:\n  up()\nright()\nif o:\n  up()\nright()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 13,
@@ -555,7 +556,7 @@ export const rawLevels = [
     ],
     "code": "repeat(4):\n  if o:\n    down()\n  right()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 14,
@@ -603,7 +604,7 @@ export const rawLevels = [
     ],
     "code": "repeat(4):\n  if o:\n    down()\n  right()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 15,
@@ -664,7 +665,7 @@ export const rawLevels = [
     ],
     "code": "repeat(5):\n  right()\n  if o:\n    down()\n    down()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 16,
@@ -694,7 +695,7 @@ export const rawLevels = [
     ],
     "code": "repeat(5):\n  up()\n  if o:\n    left()\ndown()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 17,
@@ -724,7 +725,7 @@ export const rawLevels = [
     ],
     "code": "repeat(22):\n  if o:\n    right()\nup()\nleft()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 18,
@@ -756,7 +757,7 @@ export const rawLevels = [
     ],
     "code": "repeat(33):\n  if o:\n    right()\nup()\nleft()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 19,
@@ -792,7 +793,7 @@ export const rawLevels = [
     ],
     "code": "repeat(5):\n  if o:\n    repeat(4):\n      left()\n  down()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 20,
@@ -838,7 +839,7 @@ export const rawLevels = [
     ],
     "code": "repeat(5):\n  right()\n  if o:\n    down()\n    down()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 21,
@@ -869,7 +870,7 @@ export const rawLevels = [
     ],
     "code": "repeat(5):\n  up()\n  if o:\n    left()\n  if g:\n    right()\n  down()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 22,
@@ -900,7 +901,7 @@ export const rawLevels = [
     ],
     "code": "up()\nif o:\n  left()\n  left()\nelse:\n  down()\n  down()\nright()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 23,
@@ -931,7 +932,7 @@ export const rawLevels = [
     ],
     "code": "if g:\n  left()\n  down()\nelse:\n  up()\nif o:\n  down()\n  down()\nelse:\n  right()\nup()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 24,
@@ -962,7 +963,7 @@ export const rawLevels = [
     ],
     "code": "right()\nif g:\n  left()\nelif b:\n  up()\nelse:\n  right()\ndown()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 25,
@@ -993,7 +994,7 @@ export const rawLevels = [
     ],
     "code": "right()\nif g:\n  down()\nelif b:\n  right()\nelse:\n  left()\nup()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 26,
@@ -1044,7 +1045,7 @@ export const rawLevels = [
     ],
     "code": "repeat(8):\n  if o:\n    down()\n  else:\n    left()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 27,
@@ -1090,7 +1091,7 @@ export const rawLevels = [
     ],
     "code": "repeat(19):\n  if o:\n    right()\n  elif b:\n    left()\n  else:\n    up()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 28,
@@ -1141,7 +1142,7 @@ export const rawLevels = [
     ],
     "code": "repeat(5):\n  if o:\n    left()\n  else:\n    right()\nup()",
     "concept": "Conditionals",
-    "learningObjective": "ใช้สีของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
   },
   {
     "id": 29,

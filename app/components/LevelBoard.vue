@@ -11,7 +11,7 @@
       :key="`${tile.row}-${tile.col}`"
       class="tile"
       :class="[
-        `tile-${tile.colorName}`,
+        `tile-${tile.kind}`,
         {
           alt: (tile.row + tile.col) % 2 === 1,
           start:

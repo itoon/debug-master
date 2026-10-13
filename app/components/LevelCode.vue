@@ -34,7 +34,7 @@
       aria-hidden="true"
     >{{ language === "js" ? "!" : "not " }}</span><span
       class="code-tile"
-      :class="`tile-${tileColorName(segment.color)}`"
+      :class="`tile-${tileKind(segment.color)}`"
       role="img"
       :aria-label="`${segment.negate ? 'not ' : ''}${tileDescription(segment.color)}`"
       :title="tileDescription(segment.color)"
@@ -53,7 +53,7 @@
 // A level's program in the "window" card, drawn the same way everywhere
 // (game + review page). Styles live in assets/css/board.css.
 import {
-  tileColorName,
+  tileKind,
   tileKindLabel,
 } from "../composables/useBoardPresentation";
 import { useCodePresentation } from "../composables/useCodePresentation";

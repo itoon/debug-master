@@ -54,7 +54,7 @@
               <div
                 class="tile"
                 :class="[
-                  `tile-${item.preview.colorName}`,
+                  `tile-${item.preview.tileKind}`,
                   { start: item.preview.start },
                 ]"
                 style="--cell-size: 84px"
@@ -62,7 +62,7 @@
               <div
                 v-if="item.preview.alt"
                 class="tile alt"
-                :class="`tile-${item.preview.colorName}`"
+                :class="`tile-${item.preview.tileKind}`"
                 style="--cell-size: 84px"
               />
             </template>
@@ -95,7 +95,7 @@
               class="el-chip-sample"
             >
               ในโค้ด:
-              <span class="code-tile" :class="`tile-${item.preview.colorName}`"
+              <span class="code-tile" :class="`tile-${item.preview.tileKind}`"
                 ><i class="code-tile-swatch" /><span class="code-tile-label">{{
                   tileKindLabel(item.preview.letter)
                 }}</span></span

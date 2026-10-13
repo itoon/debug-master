@@ -2,6 +2,29 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Beginner / Intermediate / Pro sets (current state)
+
+- Selectively imported `challenge-levels.json`, `challenge-groups.ts` and `conceptFeatures.ts` from `feat/add-level-set` at `e327540`. The JSON matches the source blob exactly. Each tier retains its authored order: 20 Set 01 originals interleaved with 30 new lessons, renumbered 1–50. New source IDs remain 101–130, 201–230 and 301–330.
+- Original Set 01 and Set 02 remain separate sets of 60 levels. Read-only comparisons confirm IDs, dimensions, maps, starts and programs are unchanged. Their text describing colours was updated to describe tile kinds.
+- A/B/C now display Beginner / Intermediate / Pro through dictionary keys and select `challenge-beginner`, `challenge-intermediate`, `challenge-pro`. Each mode has its own `levelSetId`, displayed range 1–50 and the existing 900-second limit. Gameplay uses the complete ordered group and starts at play level 1, without the former 20-level filter.
+- `/review` retains the original sets and Dead Mode preview and adds three tier tabs, source badges for original/new lessons, and feature-ceiling diagnostics using the existing parser/runner. No tests or generator/check scripts were executed.
+- Read-only review found a missing challenge option in the legacy setup dropdown. It now lists original and challenge sets together so a challenge selected by a review query is displayed correctly and can be selected again; legacy gameplay internals are unchanged.
+- Card boards and score snapshots use the challenge set. Ranking matching checks challenge ID together with set ID, mode and time limit so old Set 01 A/B/C scores cannot mix into new boards. Old stored data, repository namespace and schema are preserved without migration or deletion.
+- Core movement/scoring, legacy mode internals, profiles, WASD, audio and kiosk reset/idle flow are preserved. The unchanged scoring formula now uses each tier's play IDs 1–50, rather than the former 21/41 starts or raw source IDs 201/301.
+- Existing limitation: `/review` play links return to Home when the Home flag is enabled; query setup works in the legacy flow only. This import does not add a staff preview/deep-link flow. JSON generator provenance points to scripts on the source branch; those scripts were not imported.
+
+## 2026-10-13 — Item tiles and yellow honey
+
+- `data/tiles.ts` is the canonical registry for parser aliases, labels and asset previews. Internal `o` now means `honey`; `y` remains `sand`. Existing letter conditions still work; the full name `honey` resolves to `o` through the parser boundary.
+- Board/code/asset previews use semantic CSS classes. Merged only tile artwork from source CSS: central grass, flower and honey pot/honeycomb, with honey's background adjusted to yellow/gold. Sand retains its separate pale grain texture. Board size fitting, square grid tracks, Codi failure art/animation and code readability are preserved.
+- Dictionary, tooltips, tutorial and asset catalog use the new names consistently; no original puzzle map/program was rewritten.
+
+## 2026-10-13 — Narrower ranking podium
+
+- Each podium block is 90% of its slot width (10% narrower), centered under the existing profile/name. Medal colours, heights, leaderboard rows and scrolling remain unchanged.
+- Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. No tests, live browser or visual checks, per the build-only instruction. Read-only review checks data order, set separation and integration.
+- Changes remain unstaged on `feature/home-v2`. No `git add`, commit, merge or branch switch was performed, per the user's standing instruction. Older dated sections below describe the previous versions.
+
 ## 2026-10-12 — Config, i18n and storage boundary
 
 - `app/data/home-config.ts`: schemaVersion 1, Set 01; A 1–20, B 21–40, C 41–60; all time limits are **900 seconds (15:00), placeholders**. Mode names in the Thai dictionary are now A “นักบินฝึกหัด”, B “นักสำรวจ”, C “ผู้บัญชาการ”, per the user's reference. Ages 5–18, nickname maximum 24, idle timeout 90 seconds.

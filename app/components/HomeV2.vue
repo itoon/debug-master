@@ -52,7 +52,7 @@ function thumbnailUrl(mode: ChallengeMode): string {
   return `${baseURL.endsWith('/') ? baseURL : `${baseURL}/`}${mode.thumbnail}`;
 }
 function boardFor(mode: ChallengeMode): RankingBoard {
-  return { challengeId: mode.challengeId, setId: homeConfig.levelSetId, mode: "timer", timeLimitSec: mode.timeLimit };
+  return { challengeId: mode.challengeId, setId: mode.levelSetId, mode: "timer", timeLimitSec: mode.timeLimit };
 }
 function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   if (props.busy || setupMode.value) return;

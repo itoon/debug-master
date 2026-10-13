@@ -1,12 +1,12 @@
 // Public condition names are independent of the compact codes in Dev's maps.
-// Keep the existing map codes and CSS colours so old puzzles/assets stay valid.
-export const TILE_TYPES = ["flower", "rock", "grass", "lava", "ice", "gem"] as const;
+// Preserve map codes; presentation uses item names in labels and CSS classes.
+export const TILE_TYPES = ["flower", "rock", "grass", "honey", "ice", "gem"] as const;
 
 export const TILE_DEFINITIONS = {
   p: { name: "flower", nameKey: "tile.flower" },
   k: { name: "rock", nameKey: "tile.rock" },
   g: { name: "grass", nameKey: "tile.grass" },
-  o: { name: "lava", nameKey: "tile.lava" },
+  o: { name: "honey", nameKey: "tile.honey" },
   b: { name: "ice", nameKey: "tile.ice" },
   v: { name: "gem", nameKey: "tile.gem" },
   n: { name: "floor", nameKey: "tile.floor" },

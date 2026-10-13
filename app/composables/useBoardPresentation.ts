@@ -1,9 +1,9 @@
 import { computed, type ComputedRef, type Ref } from "vue";
-import { colorMeta, type LevelLike, type VisibleTile } from "../types/debug-game";
-import { tileCode, tileDefinition } from "../data/tiles";
+import type { LevelLike, VisibleTile } from "../types/debug-game";
+import { tileDefinition } from "../data/tiles";
 
-export function tileColorName(color: string): string {
-  return colorMeta[tileCode(color)]?.name ?? "gray";
+export function tileKind(color: string): string {
+  return tileDefinition(color).name;
 }
 
 export function tileKindLabel(color: string): string {
@@ -64,8 +64,8 @@ export function useBoardPresentation(
         row: rowIndex,
         col: colIndex,
         raw: color,
-        colorName: tileColorName(color),
-        symbol: colorMeta[color]?.symbol ?? "",
+        kind: tileKind(color),
+        symbol: "",
       })),
     ),
   );
