@@ -2,6 +2,26 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Upper title and stronger cover shading
+
+- Full-thumbnail Home cards now place the mode title/badge at the upper-left corner and retain difficulty/range/time at the bottom. Two stronger navy gradients shade the top and bottom edges, with additional title shadow; the center of the thumbnail remains clear.
+- CSS applies only to empty-board full covers shown in the reference. Populated card headers/leaderboards, card dimensions, selection/hover animation and click/keyboard launch remain unchanged. No asset replacement or text changes.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing user edits are preserved.
+
+## 2026-10-13 — Distinct general UI click sound
+
+- Added a separate `click` effect: a 32ms high square-wave tick (2200 → 1400Hz) layered with a 55ms low sine tap (180 → 120Hz). It differs in duration, waveform and pitch from existing movement, selection, transition, popup, clear/failure/completion cues. No new dependency or audio asset was added.
+- An app-shell bubbling click listener plays it for enabled buttons, links, radio/checkbox controls and guidance disclosures, including nickname/avatar/age and popup actions. Native mouse/touch/keyboard clicks use the same route; background/input-text clicks, disabled/inert controls and leaderboard reading do not trigger it. Movement buttons and mode launch retain only their dedicated cues; the sound toggle stays silent.
+- Cue uses the existing `useGameAudio` context, master gain, mute/hidden/disposed guards and async-resume protection. Its UI classification allows it to overlap without interrupting gameplay sounds. The listener runs after control handlers so resetting Home can stop old voices before the new tap plays. No gameplay, storage, timer or scoring changes.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete issues in click filtering, event ordering, voice overlap or audio lifecycle guards. Acoustic distinctness and live playback remain unverified; no tests/browser/listening checks, git add/commit, branch changes or reference-frontend edits. Prior nickname and user thumbnail edits are preserved.
+
+## 2026-10-13 — Playful Gen Alpha-style random nicknames
+
+- Replaced the eight fixed space-themed nickname stems with a combination pool: eight Thai bases (น้องบั๊ก, โคดิ, จรวด, แมวอวกาศ, กัปตัน, ดาวจิ๋ว, เป็ดน้อย, แพนด้า) × ten playful gaming descriptors (ตัวตึง, สายชิล, สุดเฟี้ยว, สายแบก, โหมดเทพ, ติดบูสต์, แอบเก่ง, พลังล้น, ขี้เล่น, สปีดไว).
+- Base words, descriptors and combination formatting use the lightweight dictionary. The existing random 00–99 suffix, 24-character candidate filter and fallback when a click matches the current name are retained. Examples: น้องบั๊กตัวตึง36, โคดิสุดเฟี้ยว08, จรวดสายชิล59.
+- Only the setup random-name pool changes. Manual names, avatar selection, blank-form reset, player validation/storage and existing leaderboard records remain intact. User-modified thumbnails are preserved.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits.
+
 ## 2026-10-13 — Remove Home card launch hint
 
 - Removed “แตะการ์ดเพื่อเริ่มภารกิจ” and its decorative arrow from every mode card, including full-thumbnail empty cards. Removed the unused dictionary key and hint styling.

@@ -105,7 +105,7 @@ export function useGameAudio() {
 
   function playSound(effect: SoundEffect): void {
     if (!enabled.value || typeof document === "undefined" || document.hidden) return;
-    // A selection click and its soft slide cue may play together.
+    // UI taps and selection/slide cues may play alongside other sounds.
     // Gameplay failure/clear/completion retains its existing interruption rule.
     if (effect !== "move" && !(UI_SOUND_EFFECTS as readonly SoundEffect[]).includes(effect)) stopSounds();
     const audio = ensureContext();

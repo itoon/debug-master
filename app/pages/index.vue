@@ -1,5 +1,5 @@
 <template>
-  <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }">
+  <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
     <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
       :repository="repositories.scores" :error="homeStorageError" @start="prepareChallenge" @reset-error="homeStorageError = ''"
       @unlock-audio="unlockAudio" @sound="playSound" />
@@ -771,6 +771,17 @@ function resetHomeSession(): void {
 }
 
 function recordInteraction(): void { lastInteractionAt = Date.now(); }
+
+function playUiClick(event: MouseEvent): void {
+  if (!event.isTrusted || !(event.target instanceof Element)) return;
+  const control = event.target.closest<HTMLElement>('button, a[href], input[type="radio"], input[type="checkbox"], summary');
+  if (!control || control.matches(':disabled, [aria-disabled="true"]') || control.closest('[inert]')) return;
+  // Movement and mode selection already have their own sound feedback.
+  // The mute switch stays silent; it controls whether this cue can play.
+  if (control.matches('.arrow, .sound-toggle, [data-mode-launch]')) return;
+  unlockAudio();
+  playSound("click");
+}
 function resetAfterBrowserNavigation(): void {
   if (homeConfig.enabled) backToStart();
 }

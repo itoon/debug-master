@@ -119,7 +119,15 @@ const avatarIndex = ref(0);
 const selectedAvatar = computed(() => PLAYER_AVATARS[avatarIndex.value]!);
 function nextAvatar() { avatarIndex.value = (avatarIndex.value + 1) % PLAYER_AVATARS.length; }
 const generatedAnnouncement = ref("");
-const randomNameKeys = ["nickname.star", "nickname.comet", "nickname.rocket", "nickname.captain", "nickname.explorer", "nickname.moon", "nickname.cosmo", "nickname.spark"] as const;
+const nicknameBaseKeys = [
+  "nickname.base.bug", "nickname.base.codi", "nickname.base.rocket", "nickname.base.cat",
+  "nickname.base.captain", "nickname.base.star", "nickname.base.duck", "nickname.base.panda",
+] as const;
+const nicknameVibeKeys = [
+  "nickname.vibe.top", "nickname.vibe.chill", "nickname.vibe.cool", "nickname.vibe.carry",
+  "nickname.vibe.godMode", "nickname.vibe.boost", "nickname.vibe.sneaky", "nickname.vibe.energy",
+  "nickname.vibe.playful", "nickname.vibe.fast",
+] as const;
 const age = ref<number | null>(null);
 const normalizedName = computed(() => nickname.value.trim());
 const valid = computed(() => normalizedName.value.length > 0 && normalizedName.value.length <= homeConfig.nicknameMaxLength && homeConfig.ages.includes(age.value as number));
@@ -132,7 +140,9 @@ const trackStyle = computed(() => ({
 }));
 
 function randomizeNickname(): void {
-  const names = randomNameKeys.map((key) => t(key)).filter((name) =>
+  const names = nicknameBaseKeys.flatMap((nameKey) =>
+    nicknameVibeKeys.map((vibeKey) => t("nickname.combined", { name: t(nameKey), vibe: t(vibeKey) })),
+  ).filter((name) =>
     t("nickname.generated", { name, number: "00" }).length <= homeConfig.nicknameMaxLength,
   );
   if (!names.length) return;

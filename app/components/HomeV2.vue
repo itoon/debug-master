@@ -226,6 +226,8 @@ onBeforeUnmount(() => {
 .card-ranking { min-height: 0; }
 .mode-board.empty-board { grid-template-rows: minmax(0, 1fr); gap: 0; padding-bottom: 0; }
 .empty-board .mode-cover { height: 100%; min-height: 0; border-radius: 21px; }
+.empty-board .mode-heading { inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 18px 18px; background: linear-gradient(180deg, #020d31ed, #04123980 90px, transparent 200px), linear-gradient(0deg, #020d31f2, #04123999 75px, transparent 180px); }
+.empty-board .mode-heading h2 { text-shadow: 0 2px 3px #020d31, 0 0 14px #020d31b3; }
 .home-footer { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 24px; color: #d0e2ff; font-size: .7rem; text-align: center; }
 .home-footer a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }

@@ -62,7 +62,7 @@ Global control/container radii map to `--cv-radius` (12px) and `--cv-radius-xl` 
 
 Canonical owners are `HomeV2.vue` for mode selection, `PlayerSetupDialog.vue` for nickname/age/profile input, `GameHud.vue` for gameplay information, `SessionPanel.vue` for tutorial/result/ranking, and the existing repositories for local data. `docs/HANDOFF.md` records behavioural agreements and verification history.
 
-Home mode cards with no scores today use their thumbnail as a full-card cover with mode details overlaid. All cards omit the visible tap-to-start hint; the accessible launch label and click/keyboard targets remain. Empty cards do not show the ranking heading or Codi empty-state message. `ChallengeRanking` remains subscribed through `useScoreBoard` and reports a confirmed empty state to Home; new scores restore the normal podium/list automatically. Loading/storage errors do not masquerade as empty boards. Other ranking screens keep their existing empty-state presentation.
+Home mode cards with no scores today use their thumbnail as a full-card cover: the mode title/badge sits at the upper left, with range/difficulty/time at the bottom. Strong navy gradients darken both edges for readable text while leaving the central artwork clear. All cards omit the visible tap-to-start hint; the accessible launch label and click/keyboard targets remain. Empty cards do not show the ranking heading or Codi empty-state message. `ChallengeRanking` remains subscribed through `useScoreBoard` and reports a confirmed empty state to Home; new scores restore the normal podium/list automatically. Loading/storage errors do not masquerade as empty boards. Other ranking screens keep their existing empty-state presentation.
 
 Tutorial uses the same blue game surface and shared `LevelBoard`/`LevelCode` in `TutorialDemo.vue`. Its repeating preview reads the original Set 01 level 1, synchronizes the source-line highlight with the displayed key and Codi, pauses for 1.2 seconds at completion, then resets without a backwards move. It never updates the live run, score, timer or repository. Reduced motion uses a static explanation; hidden tabs suspend the preview. Only Start/Back are primary tutorial actions, with icons and text. The tutorial card fits the available viewport height, adapting board/code space and compacting short screens. Narrow screens reserve enough space for the three code lines and stack the board above the code. Additional control/item guidance replaces the demo area while its disclosure is open and uses two radio tabs so content does not extend the card.
 
@@ -70,7 +70,11 @@ Mode selection moves one card to center and slides others away, then opens the d
 
 `useGameAudio` is the sole sound playback owner, driven by `sound-effects.ts`. Home emits selection/transition/popup cues into that same owner so the game's mute state applies everywhere. UI click and slide may overlap softly; gameplay failure/clear/completion retains its existing interruption behaviour. Sound supplements visible state and never gates navigation or scoring.
 
+Ordinary UI controls use a separate short, dry `click` cue through the app shell's delegated bubbling listener. This runs after control handlers so a Home reset does not immediately cut it off. Disabled controls, background/text clicks and leaderboard reading stay silent. Movement buttons and mode-card selection keep their dedicated cues without an added generic tap; the mute switch itself stays silent. Mouse/touch and native keyboard button activation share the same path.
+
 Age selection remains explicit 5–18 with tap/keyboard/drag alternatives and a numeric tooltip. No Codi image floats over the age bar. Keep the blank-form kiosk reset, repository retry and modal focus contracts. New UI text uses the dictionary/composable.
+
+Random nicknames combine eight playful Thai character/space bases with ten gaming-style descriptors and a two-digit number, using dictionary keys. The tone is child-friendly and informal (for example น้องบั๊กตัวตึง or จรวดสายชิล). Keep the 24-character limit, editable manual names, explicit age selection and no-repeat-on-immediate-click behaviour.
 
 ## Do's and Don'ts
 

@@ -1,4 +1,4 @@
-export const UI_SOUND_EFFECTS = ["select", "transition", "transitionBack", "popup"] as const;
+export const UI_SOUND_EFFECTS = ["click", "select", "transition", "transitionBack", "popup"] as const;
 export type UiSoundEffect = (typeof UI_SOUND_EFFECTS)[number];
 export type SoundEffect = "move" | "clear" | "wrong" | "complete" | UiSoundEffect;
 export type EffectTone = {
@@ -14,6 +14,11 @@ export type EffectTone = {
 
 // Synthesized placeholders; mid-range move/retry tones work on small speakers.
 export const soundEffects: Record<SoundEffect, readonly EffectTone[]> = {
+  // A dry two-layer tap, distinct from movement tones and melodic UI cues.
+  click: [
+    { frequency: 2200, endFrequency: 1400, delay: 0, duration: .032, volume: .09, wave: "square", release: .016 },
+    { frequency: 180, endFrequency: 120, delay: 0, duration: .055, volume: .16, wave: "sine", release: .025 },
+  ],
   select: [
     { frequency: 880, endFrequency: 1046.5, delay: 0, duration: .09, volume: .18, wave: "sine", release: .04 },
   ],
