@@ -32,11 +32,11 @@
           <button type="button" class="soft-button small" :disabled="exitSaving" @click="exitGame">{{ t('game.retryExit') }}</button>
         </div>
 
-        <div class="play-cluster">
-          <div ref="boardWrapEl" class="board-wrap" :style="{
-            '--minimum-board-height': `${currentLevel.rows * 24 + Math.max(0, currentLevel.rows - 1) * 5 + 24}px`,
-            '--board-reserved-height': `${boardReservedHeight}px`,
-          }">
+        <div class="play-cluster" :style="{
+          '--minimum-board-height': `${currentLevel.rows * 24 + Math.max(0, currentLevel.rows - 1) * 5 + 24}px`,
+          '--board-reserved-height': `${boardReservedHeight}px`,
+        }">
+          <div ref="boardWrapEl" class="board-wrap">
             <div
               v-if="notificationMessage && status !== 'success'"
               class="notification"
@@ -1399,9 +1399,14 @@ onMounted(async () => {
       if (!area) return;
       // Measure the available stage, then reserve the real footer/combo
       // heights and two 12px gaps. The board remains adjacent to the D-pad.
-      boardReservedHeight.value = (controlsEl.value?.offsetHeight ?? 0) + (instructionEl.value?.offsetHeight ?? 0) + 24 + 12;
+      // Landscape phones put the footer beside the board (CSS sets
+      // --footer-beside), so its width is reserved instead of its height.
+      const beside = getComputedStyle(area).getPropertyValue("--footer-beside").trim() === "1";
+      const footerHeight = beside ? 0 : (controlsEl.value?.offsetHeight ?? 0) + 12;
+      const footerWidth = beside ? (controlsEl.value?.offsetWidth ?? 0) + 12 : 0;
+      boardReservedHeight.value = footerHeight + (instructionEl.value?.offsetHeight ?? 0) + 24;
       boardSpace.value = {
-        width: Math.max(0, area.clientWidth - 12),
+        width: Math.max(0, area.clientWidth - 12 - footerWidth),
         height: Math.max(0, area.clientHeight - boardReservedHeight.value),
       };
     });
@@ -1471,10 +1476,13 @@ summary:focus-visible {
 
 /* ---------- Shell: navy hero background like codeventure.app ---------- */
 
+/* Layout is mobile first: base rules fit a portrait phone on one screen
+   (code above the board, D-pad at the bottom). Landscape phones put code
+   beside the board; desktop restores the two-column game. */
 .app-shell {
   height: 100dvh;
-  padding: 14px;
-  overflow: hidden;
+  padding: 8px;
+  overflow-y: auto;
   background: var(--cv-navy-900) url("~/assets/bg.png") center bottom / cover
     no-repeat;
 }
@@ -1493,28 +1501,31 @@ summary:focus-visible {
 
 .board-panel {
   min-width: 0;
-  min-height: 0;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px;
+  gap: 8px;
+  padding: 10px;
   width: 100%;
   max-width: 1640px;
-  height: 100%;
   margin: 0 auto;
   position: relative;
   border: 1px solid var(--cv-glass-border);
-  border-radius: var(--cv-radius-xl);
+  border-radius: 18px;
   background: rgba(6, 26, 56, 0.22);
   box-shadow: var(--cv-shadow-window);
 }
 
+/* Read, look, press: code first, then the board with the D-pad under it. */
 .play-cluster {
   flex: 1;
-  min-height: 320px;
+  min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  /* The board keeps its minimum readable size; the code window gives up
+     height first (down to about three lines) and scrolls inside. */
+  grid-template-rows: minmax(120px, auto) minmax(calc(var(--minimum-board-height) + var(--board-reserved-height)), 1fr);
+  gap: 8px;
   align-items: stretch;
   justify-content: center;
   width: 100%;
@@ -1522,13 +1533,16 @@ summary:focus-visible {
 }
 
 .play-cluster .code-card {
+  order: -1;
   align-self: stretch;
   min-width: 0;
   min-height: 0;
   width: 100%;
-  height: 100%;
-  max-height: 100%;
 }
+.play-cluster .code-card :deep(.window-bar) { padding: 8px 14px; }
+.play-cluster .code-card :deep(.window-bar h2) { font-size: .8rem; }
+.play-cluster .code-card :deep(.code-box) { max-height: min(30dvh, 240px); padding: 10px 0; }
+.play-cluster .code-card { overflow: hidden; }
 
 .sound-toggle { display: inline-grid; place-items: center; flex: none; width: 44px; min-height: 44px; padding: 0; border: 1px solid #759bd966; border-radius: 10px; background: #14357499; color: #e4edff; }
 .exit-action { color: #c4d9ff; background: #122b5744; border-color: #759bd94d; }
@@ -1601,8 +1615,11 @@ h2 {
 
 .practice-passed { color: var(--cv-green); }
 
+/* fitCellSize keeps 24px cells, 5px gaps, 10px padding and 2px borders:
+   never squeeze the board below that plus the measured footer; the game
+   scrolls instead on very short screens. */
 .board-wrap {
-  min-height: 0;
+  min-height: calc(var(--minimum-board-height) + var(--board-reserved-height));
   display: grid;
   place-items: center;
   position: relative;
@@ -1613,9 +1630,10 @@ h2 {
 }
 
 .board-and-controls { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
-.board-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: end; width: 100%; }
-.game-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
-.board-footer .touch-controls { grid-column: 2; }
+/* Thumb zone: sound/exit stacked at the left, the D-pad centred in the rest. */
+.board-footer { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: end; width: 100%; }
+.game-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; }
+.board-footer .touch-controls { grid-column: 2; justify-self: center; }
 
 .score-popup {
   position: absolute;
@@ -2267,27 +2285,34 @@ h2 {
   }
 }
 
-@media (max-width: 920px) {
-  .app-shell { overflow-y: auto; }
-  .game { height: auto; min-height: 100%; overflow: visible; }
-  .board-panel { height: auto; min-height: 100%; padding: 14px; }
-
-  .play-cluster {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    gap: 16px;
-  }
-
-  .board-wrap { height: clamp(340px, 65dvh, 580px); }
-  .play-cluster .code-card { height: clamp(300px, 55dvh, 560px); }
-}
-@media (max-width: 620px) {
-  /* fitCellSize keeps 24px cells, 5px gaps, 10px padding and 2px borders.
-     Reserve that minimum board plus the measured footer on short phones. */
-  .board-wrap { min-height: calc(var(--minimum-board-height) + var(--board-reserved-height)); }
-  .board-footer { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+/* Landscape phones: the screen is short, so code moves beside the board and
+   the D-pad beside the board (the resize observer reserves width instead). */
+@media (orientation: landscape) and (max-height: 560px) {
+  .play-cluster { grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.7fr); grid-template-rows: minmax(0, 1fr); }
+  .play-cluster .code-card { order: 0; height: 100%; }
+  .play-cluster .code-card :deep(.code-box) { max-height: none; }
+  .board-wrap { --footer-beside: 1; min-height: calc(var(--minimum-board-height) + var(--board-reserved-height)); }
+  .board-and-controls { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); }
+  .board-combo { grid-column: 1 / -1; }
+  .board-and-controls > .board { grid-column: 1; grid-row: 2; }
+  .board-footer { grid-column: 2; grid-row: 2; grid-template-columns: auto; justify-items: center; align-self: end; }
   .board-footer .touch-controls { grid-column: 1; grid-row: 1; }
-  .game-actions { grid-column: 1; grid-row: 2; }
+  .game-actions { grid-row: 2; flex-direction: row; }
+}
+
+/* Desktop: board and D-pad on the left, code on the right. */
+@media (min-width: 921px) and (min-height: 561px) {
+  .app-shell { padding: 14px; overflow: hidden; }
+  .board-panel { height: 100%; min-height: 0; gap: 10px; padding: 14px; border-radius: var(--cv-radius-xl); }
+  .play-cluster { min-height: 320px; grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr); grid-template-rows: none; gap: 16px; }
+  .play-cluster .code-card { order: 0; height: 100%; max-height: 100%; }
+  .play-cluster .code-card :deep(.window-bar) { padding: 14px 18px; }
+  .play-cluster .code-card :deep(.window-bar h2) { font-size: .9rem; }
+  .play-cluster .code-card :deep(.code-box) { max-height: none; padding: 16px 0; }
+  .board-wrap { min-height: 0; }
+  .board-footer { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .game-actions { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .board-footer .touch-controls { justify-self: auto; }
 }
 
 @media (hover: none) and (pointer: coarse) {
@@ -2300,6 +2325,12 @@ h2 {
     height: 62px;
     font-size: 1.25rem;
   }
+}
+
+/* Small phones (320–359px) and short landscape screens: a tighter D-pad. */
+@media (max-width: 359px), (orientation: landscape) and (max-height: 560px) {
+  .touch-controls { grid-template-columns: repeat(3, 60px); gap: 6px; }
+  .arrow { width: 60px; height: 50px; font-size: 1.1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

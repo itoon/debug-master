@@ -47,48 +47,83 @@ const avatarSrc = usePlayerAvatar();
 </script>
 
 <style scoped>
-.game-hud { flex: none; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); align-items: start; gap: 16px; min-width: 0; }
-.pilot-info { display: flex; justify-content: space-between; align-items: center; align-self: stretch; min-width: 0; gap: 12px; padding-bottom: 17px; border-bottom: 1px solid #9ac5ff80; }
-.mission-info { min-width: 0; display: grid; gap: 8px; }
-.mission-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width: 0; }
-.level-info { min-width: 0; display: grid; gap: 5px; }
+/* Mobile first: one compact block (pilot row, then mission row) so the code,
+   board and D-pad keep the screen. Wider and taller screens restore the
+   two-column desktop HUD with large metrics. */
+.game-hud { flex: none; display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; }
+.pilot-info { display: flex; justify-content: space-between; align-items: center; align-self: stretch; min-width: 0; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid #9ac5ff80; }
+.mission-info { min-width: 0; display: grid; gap: 6px; }
+.mission-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
+.level-info { min-width: 0; display: grid; gap: 3px; }
 p, h1 { margin: 0; }
-.game-brand { display: flex; align-items: center; gap: 7px; font-size: .75rem; color: #d9eaff; font-weight: 800; }
+.game-brand { display: none; align-items: center; gap: 7px; font-size: .75rem; color: #d9eaff; font-weight: 800; }
 .game-brand i { width: 7px; height: 7px; border-radius: 50%; background: #ffdb58; box-shadow: 0 0 8px #ffdb5855; }
-h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; line-height: 1.15; }
-.level-number { color: #ffdb58; font-size: clamp(1.4rem, 1.8vw, 1.9rem); white-space: nowrap; font-weight: 500; }
-.level-title { color: #fff; font-size: 1rem; font-weight: 800; }
-.level-context { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: #bdd6ff; font-size: .7rem; line-height: 1.4; }
-.concept { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; font-weight: 700; }
-.level-context span + span { padding-left: 10px; border-left: 1px solid #8eafff55; }
-.metrics { flex: none; display: flex; align-items: stretch; flex-wrap: wrap; gap: 8px; font-variant-numeric: tabular-nums; }
-.metric { display: grid; align-content: center; gap: 6px; min-width: 92px; min-height: 80px; padding: 10px 14px; border: 1px solid #6e9fe840; border-radius: 14px; background: #071e49b8; }
-.metric > span { color: #bed6ff; font-size: .75rem; line-height: 1.2; }
-.metric strong { font-size: clamp(1.45rem, 1.9vw, 2rem); line-height: 1; color: #fff; }
+h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-height: 1.15; }
+.level-number { color: #ffdb58; font-size: 1.25rem; white-space: nowrap; font-weight: 500; }
+.level-title { color: #fff; font-size: .9rem; font-weight: 800; }
+.level-context { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px 8px; min-width: 0; color: #bdd6ff; font-size: .65rem; line-height: 1.4; }
+.level-context span { flex: none; }
+.concept { flex: 0 1 auto !important; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; font-weight: 700; }
+.level-context span + span { padding-left: 8px; border-left: 1px solid #8eafff55; }
+.metrics { flex: none; display: flex; align-items: stretch; gap: 6px; font-variant-numeric: tabular-nums; }
+.metric { display: grid; align-content: center; gap: 2px; min-width: 64px; padding: 5px 10px; border: 1px solid #6e9fe840; border-radius: 12px; background: #071e49b8; }
+.metric > span { color: #bed6ff; font-size: .65rem; line-height: 1.2; }
+.metric strong { font-size: 1.2rem; line-height: 1; color: #fff; }
 .score strong { color: #ffdb58; }
+.progress-info { flex: none; }
 .progress-info strong { color: #87dfff; }
-progress { appearance: none; width: 100%; height: 10px; padding: 2px; border: 1px solid #82aeef55; border-radius: 8px; overflow: hidden; background: #071e49b8; accent-color: #87dfff; }
+progress { appearance: none; width: 100%; height: 8px; padding: 2px; border: 1px solid #82aeef55; border-radius: 8px; overflow: hidden; background: #071e49b8; accent-color: #87dfff; }
 progress::-webkit-progress-bar { background: #6688cc44; }
 progress::-webkit-progress-value { background: #87dfff; border-radius: 4px; }
 progress::-moz-progress-bar { background: #87dfff; }
-.player-profile { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px 12px; border-radius: 16px; background: #071e4980; }
-.player-profile img { flex: none; width: 64px; height: 64px; border: 3px solid #dbeaff; border-radius: 50%; background: #dbeaff; object-fit: contain; }
+.player-profile { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 12px 4px 4px; border-radius: 999px; background: #071e4980; }
+.player-profile img { flex: none; width: 36px; height: 36px; border: 2px solid #dbeaff; border-radius: 50%; background: #dbeaff; object-fit: contain; }
 .player-profile div { display: grid; gap: 1px; min-width: 0; }
-.player-profile span { font-size: .8rem; color: #bed6ff; }
-.player-profile strong { color: #fff; font-size: clamp(1.1rem, 1.4vw, 1.6rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The "player" caption is redundant next to the avatar on small screens. */
+.player-profile span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; font-size: .8rem; color: #bed6ff; }
+.player-profile strong { color: #fff; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hearts { align-self: center; display: flex; gap: 2px; color: #ff6980; }
 .hearts i { font-style: normal; }
 .hearts .lost { color: #ffffff40; }
 .game-hud.practice-hud { grid-template-columns: minmax(0, 1fr); }
-.practice-hud .mission-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; }
-.practice-hud .progress-info { text-align: center; min-height: 72px; }
-.practice-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
-@media (max-width: 1200px) { .player-profile { padding: 6px 8px; gap: 8px; } .player-profile img { width: 48px; height: 48px; } .metric { min-width: 78px; min-height: 68px; padding: 8px 10px; } .player-profile strong { font-size: 1.1rem; } }
-@media (max-width: 920px) { .game-hud { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
-@media (max-width: 480px) { .pilot-info { flex-wrap: wrap; gap: 8px; } .player-profile { width: 100%; } .metrics { width: 100%; } .metrics .metric { flex: 1; } .metric { min-height: 60px; } .mission-heading { gap: 8px; } .progress-info { min-width: 70px; } .level-context { font-size: .65rem; } }
-@media (max-width: 760px) {
-  .practice-hud .mission-heading { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
-  .practice-actions { grid-column: 1 / -1; }
-  .practice-hud .progress-info { min-height: 60px; }
+.practice-hud .mission-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.practice-hud .progress-info { text-align: center; }
+.practice-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+
+/* Wide enough for pilot and mission side by side (tablets, landscape phones). */
+@media (min-width: 640px) {
+  .game-hud { grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: 16px; }
+  .practice-hud .mission-heading { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 16px; }
+  .practice-actions { grid-column: auto; }
+}
+/* Desktop: the full HUD with captions and large metrics. */
+@media (min-width: 921px) and (min-height: 561px) {
+  .game-hud { align-items: start; }
+  .pilot-info { gap: 12px; padding-bottom: 17px; }
+  .mission-info { gap: 8px; }
+  .mission-heading { gap: 12px; }
+  .level-info { gap: 5px; }
+  .game-brand { display: flex; }
+  h1 { gap: 6px 12px; }
+  .level-number { font-size: clamp(1.4rem, 1.8vw, 1.9rem); }
+  .level-title { font-size: 1rem; }
+  .level-context { flex-wrap: wrap; gap: 4px 10px; font-size: .7rem; }
+  .level-context span + span { padding-left: 10px; }
+  .metrics { flex-wrap: wrap; gap: 8px; }
+  .metric { gap: 6px; min-width: 78px; min-height: 68px; padding: 8px 10px; border-radius: 14px; }
+  .metric > span { font-size: .75rem; }
+  .metric strong { font-size: clamp(1.45rem, 1.9vw, 2rem); }
+  progress { height: 10px; }
+  .player-profile { padding: 6px 8px; border-radius: 16px; }
+  .player-profile img { width: 48px; height: 48px; border-width: 3px; }
+  .player-profile span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  .player-profile strong { font-size: 1.1rem; }
+  .practice-hud .progress-info { min-height: 72px; }
+}
+@media (min-width: 1201px) and (min-height: 561px) {
+  .player-profile { gap: 12px; padding: 8px 12px; }
+  .player-profile img { width: 64px; height: 64px; }
+  .player-profile strong { font-size: clamp(1.1rem, 1.4vw, 1.6rem); }
+  .metric { min-width: 92px; min-height: 80px; padding: 10px 14px; }
 }
 </style>
