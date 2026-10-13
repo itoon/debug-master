@@ -5,13 +5,15 @@ export type PlayerProfile = { id: string; nickname: string; age: number; avatarI
 export type PlayerSetupInput = Omit<PlayerProfile, "id"> & { avatarId: string };
 
 export interface PlayerRepository {
-  save(player: PlayerProfile): void;
-  clearCurrent(): void;
+  save(player: PlayerProfile): Promise<void>;
+  clearCurrent(): Promise<void>;
+  clearIfPlayer(playerId: string): Promise<void>;
 }
 
 export interface ScoreRepository {
   list(): Score[];
-  save(score: Score): void;
+  save(score: Score): Promise<void>;
+  remove(scoreId: string): Promise<void>;
   today(board: RankingBoard, now?: Date, limit?: number): Score[];
   rank(scoreId: string, board: RankingBoard, now?: Date): number | undefined;
   subscribe(listener: () => void): () => void;

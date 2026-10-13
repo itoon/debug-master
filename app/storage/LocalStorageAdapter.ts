@@ -8,6 +8,12 @@ const CHANGE_EVENT = `${NAMESPACE}changed`;
 
 /** The only layer that touches browser storage. Old Dev keys are untouched. */
 export class LocalStorageAdapter {
+  async mutate(key: string, operation: () => void): Promise<void> {
+    // All read/modify/write operations share one origin-wide lock per key.
+    // Fail closed when unavailable rather than overwrite another tab's data.
+    if (!navigator.locks) throw new Error("Web Locks are required for safe local storage updates");
+    await navigator.locks.request(NAMESPACE + key, operation);
+  }
   read<T>(key: string, fallback: T, valid: (value: unknown) => value is T): T {
     const raw = window.localStorage.getItem(NAMESPACE + key);
     if (raw === null) return fallback;
@@ -54,17 +60,36 @@ function validScores(value: unknown): value is Score[] {
 
 export class LocalPlayerRepository implements PlayerRepository {
   constructor(private readonly adapter: LocalStorageAdapter) {}
-  save(player: PlayerProfile): void { this.adapter.write("player", player); }
-  clearCurrent(): void { this.adapter.remove("player"); }
+  save(player: PlayerProfile): Promise<void> { return this.adapter.mutate("player", () => this.adapter.write("player", player)); }
+  clearCurrent(): Promise<void> { return this.adapter.mutate("player", () => this.adapter.remove("player")); }
+  clearIfPlayer(playerId: string): Promise<void> {
+    return this.adapter.mutate("player", () => {
+      const current = this.adapter.read<PlayerProfile | undefined>("player", undefined, (value): value is PlayerProfile | undefined =>
+        value === undefined || Boolean(value && typeof value === "object" &&
+          typeof (value as PlayerProfile).id === "string" && typeof (value as PlayerProfile).nickname === "string" &&
+          Number.isFinite((value as PlayerProfile).age)),
+      );
+      if (current?.id === playerId) this.adapter.remove("player");
+    });
+  }
 }
 
 export class LocalScoreRepository implements ScoreRepository {
   constructor(private readonly adapter: LocalStorageAdapter) {}
   list(): Score[] { return this.adapter.read("scores", [], validScores); }
-  save(score: Score): void {
-    // Upsert makes a retry idempotent and never duplicates a finished run.
-    const rows = this.list().filter((item) => item.id !== score.id);
-    this.adapter.write("scores", [...rows, score]);
+  save(score: Score): Promise<void> {
+    return this.adapter.mutate("scores", () => {
+      // Upsert makes a retry idempotent and never duplicates a finished run.
+      const rows = this.list().filter((item) => item.id !== score.id);
+      this.adapter.write("scores", [...rows, score]);
+    });
+  }
+  remove(scoreId: string): Promise<void> {
+    return this.adapter.mutate("scores", () => {
+      const rows = this.list();
+      if (!rows.some((score) => score.id === scoreId)) return;
+      this.adapter.write("scores", rows.filter((score) => score.id !== scoreId));
+    });
   }
   today(board: RankingBoard, now = new Date(), limit = 10): Score[] {
     return todayRanking(this.list(), board, now, limit);

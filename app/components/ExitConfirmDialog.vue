@@ -1,11 +1,11 @@
 <template>
   <dialog ref="dialog" class="exit-dialog" :aria-labelledby="titleId" :aria-describedby="descriptionId" @cancel.prevent="emit('cancel')">
-    <h2 :id="titleId">{{ t('exit.title') }}</h2>
-    <p :id="descriptionId">{{ t('exit.description') }}</p>
-    <p class="timer-note">{{ t('exit.timerContinues') }}</p>
+    <h2 :id="titleId">{{ t(practice ? 'practice.exitTitle' : 'exit.title') }}</h2>
+    <p :id="descriptionId">{{ t(practice ? 'practice.exitDescription' : 'exit.description') }}</p>
+    <p v-if="!practice" class="timer-note">{{ t('exit.timerContinues') }}</p>
     <div class="exit-actions">
       <button ref="cancelButton" type="button" class="keep-playing" @click="emit('cancel')">{{ t('exit.cancel') }}</button>
-      <button type="button" class="confirm-exit" @click="emit('confirm')">{{ t('exit.confirm') }}</button>
+      <button type="button" class="confirm-exit" @click="emit('confirm')">{{ t(practice ? 'practice.exitConfirm' : 'exit.confirm') }}</button>
     </div>
   </dialog>
 </template>
@@ -13,6 +13,7 @@
 <script setup lang="ts">
 import { useGameI18n } from "../composables/useGameI18n";
 const { t } = useGameI18n();
+withDefaults(defineProps<{ practice?: boolean }>(), { practice: false });
 const emit = defineEmits<{ confirm: []; cancel: [] }>();
 const dialog = ref<HTMLDialogElement | null>(null);
 const cancelButton = ref<HTMLButtonElement | null>(null);

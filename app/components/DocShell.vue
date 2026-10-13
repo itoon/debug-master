@@ -11,6 +11,7 @@
           <NuxtLink to="/">เล่นเกม</NuxtLink>
           <NuxtLink to="/review">คลังโจทย์</NuxtLink>
           <NuxtLink to="/elements">Elements</NuxtLink>
+          <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink>
         </nav>
       </div>
       <slot name="toolbar" />
@@ -23,8 +24,10 @@
 </template>
 
 <script setup lang="ts">
-// Shared frame for the team pages (pages/review.vue, pages/elements.vue).
+// Shared frame for the team's review, elements and player management pages.
+import { useGameI18n } from '../composables/useGameI18n';
 defineProps<{ eyebrow: string; title: string }>();
+const { t } = useGameI18n();
 </script>
 
 <style scoped>
@@ -89,6 +92,8 @@ defineProps<{ eyebrow: string; title: string }>();
 
 .doc-nav {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   padding: 3px;
   border-radius: var(--cv-radius);
   background: rgba(255, 255, 255, 0.1);

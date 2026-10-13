@@ -16,6 +16,7 @@ export const homeConfig = {
   enabled: true, // false restores Dev's original setup and modes.
   idleTimeoutMs: 90_000,
   nicknameMaxLength: 24,
+  practice: { levelSetId: "set-01" },
   modeMotion: { cardsMs: 420, popupInMs: 380, popupOutMs: 180 },
   ages: Array.from({ length: 14 }, (_, index) => index + 5),
   leaderboardScroll: { pixelsPerSecond: 18, returnPixelsPerSecond: 12, startPauseMs: 1400, endPauseMs: 1800, interactionPauseMs: 3000 },

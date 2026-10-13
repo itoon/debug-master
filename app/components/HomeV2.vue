@@ -28,7 +28,10 @@
       </section>
     </div>
 
-    <footer class="home-footer"><span>{{ t('home.rules') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink></span></footer>
+    <footer class="home-footer">
+      <div class="home-footer-info"><span>{{ t('home.rules') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink></span></div>
+      <button type="button" class="practice-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('practice')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 4 3 5-5 3-3-5zm10 8 3 5-5 3-3-5zM4 19h5m6-15h5" /></svg>{{ t('practice.open') }}</button>
+    </footer>
     <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :error="error" :busy="busy || motionPhase === 'leaving'"
       @close="closeSetup" @start="launch" @popup="emit('sound', 'popup')" />
   </main>
@@ -42,7 +45,7 @@ import { formatClock, type RankingBoard } from "../utils/ranking";
 import type { UiSoundEffect } from "../data/sound-effects";
 
 const props = defineProps<{ repository: ScoreRepository; error?: string; busy?: boolean }>();
-const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
+const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; practice: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
 const { t } = useGameI18n();
 const setupMode = ref<ChallengeMode | null>(null);
 const selectedMode = ref<ChallengeMode | null>(null);
@@ -163,7 +166,7 @@ function clearDetachedFocus(modeId: ChallengeId) {
   if (focusedMode.value === modeId && activeCard?.getAttribute("data-mode-card") !== modeId) focusedMode.value = null;
 }
 async function closeSetup() {
-  if (motionPhase.value !== "open") return;
+  if (props.busy || motionPhase.value !== "open") return;
   const token = ++motionToken;
   motionPhase.value = "leaving";
   await setupDialog.value?.closeWithMotion();
@@ -228,7 +231,13 @@ onBeforeUnmount(() => {
 .empty-board .mode-cover { height: 100%; min-height: 0; border-radius: 21px; }
 .empty-board .mode-heading { inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 18px 18px; background: linear-gradient(180deg, #020d31ed, #04123980 90px, transparent 200px), linear-gradient(0deg, #020d31f2, #04123999 75px, transparent 180px); }
 .empty-board .mode-heading h2 { text-shadow: 0 2px 3px #020d31, 0 0 14px #020d31b3; }
-.home-footer { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 24px; color: #d0e2ff; font-size: .7rem; text-align: center; }
+.home-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; color: #d0e2ff; font-size: .7rem; text-align: center; }
+.home-footer-info { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 24px; }
+.practice-button { display: inline-flex; justify-self: end; align-items: center; gap: 6px; min-height: 36px; padding: 6px 10px; border: 1px solid #84b4ff80; border-radius: 10px; background: #0b275c99; color: #e4efff; font: inherit; font-size: .75rem; font-weight: 800; cursor: pointer; }
+.practice-button svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.practice-button:not(:disabled):hover { background: #1b4380; }
+.practice-button:focus-visible { outline: 3px solid #ffe36b; outline-offset: 3px; }
+.practice-button:disabled { opacity: .55; cursor: wait; }
 .home-footer a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
 @keyframes cover-sweep { to { transform: translateX(120%); } }
@@ -243,6 +252,7 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .mode-board { height: 620px; }
 }
 @media (max-width: 520px) {
+  .home-footer { grid-template-columns: 1fr; }
   .home-v2 { padding: 4px; }
   .mode-boards { gap: 18px; }
   .mode-board { height: 690px; }

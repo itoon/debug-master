@@ -1,14 +1,15 @@
 <template>
   <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
     <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
-      :repository="repositories.scores" :error="homeStorageError" @start="prepareChallenge" @reset-error="homeStorageError = ''"
-      @unlock-audio="unlockAudio" @sound="playSound" />
+      :repository="repositories.scores" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @reset-error="homeStorageError = ''"
+      @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" />
+    <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
     <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
       :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
-      :result="summaryScore" :saved="scoreSaved" :storage-error="scoreStorageError"
+      :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError"
       @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
-    <ExitConfirmDialog v-if="showExitConfirm" @cancel="showExitConfirm = false" @confirm="confirmExit" />
+    <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" @cancel="showExitConfirm = false" @confirm="confirmExit" />
     <main v-show="!showSetup && !showTutorial && !(activeChallenge && showRanking && !showSummary)" class="game">
       <section class="board-panel">
         <GameHud :level="currentLevel" :language="languageLabel"
@@ -21,8 +22,17 @@
 
         <div v-if="exitSaveError" class="exit-save-error" role="alert">
           <p>{{ t('game.exitSaveError') }}</p>
-          <button type="button" class="soft-button small" @click="exitGame">{{ t('game.retryExit') }}</button>
+          <button type="button" class="soft-button small" :disabled="exitSaving" @click="exitGame">{{ t('game.retryExit') }}</button>
         </div>
+
+        <section v-if="practiceActive" class="practice-toolbar" :aria-label="t('practice.badge')">
+          <label>{{ t('practice.level') }}<select :value="currentLevel.id" :disabled="practiceStarting" @change="startPracticeLevel(Number(($event.target as HTMLSelectElement).value))"><option v-for="level in practiceLevels" :key="level.id" :value="level.id">{{ level.id.toString().padStart(2, '0') }} · {{ level.concept }}</option></select></label>
+          <button type="button" class="soft-button small" :disabled="practiceStarting || currentLevel.id <= 1" @click="startPracticeLevel(currentLevel.id - 1)">{{ t('practice.previous') }}</button>
+          <button type="button" class="soft-button small" :disabled="practiceStarting || currentLevel.id >= practiceLevels.length" @click="startPracticeLevel(currentLevel.id + 1)">{{ t('practice.next') }}</button>
+          <button type="button" class="soft-button small" :disabled="practiceStarting" @click="startPracticeLevel(currentLevel.id)">{{ t('practice.restart') }}</button>
+          <button type="button" class="soft-button small superhint-button" :class="{ 'hint-enabled': practiceSuperHint }" :disabled="practiceStarting" :aria-pressed="practiceSuperHint" :aria-label="t(practiceSuperHint ? 'practice.hidePath' : 'practice.showPath')" @click="practiceSuperHint = !practiceSuperHint"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5M13 5l-2 14" /></svg>{{ t('practice.superHint') }}</button>
+          <p class="practice-note" role="status">{{ t(practiceSuperHint ? practiceHintSolution?.error ? 'practice.pathError' : 'practice.pathGuide' : status === 'completed' ? 'practice.completed' : 'practice.noRanking') }}</p>
+        </section>
 
         <div class="play-cluster">
           <div ref="boardWrapEl" class="board-wrap" :style="{
@@ -46,6 +56,7 @@
                 :max-cell-size="160"
                 :shattering="boardShattering"
               >
+                <BoardSuperHint v-if="practiceSuperHint && practiceActive && !practiceStarting && ['playing', 'success', 'completed'].includes(status) && !practiceHintSolution?.error" :key="currentLevel.id" :path="practiceHintSolution?.path ?? []" />
                 <div
                   class="actor"
                   :class="[`actor-${status}`, { warp: playerWarped }]"
@@ -68,10 +79,11 @@
                     :title="t(soundEnabled ? 'game.mute' : 'game.unmute')" @click="toggleSound">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path v-if="soundEnabled" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path v-else d="m17 9 5 6m0-6-5 6" /></svg>
                   </button>
-                  <button v-if="!campaignStarted" type="button" class="hud-action primary-button small"
+                  <button v-if="!campaignStarted && !practiceActive" type="button" class="hud-action primary-button small"
                     :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
                     @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
                   <button type="button" class="hud-action soft-button small exit-action"
+                    :disabled="exitSaving || practiceStarting"
                     :title="campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
                     @click="requestExit">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</button>
                 </nav>
@@ -104,25 +116,25 @@
           </div>
         </transition>
 
-        <section v-if="debugMode" class="debug-card">
+        <section v-if="debugMode && !practiceActive" class="debug-card">
           <div class="metric-grid">
             <div>
-              <span>Position</span
+              <span>{{ t('debug.position') }}</span
               ><strong>[{{ player.row }}, {{ player.col }}]</strong>
             </div>
             <div>
               <span>{{ t('game.tile') }}</span><strong>{{ tileKindLabel(currentTile) }}</strong>
             </div>
             <div>
-              <span>Step</span><strong>{{ executionSteps }}</strong>
+              <span>{{ t('debug.step') }}</span><strong>{{ executionSteps }}</strong>
             </div>
             <div>
-              <span>Input</span><strong>{{ playerInputs }}</strong>
+              <span>{{ t('debug.inputs') }}</span><strong>{{ playerInputs }}</strong>
             </div>
           </div>
           <p class="debug-note">{{ feedbackMessage }}</p>
           <button type="button" class="soft-button" @click="showNextHint">
-            Hint
+            {{ t('practice.hint') }}
           </button>
           <div v-if="revealedHints.length" class="hint-list">
             <p v-for="hint in revealedHints" :key="hint">{{ hint }}</p>
@@ -310,7 +322,7 @@
     </div>
 
     <section
-      v-if="showRanking && !activeChallenge"
+      v-if="showRanking && !activeChallenge && !practiceActive"
       class="overlay"
       role="dialog"
       aria-modal="true"
@@ -357,6 +369,7 @@ import {
 import {
   createRunState,
   runUntilMove,
+  solveLevel,
   stepPosition,
   type RunState,
 } from "../utils/programRunner";
@@ -385,6 +398,19 @@ const homeResetKey = ref(0);
 const showTutorial = ref(false);
 const showSummary = ref(false);
 const showExitConfirm = ref(false);
+const practiceActive = ref(false);
+const showPracticePicker = ref(false);
+const practiceStarting = ref(false);
+const practiceSuperHint = ref(false);
+const homeStarting = ref(false);
+const scoreSaving = ref(false);
+const exitSaving = ref(false);
+let sessionToken = 0;
+let homeAfterSave = false;
+const practiceSet = levelSets.find((set) => set.id === homeConfig.practice.levelSetId)!;
+const practiceLevels = practiceSet.levels;
+let practiceLaunchToken = 0;
+let practiceLaunchButton: HTMLElement | null = null;
 const summaryScore = ref<Score | undefined>();
 const scoreSaved = ref(false);
 const homeStorageError = ref("");
@@ -556,7 +582,7 @@ const notificationTitle = computed(() => {
   return t("game.notificationTitle");
 });
 const canControl = computed(
-  () => status.value === "playing" && Boolean(expectedMove.value),
+  () => !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
 );
 const codiSprite = computed(() =>
   status.value === "failed" || status.value === "timeup"
@@ -570,6 +596,14 @@ const actorStyle = computed(() => ({
 const currentTile = computed(
   () => currentLevel.value.map[player.row]?.[player.col] ?? "n",
 );
+const practiceHintSolution = computed(() => {
+  if (!practiceActive.value || !practiceSuperHint.value) return null;
+  try {
+    return solveLevel(currentLevel.value, parseProgram(currentLevel.value.code));
+  } catch {
+    return { path: [], error: 'Invalid hint program' };
+  }
+});
 const campaignLevelConcept = computed(() => {
   const level =
     activeLevels.value[
@@ -583,12 +617,12 @@ const campaignLevelConcept = computed(() => {
 const formattedTime = computed(() => formatClock(timerRemaining.value));
 const revealedHints = computed(() =>
   [
-    `Concept: ${currentLevel.value.concept}`,
+    t('debug.concept', { concept: currentLevel.value.concept }),
     currentLevel.value.learningObjective ||
       t("game.readAndMove"),
     expectedMove.value
-      ? `คำสั่งถัดไปคือ ${expectedMove.value.direction}()`
-      : "ให้ดูว่าเงื่อนไขหรือ loop จะพาไปคำสั่ง move ใดต่อ",
+      ? t('debug.nextMove', { direction: expectedMove.value.direction })
+      : t('debug.branchHint'),
   ].slice(0, revealedHintCount.value),
 );
 function startGame(): void {
@@ -629,11 +663,20 @@ function startGame(): void {
 }
 
 function backToStart(): void {
-  showRanking.value = false;
   openSetup();
 }
 
 function openSetup(): void {
+  if (scoreSaving.value || exitSaving.value) {
+    homeAfterSave = true;
+    return;
+  }
+  homeAfterSave = false;
+  showRanking.value = false;
+  sessionToken += 1;
+  homeStarting.value = false;
+  scoreSaving.value = false;
+  exitSaving.value = false;
   showExitConfirm.value = false;
   pendingExitScore.value = undefined;
   exitSaveError.value = false;
@@ -653,6 +696,7 @@ function openSetup(): void {
 }
 
 function requestExit(): void {
+  if (exitSaving.value) return;
   if (campaignStarted.value && !pendingExitScore.value) showExitConfirm.value = true;
   else exitGame();
 }
@@ -663,7 +707,12 @@ function confirmExit(): void {
   exitGame();
 }
 
-function exitGame(): void {
+async function exitGame(): Promise<void> {
+  if (exitSaving.value) return;
+  if (practiceActive.value) {
+    openSetup();
+    return;
+  }
   if (!pendingExitScore.value && (!campaignStarted.value || showSummary.value || showRanking.value)) {
     openSetup();
     return;
@@ -688,30 +737,42 @@ function exitGame(): void {
     pendingExitScore.value = undefined;
     return;
   }
+  const score = pendingExitScore.value;
+  const token = sessionToken;
+  exitSaving.value = true;
   try {
-    repositories.scores.save(pendingExitScore.value);
+    await repositories.scores.save(score);
   } catch {
-    exitSaveError.value = true;
+    if (token === sessionToken) exitSaveError.value = true;
     return; // Stay with the frozen score until it can be saved.
+  } finally {
+    if (token === sessionToken) exitSaving.value = false;
   }
-  lastScoreId.value = pendingExitScore.value.id;
+  if (token !== sessionToken) return;
+  lastScoreId.value = score.id;
   refreshStoredScores();
   openSetup();
 }
 
 /** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
-function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode): void {
+async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode): Promise<void> {
+  if (homeStarting.value || !showSetup.value) return;
   const nickname = profile.nickname.trim();
   if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return;
   const configuredMode = homeConfig.modes.find((item) => item.id === mode.id);
   if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900 || !challengeSets.some((set) => set.id === configuredMode.levelSetId)) return;
   const playerId = crypto.randomUUID();
+  const token = ++sessionToken;
+  homeStarting.value = true;
   try {
-    repositories.players.save({ id: playerId, nickname, age: profile.age, avatarId: profile.avatarId });
+    await repositories.players.save({ id: playerId, nickname, age: profile.age, avatarId: profile.avatarId });
   } catch {
-    homeStorageError.value = t("storage.error");
+    if (token === sessionToken) homeStorageError.value = t("storage.error");
     return;
+  } finally {
+    if (token === sessionToken) homeStarting.value = false;
   }
+  if (token !== sessionToken) return;
   homeStorageError.value = "";
   // Keep one same-URL history entry so browser Back exits a session to Home.
   // Preserve Vue Router's state; session screens themselves are not routes.
@@ -736,6 +797,47 @@ function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode): void 
   lastInteractionAt = Date.now();
 }
 
+function openPracticePicker(): void {
+  if (!showSetup.value || showPracticePicker.value || homeStarting.value) return;
+  practiceLaunchButton = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  showPracticePicker.value = true;
+  lastInteractionAt = Date.now();
+}
+async function closePracticePicker(): Promise<void> {
+  if (practiceStarting.value) return;
+  showPracticePicker.value = false;
+  await nextTick();
+  if (practiceLaunchButton?.isConnected) practiceLaunchButton.focus({ preventScroll: true });
+}
+async function startPracticeLevel(levelId: number): Promise<void> {
+  if (practiceStarting.value || !practiceLevels.some((level) => level.id === levelId) || (!practiceActive.value && !showPracticePicker.value)) return;
+  const token = ++practiceLaunchToken;
+  sessionToken += 1;
+  const alreadyPracticing = practiceActive.value;
+  practiceStarting.value = true;
+  practiceActive.value = true;
+  activeChallenge.value = null;
+  pendingExitScore.value = undefined;
+  exitSaveError.value = false;
+  currentPlayerId.value = '';
+  currentAvatarId.value = undefined;
+  playerNameDraft.value = t('practice.badge');
+  playerAgeDraft.value = null;
+  selectedSetId.value = practiceSet.id;
+  selectedMode.value = 'campaign';
+  selectedLanguageDraft.value = 'python';
+  debugModeDraft.value = false;
+  if (!alreadyPracticing) practiceSuperHint.value = false;
+  showSummary.value = false;
+  showRanking.value = false;
+  await nextTick(); // The existing set watcher resets the selected level first.
+  if (token !== practiceLaunchToken || !practiceActive.value) return;
+  selectedLevelDraft.value = levelId;
+  if (!window.history.state?.debugMasterHomeV2Session) window.history.pushState({ ...window.history.state, debugMasterHomeV2Session: true }, '', window.location.href);
+  showPracticePicker.value = false;
+  practiceStarting.value = false;
+  startGame();
+}
 function playChallenge(): void {
   if (!activeChallenge.value || !showTutorial.value) return;
   showTutorial.value = false;
@@ -749,6 +851,16 @@ function showChallengeRanking(): void {
 }
 
 function resetHomeSession(): void {
+  homeAfterSave = false;
+  sessionToken += 1;
+  homeStarting.value = false;
+  scoreSaving.value = false;
+  exitSaving.value = false;
+  practiceLaunchToken += 1;
+  practiceActive.value = false;
+  practiceSuperHint.value = false;
+  practiceStarting.value = false;
+  showPracticePicker.value = false;
   showExitConfirm.value = false;
   showSetup.value = true;
   showTutorial.value = false;
@@ -767,7 +879,7 @@ function resetHomeSession(): void {
   homeStorageError.value = "";
   homeResetKey.value += 1; // Recreate the form; never hydrate a previous profile.
   lastInteractionAt = Date.now();
-  try { repositories.players.clearCurrent(); } catch { /* Form still clears if storage is blocked. */ }
+  void repositories.players.clearCurrent().catch(() => { /* Form still clears if storage is blocked. */ });
 }
 
 function recordInteraction(): void { lastInteractionAt = Date.now(); }
@@ -790,15 +902,23 @@ function refreshStoredScores(): void {
   catch { scores.value = []; }
 }
 
-function retryScoreSave(): void {
-  if (!summaryScore.value) return;
+async function retryScoreSave(): Promise<void> {
+  if (practiceActive.value) return;
+  if (!summaryScore.value || scoreSaving.value) return;
+  const score = summaryScore.value;
+  const token = sessionToken;
+  scoreSaving.value = true;
   try {
-    repositories.scores.save(summaryScore.value);
+    await repositories.scores.save(score);
+    if (token !== sessionToken || summaryScore.value?.id !== score.id) return;
     scoreSaved.value = true;
     scoreStorageError.value = false;
   } catch {
-    scoreStorageError.value = true;
+    if (token === sessionToken && summaryScore.value?.id === score.id) scoreStorageError.value = true;
+  } finally {
+    if (token === sessionToken && summaryScore.value?.id === score.id) scoreSaving.value = false;
   }
+  if (token === sessionToken && homeAfterSave && scoreSaved.value) openSetup();
 }
 
 function beginTimer(): void {
@@ -962,7 +1082,7 @@ function completeLevel(): void {
     status.value = "completed";
     saveScore();
     stopTimer();
-    showRanking.value = !activeChallenge.value;
+    showRanking.value = !activeChallenge.value && !practiceActive.value;
     return;
   }
   levelAdvanceTimer = setTimeout(() => {
@@ -1015,7 +1135,7 @@ function timeUp(): void {
   expectedMove.value = null;
   notificationMessage.value = "หมดเวลา 5 นาที/เวลาที่ตั้งไว้ แสดง Ranking แล้ว";
   saveScore();
-  showRanking.value = !activeChallenge.value;
+  showRanking.value = !activeChallenge.value && !practiceActive.value;
 }
 
 function createScoreSnapshot(): Score {
@@ -1065,16 +1185,32 @@ function presentSummary(score: Score): void {
   playSound("complete");
 }
 
-function saveScore(): void {
+async function saveScore(): Promise<void> {
+  if (practiceActive.value) return;
   showExitConfirm.value = false;
   const score = createScoreSnapshot();
   lastScoreId.value = score.id;
   if (activeChallenge.value) {
     presentSummary(score);
-  } else {
-    repositories.scores.save(score);
+    return;
   }
-  refreshStoredScores();
+  const token = sessionToken;
+  exitSaving.value = true;
+  try {
+    await repositories.scores.save(score);
+  } catch {
+    if (token === sessionToken) {
+      pendingExitScore.value = score;
+      exitSaveError.value = true;
+    }
+    return;
+  } finally {
+    if (token === sessionToken) exitSaving.value = false;
+  }
+  if (token === sessionToken) {
+    refreshStoredScores();
+    if (homeAfterSave) openSetup();
+  }
 }
 
 function calculateLevelScore(): {
@@ -1125,7 +1261,7 @@ function isActiveRawLine(line: string): boolean {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  if (showSetup.value || showTutorial.value || showSummary.value || showRanking.value || showExitConfirm.value || status.value !== "playing") return;
+  if (showSetup.value || showTutorial.value || showSummary.value || showRanking.value || showExitConfirm.value || showPracticePicker.value || practiceStarting.value || status.value !== "playing") return;
   if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
   const target = event.target;
   if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return;
@@ -1184,7 +1320,7 @@ onMounted(async () => {
     window.addEventListener("pageshow", resetAfterBrowserNavigation);
     idleTimer = setInterval(() => {
       // No idle policy during gameplay (including level retries and transitions).
-      if ((showSetup.value || showTutorial.value || showSummary.value || showRanking.value) && Date.now() - lastInteractionAt >= homeConfig.idleTimeoutMs) backToStart();
+      if (!homeStarting.value && !scoreSaving.value && !exitSaving.value && (showSetup.value || showTutorial.value || showSummary.value || showRanking.value) && Date.now() - lastInteractionAt >= homeConfig.idleTimeoutMs) backToStart();
     }, 1000);
   } else {
     await applyLevelFromQuery();
@@ -1214,6 +1350,8 @@ watch(selectedSetId, () => {
 });
 
 onBeforeUnmount(() => {
+  sessionToken += 1;
+  practiceLaunchToken += 1;
   clearPendingRunTimers();
   unsubscribeScores?.();
   clearInterval(idleTimer);
@@ -1333,6 +1471,14 @@ summary:focus-visible {
 .board-panel .hud-action.sound-toggle { min-width: 44px; width: 44px; padding: 0; }
 .board-panel .hud-action.exit-action { color: #c4d9ff; background: #122b5744; border-color: #759bd94d; }
 .exit-save-error { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border: 1px solid #f3bc76; border-radius: 12px; background: #412d36; color: #ffe2c1; font-size: .9rem; }
+.practice-toolbar { display: flex; align-items: center; flex-wrap: wrap; flex: none; gap: 8px; padding: 10px; border: 1px solid #82b0ff55; border-radius: 12px; background: #092658b3; }
+.practice-toolbar label { display: flex; align-items: center; gap: 8px; font-size: .8rem; }
+.practice-toolbar select { max-width: min(300px, 100%); min-height: 44px; padding: 8px; border: 1px solid #85b2ff66; border-radius: 8px; background: #102d64; color: #fff; font: inherit; }
+.superhint-button { display: inline-flex; align-items: center; gap: 6px; }
+.superhint-button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.superhint-button.hint-enabled { background: #1f75ff; color: #fff; border-color: #a8c9ff; }
+.practice-note { width: 100%; min-height: 2.6em; margin: 0; font-size: .75rem; color: #bed9ff; }
+.practice-toolbar button:focus-visible, .practice-toolbar select:focus-visible { outline: 3px solid #ffe36b; outline-offset: 3px; }
 
 /* ---------- Typography ---------- */
 
