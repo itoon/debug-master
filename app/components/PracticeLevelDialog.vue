@@ -7,7 +7,7 @@
         <div class="concept-heading"><span class="concept-emoji" aria-hidden="true">{{ group.emoji }}</span><h3 :id="`${groupId}-${index}`">{{ group.label }}</h3><span class="concept-count">{{ t('practice.groupCount', { count: group.levels.length }) }}</span></div>
         <div class="level-grid">
           <button v-for="level in group.levels" :key="level.id" type="button" :disabled="busy" :class="{ selected: level.id === selectedLevel }" :aria-current="level.id === selectedLevel ? 'step' : undefined"
-            :title="level.concept" :aria-label="t('practice.playLevel', { level: level.id, concept: level.concept })" @click="emit('select', level.id)"><span>{{ level.id.toString().padStart(2, '0') }}</span><span v-if="level.id === selectedLevel" class="selected-check" aria-hidden="true">✓</span></button>
+            :title="level.concept" :aria-label="t('practice.playLevel', { level: level.id, concept: level.concept })" @click="emit('select', level.id)"><span>{{ level.id.toString().padStart(2, '0') }}</span></button>
         </div>
       </section>
     </div>
@@ -74,7 +74,6 @@ button { min-height: 48px; padding: 6px; border: 1px solid #7caaff; border-radiu
 .level-grid button.selected { background: #ffe36b; color: #102754; border-color: #ffe36b; }
 .level-grid button.selected:not(:disabled):hover { background: #ffed9e; border-color: #ffed9e; }
 .level-grid button:not(:disabled):active { transform: translateY(1px); box-shadow: 0 1px 0 #061632; }
-.selected-check { position: absolute; right: 5px; top: 3px; font-size: .65rem; }
 .close-button:not(:disabled):hover { background: #285ba0; }
 button:disabled { opacity: .55; cursor: wait; }
 button:focus-visible { outline: 3px solid #ffe36b; outline-offset: 2px; }

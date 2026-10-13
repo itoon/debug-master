@@ -2,6 +2,18 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Remove practice picker checkmark
+
+- Removed the selected-level checkmark and its unused CSS from `PracticeLevelDialog.vue`. Level number, yellow selection highlight, aria-current, initial focus and select handlers are unchanged. Updated `DESIGN.md` to match.
+- Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No tests/live browser checks, git add/commit, branch changes or reference-frontend edits. Existing user changes/staging preserved.
+
+## 2026-10-13 — Retain SuperHint dots for repeated visits
+
+- Supersedes the earlier remove-on-first-visit behaviour. `BoardSuperHint` now consumes the isolated solver's route in order using the existing per-attempt `levelCorrectInputs` count. The first path coordinate is standing, not a move; each correct direction consumes one destination. A cell stays marked while any later visit remains, including wrapping or returning to the starting cell. Its dot and endpoint ring disappear only after its last required visit.
+- Repeated destinations add concentric blinking red outline rings around the ordinary dot, reducing as visits are consumed. Extra rings are capped at three and sized within the cell for visual density; the underlying remaining-visit count is uncapped. For a two-visit cell, the first arrival removes one extra ring and retains the dot, and the second removes the dot. Arrow direction and teaching code highlights are unchanged.
+- Removed the coordinate-only visited Set from the page. The existing correct-input count already updates even when hints are off and resets in `beginLevel`, so toggling SuperHint retains accurate progress and retry/manual selection/new levels restore the route. Wrong input consumes no destination. Practice summary statistics, live game runner, scoring, timers, assets and storage are unchanged.
+- Updated the Thai hint guidance and `DESIGN.md`. Verification: `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review found no actionable issue in repeat/wrap/start-cell visits, consumption, resets, toggles or marker bounds. No tests/live viewport checks, git add/commit, branch changes or reference-frontend edits; existing user work/staging preserved.
+
 ## 2026-10-13 — Equal podium numbers, top alignment
 
 - `ChallengeRanking.vue` now uses one shared 2rem size (32px at the default root size) for podium numbers 1/2/3, removing rank 3's separate size override. Numbers are centered horizontally and top-aligned within each podium face. Retains gold/silver/bronze colours, original block heights/widths and compact centered podium spacing.

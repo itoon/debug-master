@@ -55,7 +55,7 @@
                 :max-cell-size="160"
                 :shattering="boardShattering"
               >
-                <BoardSuperHint v-if="practiceSuperHint && practiceActive && !practiceStarting && ['playing', 'success', 'completed'].includes(status) && !practiceHintSolution?.error" :key="currentLevel.id" :path="practiceHintSolution?.path ?? []" :visited-cells="practiceVisitedCells" />
+                <BoardSuperHint v-if="practiceSuperHint && practiceActive && !practiceStarting && ['playing', 'success', 'completed'].includes(status) && !practiceHintSolution?.error" :key="currentLevel.id" :path="practiceHintSolution?.path ?? []" :completed-moves="levelCorrectInputs" />
                 <div
                   class="actor"
                   :class="[`actor-${status}`, { warp: playerWarped }]"
@@ -404,7 +404,6 @@ const practiceActive = ref(false);
 const showPracticePicker = ref(false);
 const practiceStarting = ref(false);
 const practiceSuperHint = ref(false);
-const practiceVisitedCells = ref(new Set<string>());
 const practiceSummary = ref<PracticeSummary | undefined>();
 const practiceSessionStartedAt = ref<number | null>(null);
 const practicePassedLevels = ref(new Set<number>());
@@ -906,7 +905,6 @@ function resetHomeSession(): void {
   practiceSessionStartedAt.value = null;
   practicePassedLevels.value = new Set<number>();
   practiceMistakes.value = 0;
-  practiceVisitedCells.value = new Set<string>();
   practiceSuperHint.value = false;
   practiceStarting.value = false;
   showPracticePicker.value = false;
@@ -1017,7 +1015,6 @@ function clearPendingRunTimers(): void {
 }
 
 function beginLevel(): void {
-  practiceVisitedCells.value = new Set<string>();
   clearPendingRunTimers();
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
@@ -1086,7 +1083,6 @@ function controlMove(direction: Direction): void {
   );
   player.row = result.row;
   player.col = result.col;
-  if (practiceActive.value) practiceVisitedCells.value.add(`${result.row}-${result.col}`);
   // Wrapping teleports to the far edge, so skip the slide across the board.
   playerWarped.value = result.wrapped;
   playerFacing.value = direction;
