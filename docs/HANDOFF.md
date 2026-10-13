@@ -2,6 +2,35 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Codi horizontal alignment
+
+- Gave `.actor` and `.hop` an explicit `minmax(0, 1fr)` horizontal grid track. This keeps the track at tile width while the 105%-wide sprite is centered with equal overflow, correcting the slight rightward placement in gameplay and review without a pixel offset that changes with tile size.
+- Sprite assets/size, vertical offset, idle/hop/failure animation and logical row/column movement are unchanged. Earlier UI edits remain in the working tree.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests or live browser/visual checks. No `git add` or commit; changes remain unstaged.
+
+## 2026-10-13 — Profile frame and lower-right avatar button
+
+- Player setup profile uses a dark inner outline with an offset white outer arc, following the supplied reference. The 48px avatar-cycle button overlaps the lower-right of the portrait with a white/lavender badge and the existing refresh icon; added space below keeps the badge clear of adjacent fields.
+- Avatar assets, random initial selection, next-avatar handler, form validation and saved IDs are unchanged. Added hover/press/disabled styling; reduced-motion removes transitions. Earlier HUD/dialog/podium edits remain in the working tree.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests or live visual/browser checks. No `git add` or commit; changes remain unstaged.
+
+## 2026-10-13 — Centered, narrower ranking podium group
+
+- Set the entire podium group to 80% of its previous available width and centered it with automatic inline margins. This brings the three ranks, profiles and names closer together in the middle; individual blocks keep their existing 90% slot width, so their width also decreases by approximately another 20%.
+- Podium heights, medal colours, avatar sizes and leaderboard list/scroll behaviour are preserved. Changes from the preceding HUD/dialog task remain in the working tree.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests or live visual/browser checks. No `git add` or commit; changes remain unstaged.
+
+## 2026-10-13 — Compact gameplay HUD and end-of-session dialogs
+
+- Starting checkout was clean at user commit `2f66246` (add new level). Extracted presentation into `GameHud.vue`: left game/level/concept with language and difficulty together, center compact time/score/progress with combo, right a visible saved profile/name and one row of 44px Sound/Start/Exit actions. Tier appears once through the level title; removed the Control status and Restart button from the HUD as requested. Start retains its original handler/disabled condition; sound and D-pad retain their existing handlers.
+- Reduced board-panel padding/gaps and the space between gameplay columns. Board remains on the left with the centered D-pad below; the existing Python editor fills the right column with internal scrolling. Removed obsolete scoped header/HUD CSS after extraction. No board, tile, character, background or Python editor asset/functionality changes.
+- Added native `ExitConfirmDialog.vue`: cancel/Escape continues the run, confirm uses the existing exit snapshot path. Timer keeps running while the dialog is open; modal keyboard guarding blocks movement without changing the movement system. Timeout closes confirmation and presents the final result. Home/back/session resets close the confirmation too.
+- For the A/B/C challenge flow, confirmed exit, time-up and all-level completion now share `presentSummary()` with a frozen Score snapshot and existing repository retry. Summary is a native modal in `SessionPanel.vue` over the finished board, showing avatar/name, score, elapsed time and the mode's daily rank. Returning Home is the primary action; viewing ranking remains available. Storage errors remain visible and retry reuses the same score ID. The hidden legacy modes keep their existing terminal ranking path.
+- Summary has short arrival/avatar/star animations and a new synthesized `complete` cue through the existing audio composable, mute switch and voice cleanup. Movement/clear/failure sounds and their assets are unchanged. Reduced-motion disables the new animation; no dependency or media asset was added.
+- The existing 90-second idle policy still resets summary/ranking to blank Home; no idle timeout is added during gameplay or exit confirmation. Scoring formula, timer interval, runner/programs and input mapping are unchanged. New UI messages use the lightweight dictionary.
+- Verification: final `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete Critical/Important/Minor issues in event wiring, dialog lifecycle, timeout/exit overlap, snapshot retries or HUD styles. No tests, browser/viewport execution or live listening checks, per the build-only instruction; exact rendered dimensions/audio remain unverified.
+- All changes remain unstaged on `feature/home-v2`; no `git add`, commit, merge, branch switch or reference-frontend edit was performed.
+
 ## 2026-10-13 — Beginner / Intermediate / Pro sets (current state)
 
 - Selectively imported `challenge-levels.json`, `challenge-groups.ts` and `conceptFeatures.ts` from `feat/add-level-set` at `e327540`. The JSON matches the source blob exactly. Each tier retains its authored order: 20 Set 01 originals interleaved with 30 new lessons, renumbered 1–50. New source IDs remain 101–130, 201–230 and 301–330.

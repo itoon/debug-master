@@ -146,6 +146,7 @@
   width: var(--cell-size);
   height: var(--cell-size);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   pointer-events: none;
   transform: translate(
@@ -163,6 +164,8 @@
   width: 100%;
   height: 100%;
   display: grid;
+  /* Keep the 105%-wide sprite centered on the tile-sized track. */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   animation: hop 0.3s var(--ease-spring);
 }

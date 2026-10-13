@@ -1,5 +1,5 @@
 <template>
-  <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || showSummary || showRanking) }">
+  <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }">
     <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
       :repository="repositories.scores" :error="homeStorageError" @start="prepareChallenge" @reset-error="homeStorageError = ''" />
     <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
@@ -7,82 +7,29 @@
       :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
       :result="summaryScore" :saved="scoreSaved" :storage-error="scoreStorageError"
       @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
-    <main v-show="!showSetup && !showTutorial && !(activeChallenge && (showSummary || showRanking))" class="game">
+    <ExitConfirmDialog v-if="showExitConfirm" @cancel="showExitConfirm = false" @confirm="confirmExit" />
+    <main v-show="!showSetup && !showTutorial && !(activeChallenge && showRanking && !showSummary)" class="game">
       <section class="board-panel">
-        <header class="game-header">
-          <div class="title-block">
-            <p class="brand-pill"><span class="brand-dot" />Debug Runner</p>
-            <h1>
-              <span class="level-mark">LV <span class="level-number">{{ currentLevel.id.toString().padStart(2, "0") }}</span></span>
-              <span class="stage-concept">{{ currentLevel.concept }}</span>
-            </h1>
-            <p v-if="currentLevel.title" class="stage-name">{{ currentLevel.title }}</p>
-          </div>
-          <div class="hud">
-            <div class="hud-primary">
-              <div v-if="isTimedMode" class="hud-metric timer-metric"><span>{{ t('game.timer') }}</span><strong>{{ formattedTime }}</strong></div>
-              <div class="hud-metric score-metric"><span>{{ t('game.score') }}</span><strong>{{ totalScore }}</strong></div>
-            </div>
-            <div class="hud-secondary">
-              <span>{{ t('game.combo') }} <strong>×{{ Math.max(1, comboStreak) }}</strong></span>
-              <span>{{ t('game.progress') }} <strong>{{ progressLabel }}</strong></span>
-              <span
-                v-if="deadRun"
-                class="hearts"
-                role="img"
-                :aria-label="`เหลือ ${livesLeft} หัวใจ`"
-                ><i
-                  v-for="heart in DEAD_LIVES"
-                  :key="heart"
-                  :class="{ lost: heart > livesLeft }"
-                  aria-hidden="true"
-                  >♥</i
-                ></span
-              >
-            </div>
-          </div>
-          <div class="header-tools">
-            <div class="session-details">
-              <strong class="player-name" :title="playerName">{{ playerName || "Player" }}</strong>
-              <span>{{ languageLabel }}</span>
-              <span>{{ activeChallenge ? `${activeChallenge.id} · ${t(activeChallenge.nameKey)}` : modeLabel }}</span>
-              <button type="button" class="sound-toggle" :aria-pressed="soundEnabled" :aria-label="t('game.soundEffects')"
-                :title="t(soundEnabled ? 'game.mute' : 'game.unmute')" @click="toggleSound">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path v-if="soundEnabled" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path v-else d="m17 9 5 6m0-6-5 6" /></svg>
-                {{ t(soundEnabled ? 'game.soundOn' : 'game.soundOff') }}
-              </button>
-            </div>
-            <div class="header-menu">
-              <span class="status" :class="`status-${status}`">{{
-                statusLabel
-              }}</span>
-              <button
-                type="button"
-                class="primary-button small"
-                :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
-                @click="startGame"
-              >
-                Start
-              </button>
-              <button
-                type="button"
-                class="soft-button small"
-                :disabled="!campaignStarted || Boolean(pendingExitScore)"
-                @click="restartLevel"
-              >
-                Restart
-              </button>
-              <button
-                type="button"
-                class="soft-button small"
-                :title="campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
-                @click="exitGame"
-              >
-                {{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : 'Menu' }}
-              </button>
-            </div>
-          </div>
-        </header>
+        <GameHud :level="currentLevel" :language="languageLabel"
+          :difficulty="activeChallenge ? t(`difficulty.${activeChallenge.id}`) : modeLabel"
+          :player-name="playerName" :avatar-id="currentAvatarId"
+          :timed="isTimedMode" :time="formattedTime" :score="totalScore"
+          :combo="Math.max(1, comboStreak)" :progress="progressLabel"
+          :completed-levels="completedLevels" :total-levels="deadRun ? 0 : activeLevels.length"
+          :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES">
+          <template #actions>
+            <button type="button" class="hud-action sound-toggle" :aria-pressed="soundEnabled" :aria-label="t('game.soundEffects')"
+              :title="t(soundEnabled ? 'game.mute' : 'game.unmute')" @click="toggleSound">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path v-if="soundEnabled" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path v-else d="m17 9 5 6m0-6-5 6" /></svg>
+            </button>
+            <button type="button" class="hud-action primary-button small"
+              :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
+              @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
+            <button type="button" class="hud-action soft-button small exit-action"
+              :title="campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
+              @click="requestExit">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</button>
+          </template>
+        </GameHud>
 
         <div v-if="exitSaveError" class="exit-save-error" role="alert">
           <p>{{ t('game.exitSaveError') }}</p>
@@ -432,6 +379,7 @@ const currentAvatarId = ref<string | undefined>(undefined);
 const homeResetKey = ref(0);
 const showTutorial = ref(false);
 const showSummary = ref(false);
+const showExitConfirm = ref(false);
 const summaryScore = ref<Score | undefined>();
 const scoreSaved = ref(false);
 const homeStorageError = ref("");
@@ -680,6 +628,7 @@ function backToStart(): void {
 }
 
 function openSetup(): void {
+  showExitConfirm.value = false;
   pendingExitScore.value = undefined;
   exitSaveError.value = false;
   stopSounds();
@@ -695,6 +644,17 @@ function openSetup(): void {
   campaignStarted.value = false;
   status.value = "ready";
   if (homeConfig.enabled) resetHomeSession();
+}
+
+function requestExit(): void {
+  if (campaignStarted.value && !pendingExitScore.value) showExitConfirm.value = true;
+  else exitGame();
+}
+
+function confirmExit(): void {
+  if (!showExitConfirm.value) return;
+  showExitConfirm.value = false;
+  exitGame();
 }
 
 function exitGame(): void {
@@ -715,6 +675,12 @@ function exitGame(): void {
     campaignStarted.value = false;
     expectedMove.value = null;
     status.value = "ready";
+  }
+  if (activeChallenge.value) {
+    lastScoreId.value = pendingExitScore.value.id;
+    presentSummary(pendingExitScore.value);
+    pendingExitScore.value = undefined;
+    return;
   }
   try {
     repositories.scores.save(pendingExitScore.value);
@@ -777,6 +743,7 @@ function showChallengeRanking(): void {
 }
 
 function resetHomeSession(): void {
+  showExitConfirm.value = false;
   showSetup.value = true;
   showTutorial.value = false;
   showSummary.value = false;
@@ -978,7 +945,7 @@ function completeLevel(): void {
     status.value = "completed";
     saveScore();
     stopTimer();
-    showRanking.value = true;
+    showRanking.value = !activeChallenge.value;
     return;
   }
   levelAdvanceTimer = setTimeout(() => {
@@ -1031,7 +998,7 @@ function timeUp(): void {
   expectedMove.value = null;
   notificationMessage.value = "หมดเวลา 5 นาที/เวลาที่ตั้งไว้ แสดง Ranking แล้ว";
   saveScore();
-  showRanking.value = true;
+  showRanking.value = !activeChallenge.value;
 }
 
 function createScoreSnapshot(): Score {
@@ -1061,21 +1028,32 @@ function createScoreSnapshot(): Score {
   };
 }
 
+/** Session presentation only: all finish paths use one frozen score snapshot. */
+function presentSummary(score: Score): void {
+  showExitConfirm.value = false;
+  stopTimer();
+  stopSounds();
+  clearPendingRunTimers();
+  clearLevelAdvanceTimer();
+  clearScorePopupTimer();
+  scorePopup.value = null;
+  campaignStarted.value = false;
+  expectedMove.value = null;
+  summaryScore.value = score;
+  scoreSaved.value = false;
+  retryScoreSave();
+  showSummary.value = true;
+  showRanking.value = false;
+  lastInteractionAt = Date.now();
+  playSound("complete");
+}
+
 function saveScore(): void {
+  showExitConfirm.value = false;
   const score = createScoreSnapshot();
   lastScoreId.value = score.id;
   if (activeChallenge.value) {
-    stopTimer();
-    clearPendingRunTimers();
-    clearLevelAdvanceTimer();
-    clearScorePopupTimer();
-    campaignStarted.value = false;
-    expectedMove.value = null;
-    summaryScore.value = score;
-    scoreSaved.value = false;
-    retryScoreSave();
-    showSummary.value = true;
-    lastInteractionAt = Date.now();
+    presentSummary(score);
   } else {
     repositories.scores.save(score);
   }
@@ -1130,7 +1108,7 @@ function isActiveRawLine(line: string): boolean {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  if (showSetup.value || showTutorial.value || showSummary.value || showRanking.value || status.value !== "playing") return;
+  if (showSetup.value || showTutorial.value || showSummary.value || showRanking.value || showExitConfirm.value || status.value !== "playing") return;
   if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
   const target = event.target;
   if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return;
@@ -1295,8 +1273,8 @@ summary:focus-visible {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 18px;
+  gap: 10px;
+  padding: 14px;
   width: 100%;
   max-width: 1640px;
   height: 100%;
@@ -1313,50 +1291,30 @@ summary:focus-visible {
   min-height: 320px;
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
-  gap: 24px;
-  align-items: center;
+  gap: 16px;
+  align-items: stretch;
   justify-content: center;
   width: 100%;
   margin: 0 auto;
 }
 
 .play-cluster .code-card {
-  align-self: center;
+  align-self: stretch;
   min-width: 0;
+  min-height: 0;
   width: 100%;
-  height: min(100%, 780px);
+  height: 100%;
   max-height: 100%;
 }
 
-.header-tools,
-.header-menu,
-.panel-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.game-header { flex: none; display: grid; grid-template-columns: minmax(220px, 1fr) auto minmax(290px, auto); align-items: center; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid rgba(150, 190, 255, .3); }
-.session-details { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; color: #c4d9ff; font-size: .75rem; }
-.player-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; }
-.sound-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 10px; border: 1px solid #759bd9; border-radius: 10px; background: #143574; color: #e4edff; font-size: .75rem; font-weight: 700; }
+.sound-toggle { display: inline-grid; place-items: center; flex: none; width: 44px; min-height: 44px; padding: 0; border: 1px solid #759bd966; border-radius: 10px; background: #14357499; color: #e4edff; }
+.exit-action { color: #c4d9ff; background: #122b5744; border-color: #759bd94d; }
 .sound-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .sound-toggle[aria-pressed="false"] { color: #b6c7e7; background: #102955; }
-.game-header .header-menu .small { min-width: 72px; min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: .82rem; }
+.board-panel .hud-action { min-height: 44px; min-width: 72px; padding: 0 12px; border-radius: 10px; font-size: .8rem; }
+.board-panel .hud-action.sound-toggle { min-width: 44px; width: 44px; padding: 0; }
+.board-panel .hud-action.exit-action { color: #c4d9ff; background: #122b5744; border-color: #759bd94d; }
 .exit-save-error { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border: 1px solid #f3bc76; border-radius: 12px; background: #412d36; color: #ffe2c1; font-size: .9rem; }
-
-.header-tools {
-  flex-direction: column;
-  align-items: flex-end;
-  min-width: 0;
-  gap: 8px;
-}
-
-.header-menu {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
 
 /* ---------- Typography ---------- */
 
@@ -1376,9 +1334,6 @@ h1 {
   letter-spacing: -0.01em;
 }
 
-.level-mark { flex: none; white-space: nowrap; }
-.stage-concept { padding-left: 10px; border-left: 2px solid #719bdf; font-size: .875rem; font-weight: 700; text-transform: uppercase; }
-.stage-name { color: #c4d9ff; font-size: .72rem; }
 
 h2 {
   font-size: 1.15rem;
@@ -1389,31 +1344,7 @@ h2 {
   color: var(--cv-yellow);
 }
 
-.title-block {
-  display: grid;
-  gap: 4px;
-  justify-items: start;
-}
-
 /* Glass pill with yellow ring, like the hero tagline */
-.brand-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0;
-  color: var(--cv-on-dark);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.brand-dot {
-  width: 8px;
-  height: 8px;
-  border: 2px solid var(--cv-yellow);
-  border-radius: 9999px;
-}
-
 /* Light-surface label, like "Why do so many kids love it?" */
 .eyebrow {
   display: inline-block;
@@ -1425,52 +1356,6 @@ h2 {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-}
-
-/* ---------- HUD / status ---------- */
-
-.hud {
-  display: grid;
-  gap: 7px;
-}
-
-.hud-primary { display: flex; justify-content: center; gap: 10px; }
-.hud-metric { display: grid; gap: 2px; min-width: 112px; padding: 7px 16px; border: 1px solid #537fcb; border-radius: 12px; background: #122c63; font-variant-numeric: tabular-nums; }
-.hud-metric > span { color: #bfd6ff; font-size: .7rem; font-weight: 700; }
-.hud-metric > strong { color: #fff; font-size: clamp(1.5rem, 2vw, 2rem); font-weight: 800; line-height: 1.1; }
-.score-metric { border-color: rgba(255, 213, 81, .55); }
-.score-metric > strong { color: #ffdc53; }
-.hud-secondary { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px; color: #bfd6ff; font-size: .72rem; }
-.hud-secondary strong { color: #fff; font-size: .8rem; }
-
-.status {
-  padding: 6px 12px;
-  border: 1px solid var(--cv-glass-border);
-  border-radius: 9999px;
-  background: var(--cv-glass-soft);
-  color: var(--cv-on-dark);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.hud .hearts {
-  display: inline-flex;
-  gap: 2px;
-  color: var(--cv-red);
-  font-size: 0.95rem;
-  letter-spacing: 0;
-}
-
-.hearts i {
-  font-style: normal;
-  transition:
-    color 200ms ease,
-    transform 200ms ease;
-}
-
-.hearts i.lost {
-  color: rgba(255, 255, 255, 0.25);
-  transform: scale(0.85);
 }
 
 .objective {
@@ -2151,17 +2036,6 @@ h2 {
   .app-shell { overflow-y: auto; }
   .game { height: auto; min-height: 100%; overflow: visible; }
   .board-panel { height: auto; min-height: 100%; padding: 14px; }
-  .game-header {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
-  }
-
-  .header-tools {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
-  }
 
   .play-cluster {
     grid-template-columns: 1fr;
@@ -2171,16 +2045,7 @@ h2 {
 
   .board-wrap { height: clamp(340px, 65dvh, 580px); }
   .play-cluster .code-card { height: clamp(300px, 55dvh, 560px); }
-  .session-details { justify-content: flex-start; }
 }
-
-@media (max-width: 520px) {
-  .game-header { grid-template-columns: 1fr; }
-  .hud-primary, .hud-secondary { justify-content: flex-start; }
-  .hud-metric { flex: 1; }
-  .header-menu { justify-content: flex-start; }
-}
-
 
 @media (hover: none) and (pointer: coarse) {
   .touch-controls {

@@ -1,4 +1,4 @@
-export type SoundEffect = "move" | "clear" | "wrong";
+export type SoundEffect = "move" | "clear" | "wrong" | "complete";
 export type EffectTone = {
   frequency: number;
   endFrequency?: number;
@@ -12,6 +12,12 @@ export type EffectTone = {
 
 // Synthesized placeholders; mid-range move/retry tones work on small speakers.
 export const soundEffects: Record<SoundEffect, readonly EffectTone[]> = {
+  complete: [
+    { frequency: 523.25, delay: 0, duration: .18, volume: .18, wave: "triangle" },
+    { frequency: 659.25, delay: .12, duration: .18, volume: .18, wave: "triangle" },
+    { frequency: 783.99, delay: .24, duration: .22, volume: .18, wave: "triangle" },
+    { frequency: 1046.5, delay: .4, duration: .4, volume: .16, wave: "sine" },
+  ],
   move: [
     { frequency: 660, endFrequency: 440, delay: 0, duration: .14, volume: .28, wave: "triangle", release: .055 },
   ],

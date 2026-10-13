@@ -98,7 +98,7 @@ function ageRange(age?: number): string {
   .credits-viewport::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, .65); }
   .credits-viewport::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 }
-.rank-podium { flex: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 6px; height: 190px; padding: 18px 6px 0; }
+.rank-podium { flex: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 6px; width: 80%; margin-inline: auto; box-sizing: border-box; height: 190px; padding: 18px 6px 0; }
 .podium-slot { --medal: #ffdc53; --podium-face: linear-gradient(135deg, #f8dda0, #b38026); --podium-top: #ffe9a3; --podium-edge: #efc969; display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 4px; min-width: 0; }
 .podium-place-2 { --medal: #c1d8ff; --podium-face: linear-gradient(135deg, #e6edf6, #8294ad); --podium-top: #f1f6ff; --podium-edge: #c5d5e9; }
 .podium-place-3 { --medal: #efb387; --podium-face: linear-gradient(135deg, #f0c7a4, #a2653c); --podium-top: #ffd5b0; --podium-edge: #dca57e; }

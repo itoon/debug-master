@@ -171,10 +171,15 @@ button { cursor: pointer; }
 .player-identity { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: center; gap: 20px; }
 .profile-choice { display: grid; justify-items: center; gap: 8px; }
 .profile-choice p { margin: 0; font-size: .85rem; font-weight: 800; }
-.avatar-preview { position: relative; width: 104px; height: 104px; border: 3px solid #87bbff; border-radius: 50%; background: radial-gradient(circle at top, #91caff, #2b59b5); }
-.avatar-preview img { width: 100%; height: 100%; border-radius: inherit; object-fit: contain; }
-.avatar-cycle { position: absolute; top: -10px; right: -10px; display: grid; place-items: center; width: 48px; height: 48px; padding: 9px; border: 2px solid #ffe889; border-radius: 50%; background: #153779; color: #ffe17a; box-shadow: 0 3px 8px #0c2058; }
-.avatar-cycle svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.avatar-preview { position: relative; isolation: isolate; width: 104px; height: 104px; margin-bottom: 8px; border: 3px solid #092852; border-radius: 50%; background: #cceaff; }
+.avatar-preview::before { content: ""; position: absolute; inset: -7px; border: 4px solid #fff; border-top-color: transparent; border-radius: inherit; transform: translateY(3px); pointer-events: none; z-index: 0; }
+.avatar-preview img { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: inherit; object-fit: contain; }
+.avatar-cycle { position: absolute; bottom: -8px; right: -8px; z-index: 2; display: grid; place-items: center; width: 48px; height: 48px; padding: 9px; border: 3px solid #fff; border-radius: 50%; background: linear-gradient(145deg, #fff, #dfcbff); color: #17356b; box-shadow: 0 0 0 1px #5a4489, 0 3px 0 #493270, 0 4px 8px #0c205866; transition: transform 150ms ease, filter 150ms ease; }
+.avatar-cycle svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 1px 0 #43ddcf); }
+.avatar-cycle:not(:disabled):hover { transform: scale(1.05); filter: brightness(1.05); }
+.avatar-cycle:not(:disabled):active { transform: translateY(2px); }
+.avatar-cycle:disabled { opacity: .55; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .avatar-cycle { transition: none; } }
 .nickname-entry { display: flex; gap: 10px; }
 .nickname-entry input { flex: 1; min-width: 0; }
 .random-name-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; min-width: 116px; min-height: 52px; padding: 8px 12px; border: 2px solid #ffe889; border-radius: 14px; background: #ffdc53; color: #142854; font-weight: 800; }
