@@ -52,6 +52,8 @@ Home uses three cards up to 1640px, stacking below 1100px. Game HUD aligns with 
 
 Keep the space background and restrained blue surfaces, thin outlines and soft shadows. App-owned native dialogs use a blurred backdrop with accessible focus/inert behaviour. Motion must not reorder the home grid or move form controls during validation.
 
+The summary dialog hides its scrollbar as requested, while retaining overflow scrolling so result details, retry and navigation remain reachable on small screens. Other scroll areas keep their existing presentation.
+
 ## Shapes
 
 Global control/container radii map to `--cv-radius` (12px) and `--cv-radius-xl` (24px). Player portraits use a full circular white border fitted to the image, with a 36px refresh badge overlapping the lower-right and a transparent extension for a 48px pointer target. Its 22px circular-arrow icon has filled arrowheads so the direction is recognizable. Portrait geometry belongs to `PlayerSetupDialog.vue`, not a second global theme.
@@ -59,6 +61,8 @@ Global control/container radii map to `--cv-radius` (12px) and `--cv-radius-xl` 
 ## Components
 
 Canonical owners are `HomeV2.vue` for mode selection, `PlayerSetupDialog.vue` for nickname/age/profile input, `GameHud.vue` for gameplay information, `SessionPanel.vue` for tutorial/result/ranking, and the existing repositories for local data. `docs/HANDOFF.md` records behavioural agreements and verification history.
+
+Home mode cards with no scores today use their thumbnail as a full-card cover with mode details overlaid. All cards omit the visible tap-to-start hint; the accessible launch label and click/keyboard targets remain. Empty cards do not show the ranking heading or Codi empty-state message. `ChallengeRanking` remains subscribed through `useScoreBoard` and reports a confirmed empty state to Home; new scores restore the normal podium/list automatically. Loading/storage errors do not masquerade as empty boards. Other ranking screens keep their existing empty-state presentation.
 
 Tutorial uses the same blue game surface and shared `LevelBoard`/`LevelCode` in `TutorialDemo.vue`. Its repeating preview reads the original Set 01 level 1, synchronizes the source-line highlight with the displayed key and Codi, pauses for 1.2 seconds at completion, then resets without a backwards move. It never updates the live run, score, timer or repository. Reduced motion uses a static explanation; hidden tabs suspend the preview. Only Start/Back are primary tutorial actions, with icons and text. The tutorial card fits the available viewport height, adapting board/code space and compacting short screens. Narrow screens reserve enough space for the three code lines and stack the board above the code. Additional control/item guidance replaces the demo area while its disclosure is open and uses two radio tabs so content does not extend the card.
 

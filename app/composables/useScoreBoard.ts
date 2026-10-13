@@ -7,6 +7,7 @@ import type { RankingBoard } from "../utils/ranking";
 export function useScoreBoard(repository: ScoreRepository, board: Ref<RankingBoard>, limit = 10) {
   const rows = ref<Score[]>([]);
   const error = ref(false);
+  const loaded = ref(false);
   let unsubscribe: (() => void) | undefined;
   let refreshTimer: ReturnType<typeof setInterval> | undefined;
   let mounted = false;
@@ -17,6 +18,8 @@ export function useScoreBoard(repository: ScoreRepository, board: Ref<RankingBoa
     } catch {
       rows.value = [];
       error.value = true;
+    } finally {
+      loaded.value = true;
     }
   }
   onMounted(() => {
@@ -30,5 +33,5 @@ export function useScoreBoard(repository: ScoreRepository, board: Ref<RankingBoa
     unsubscribe?.();
     clearInterval(refreshTimer);
   });
-  return { rows: computed(() => rows.value), error, refresh };
+  return { rows: computed(() => rows.value), error, loaded, refresh };
 }

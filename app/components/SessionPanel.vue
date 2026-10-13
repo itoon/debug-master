@@ -169,7 +169,8 @@ button:focus-visible { outline: 3px solid #ffc83d; outline-offset: 3px; }
 .tutorial-panel .tile-legend li { align-items: center; gap: 6px; }
 .tutorial-panel .tile-legend code { color: #ffe36b; }
 .tutorial-panel .tile-legend .code-tile-swatch { display: inline-block; flex: 0 0 22px; width: 22px; height: 22px; }
-.summary-dialog { box-sizing: border-box; width: min(640px, calc(100% - 32px)); max-width: none; min-height: 0; max-height: calc(100dvh - 32px); overflow-y: auto; margin: auto; padding: 0; border: 0; border-radius: 24px; background: transparent; }
+.summary-dialog { box-sizing: border-box; width: min(640px, calc(100% - 32px)); max-width: none; min-height: 0; max-height: calc(100dvh - 32px); overflow-y: auto; scrollbar-width: none; margin: auto; padding: 0; border: 0; border-radius: 24px; background: transparent; }
+.summary-dialog::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .summary-dialog::backdrop { background: #03102bb3; backdrop-filter: blur(6px); }
 .summary-dialog .session-card { box-sizing: border-box; position: relative; width: 100%; overflow: hidden; gap: 14px; padding: clamp(22px, 3vw, 32px); border: 1px solid #7faaff; background: linear-gradient(155deg, #19387b, #0b214a); color: #fff; animation: summary-arrive 380ms cubic-bezier(.2, .8, .2, 1) both; }
 .summary-dialog .session-brand, .summary-dialog .session-mode { color: #bdd8ff; }

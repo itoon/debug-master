@@ -96,7 +96,6 @@ export const th = {
   "home.ready": "พร้อมแล้ว กดเริ่มเล่นได้เลย",
   "home.openSetup": "เริ่มเกม",
   "home.cardAction": "เริ่มเกมโหมด {mode}",
-  "home.cardHint": "แตะการ์ดเพื่อเริ่มภารกิจ",
   "home.thumbnail": "ภาพปกโหมด {mode}",
   "home.closeSetup": "ปิดหน้าต่างเตรียมผู้เล่น",
   "home.ageHint": "แตะตัวเลขหรือลากแถบ เพื่อเลือกอายุ",

@@ -3,7 +3,7 @@
     <h1 class="sr-only">{{ t('brand') }}</h1>
 
     <div ref="modeBoards" class="mode-boards" :inert="motionPhase !== 'idle'">
-      <section v-for="mode in homeConfig.modes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id }]"
+      <section v-for="mode in homeConfig.modes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id, 'empty-board': emptyBoards[mode.id] }]"
         :data-mode-card="mode.id"
         :aria-labelledby="`mode-${mode.id}-title`" :aria-busy="busy || motionPhase === 'entering' || motionPhase === 'leaving'"
         @click="openModeSetup(mode, $event)"
@@ -23,9 +23,8 @@
           </div>
           </figcaption>
         </figure>
-        <ChallengeRanking class="card-ranking" :repository="repository" :board="boardFor(mode)" variant="space" podium credits
-          :paused="motionPhase !== 'idle' || focusedMode === mode.id" @viewport-removed="clearDetachedFocus(mode.id)" />
-        <p class="card-hint">{{ t('home.cardHint') }} <span aria-hidden="true">↗</span></p>
+        <ChallengeRanking class="card-ranking" :repository="repository" :board="boardFor(mode)" variant="space" podium credits hide-empty
+          :paused="motionPhase !== 'idle' || focusedMode === mode.id" @viewport-removed="clearDetachedFocus(mode.id)" @empty-change="emptyBoards[mode.id] = $event" />
       </section>
     </div>
 
@@ -51,6 +50,7 @@ const motionPhase = ref<"idle" | "entering" | "open" | "leaving">("idle");
 const modeBoards = ref<HTMLElement | null>(null);
 const setupDialog = ref<{ closeWithMotion: () => Promise<void> } | null>(null);
 const focusedMode = ref<ChallengeId | null>(null);
+const emptyBoards = ref<Record<ChallengeId, boolean>>({ A: false, B: false, C: false });
 const baseURL = useRuntimeConfig().app.baseURL;
 let launchButton: HTMLButtonElement | null = null;
 let cardAnimations: Animation[] = [];
@@ -200,7 +200,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .home-v2 { height: 100%; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; max-width: 1640px; padding: 8px; margin: 0 auto; color: #fff; }
 .mode-boards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; min-height: 0; }
-.mode-board { --mode-accent: #ffdc53; position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; min-width: 0; min-height: 0; padding: 0 14px 12px; border: 2px solid #5c86db; border-radius: 24px; color: #fff; background: linear-gradient(165deg, #183985, #0c2056); box-shadow: 0 14px 30px rgba(3, 15, 56, .35); cursor: pointer; transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease; }
+.mode-board { --mode-accent: #ffdc53; position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; min-width: 0; min-height: 0; padding: 0 14px 12px; border: 2px solid #5c86db; border-radius: 24px; color: #fff; background: linear-gradient(165deg, #183985, #0c2056); box-shadow: 0 14px 30px rgba(3, 15, 56, .35); cursor: pointer; transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease; }
 .mode-A { border-color: #e3bd4b; }
 .home-v2:not([data-motion="idle"]) .mode-boards { overflow: clip; }
 .home-v2:not([data-motion="idle"]) .mode-board { transform: none; transition: none; }
@@ -224,9 +224,8 @@ onBeforeUnmount(() => {
 .time-tag { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-variant-numeric: tabular-nums; }
 .time-tag svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
 .card-ranking { min-height: 0; }
-.card-hint { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 0; color: #e1d597; font-size: .78rem; font-weight: 700; }
-.card-hint span { transition: transform 240ms ease; }
-.mode-board:hover .card-hint span { transform: translate(3px, -3px); }
+.mode-board.empty-board { grid-template-rows: minmax(0, 1fr); gap: 0; padding-bottom: 0; }
+.empty-board .mode-cover { height: 100%; min-height: 0; border-radius: 21px; }
 .home-footer { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 24px; color: #d0e2ff; font-size: .7rem; text-align: center; }
 .home-footer a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
@@ -248,8 +247,8 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .mode-cover { height: 230px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mode-board, .cover-image, .card-hint span { transition: none; }
-  .mode-board:hover, .mode-board:focus-within, .mode-board:hover .cover-image, .mode-board:focus-within .cover-image, .mode-board:hover .card-hint span { transform: none; }
+  .mode-board, .cover-image { transition: none; }
+  .mode-board:hover, .mode-board:focus-within, .mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: none; }
   .mode-board:hover .cover-sheen { animation: none; }
 }
 </style>

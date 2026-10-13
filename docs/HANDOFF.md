@@ -2,6 +2,25 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Remove Home card launch hint
+
+- Removed “แตะการ์ดเพื่อเริ่มภารกิจ” and its decorative arrow from every mode card, including full-thumbnail empty cards. Removed the unused dictionary key and hint styling.
+- Removed the footer grid row and extra cover-caption spacing reserved for that hint. Card launch via click/keyboard, accessible labels, thumbnails, hover/selection motion and leaderboard behaviour are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing edits are preserved.
+
+## 2026-10-13 — Hidden summary scrollbar
+
+- Hid the summary dialog's scrollbar with `scrollbar-width: none` and the WebKit scrollbar selector. Kept `overflow-y: auto` and the viewport-height cap, so wheel/touch/keyboard scrolling still reaches content and buttons on small screens.
+- Changes apply only to `SessionPanel.vue`'s summary dialog. Summary data, navigation, focus, animations and other scroll regions are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing edits are preserved.
+
+## 2026-10-13 — Full thumbnail for empty Home mode cards
+
+- Home cards with no scores on today's mode board now fill the card with their existing thumbnail. Mode/title/range/time and the card-launch hint remain overlaid; the empty ranking heading, Codi panel and “ยังไม่มีอันดับวันนี้…” message are absent. Populated cards retain the podium/list layout.
+- `ChallengeRanking` has an opt-in `hideEmpty` presentation and reports confirmed emptiness to Home. `useScoreBoard.loaded` distinguishes a completed read from initial loading; errors remain visible rather than triggering the full-cover state. The ranking component stays mounted and subscribed, so writes, other-tab updates and Bangkok day refresh restore/remove rankings automatically. No duplicate repository read loop or component localStorage access was added.
+- Card click/keyboard launch, selection motion/audio, leaderboard reading/credits and other ranking screens are unchanged. Existing staged/unstaged work is preserved.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete issues in empty/populated/error transitions, subscriptions, responsive cover sizing or card interaction/motion. Rendered appearance remains unverified; no tests/browser checks, git add/commit, branch changes or reference-frontend edits.
+
 ## 2026-10-13 — Left Combo and HUD divider
 
 - Aligned Combo to the left above the board and only render its text when `comboStreak > 1`. Keep its measured row height reserved so appearing/disappearing text does not resize or shift the board. Scoring and the streak counter are unchanged.

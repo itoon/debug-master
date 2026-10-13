@@ -1,5 +1,5 @@
 <template>
-  <section class="challenge-ranking" :class="{ space: variant === 'space', 'with-podium': podium, 'with-credits': credits }" :aria-labelledby="headingId">
+  <section v-show="!hideEmpty || !empty" class="challenge-ranking" :class="{ space: variant === 'space', 'with-podium': podium, 'with-credits': credits }" :aria-labelledby="headingId">
     <div class="ranking-heading">
       <h3 :id="headingId">{{ t('home.today') }}</h3>
     </div>
@@ -41,7 +41,7 @@
     </ol>
       </div>
     </template>
-    <div v-else class="challenge-empty">
+    <div v-else-if="!hideEmpty" class="challenge-empty">
       <div class="codi-stand">
         <span class="landing-pad" aria-hidden="true" />
         <img :src="variant === 'space' ? codiHappy : PLAYER_SPRITES.down" alt="Codi" draggable="false" />
@@ -62,11 +62,13 @@ import codiHappy from "~/assets/sprites/cody-happy.webp";
 import { useLeaderboardCredits } from "../composables/useLeaderboardCredits";
 import { usePlayerAvatar } from "../composables/usePlayerAvatar";
 
-const props = withDefaults(defineProps<{ repository: ScoreRepository; board: RankingBoard; highlightId?: string; variant?: "light" | "space"; podium?: boolean; credits?: boolean; paused?: boolean }>(), { variant: "light", podium: false, credits: false, paused: false });
-const emit = defineEmits<{ viewportRemoved: [] }>();
+const props = withDefaults(defineProps<{ repository: ScoreRepository; board: RankingBoard; highlightId?: string; variant?: "light" | "space"; podium?: boolean; credits?: boolean; paused?: boolean; hideEmpty?: boolean }>(), { variant: "light", podium: false, credits: false, paused: false, hideEmpty: false });
+const emit = defineEmits<{ viewportRemoved: []; emptyChange: [empty: boolean] }>();
 const { t } = useGameI18n();
 const headingId = useId();
-const { rows, error } = useScoreBoard(props.repository, computed(() => props.board));
+const { rows, error, loaded } = useScoreBoard(props.repository, computed(() => props.board));
+const empty = computed(() => loaded.value && !error.value && rows.value.length === 0);
+watch(empty, (value) => emit('emptyChange', value), { immediate: true, flush: 'post' });
 const podiumPlaces = computed(() => [2, 1, 3].map((rank) => ({ rank, score: rows.value[rank - 1] })));
 const creditsViewport = ref<HTMLElement | null>(null);
 const creditsContent = ref<HTMLElement | null>(null);
