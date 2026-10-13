@@ -88,11 +88,11 @@ export const assetGroups: AssetGroup[] = [
         (direction): AssetItem => ({
           id: `codi-walk-${direction}`,
           name: `ตัวเดิน หัน${{ right: "ขวา", up: "ขึ้น (หันหลัง)", down: "ลง (หันหน้า)", left: "ซ้าย" }[direction]}`,
-          file: `app/assets/sprites/codi-${direction}.png`,
+          file: `app/assets/sprites/codi-${direction}.svg`,
           status: "in-use",
           preview: { kind: "image", src: PLAYER_SPRITES[direction], backdrop: "tile" },
           usedIn: direction === "down" ? "หน้าแรก, ตัวผู้เล่นตอนเริ่มด่าน / เดินลง, หน้าคลังโจทย์" : `ตัวผู้เล่นตอนเดิน${direction === "up" ? "ขึ้น" : direction === "left" ? "ซ้าย" : "ขวา"}`,
-          spec: ["PNG โปร่งใส 128 × 128 px ทั้ง 4 ทิศตัวขนาดเท่ากัน เท้าอยู่ระดับเดียวกัน"],
+          spec: ["SVG viewBox 128 × 128 ทั้ง 4 ทิศตัวขนาดเท่ากัน เท้าอยู่ระดับเดียวกัน"],
         }),
       ),
       {
@@ -125,7 +125,7 @@ export const assetGroups: AssetGroup[] = [
       {
         id: "codi-failed",
         name: th["asset.codiFailed"],
-        file: "app/assets/sprites/codi-failed.png",
+        file: "app/assets/sprites/codi-failed.svg",
         status: "in-use",
         preview: { kind: "image", src: PLAYER_POSES.failed, backdrop: "tile" },
         usedIn: th["asset.codiFailedUsage"],

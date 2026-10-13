@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <path id="capIn" d="M27.55 38.15C29.05 23.95 39.4 12.45 56.8 13.55C70.55 13 80.7 15.8 87.8 19.6C91.9 21.81 100.15 30.35 100.15 37.5L100.8 40.6C100.5 43 96.75 43.05 96.7 43.3L83.8 44.95L53.25 42.95L35.5 41.2L36.9 41.15L35.4 39.35Z"/>
+    <clipPath id="capClip"><use href="#capIn"/></clipPath>
+    <linearGradient id="botL" x1="24" y1="0" x2="60" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#444446"/><stop offset="1" stop-color="#d3d3d5"/>
+    </linearGradient>
+    <linearGradient id="botR" x1="57" y1="0" x2="92" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#424242"/><stop offset="1" stop-color="#d5d5d7"/>
+    </linearGradient>
+    <linearGradient id="rEdge" x1="0" y1="44" x2="0" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c3c3c5"/><stop offset="1" stop-color="#3a3a3a"/>
+    </linearGradient>
+    <linearGradient id="crease" x1="0" y1="78" x2="0" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dadde6"/><stop offset="1" stop-color="#5f6783"/>
+    </linearGradient>
+    <linearGradient id="opG" x1="58" y1="0" x2="75" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#232d4c"/><stop offset="1" stop-color="#8f8d99"/></linearGradient>
+    <linearGradient id="shG" x1="81" y1="0" x2="97" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3a3a3a" stop-opacity="0.15"/><stop offset="1" stop-color="#3a3a3a" stop-opacity="0.6"/></linearGradient>
+  <linearGradient id="ufG" x1="50" y1="0" x2="60" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f2f3f7"/><stop offset="1" stop-color="#c8ccd4"/></linearGradient><linearGradient id="ufG2" x1="50.5" y1="0" x2="57.5" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#4f576e"/><stop offset="1" stop-color="#212b48"/></linearGradient><linearGradient id="bbG" x1="80" y1="0" x2="95" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3a3a3c"/><stop offset="1" stop-color="#6a6a6a"/></linearGradient>
+    <linearGradient id="cr2" x1="0" y1="79" x2="0" y2="89" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#949aac"/><stop offset="1" stop-color="#c9cacf"/></linearGradient>
+  </defs>
+
+  <!-- right arm -->
+  <path d="M98.25 69.2L100.5 68.25L107.1 87.9C108.45 92.25 105.6 97.35 100.75 97.85L96.3 98.2Z" fill="#141f41"/>
+  <path d="M98.5 69.45L99.3 68.55L105.5 87.45C106.9 93.2 105 93.75 101.15 97.45L98.7 96.25Z" fill="#192652"/>
+
+  <!-- shoes -->
+  <rect x="61.5" y="105.05" width="24.5" height="12.9" rx="5.85" fill="#ba9417"/>
+  <rect x="62.35" y="106.55" width="22.6" height="10.15" rx="4.75" fill="#f6ca21"/>
+  <rect x="36.8" y="105.4" width="25.3" height="12.5" rx="6.3" fill="#ba9317"/>
+  <rect x="38" y="106.25" width="22.8" height="10.6" rx="5.3" fill="#f6ca21"/>
+  <rect x="40.25" y="105.5" width="16" height="0.25" fill="#b1aa02"/>
+  <rect x="65.75" y="106" width="15.75" height="1" fill="#e7bc1e"/>
+
+  <!-- legs -->
+  <rect x="41.45" y="94.75" width="15.9" height="11" fill="#101c38"/>
+  <rect x="42.7" y="95.5" width="13.4" height="9" fill="#192652"/>
+  <rect x="42.85" y="98" width="13.4" height="1" fill="#364b8a"/>
+  <rect x="42.95" y="99" width="13.4" height="1" fill="#223264"/>
+  <rect x="42.85" y="104" width="13.4" height="1" fill="#33426e"/>
+  <rect x="41.45" y="105" width="15.9" height="1" fill="#a2862e"/>
+  <rect x="65.7" y="95.25" width="15.7" height="10" fill="#121c3a"/>
+  <rect x="66.8" y="95.75" width="13.45" height="8.25" fill="#192652"/>
+  <rect x="67.15" y="97.75" width="13.2" height="1.75" fill="#364b8a"/>
+  <rect x="66.8" y="99.25" width="13.2" height="0.75" fill="#202f60"/>
+  <rect x="66.8" y="104" width="13.7" height="1" fill="#33426e"/>
+  <rect x="65.65" y="105" width="14.5" height="1" fill="#a2862e"/>
+
+  <rect x="81" y="96.75" width="17.25" height="1" fill="url(#bbG)"/>
+  <rect x="79.25" y="98" width="17.25" height="1" fill="url(#shG)"/>
+  <!-- body -->
+  <path d="M25.7 38.85L101.6 35.4L100.2 68.75L98.75 97.5L73.4 98L61.05 96.9L43.05 96.4L34.9 95.9L24.9 95.3L23.15 93.4Z" fill="#4e4f50"/>
+  <path d="M31.1 40L100.25 40L98.6 75.5L97.6 97L66.55 97.05L59.75 95.65L50.75 95.2L24.85 94.45Z" fill="#d5d5d7"/>
+  <path d="M26.75 39.8L63.3 39.8L60.15 85.75L41.45 84.85L34.8 94.7L24.5 93.8Z" fill="#f4f5f9"/>
+  <path d="M22.5 94.85L63 94.9L57.75 95.5L42.15 94.55L25.1 94.1Z" fill="url(#botL)"/>
+  <path d="M56.1 96L96.5 96.2L97 97L67 97.1L56.15 96.35Z" fill="url(#botR)"/>
+  <rect x="98.9" y="46.25" width="0.9" height="24" fill="url(#rEdge)"/>
+  <rect x="94.8" y="49.75" width="2.95" height="28.75" fill="#ffffff"/>
+  <rect x="60" y="78" width="1.75" height="18" fill="url(#crease)"/>
+  <rect x="61" y="77.5" width="1.25" height="18" fill="#333e65"/>
+  <rect x="62" y="85.25" width="1" height="9.75" fill="url(#cr2)"/>
+  <path d="M85.75 83H98M86.5 83.5V97" fill="none" stroke="#9ca1a6" stroke-width="1.4"/>
+  <circle cx="49.15" cy="84.25" r="3.2" fill="#192652"/>
+  <circle cx="74.4" cy="85.4" r="3.15" fill="#192652"/>
+
+  <!-- face -->
+  <path d="M35.5 41H89.2V45.6L90.55 50V55.5L90.3 63L89.65 64.05A17.4 16.05 0 0 1 76.75 78H52.25A18.9 17.8 0 0 1 35 60.45Z" fill="#131e3f"/>
+  <path d="M36.9 41.3H89.15V59.9A16.3 17.1 0 0 1 75.4 77.15H52.45A20.4 17.1 0 0 1 36.25 60.1Z" fill="#192652"/>
+  <path d="M68 77.9H78L74 79H60.5Z" fill="#424b61"/>
+  <rect x="44.7" y="52.8" width="4.55" height="5.8" rx="1.95" fill="#ffffff"/>
+  <rect x="76.4" y="54.4" width="4.4" height="5.45" rx="1.35" fill="#ffffff"/>
+  <circle cx="62.7" cy="57.85" r="6.8" fill="#fd607c"/>
+
+  <rect x="51.5" y="78" width="9.5" height="1" fill="url(#ufG)"/>
+  <rect x="49.75" y="77" width="7" height="0.75" fill="url(#ufG2)"/>
+  <!-- left arm -->
+  <path d="M25.8 40.4L44.35 38.95L34 61C31.25 67.8 28.75 71.45 23.8 70.7C21.1 71 17.4 68.5 24.4 69.5C27.4 58 23.3 50 28.4 40.35Z" fill="#131f3d"/>
+  <path d="M27.9 41.35L43.45 39.75L32.75 60.4C30.4 66.5 28.35 70.3 22.5 70.25C18.9 70.2 16.4 67.1 16.4 61.7C18.3 58.15 22 50 26.45 41.25Z" fill="#192652"/>
+
+  <!-- cap -->
+  <path d="M25.65 40C27.2 22.6 37.85 11 58.3 11.75C69.2 12 82.8 14.6 88.5 18.5C91.15 19.65 101.35 27.4 101.35 38.35L102.2 41.8C101.45 43.4 97.35 44.4 98.25 44.2L86.4 46L59.05 44.55L49.65 43.4L42.75 42.5L34.85 40.05Z" fill="#932a2a"/>
+  <rect x="61" y="9.3" width="10.7" height="5" rx="3.1" fill="#902727"/>
+  <rect x="62.75" y="10.75" width="7" height="1.5" fill="#a63232"/>
+  <use href="#capIn" fill="#ce4444"/>
+  <g clip-path="url(#capClip)">
+    <path d="M64.9 12C54.25 17 49.75 22 45.65 25.95C42.3 30.3 39.25 34.5 38.55 41.7L19.95 40.2L20 10Z" fill="#b43535"/>
+    <path d="M73.95 15C66.95 13.7 86.2 20 89.5 25.5C93.95 29.6 97.5 35.35 97.75 42L106 41.65L106 10Z" fill="#e45555"/>
+  </g>
+  <!-- strap opening -->
+  <path d="M46.8 39.9C47.4 34 54.55 29.35 61.85 29.55C70.75 28.9 80.25 33.35 80.75 42.05Z" fill="#8f2828"/>
+  <path d="M53.45 37.5C49.7 33.6 55.5 30.85 62.45 30.75C69.7 30.65 75.9 33 77.25 39.55Z" fill="#f4f5f9"/>
+  <path d="M48.9 39.85C48.9 32.45 54.05 33.5 62.55 34.1C77.85 34.15 78.65 35.35 78.95 42.1Z" fill="#192652"/>
+  <rect x="57.25" y="34.25" width="18" height="0.75" fill="url(#opG)"/>
+  <path d="M48.3 38.95L56.25 40L68.25 40.95L80.05 41L79.3 42.35L63.5 42.05L57.5 41.3L48.4 40.1Z" fill="#8d2728"/>
+  <path d="M61 45.65L75.25 44.95L88.35 44.7L88 45.85L78 46.1L63.85 45.2Z" fill="#7e2930"/>
+  <path d="M33.9 40.05L42 41.25L54.05 42.85L61.65 44.8L63.25 45.4L57.5 43.4L46.4 42.4L36.1 40.9Z" fill="#631315"/>
+</svg>

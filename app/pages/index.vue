@@ -1922,38 +1922,59 @@ h2 {
 .notification strong { display: block; font-size: 1.1rem; font-weight: 800; }
 .notification p { margin: 3px 0 0; font-size: .95rem; }
 
+/* Score card slices in skewed from the left, a light blade sweeps across it
+   and the points slam down. Sharp ease-outs only, no overshoot. */
 .score-pop-enter-active {
   transition:
-    opacity 160ms ease,
-    transform 440ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    opacity 90ms linear,
+    transform 260ms cubic-bezier(0.2, 0.9, 0.1, 1);
 }
 
 .score-pop-leave-active {
   transition:
-    opacity 180ms ease-in,
-    transform 220ms ease-in;
+    opacity 160ms ease-in,
+    transform 160ms ease-in;
 }
 
 .score-pop-enter-from {
   opacity: 0;
-  transform: translateX(-50%) translateY(18px) scale(0.7);
+  transform: translateX(calc(-50% - 48px)) skewX(-14deg);
 }
 
 .score-pop-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(-22px) scale(0.9);
+  transform: translateX(-50%) translateY(-12px);
 }
 
-/* The points land a beat after the card, like a coin dropping in. */
+.score-popup {
+  overflow: hidden;
+}
+
+.score-popup::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.75) 50%, transparent 65%);
+  transform: translateX(-110%);
+  animation: popup-blade 420ms 120ms ease-out both;
+  pointer-events: none;
+}
+
 .score-popup strong {
   display: inline-block;
-  animation: points-land 520ms 90ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: points-slam 200ms 90ms cubic-bezier(0.2, 0.9, 0.1, 1) both;
 }
 
-@keyframes points-land {
+@keyframes popup-blade {
+  to {
+    transform: translateX(110%);
+  }
+}
+
+@keyframes points-slam {
   from {
     opacity: 0;
-    transform: translateY(-14px) scale(1.6);
+    transform: scale(1.6);
   }
 }
 

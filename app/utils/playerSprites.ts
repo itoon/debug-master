@@ -1,9 +1,9 @@
 import type { Direction } from "../types/debug-game";
-import codiDown from "~/assets/sprites/codi-down.png";
-import codiLeft from "~/assets/sprites/codi-left.png";
-import codiRight from "~/assets/sprites/codi-right.png";
-import codiUp from "~/assets/sprites/codi-up.png";
-import codiFailed from "~/assets/sprites/codi-failed.png";
+import codiDown from "~/assets/sprites/codi-down.svg";
+import codiLeft from "~/assets/sprites/codi-left.svg";
+import codiRight from "~/assets/sprites/codi-right.svg";
+import codiUp from "~/assets/sprites/codi-up.svg";
+import codiFailed from "~/assets/sprites/codi-failed.svg";
 
 // The player character, one picture per facing. The game shows the picture
 // of the last move's direction; a level starts facing down (towards the

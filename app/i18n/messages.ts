@@ -133,7 +133,7 @@ export const th = {
   "game.tile": "ช่องปัจจุบัน",
   "asset.codiFailed": "Codi ท่าแพ้",
   "asset.codiFailedUsage": "ตัวผู้เล่นตอนกดผิดก่อนเริ่มด่านใหม่ และสถานะหมดเวลา",
-  "asset.codiFailedSpec": "PNG พื้นหลังโปร่งใส รักษาสัดส่วนภาพเดิมเมื่อแสดงบนช่อง",
+  "asset.codiFailedSpec": "SVG พื้นหลังโปร่งใส รักษาสัดส่วนภาพเดิมเมื่อแสดงบนช่อง",
   "asset.failureSound": "เสียงแพ้และเริ่มใหม่",
   "asset.failureSoundUsage": "ตอนกดเดินผิดพร้อมท่าแพ้ และเมื่อกดเริ่มใหม่",
   "asset.failureSoundSpec": "WAV สั้น 0.52 วินาที โหลดไว้ตอนเริ่มเกมและใช้ปุ่มเปิด/ปิดเสียงเดียวกัน",

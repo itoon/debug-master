@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <path id="capIn" d="M28.35 41.05C26.85 23.25 38.95 9.85 63.6 11.2C85.35 10.2 101.2 20.55 101.65 37.4L100.5 39.3C90.8 43.9 73.75 43.6 60.85 43.5C47.75 42.75 35.05 41.9 27.95 40.75Z"/>
+    <clipPath id="capClip"><use href="#capIn"/></clipPath>
+    <linearGradient id="flapG" x1="0" y1="44" x2="0" y2="57" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8b2626"/><stop offset="0.65" stop-color="#ce4444"/><stop offset="0.9" stop-color="#c54040"/><stop offset="1" stop-color="#8a2525"/>
+    </linearGradient>
+  </defs>
+
+  <!-- back leg nub -->
+  <rect x="79.05" y="85.9" width="13.6" height="10.9" rx="4.35" fill="#121d3b"/>
+  <rect x="81.35" y="85.4" width="13.1" height="9.9" rx="3.85" fill="#192652"/>
+
+  <!-- legs -->
+  <rect x="49" y="88.75" width="16.5" height="14" fill="#121d3a"/>
+  <rect x="50" y="88.5" width="14.5" height="12.5" fill="#192652"/>
+  <rect x="50" y="95" width="14.25" height="1.5" fill="#364c8c"/>
+  <rect x="50" y="96" width="14" height="1" fill="#26366a"/>
+  <rect x="50" y="101" width="14.5" height="1" fill="#374161"/>
+  <rect x="71.05" y="88.5" width="16.7" height="14" fill="#15203a"/>
+  <rect x="71.75" y="88.5" width="14.75" height="13" fill="#1a2751"/>
+  <rect x="72" y="95" width="14.5" height="1.25" fill="#374d8c"/>
+  <rect x="72" y="96" width="14.25" height="1" fill="#26376b"/>
+  <rect x="72.25" y="101" width="14.5" height="1" fill="#434857"/>
+
+  <!-- shoes (left shoe overlaps right) -->
+  <rect x="67.85" y="101.9" width="24.65" height="13.75" rx="6.25" fill="#bb941b"/>
+  <rect x="66.35" y="103" width="24.25" height="11.65" rx="5.15" fill="#d6ac16"/>
+  <rect x="68.9" y="103" width="22.5" height="11.35" rx="5.25" fill="#f6ca21"/>
+  <rect x="44.25" y="101.95" width="25.95" height="13.7" rx="6.65" fill="#bc9517"/>
+  <rect x="45.5" y="103.25" width="23.5" height="11.7" rx="6.05" fill="#ddb31c"/>
+  <rect x="45.45" y="103.1" width="23.5" height="11" rx="5.45" fill="#f6ca21"/>
+
+  <!-- body outline base -->
+  <path d="M27.2 38.75H101.9V89.05Q100.75 91.1 95.4 91.1L55.85 93.85L35.9 89.45Q27.7 89 27.2 87Z" fill="#373738"/>
+  <!-- side panel -->
+  <path d="M28 39H56V88.9L33 86.5L28 87.2Z" fill="#babbbe"/>
+  <path d="M29 39H57.6V92.9L29.1 87.4Z" fill="#f4f5f9"/>
+  <path d="M33.05 40V54M48.05 55.6V65.5" stroke="#e3e7ea" stroke-width="1"/>
+  <path d="M32.5 40V55" stroke="#ffffff" stroke-width="1"/>
+  <path d="M34.5 40V53.9L48.35 55.45V67" fill="none" stroke="#92989e" stroke-width="1.25"/>
+  <!-- front panel -->
+  <path d="M54.5 39H99.95V87.05L57 92.8Z" fill="#f4f5f9"/>
+  <path d="M61 92.4L66.95 82.85H86V72.75H100V89.6Z" fill="#cccdd2"/>
+  <rect x="100" y="68.75" width="1" height="20" fill="#c4c5ca"/>
+  <rect x="54" y="40.25" width="2" height="53" fill="#646465"/>
+  <rect x="55" y="39" width="1" height="53" fill="#b2b3b5"/>
+  <circle cx="76.35" cy="83.9" r="2.7" fill="#192652"/>
+  <circle cx="96.75" cy="81.5" r="2.45" fill="#192652"/>
+
+  <!-- face screen -->
+  <path d="M63.55 40V63.5A14.5 14 0 0 0 75.25 78H92.25A11 13.45 0 0 0 95.5 69.5V40Z" fill="#9ca1ae"/>
+  <path d="M60.45 40V61.8A14.65 15.5 0 0 0 72.45 76.9H93.3A11.5 10.7 0 0 0 101.25 67.85V40Z" fill="#131f3e"/>
+  <path d="M61.8 40V63.45A13.55 14.6 0 0 0 73.6 75.9H92.3A9.75 9.55 0 0 0 99.9 68.25V40Z" fill="#192652"/>
+  <rect x="86" y="77.1" width="2" height="14" fill="#7a8199"/>
+  <rect x="87" y="77.1" width="1" height="14" fill="#3a456a"/>
+  <rect x="88" y="77.1" width="3.5" height="1" fill="#808594"/>
+  <rect x="70.9" y="51.35" width="4.35" height="8.8" rx="2" fill="#fdfdfd"/>
+  <rect x="92.25" y="51.25" width="4.6" height="8.9" rx="2.4" fill="#ffffff"/>
+  <circle cx="86.45" cy="57.3" r="6.75" fill="#fd607c"/>
+
+  <!-- arm -->
+  <rect x="33.92" y="62.85" width="16.41" height="34.1" rx="8.23" fill="#131e3b"/>
+  <rect x="35.07" y="64" width="14.16" height="31.75" rx="7.23" fill="#192652"/>
+
+  <!-- cap flap (left strap tab) -->
+  <path d="M26.5 40.45L26.1 44L24.35 56.45Q24.75 57.8 26.15 57.8L27.15 58.25V35.15Z" fill="#862525"/>
+  <path d="M26.6 45L25.6 56.85L26.95 58.25V42.5Z" fill="url(#flapG)"/>
+
+  <!-- cap silhouette / outline -->
+  <path d="M27.15 41.45C25.4 23.1 37.85 9.6 61.1 9.55C87.65 9 101.25 19.5 103.05 36.65L102.5 39.25C95.1 45 71.4 45 59.75 44.5C46.25 44 36.7 43 27.25 42Z" fill="#8a2525"/>
+  <!-- button -->
+  <rect x="60.1" y="6.85" width="11" height="4.7" rx="3.8" fill="#892525"/>
+  <rect x="60.4" y="7.7" width="9" height="2.4" rx="0.8" fill="#a33030"/>
+  <!-- cap fill + shading -->
+  <use href="#capIn" fill="#ce4444"/>
+  <g clip-path="url(#capClip)">
+    <path d="M63.4 9C56.4 17.85 51 28 50.5 43.5L20 44L20 9Z" fill="#b43535"/>
+    <path d="M62 12.75C73.75 11.3 88.35 17 96.9 27.5C99.15 31 100.85 34.2 101.5 38.25L106 37L106.6 8.7Z" fill="#e45555"/>
+  </g>
+  <rect x="61.5" y="10.65" width="6.8" height="1.4" fill="#8a2525"/>
+  <!-- strap opening -->
+  <path d="M68.05 42.75C69.1 35.6 72.1 30.45 79.8 29C82.75 28 87.5 28 91.25 28.8C97.25 30 100.75 34.65 100.85 37.65L90.25 39.1C89.25 39.6 74.4 40.05 68.65 39.5Z" fill="#8a2525"/>
+  <path d="M71.95 34C76.9 30.95 77.1 30.35 83.7 29.4C86.7 29.2 92 29.4 95 31.5C96.75 33 100.5 36.35 97.85 35.85L73.5 36.75Z" fill="#f4f5f9"/>
+  <path d="M94.6 33.6L94.85 31.8C97.1 32.7 97.8 33.6 98.6 35.2L97.8 34.3Z" fill="#cbccd2"/>
+  <path d="M71.95 33.95H94.75C97.5 34.5 98.2 35.3 99.15 36.65C95.5 37.25 91.75 38.1 86 38.25C85.3 38.75 80.25 38.62 69.9 38.62C71.2 36.25 72.2 34.3 72.7 33.45Z" fill="#192652"/>
+  <path d="M72.45 33.45H93.6L97.75 34.5H71.6Z" fill="#1b263c"/>
+</svg>
