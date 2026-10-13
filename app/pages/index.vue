@@ -1,7 +1,7 @@
 <template>
   <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
     <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
-      :repository="repositories.scores" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @reset-error="homeStorageError = ''"
+      :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @reset-error="homeStorageError = ''"
       @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" />
     <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
     <PracticeSummaryDialog v-if="practiceSummary" :result="practiceSummary" @home="backToStart" />
@@ -382,7 +382,7 @@ import {
 } from "../utils/levelGen";
 import { PLAYER_AGES, type RankingBoard } from "../utils/ranking";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
-import { homeConfig, type ChallengeMode } from "../data/home-config";
+import { enabledModesFor, homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
 import type { PlayerSetupInput } from "../storage/contracts";
@@ -795,7 +795,9 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode):
   if (homeStarting.value || !showSetup.value) return;
   const nickname = profile.nickname.trim();
   if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return;
-  const configuredMode = homeConfig.modes.find((item) => item.id === mode.id);
+  let savedModeIds;
+  try { savedModeIds = repositories.modes.enabledIds(); } catch { savedModeIds = undefined; }
+  const configuredMode = enabledModesFor(savedModeIds).find((item) => item.id === mode.id);
   if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900 || !challengeSets.some((set) => set.id === configuredMode.levelSetId)) return;
   const playerId = crypto.randomUUID();
   const token = ++sessionToken;

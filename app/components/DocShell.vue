@@ -12,6 +12,7 @@
           <NuxtLink to="/review">คลังโจทย์</NuxtLink>
           <NuxtLink to="/elements">Elements</NuxtLink>
           <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink>
+          <NuxtLink to="/modes">{{ t('home.modes') }}</NuxtLink>
         </nav>
       </div>
       <slot name="toolbar" />
@@ -24,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-// Shared frame for the team's review, elements and player management pages.
+// Shared frame for the team's review, elements, player management and mode settings pages.
 import { useGameI18n } from '../composables/useGameI18n';
 defineProps<{ eyebrow: string; title: string }>();
 const { t } = useGameI18n();

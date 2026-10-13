@@ -2,8 +2,8 @@
   <main class="home-v2" :data-motion="motionPhase">
     <h1 class="sr-only">{{ t('brand') }}</h1>
 
-    <div ref="modeBoards" class="mode-boards" :inert="motionPhase !== 'idle'">
-      <section v-for="mode in homeConfig.modes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id, 'empty-board': emptyBoards[mode.id] }]"
+    <div ref="modeBoards" class="mode-boards" :class="[`count-${enabledModes.length}`, { 'modes-loading': !modesLoaded }]" :inert="motionPhase !== 'idle'">
+      <section v-for="mode in enabledModes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id, 'empty-board': emptyBoards[mode.id] && !singleMode }]"
         :data-mode-card="mode.id"
         :aria-labelledby="`mode-${mode.id}-title`" :aria-busy="busy || motionPhase === 'entering' || motionPhase === 'leaving'"
         @click="openModeSetup(mode, $event)"
@@ -22,14 +22,16 @@
             <span class="time-tag"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="M10 5v5l3 2" /></svg>{{ formatClock(mode.timeLimit * 1000) }}</span>
           </div>
           </figcaption>
+          <!-- Visual cue only; the card's launch button carries the accessible name. -->
+          <span class="start-cta" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7 4.5v11l9-5.5z" /></svg>{{ t('home.startGame') }}</span>
         </figure>
-        <ChallengeRanking class="card-ranking" :repository="repository" :board="boardFor(mode)" variant="space" podium credits hide-empty
+        <ChallengeRanking class="card-ranking" :repository="repository" :board="boardFor(mode)" variant="space" podium credits hide-empty :placeholder="singleMode"
           :paused="motionPhase !== 'idle' || focusedMode === mode.id" @viewport-removed="clearDetachedFocus(mode.id)" @empty-change="emptyBoards[mode.id] = $event" />
       </section>
     </div>
 
     <footer class="home-footer">
-      <div class="home-footer-info"><span>{{ t('home.rules') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink></span></div>
+      <div class="home-footer-info"><span>{{ t('home.rules') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink> · <NuxtLink to="/modes">{{ t('home.modes') }}</NuxtLink></span></div>
       <button type="button" class="practice-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('practice')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 4 3 5-5 3-3-5zm10 8 3 5-5 3-3-5zM4 19h5m6-15h5" /></svg>{{ t('practice.open') }}</button>
     </footer>
     <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :error="error" :busy="busy || motionPhase === 'leaving'"
@@ -39,14 +41,18 @@
 
 <script setup lang="ts">
 import { homeConfig, type ChallengeMode, type ChallengeId } from "../data/home-config";
+import { useModeSettings } from "../composables/useModeSettings";
 import { useGameI18n } from "../composables/useGameI18n";
-import type { ScoreRepository, PlayerSetupInput } from "../storage/contracts";
+import type { ModeSettingsRepository, ScoreRepository, PlayerSetupInput } from "../storage/contracts";
 import { formatClock, type RankingBoard } from "../utils/ranking";
 import type { UiSoundEffect } from "../data/sound-effects";
 
-const props = defineProps<{ repository: ScoreRepository; error?: string; busy?: boolean }>();
+const props = defineProps<{ repository: ScoreRepository; modesRepository: ModeSettingsRepository; error?: string; busy?: boolean }>();
 const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; practice: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
 const { t } = useGameI18n();
+// Saved on this device at /modes; hidden until read so SSR defaults never flash.
+const { enabledModes, loaded: modesLoaded } = useModeSettings(props.modesRepository);
+const singleMode = computed(() => enabledModes.value.length === 1);
 const setupMode = ref<ChallengeMode | null>(null);
 const selectedMode = ref<ChallengeMode | null>(null);
 const motionPhase = ref<"idle" | "entering" | "open" | "leaving">("idle");
@@ -215,10 +221,23 @@ onBeforeUnmount(() => {
 .card-launch-target { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: none; pointer-events: none; }
 .card-launch-target:focus-visible { outline: 3px solid #fff; outline-offset: 5px; }
 .mode-cover { position: relative; height: clamp(170px, 27dvh, 280px); margin: 0 -14px; overflow: hidden; border-radius: 21px 21px 0 0; background: #0b3a92; }
-.cover-image { width: 100%; height: 100%; object-fit: cover; object-position: center 48%; transition: transform 650ms cubic-bezier(.2, .7, .2, 1); }
-.mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: scale(1.06); }
+.cover-image { width: 100%; height: 100%; object-fit: cover; object-position: center 48%; transition: transform 650ms cubic-bezier(.2, .7, .2, 1), filter 300ms ease; }
+.mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: scale(1.06); filter: brightness(.72) saturate(1.1); }
 .cover-sheen { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, .22) 45%, transparent 70%); transform: translateX(-120%); pointer-events: none; }
 .mode-board:hover .cover-sheen { animation: cover-sweep 900ms ease both; }
+/* Start cue: one large pill at the centre of the art, scaling in as the cover dims. */
+.start-cta { --cta-y: 50%; position: absolute; top: var(--cta-y); left: 50%; z-index: 1; display: inline-flex; align-items: center; gap: 12px; padding: 10px 28px 10px 10px; border: 3px solid #fff; border-radius: 999px; background: var(--mode-accent); color: #0c2056; font-size: clamp(1.1rem, 1.45vw, 1.4rem); font-weight: 800; line-height: 1; white-space: nowrap; box-shadow: 0 12px 30px rgba(2, 13, 51, .55); opacity: 0; transform: translate(-50%, -50%) scale(.84); transition: opacity 220ms ease, transform 380ms cubic-bezier(.16, 1, .3, 1); pointer-events: none; }
+.start-cta svg { width: 46px; height: 46px; flex: none; padding: 12px; border-radius: 50%; background: #0c2056; fill: var(--mode-accent); }
+/* Cards with scores keep their title strip at the bottom of the art; centre in the space above it. */
+.mode-board:not(.empty-board) .start-cta { --cta-y: calc((100% - 92px) / 2); }
+.count-1 .mode-board .start-cta { --cta-y: calc((100% - 120px) / 2); }
+.mode-board:hover .start-cta, .mode-board:focus-within .start-cta { opacity: 1; transform: translate(-50%, -50%); }
+.mode-board:hover .start-cta svg { animation: start-nudge 900ms ease-in-out 380ms infinite; }
+.count-1 .start-cta { gap: 14px; padding: 12px 34px 12px 12px; font-size: clamp(1.3rem, 1.9vw, 1.75rem); }
+.count-1 .start-cta svg { width: 58px; height: 58px; padding: 15px; }
+/* Touch screens have no hover: keep the cue visible so players know the card starts a game. */
+@media (hover: none) { .start-cta { opacity: 1; transform: translate(-50%, -50%); } }
+.home-v2:not([data-motion="idle"]) .start-cta { opacity: 0; transition: none; }
 .mode-heading { position: absolute; inset: auto 0 0; display: grid; gap: 7px; padding: 34px 14px 12px; background: linear-gradient(transparent, rgba(4, 18, 57, .95)); }
 .mode-heading h2 { display: flex; align-items: center; gap: 8px; margin: 0; color: #fff; font-size: clamp(1.15rem, 1.7vw, 1.65rem); font-weight: 800; line-height: 1.3; text-shadow: 0 2px 8px #081f52; }
 .mode-heading :deep(.mode-badge) { width: 48px; flex: none; }
@@ -227,6 +246,17 @@ onBeforeUnmount(() => {
 .time-tag { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-variant-numeric: tabular-nums; }
 .time-tag svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
 .card-ranking { min-height: 0; }
+.modes-loading { visibility: hidden; }
+.count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 1240px; justify-self: center; }
+/* One enabled mode: the art at its own 4:3 shape beside a full leaderboard, sized to the viewport. */
+.count-1 { --single-h: clamp(420px, calc(100dvh - 150px), 620px); grid-template-columns: minmax(0, max-content); justify-content: center; align-content: center; }
+.count-1 .mode-board { height: var(--single-h); grid-template-columns: minmax(0, calc(var(--single-h) * 4 / 3)) minmax(340px, 420px); grid-template-rows: minmax(0, 1fr); gap: 24px; padding: 0 22px 0 0; }
+.count-1 .mode-cover { height: 100%; margin: 0; border-radius: 21px 0 0 21px; }
+.count-1 .mode-heading { gap: 12px; padding: 80px 28px 24px; }
+.count-1 .mode-heading h2 { gap: 12px; font-size: clamp(1.7rem, 2.6vw, 2.5rem); }
+.count-1 .mode-heading :deep(.mode-badge) { width: 64px; }
+.count-1 .mode-details { gap: 8px 14px; font-size: .95rem; }
+.count-1 .card-ranking { padding: 20px 0 16px; }
 .mode-board.empty-board { grid-template-rows: minmax(0, 1fr); gap: 0; padding-bottom: 0; }
 .empty-board .mode-cover { height: 100%; min-height: 0; border-radius: 21px; }
 .empty-board .mode-heading { inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 18px 18px; background: linear-gradient(180deg, #020d31ed, #04123980 90px, transparent 200px), linear-gradient(0deg, #020d31f2, #04123999 75px, transparent 180px); }
@@ -241,11 +271,16 @@ onBeforeUnmount(() => {
 .home-footer a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
 @keyframes cover-sweep { to { transform: translateX(120%); } }
+@keyframes start-nudge { 50% { transform: translateX(3px); } }
 @media (max-width: 1100px) {
   .home-v2 { height: auto; min-height: 100%; grid-template-rows: auto auto; }
   .mode-boards { grid-template-columns: 1fr; }
   .mode-board { height: 760px; max-width: 620px; width: 100%; justify-self: center; }
   .mode-cover { height: clamp(220px, 35vw, 300px); }
+  .count-1 { grid-template-columns: minmax(0, 1fr); }
+  .count-1 .mode-board { height: 760px; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 12px; padding: 0 14px 12px; }
+  .count-1 .mode-cover { height: clamp(220px, 35vw, 300px); margin: 0 -14px; border-radius: 21px 21px 0 0; }
+  .count-1 .card-ranking { padding: 0; }
 }
 @media (max-height: 680px) and (min-width: 1101px) {
   .home-v2 { height: auto; min-height: 100%; grid-template-rows: auto auto; }
@@ -256,11 +291,15 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .home-v2 { padding: 4px; }
   .mode-boards { gap: 18px; }
   .mode-board { height: 690px; }
-  .mode-cover { height: 230px; }
+  .mode-cover, .count-1 .mode-cover { height: 230px; }
+  .count-1 .mode-board { height: 690px; }
+  .start-cta, .count-1 .start-cta { gap: 10px; padding: 8px 22px 8px 8px; font-size: 1.05rem; }
+  .start-cta svg, .count-1 .start-cta svg { width: 40px; height: 40px; padding: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mode-board, .cover-image { transition: none; }
   .mode-board:hover, .mode-board:focus-within, .mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: none; }
-  .mode-board:hover .cover-sheen { animation: none; }
+  .mode-board:hover .cover-sheen, .mode-board:hover .start-cta svg { animation: none; }
+  .start-cta, .mode-board:hover .start-cta { transform: translate(-50%, -50%); transition: opacity 120ms linear; }
 }
 </style>

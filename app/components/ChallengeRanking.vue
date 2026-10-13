@@ -1,11 +1,12 @@
 <template>
   <section
-    v-show="!hideEmpty || !empty"
+    v-show="!hideEmpty || !empty || placeholder"
     class="challenge-ranking"
     :class="{
       space: variant === 'space',
       'with-podium': podium,
-      'with-credits': credits
+      'with-credits': credits,
+      'with-placeholder': placeholder
     }"
     :aria-labelledby="headingId"
   >
@@ -15,7 +16,8 @@
     <p v-if="error" class="board-error" role="alert">
       {{ t('storage.loadError') }}
     </p>
-    <template v-else-if="rows.length">
+    <template v-else-if="rows.length || (placeholder && loaded)">
+      <p v-if="!rows.length" class="placeholder-note">{{ t('ranking.empty') }}</p>
       <div v-if="podium" class="rank-podium">
         <div
           v-for="place in podiumPlaces"
@@ -118,6 +120,19 @@
               <small>{{ formatClock(score.elapsedMs) }}</small>
             </span>
           </li>
+          <!-- Open places up to the board size, so an empty board still reads as a leaderboard. -->
+          <li
+            v-for="rank in openRanks"
+            :key="`open-${rank}`"
+            class="open-place"
+            :class="[{ podium: rank <= 3 }, `place-${rank}`]"
+            aria-hidden="true"
+          >
+            <span class="rank-number">{{ rank }}</span>
+            <span class="row-avatar avatar-slot" />
+            <span class="who"><strong>{{ t('ranking.waiting') }}</strong></span>
+            <span class="result"><strong>—</strong></span>
+          </li>
         </ol>
       </div>
     </template>
@@ -156,13 +171,16 @@ const props = withDefaults(
     credits?: boolean
     paused?: boolean
     hideEmpty?: boolean
+    /** Show the podium and open places even before anyone has played today. */
+    placeholder?: boolean
   }>(),
   {
     variant: 'light',
     podium: false,
     credits: false,
     paused: false,
-    hideEmpty: false
+    hideEmpty: false,
+    placeholder: false
   }
 )
 const emit = defineEmits<{
@@ -185,6 +203,16 @@ watch(empty, (value) => emit('emptyChange', value), {
 const podiumPlaces = computed(() =>
   [2, 1, 3].map((rank) => ({ rank, score: rows.value[rank - 1] }))
 )
+/** Matches the 10 places todayRanking keeps per board. */
+const BOARD_PLACES = 10
+const openRanks = computed(() =>
+  props.placeholder && !error.value
+    ? Array.from(
+        { length: Math.max(0, BOARD_PLACES - rows.value.length) },
+        (_, index) => rows.value.length + index + 1
+      )
+    : []
+)
 const creditsViewport = ref<HTMLElement | null>(null)
 const creditsContent = ref<HTMLElement | null>(null)
 watch(
@@ -205,7 +233,8 @@ const {
 } = useLeaderboardCredits(
   creditsViewport,
   creditsContent,
-  computed(() => props.credits),
+  // Open places fit the board; auto-scrolling through them would only show empty rows.
+  computed(() => props.credits && openRanks.value.length === 0),
   computed(() => props.paused)
 )
 function ageRange(age?: number): string {
@@ -704,6 +733,32 @@ h3 {
   font-size: 0.9rem;
   font-weight: 700;
   box-shadow: 0 4px 0 rgba(31, 86, 164, 0.18);
+}
+.space .placeholder-note {
+  flex: none;
+  margin: 0;
+  color: #b5cdfa;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.space .challenge-rows li.open-place,
+.space .challenge-rows li.open-place.podium {
+  border: 1px dashed rgba(140, 182, 255, 0.4);
+  background: rgba(16, 42, 112, 0.45);
+}
+.space .open-place .rank-number {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(140, 182, 255, 0.55);
+  color: #b5cdfa;
+}
+.space .open-place .who strong,
+.space .open-place .result strong {
+  color: #8fb0e6;
+  font-weight: 700;
+}
+.avatar-slot {
+  border: 1px dashed rgba(140, 182, 255, 0.55);
+  background: rgba(140, 182, 255, 0.08);
 }
 .space .board-error {
   border-radius: 12px;
