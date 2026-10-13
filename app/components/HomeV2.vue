@@ -1,15 +1,15 @@
 <template>
-  <main class="home-v2">
+  <main class="home-v2" :data-motion="motionPhase">
     <h1 class="sr-only">{{ t('brand') }}</h1>
 
-    <div class="mode-boards">
-      <section v-for="mode in homeConfig.modes" :key="mode.id" class="mode-board" :class="`mode-${mode.id}`"
+    <div ref="modeBoards" class="mode-boards" :inert="motionPhase !== 'idle'">
+      <section v-for="mode in homeConfig.modes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id }]"
         :data-mode-card="mode.id"
-        :aria-labelledby="`mode-${mode.id}-title`" :aria-busy="busy"
+        :aria-labelledby="`mode-${mode.id}-title`" :aria-busy="busy || motionPhase === 'entering' || motionPhase === 'leaving'"
         @click="openModeSetup(mode, $event)"
         @focusin="focusedMode = mode.id" @focusout="leaveCardFocus($event)">
         <!-- Keyboard target for the whole card; there is no visible Start button. -->
-        <button type="button" class="card-launch-target" :disabled="busy" aria-haspopup="dialog" :data-mode-launch="mode.id"
+        <button type="button" class="card-launch-target" :disabled="busy || motionPhase !== 'idle'" aria-haspopup="dialog" :data-mode-launch="mode.id"
           :aria-label="t('home.cardAction', { mode: t(mode.nameKey) })" />
         <figure class="mode-cover">
           <img class="cover-image" :src="thumbnailUrl(mode)" :alt="t('home.thumbnail', { mode: t(mode.nameKey) })" draggable="false" />
@@ -24,13 +24,13 @@
           </figcaption>
         </figure>
         <ChallengeRanking class="card-ranking" :repository="repository" :board="boardFor(mode)" variant="space" podium credits
-          :paused="setupMode !== null || focusedMode === mode.id" @viewport-removed="clearDetachedFocus(mode.id)" />
+          :paused="motionPhase !== 'idle' || focusedMode === mode.id" @viewport-removed="clearDetachedFocus(mode.id)" />
         <p class="card-hint">{{ t('home.cardHint') }} <span aria-hidden="true">↗</span></p>
       </section>
     </div>
 
     <footer class="home-footer"><span>{{ t('home.rules') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink></span></footer>
-    <PlayerSetupDialog v-if="setupMode" :mode="setupMode" :error="error" :busy="busy"
+    <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :error="error" :busy="busy || motionPhase === 'leaving'"
       @close="closeSetup" @start="launch" />
   </main>
 </template>
@@ -45,19 +45,110 @@ const props = defineProps<{ repository: ScoreRepository; error?: string; busy?: 
 const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resetError: [] }>();
 const { t } = useGameI18n();
 const setupMode = ref<ChallengeMode | null>(null);
+const selectedMode = ref<ChallengeMode | null>(null);
+const motionPhase = ref<"idle" | "entering" | "open" | "leaving">("idle");
+const modeBoards = ref<HTMLElement | null>(null);
+const setupDialog = ref<{ closeWithMotion: () => Promise<void> } | null>(null);
 const focusedMode = ref<ChallengeId | null>(null);
 const baseURL = useRuntimeConfig().app.baseURL;
 let launchButton: HTMLButtonElement | null = null;
+let cardAnimations: Animation[] = [];
+let motionToken = 0;
+let disposed = false;
+let viewportSize = "";
+let cardsReturning = false;
+
+function reducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+function cancelCardMotion(): void {
+  for (const animation of cardAnimations) animation.cancel();
+  cardAnimations = [];
+}
+async function waitForCardMotion(token: number): Promise<void> {
+  // Resize replaces the animations; don't mistake cancellation for completion.
+  while (!disposed && token === motionToken) {
+    const animations = cardAnimations;
+    await Promise.all(animations.map((animation) => animation.finished.catch(() => {})));
+    if (animations === cardAnimations) return;
+  }
+}
+function reverseCards(): void {
+  cardAnimations = cardAnimations.filter((animation) => {
+    if (animation.effect?.getTiming().duration !== 0) return true;
+    animation.cancel();
+    return false;
+  });
+  for (const animation of cardAnimations) animation.reverse();
+}
+function snapshotCards() {
+  return Array.from(modeBoards.value?.querySelectorAll<HTMLElement>("[data-mode-card]") ?? []).map((element) => ({
+    element, rect: element.getBoundingClientRect(), transform: getComputedStyle(element).transform,
+  }));
+}
+/** Keep the grid intact; move each card from its measured position. */
+function positionCards(mode: ChallengeMode, snapshots = snapshotCards(), pinned = false): void {
+  cancelCardMotion();
+  const area = modeBoards.value?.getBoundingClientRect();
+  if (!area) return;
+  const centerX = (Math.max(16, area.left) + Math.min(window.innerWidth - 16, area.right)) / 2;
+  const centerY = (Math.max(16, area.top) + Math.min(window.innerHeight - 16, area.bottom)) / 2;
+  const chosenIndex = snapshots.findIndex(({ element }) => element.dataset.modeCard === mode.id);
+  viewportSize = `${window.innerWidth}:${window.innerHeight}`;
+  snapshots.forEach(({ element, rect, transform }, index) => {
+    if (typeof element.animate !== "function") return;
+    const matrix = new DOMMatrixReadOnly(transform === "none" ? undefined : transform);
+    const left = rect.left - matrix.e;
+    const top = rect.top - matrix.f;
+    const selected = index === chosenIndex;
+    const x = selected ? centerX - (left + rect.width / 2)
+      : index < chosenIndex ? -left - rect.width - 32 : window.innerWidth - left + 32;
+    const y = selected ? centerY - (top + rect.height / 2) : 0;
+    const scale = selected ? Math.min(1, (window.innerWidth - 48) / rect.width, (window.innerHeight - 48) / rect.height) : 1;
+    const duration = reducedMotion() ? 0 : homeConfig.modeMotion.cardsMs;
+    const animation = element.animate([
+      { transform, opacity: 1 },
+      { transform: `translate(${x}px, ${y}px) scale(${scale})`, opacity: selected ? 1 : 0 },
+    ], { duration, easing: "cubic-bezier(.22, .8, .25, 1)", fill: "both" });
+    void animation.finished.catch(() => {}); // Cancellation on resize/unmount is intentional.
+    if (pinned) { animation.pause(); animation.currentTime = duration; }
+    cardAnimations.push(animation);
+  });
+}
+function recenterCards(): void {
+  if ((motionPhase.value !== "open" && motionPhase.value !== "leaving") || !selectedMode.value) return;
+  const duration = Number(cardAnimations[0]?.effect?.getTiming().duration ?? homeConfig.modeMotion.cardsMs);
+  const currentTime = cardAnimations[0]?.currentTime;
+  const progress = duration > 0 && typeof currentTime === "number" ? Math.max(0, Math.min(1, currentTime / duration)) : 1;
+  cancelCardMotion(); // Measure the natural positions after a responsive reflow.
+  if (cardsReturning && reducedMotion()) return;
+  positionCards(selectedMode.value, snapshotCards(), true);
+  if (cardsReturning) {
+    for (const animation of cardAnimations) animation.currentTime = Number(animation.effect?.getTiming().duration ?? 0) * progress;
+    reverseCards();
+  }
+}
 function thumbnailUrl(mode: ChallengeMode): string {
   return `${baseURL.endsWith('/') ? baseURL : `${baseURL}/`}${mode.thumbnail}`;
 }
 function boardFor(mode: ChallengeMode): RankingBoard {
   return { challengeId: mode.challengeId, setId: mode.levelSetId, mode: "timer", timeLimitSec: mode.timeLimit };
 }
-function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
-  if (props.busy || setupMode.value) return;
+async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
+  if (props.busy || motionPhase.value !== "idle") return;
+  const snapshots = snapshotCards();
+  const token = ++motionToken;
   emit("resetError");
   launchButton = (event.currentTarget as HTMLElement).querySelector<HTMLButtonElement>("[data-mode-launch]");
+  selectedMode.value = mode;
+  motionPhase.value = "entering";
+  await nextTick();
+  if (disposed || token !== motionToken) return;
+  positionCards(mode, snapshots);
+  await waitForCardMotion(token);
+  if (disposed || token !== motionToken || motionPhase.value !== "entering") return;
+  motionPhase.value = "open";
+  if (viewportSize !== `${window.innerWidth}:${window.innerHeight}`) recenterCards();
   setupMode.value = mode;
 }
 function leaveCardFocus(event: FocusEvent) {
@@ -68,13 +159,37 @@ function clearDetachedFocus(modeId: ChallengeId) {
   if (focusedMode.value === modeId && activeCard?.getAttribute("data-mode-card") !== modeId) focusedMode.value = null;
 }
 async function closeSetup() {
+  if (motionPhase.value !== "open") return;
+  const token = ++motionToken;
+  motionPhase.value = "leaving";
+  await setupDialog.value?.closeWithMotion();
+  if (disposed || token !== motionToken) return;
   setupMode.value = null;
   await nextTick();
-  launchButton?.focus();
+  if (disposed || token !== motionToken) return;
+  if (!reducedMotion()) {
+    cardsReturning = true;
+    reverseCards();
+    await waitForCardMotion(token);
+  }
+  if (disposed || token !== motionToken) return;
+  cancelCardMotion();
+  cardsReturning = false;
+  selectedMode.value = null;
+  motionPhase.value = "idle";
+  await nextTick();
+  if (!disposed && token === motionToken) launchButton?.focus({ preventScroll: true });
 }
 function launch(player: PlayerSetupInput) {
-  if (setupMode.value) emit("start", player, setupMode.value);
+  if (motionPhase.value === "open" && setupMode.value && !props.busy) emit("start", player, setupMode.value);
 }
+onMounted(() => window.addEventListener("resize", recenterCards));
+onBeforeUnmount(() => {
+  disposed = true;
+  motionToken += 1;
+  cancelCardMotion();
+  window.removeEventListener("resize", recenterCards);
+});
 </script>
 
 <style scoped>
@@ -82,6 +197,9 @@ function launch(player: PlayerSetupInput) {
 .mode-boards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; min-height: 0; }
 .mode-board { --mode-accent: #ffdc53; position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; min-width: 0; min-height: 0; padding: 0 14px 12px; border: 2px solid #5c86db; border-radius: 24px; color: #fff; background: linear-gradient(165deg, #183985, #0c2056); box-shadow: 0 14px 30px rgba(3, 15, 56, .35); cursor: pointer; transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease; }
 .mode-A { border-color: #e3bd4b; }
+.home-v2:not([data-motion="idle"]) .mode-boards { overflow: clip; }
+.home-v2:not([data-motion="idle"]) .mode-board { transform: none; transition: none; }
+.mode-board.selected-card { z-index: 2; }
 .mode-B { --mode-accent: #94deff; }
 .mode-C { --mode-accent: #d7bcff; }
 .mode-board:hover, .mode-board:focus-within { transform: translateY(-4px); border-color: var(--mode-accent); box-shadow: 0 20px 36px rgba(2, 13, 51, .5), 0 0 22px color-mix(in srgb, var(--mode-accent) 18%, transparent); }

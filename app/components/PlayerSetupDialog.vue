@@ -1,12 +1,14 @@
 <template>
-  <dialog ref="dialog" class="player-setup-dialog" :aria-labelledby="titleId" @cancel.prevent="emit('close')">
+  <dialog ref="dialog" class="player-setup-dialog" :class="{ 'is-closing': isClosing }"
+    :style="{ '--popup-in-ms': `${homeConfig.modeMotion.popupInMs}ms`, '--popup-out-ms': `${homeConfig.modeMotion.popupOutMs}ms` }"
+    :aria-labelledby="titleId" @cancel.prevent="emit('close')">
     <form class="setup-form" @submit.prevent="launch">
       <header class="setup-header">
         <div>
           <p class="setup-brand">{{ t('brand') }}</p>
           <h2 :id="titleId">{{ t('home.player') }}</h2>
         </div>
-        <button type="button" class="close-button" :aria-label="t('home.closeSetup')" @click="emit('close')">×</button>
+        <button type="button" class="close-button" :disabled="busy || isClosing" :aria-label="t('home.closeSetup')" @click="emit('close')">×</button>
       </header>
       <div class="selected-mode"><ModeBadge :mode="mode.id" /><strong>{{ t(mode.nameKey) }}</strong></div>
       <div class="player-identity">
@@ -74,11 +76,40 @@ import { PLAYER_AVATARS } from "../data/player-avatars";
 import { usePlayerAvatar } from "../composables/usePlayerAvatar";
 import type { PlayerSetupInput } from "../storage/contracts";
 
-defineProps<{ mode: ChallengeMode; error?: string; busy?: boolean }>();
+const props = defineProps<{ mode: ChallengeMode; error?: string; busy?: boolean }>();
 const emit = defineEmits<{ close: []; start: [player: PlayerSetupInput] }>();
 const { t } = useGameI18n();
 const titleId = useId();
 const dialog = ref<HTMLDialogElement | null>(null);
+const isClosing = ref(false);
+let popupAnimation: Animation | undefined;
+let disposed = false;
+
+function reducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+async function animatePopup(frames: Keyframe[], duration: number): Promise<void> {
+  popupAnimation?.cancel();
+  if (!dialog.value || reducedMotion() || typeof dialog.value.animate !== "function") return;
+  const animation = dialog.value.animate(frames, { duration, easing: "cubic-bezier(.22, .8, .25, 1)", fill: "both" });
+  popupAnimation = animation;
+  await animation.finished.catch(() => {});
+  if (popupAnimation === animation && !isClosing.value) { animation.cancel(); popupAnimation = undefined; }
+}
+async function closeWithMotion(): Promise<void> {
+  if (isClosing.value || disposed) return;
+  const current = dialog.value ? getComputedStyle(dialog.value) : undefined;
+  const opacity = current?.opacity ?? "1";
+  const transform = current?.transform ?? "none";
+  if (dialog.value) dialog.value.style.setProperty("--backdrop-start-opacity", getComputedStyle(dialog.value, "::backdrop").opacity);
+  isClosing.value = true;
+  await animatePopup([
+    { opacity, transform },
+    { opacity: 0, transform: "translateY(14px) scale(.92)" },
+  ], homeConfig.modeMotion.popupOutMs);
+  if (!disposed) dialog.value?.close();
+}
+defineExpose({ closeWithMotion });
 const nicknameInput = ref<HTMLInputElement | null>(null);
 const ageTrack = ref<HTMLDivElement | null>(null);
 const nickname = ref("");
@@ -150,15 +181,27 @@ function handleAgeKey(event: KeyboardEvent, index: number) {
   button?.focus();
 }
 function launch() {
-  if (valid.value && age.value !== null) emit("start", { nickname: normalizedName.value, age: age.value, avatarId: selectedAvatar.value });
+  if (!props.busy && !isClosing.value && valid.value && age.value !== null) emit("start", { nickname: normalizedName.value, age: age.value, avatarId: selectedAvatar.value });
 }
-onMounted(() => { avatarIndex.value = Math.floor(Math.random() * PLAYER_AVATARS.length); dialog.value?.showModal(); nicknameInput.value?.focus(); });
-onBeforeUnmount(() => dialog.value?.close());
+onMounted(() => {
+  avatarIndex.value = Math.floor(Math.random() * PLAYER_AVATARS.length);
+  dialog.value?.showModal();
+  void animatePopup([
+    { opacity: 0, transform: "translateY(18px) scale(.94)" },
+    { opacity: 1, transform: "none" },
+  ], homeConfig.modeMotion.popupInMs);
+  nicknameInput.value?.focus();
+});
+onBeforeUnmount(() => { disposed = true; popupAnimation?.cancel(); dialog.value?.close(); });
 </script>
 
 <style scoped>
 .player-setup-dialog { box-sizing: border-box; width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; margin: auto; overflow-y: auto; border: 1px solid #668eff; border-radius: 24px; background: #142f80; color: #fff; font-family: var(--cv-font); box-shadow: var(--cv-shadow-window); }
-.player-setup-dialog::backdrop { background: rgba(3, 12, 40, .78); backdrop-filter: blur(5px); }
+.player-setup-dialog::backdrop { background: rgba(3, 12, 40, .78); backdrop-filter: blur(5px); animation: setup-backdrop-in var(--popup-in-ms) ease both; }
+.player-setup-dialog.is-closing::backdrop { animation: setup-backdrop-out var(--popup-out-ms) ease both; }
+@keyframes setup-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes setup-backdrop-out { from { opacity: var(--backdrop-start-opacity, 1); } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .player-setup-dialog::backdrop, .player-setup-dialog.is-closing::backdrop { animation: none; } }
 .setup-form { display: grid; gap: 12px; padding: clamp(18px, 2vw, 24px); }
 .setup-header { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .setup-brand { margin: 0 0 5px; color: #b7d8ff; font-size: .8rem; font-weight: 800; }

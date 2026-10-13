@@ -2,6 +2,16 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Mode card and setup popup motion
+
+- Added an idle → entering → open → leaving UI sequence in `HomeV2.vue`. Selecting a cover/card measures the existing positions, moves the selected card to the visible center, and slides/fades the other cards offscreen; only after card motion finishes does the existing player setup dialog open. The grid itself never reorders or collapses.
+- Closing the popup or pressing Escape fades/scales the dialog out, closes it, reverses the same card animations, and restores focus to the selected launch target without scrolling. A new selection recreates the blank nickname/age form and initial random profile as before.
+- Durations live in `homeConfig.modeMotion`: cards 420ms, popup entrance 260ms, popup exit 180ms. The popup backdrop also fades. Reduced-motion uses immediate card states and skips popup/backdrop motion.
+- While entering/open/leaving, card interactions are inert and credits pause; repeated selection/close and form submission while closing are guarded. Reading clicks in the leaderboard keep their original stop-propagation behaviour. Resize while the popup is open remeasures natural responsive positions; selected tall cards scale to fit the visible viewport. Unmount/idle reset cancels animations and invalidates pending work so no late popup appears.
+- Read-only review found two visual interruption issues and both were addressed: early popup close now starts from its current opacity/transform (including backdrop opacity), and resize during popup exit/card return remeasures the grid while preserving return progress. The completion wait follows replacement animations so resize cancellation cannot end the return early.
+- No game, storage, asset or text changes. Existing repository/form validation/error handling and native dialog focus are retained. User commit `16ebeb1` contains the previous UI work; this task changes only Home/setup motion and its config/documentation.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests, browser/viewport execution or live motion checks, per the build-only instruction. Changes remain unstaged; no `git add`, commit, merge or branch switch was performed.
+
 ## 2026-10-13 — Codi horizontal alignment
 
 - Gave `.actor` and `.hop` an explicit `minmax(0, 1fr)` horizontal grid track. This keeps the track at tile width while the 105%-wide sprite is centered with equal overflow, correcting the slight rightward placement in gameplay and review without a pixel offset that changes with tile size.
