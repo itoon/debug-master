@@ -17,7 +17,10 @@
           <div class="avatar-preview">
             <img :src="avatarSrc(selectedAvatar)" :alt="t('home.selectedAvatar', { number: avatarIndex + 1, total: PLAYER_AVATARS.length })" draggable="false" />
             <button type="button" class="avatar-cycle" :disabled="busy" :aria-label="t('home.nextAvatar')" :title="t('home.nextAvatar')" @click="nextAvatar">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M18 17a7 7 0 0 1-12 1l-2-3" /></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12a9 9 0 0 1 15.36-6.36L21 9M21 12a9 9 0 0 1-15.36 6.36L3 15" />
+                <path class="refresh-arrowhead" d="M21 3v6h-6zM3 21v-6h6z" />
+              </svg>
             </button>
           </div>
           <span class="sr-only" role="status">{{ t('home.selectedAvatar', { number: avatarIndex + 1, total: PLAYER_AVATARS.length }) }}</span>
@@ -217,8 +220,10 @@ button { cursor: pointer; }
 .profile-choice p { margin: 0; font-size: .85rem; font-weight: 800; }
 .avatar-preview { position: relative; isolation: isolate; width: 104px; height: 104px; margin-bottom: 8px; border: 4px solid #fff; border-radius: 50%; background: #cceaff; box-shadow: 0 0 0 2px #092852; }
 .avatar-preview img { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: inherit; object-fit: contain; }
-.avatar-cycle { position: absolute; bottom: -8px; right: -8px; z-index: 2; display: grid; place-items: center; width: 48px; height: 48px; padding: 9px; border: 3px solid #fff; border-radius: 50%; background: linear-gradient(145deg, #fff, #dfcbff); color: #17356b; box-shadow: 0 0 0 1px #5a4489, 0 3px 0 #493270, 0 4px 8px #0c205866; transition: transform 150ms ease, filter 150ms ease; }
-.avatar-cycle svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 1px 0 #43ddcf); }
+.avatar-cycle { position: absolute; bottom: -4px; right: -4px; z-index: 2; display: grid; place-items: center; width: 36px; height: 36px; padding: 5px; border: 2px solid #fff; border-radius: 50%; background: linear-gradient(145deg, #fff, #dfcbff); color: #17356b; box-shadow: 0 0 0 1px #5a4489, 0 2px 0 #493270, 0 3px 6px #0c205866; transition: transform 150ms ease, filter 150ms ease; }
+.avatar-cycle::before { content: ""; position: absolute; width: 48px; height: 48px; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; }
+.avatar-cycle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.avatar-cycle .refresh-arrowhead { fill: currentColor; stroke: none; }
 .avatar-cycle:not(:disabled):hover { transform: scale(1.05); filter: brightness(1.05); }
 .avatar-cycle:not(:disabled):active { transform: translateY(2px); }
 .avatar-cycle:disabled { opacity: .55; cursor: not-allowed; }

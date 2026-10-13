@@ -31,7 +31,7 @@
   animation-delay: calc((var(--tile-index, 0)) * 8ms);
 }
 
-/* Tile kinds follow codeventure-signal-lost (src/style.css): pale-blue floor,
+/* Tile kinds follow codeventure-signal-lost (src/style.css): deeper-blue floor,
    glossy ice, dotted sand, rock + gem sprites. No letters on the board: the
    texture is the cue. Each kind sets --tile-bg and --bevel; board tiles and
    the code-view swatches share them so a condition looks like its tile. */
@@ -57,9 +57,14 @@
     0 2px 5px -1px rgba(3, 10, 40, 0.35);
 }
 
-/* n: plain floor, checkered */
+/* n: plain floor, checkered and darker than glossy ice. Shared by board
+   tiles and condition swatches so item identification stays consistent. */
+.tile-floor {
+  --tile-bg: linear-gradient(160deg, #57a4e4, #2d78bf);
+  --bevel: #1b5598;
+}
 .tile-floor.alt {
-  --tile-bg: linear-gradient(160deg, #a9dbf8, #7fc3ee);
+  --tile-bg: linear-gradient(160deg, #4b98d9, #246bad);
 }
 
 /* b: ice, glossy with two glare streaks */

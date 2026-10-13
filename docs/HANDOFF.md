@@ -2,6 +2,18 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-13 — Clearer floor versus ice tiles
+
+- Added an explicit deeper-blue `.tile-floor` gradient (`#57a4e4` → `#2d78bf`) and darker bevel in shared `board.css`. Its alternating variant is also darker (`#4b98d9` → `#246bad`); ice retains its existing pale gradient and diagonal reflection streaks.
+- Shared tile variables apply consistently to gameplay/review/tutorial boards and condition swatches. Maps, compact tile codes, names, other item assets and gameplay behaviour are unchanged.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits. Existing staged and unstaged changes are preserved.
+
+## 2026-10-13 — Smaller and clearer profile refresh badge
+
+- Reduced the profile-change badge from 48px to 36px, with a thinner 2px border and smaller shadow. It remains at the portrait's lower-right; a transparent 6px extension preserves a 48px pointer target without covering more of the image visually.
+- Replaced the ambiguous hooked icon with two circular arcs and distinct filled triangular arrowheads at 22px. Removed the coloured icon shadow for a crisp silhouette. Avatar cycling, labels, disabled/hover/focus behaviour and saved data are unchanged.
+- Verification: final `pnpm build` passed (exit 0), `git diff --check` passed. No tests/browser checks, git add/commit, branch changes or reference-frontend edits; existing user-staged changes are preserved.
+
 ## 2026-10-13 — Gameplay layout following the revised screenshot
 
 - Reordered `GameHud.vue` to match the two gameplay columns: a larger player portrait/name at upper left, Score then Time beside it, and game/level/title/concept/language/difficulty on the right with the progress count at its far edge. Progress now has a wide bar directly above the code panel and still uses the existing completed/total values. Legacy Dead Mode hearts remain visible.

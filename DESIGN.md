@@ -38,6 +38,8 @@ This file records existing design context; it does not generate runtime tokens. 
 
 The canonical global palette lives in `app/assets/css/tailwind.css`: primary → `--cv-blue`, background → `--cv-navy-900`, accent → `--cv-yellow`, onDark → `--cv-on-dark`, danger → `--cv-red`. Component-specific art and surfaces stay in the shared component styles. Keep yellow for important scores/actions and blue for progress. Do not rebrand for an isolated feature or use colour as the only state cue.
 
+Tile surfaces are owned by `app/assets/css/board.css`. Plain floor uses a deeper blue than pale, glossy ice; retain ice's diagonal reflection streaks and the floor's plain/checkered appearance as additional distinguishing cues. Shared tile variables keep board cells and code swatches consistent.
+
 ## Typography
 
 `--cv-font` and `--cv-font-mono` in the application stylesheet own the font stacks mirrored above. Retain local LINE Seed Sans TH files, Thai-capable fallbacks and readable code. Names, timers and scores must remain legible; preserve complete values through appropriate text/tooltip treatment.
@@ -52,7 +54,7 @@ Keep the space background and restrained blue surfaces, thin outlines and soft s
 
 ## Shapes
 
-Global control/container radii map to `--cv-radius` (12px) and `--cv-radius-xl` (24px). Player portraits use a full circular white border fitted to the image, with a 48px refresh badge overlapping the lower-right. Portrait geometry belongs to `PlayerSetupDialog.vue`, not a second global theme.
+Global control/container radii map to `--cv-radius` (12px) and `--cv-radius-xl` (24px). Player portraits use a full circular white border fitted to the image, with a 36px refresh badge overlapping the lower-right and a transparent extension for a 48px pointer target. Its 22px circular-arrow icon has filled arrowheads so the direction is recognizable. Portrait geometry belongs to `PlayerSetupDialog.vue`, not a second global theme.
 
 ## Components
 
