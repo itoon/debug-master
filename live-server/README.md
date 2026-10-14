@@ -41,8 +41,10 @@ pnpm --dir live-server types      # writes src/worker-configuration.d.ts (commit
 
 ```bash
 npx wrangler login                # once per machine
-pnpm --dir live-server deploy     # wrangler deploy -> https://debug-master-live.<account>.workers.dev
+pnpm --dir live-server run deploy     # wrangler deploy -> https://debug-master-live.<account>.workers.dev
 ```
+
+Use `run deploy`: plain `pnpm deploy` is a pnpm built-in and does not run the package script.
 
 The Durable Object needs a plan that supports SQLite-backed Durable Objects (migration `v1`).
 Use the deployed `https://…workers.dev` origin as `NUXT_PUBLIC_LIVE_URL` when building the game.
@@ -76,7 +78,7 @@ exactly: scheme + host + port, no trailing slash. To add an origin, edit the lis
 or override it for one deploy:
 
 ```bash
-pnpm --dir live-server deploy --var ALLOWED_ORIGINS:https://itoon.github.io,https://booth.example
+pnpm --dir live-server run deploy --var ALLOWED_ORIGINS:https://itoon.github.io,https://booth.example
 ```
 
 ## Runbook
