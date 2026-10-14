@@ -23,9 +23,9 @@
             <span class="time-tag"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="M10 5v5l3 2" /></svg>{{ formatClock(mode.timeLimit * 1000) }}</span>
           </div>
           </figcaption>
-          <!-- Visual cue only; the card's launch button carries the accessible name. -->
-          <span class="start-cta" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7 4.5v11l9-5.5z" /></svg>{{ t('home.startGame') }}</span>
         </figure>
+        <!-- Visual cue only; the card's launch button carries the accessible name. -->
+        <span class="start-cta" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7 4.5v11l9-5.5z" /></svg>{{ t('home.startGame') }}</span>
         <ChallengeRanking class="card-ranking" :repository="repository" :board="boardFor(mode)" variant="space" podium credits hide-empty :placeholder="singleMode"
           :paused="motionPhase !== 'idle' || focusedMode === mode.id" @viewport-removed="clearDetachedFocus(mode.id)" @empty-change="emptyBoards[mode.id] = $event" />
       </section>
@@ -379,6 +379,7 @@ onBeforeUnmount(() => {
 .mode-boards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; min-height: 0; }
 .mode-board { --mode-accent: #ffdc53; position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; min-width: 0; min-height: 0; padding: 0 14px 12px; border: 2px solid #5c86db; border-radius: 24px; color: #fff; background: linear-gradient(165deg, #183985, #0c2056); box-shadow: 0 14px 30px rgba(3, 15, 56, .35); cursor: pointer; transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease; }
 .mode-A { border-color: #e3bd4b; }
+.mode-board { --cover-height: clamp(170px, 27dvh, 280px); --cta-y: calc(var(--cover-height) + 36px); }
 /* Cards are dealt in left to right once the enabled modes are known. Backwards
    fill only, so hover lift and the selection motion own transform afterwards. */
 .home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: card-deal var(--card-in-ms) cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--deal, 0) * var(--card-stagger-ms)); }
@@ -392,23 +393,22 @@ onBeforeUnmount(() => {
 .mode-board[aria-busy="true"] { cursor: wait; }
 .card-launch-target { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: none; pointer-events: none; }
 .card-launch-target:focus-visible { outline: 3px solid #fff; outline-offset: 5px; }
-.mode-cover { position: relative; height: clamp(170px, 27dvh, 280px); margin: 0 -14px; overflow: hidden; border-radius: 21px 21px 0 0; background: #0b3a92; }
+.mode-cover { position: relative; height: var(--cover-height); margin: 0 -14px; overflow: hidden; border-radius: 21px 21px 0 0; background: #0b3a92; }
 .cover-image { width: 100%; height: 100%; object-fit: cover; object-position: center 48%; transition: transform 650ms cubic-bezier(.2, .7, .2, 1), filter 300ms ease; }
-.mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: scale(1.06); filter: brightness(.72) saturate(1.1); }
+@media (hover: hover) and (pointer: fine) { .mode-board:hover .cover-image { transform: scale(1.06); filter: brightness(.72) saturate(1.1); } }
 .cover-sheen { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, .22) 45%, transparent 70%); transform: translateX(-120%); pointer-events: none; }
 .mode-board:hover .cover-sheen { animation: cover-sweep 900ms ease both; }
-/* Start cue: one large pill at the centre of the art, scaling in as the cover dims. */
-.start-cta { --cta-y: 50%; position: absolute; top: var(--cta-y); left: 50%; z-index: 1; display: inline-flex; align-items: center; gap: 12px; padding: 10px 28px 10px 10px; border: 3px solid #fff; border-radius: 999px; background: var(--mode-accent); color: #0c2056; font-size: clamp(1.1rem, 1.45vw, 1.4rem); font-weight: 800; line-height: 1; white-space: nowrap; box-shadow: 0 12px 30px rgba(2, 13, 51, .55); opacity: 0; transform: translate(-50%, -50%) scale(.84); transition: opacity 220ms ease, transform 380ms cubic-bezier(.16, 1, .3, 1); pointer-events: none; }
+/* Keep the hover cue below the art, clear of its title/metadata and ranking heading. */
+.start-cta { position: absolute; top: var(--cta-y); left: 50%; z-index: 1; display: inline-flex; align-items: center; gap: 12px; padding: 10px 28px 10px 10px; border: 3px solid #fff; border-radius: 999px; background: var(--mode-accent); color: #0c2056; font-size: clamp(1.1rem, 1.45vw, 1.4rem); font-weight: 800; line-height: 1; white-space: nowrap; box-shadow: 0 12px 30px rgba(2, 13, 51, .55); opacity: 0; transform: translate(-50%, -50%) scale(.84); transition: opacity 220ms ease, transform 380ms cubic-bezier(.16, 1, .3, 1); pointer-events: none; }
 .start-cta svg { width: 46px; height: 46px; flex: none; padding: 12px; border-radius: 50%; background: #0c2056; fill: var(--mode-accent); }
-/* Cards with scores keep their title strip at the bottom of the art; centre in the space above it. */
-.mode-board:not(.empty-board) .start-cta { --cta-y: calc((100% - 92px) / 2); }
-.count-1 .mode-board .start-cta { --cta-y: calc((100% - 120px) / 2); }
-.mode-board:hover .start-cta, .mode-board:focus-within .start-cta { opacity: 1; transform: translate(-50%, -50%); }
-.mode-board:hover .start-cta svg { animation: start-nudge 900ms ease-in-out 380ms infinite; }
+.empty-board .start-cta { --cta-y: calc(100% - 112px); }
+.count-1 .mode-board .start-cta { --cta-y: calc(100% - 156px); left: calc(var(--single-h) * 2 / 3); }
+@media (hover: hover) and (pointer: fine) {
+  .mode-board:hover .start-cta { opacity: 1; transform: translate(-50%, -50%); }
+  .mode-board:hover .start-cta svg { animation: start-nudge 900ms ease-in-out 380ms infinite; }
+}
 .count-1 .start-cta { gap: 14px; padding: 12px 34px 12px 12px; font-size: clamp(1.3rem, 1.9vw, 1.75rem); }
 .count-1 .start-cta svg { width: 58px; height: 58px; padding: 15px; }
-/* Touch screens have no hover: keep the cue visible so players know the card starts a game. */
-@media (hover: none) { .start-cta { opacity: 1; transform: translate(-50%, -50%); } }
 .home-v2:not([data-motion="idle"]) .start-cta { opacity: 0; transition: none; }
 .mode-heading { position: absolute; inset: auto 0 0; display: grid; gap: 7px; padding: 34px 14px 12px; background: linear-gradient(transparent, rgba(4, 18, 57, .95)); }
 .mode-heading h2 { display: flex; align-items: center; gap: 8px; margin: 0; color: #fff; font-size: clamp(1.15rem, 1.7vw, 1.65rem); font-weight: 800; line-height: 1.3; text-shadow: 0 2px 8px #081f52; }
@@ -417,7 +417,7 @@ onBeforeUnmount(() => {
 .difficulty-tag { padding: 3px 8px; border: 1px solid rgba(170, 198, 255, .6); border-radius: 8px; background: #102b67; color: var(--mode-accent); font-weight: 800; }
 .time-tag { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-variant-numeric: tabular-nums; }
 .time-tag svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-.card-ranking { min-height: 0; }
+.card-ranking { min-height: 0; padding-top: 72px; }
 .modes-loading { visibility: hidden; }
 .count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 1240px; justify-self: center; }
 /* One enabled mode: the art at its own 4:3 shape beside a full leaderboard, sized to the viewport. */
@@ -454,11 +454,12 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .home-v2 { height: auto; min-height: 100%; grid-template-rows: auto auto; }
   .mode-boards { grid-template-columns: 1fr; }
   .mode-board { height: 760px; max-width: 620px; width: 100%; justify-self: center; }
-  .mode-cover { height: clamp(220px, 35vw, 300px); }
+  .mode-board { --cover-height: clamp(220px, 35vw, 300px); }
   .count-1 { grid-template-columns: minmax(0, 1fr); }
   .count-1 .mode-board { height: 760px; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 12px; padding: 0 14px 12px; }
-  .count-1 .mode-cover { height: clamp(220px, 35vw, 300px); margin: 0 -14px; border-radius: 21px 21px 0 0; }
-  .count-1 .card-ranking { padding: 0; }
+  .count-1 .mode-cover { height: var(--cover-height); margin: 0 -14px; border-radius: 21px 21px 0 0; }
+  .count-1 .mode-board .start-cta { --cta-y: calc(var(--cover-height) + 36px); left: 50%; }
+  .count-1 .card-ranking { padding: 72px 0 0; }
 }
 @media (max-height: 680px) and (min-width: 1101px) {
   .home-v2 { height: auto; min-height: 100%; grid-template-rows: auto auto; }
@@ -469,7 +470,7 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .home-v2 { padding: 4px; }
   .mode-boards { gap: 18px; }
   .mode-board { height: 690px; }
-  .mode-cover, .count-1 .mode-cover { height: 230px; }
+  .mode-board { --cover-height: 230px; }
   .count-1 .mode-board { height: 690px; }
   .start-cta, .count-1 .start-cta { gap: 10px; padding: 8px 22px 8px 8px; font-size: 1.05rem; }
   .start-cta svg, .count-1 .start-cta svg { width: 40px; height: 40px; padding: 10px; }

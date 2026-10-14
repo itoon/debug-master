@@ -2,6 +2,13 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — Hover-only Start Game cue at the thumbnail/ranking boundary
+
+- Continued on `feature/replay-same-user`. The visible cue remained after Back because `.mode-board:focus-within .start-cta` matched the intentionally restored card/leaderboard focus. Removed that visibility trigger and the touch `hover:none` always-visible fallback. Cue reveal and thumbnail dim/zoom now require `(hover: hover) and (pointer: fine)` plus actual card hover. Keyboard focus still has the original visible outline and launch action; touch/card clicks still work.
+- Moved the aria-hidden, pointer-events-none cue outside `.mode-cover` so it can sit below the clipped thumbnail and is absent from cloned cover-selection previews. Normal ranked cards center it in a reserved 72px strip below the cover; ranking padding prevents overlap with title/metadata/heading and avoids hover-induced layout shifts. Shared `--cover-height` controls both cover sizing and the cue's vertical anchor at desktop/narrow breakpoints. Full-art empty and desktop single-mode cards keep the cue above bottom metadata; narrow single-mode uses the same below-cover anchor.
+- No event handlers, focus restoration, history/card animation sequence, gameplay, scoring, level data or assets changed. Existing untracked `logo-sleep.svg` was left untouched. Updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no blockers in hover/focus precedence, clone/grid/pointer behavior or responsive selectors. No tests written/run, live browser/runtime/audio checks, git add/commit, branch switch or reference-frontend edits. Rendered spacing remains unverified in a browser.
+
 ## 2026-10-14 — Zero-point results do not receive leaderboard ranks
 
 - Continued on `feature/replay-same-user` without disturbing the existing sleep/logo edits. Added shared `hasRankingScore(score)` (>0) and filter eligibility in `todayRanking` before sorting, best-per-player deduplication and limits. Home podium/Top 10, side-detail all-player list/search/counts, end-of-game ranking and legacy `TodayRanking` all consume this rule, including existing stored zero-point runs.
