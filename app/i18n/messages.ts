@@ -1,11 +1,9 @@
 export const th = {
   "sleep.wake": "คลิก เลื่อนหน้าจอ หรือกด Space เพื่อเริ่มเล่น",
   "sleep.back": "หน้าพัก",
-  "asset.sleepLogo": "โลโก้หน้าพัก Debug Master",
+  "asset.sleepLogo": "Logo",
   "asset.sleepLogoUsage": "หน้าโลโก้เต็มจอก่อนเลือกโหมด ลอยขึ้นลงแล้วเลื่อนขึ้นเมื่อมี interaction",
-  "asset.sleepLogoSpec": "SVG เส้นเวกเตอร์ 1448 × 980 เทียบ PNG ต้นฉบับที่เก็บไว้ด้วย SSIM ≥ 98%",
-  "asset.sleepLogoSourceUsage": "ต้นฉบับเวกเตอร์ของหน้าพัก ใช้เรนเดอร์ PNG สำหรับแสดงผลและเคลื่อนไหว",
-  "asset.sleepLogoDisplay": "โลโก้หน้าพักสำหรับแสดงผล",
+  "asset.sleepLogoSpec": "ต้นฉบับเวกเตอร์: app/assets/brand/logo-sleep.svg · 1448 × 980 เทียบ PNG ต้นฉบับด้วย SSIM ≥ 98%",
   "asset.sleepLogoDisplaySpec": "PNG 1448 × 980 เรนเดอร์จาก SVG ที่ผ่าน SSIM เพื่อให้เคลื่อนไหวได้เบาขึ้น",
   "practice.open": "ฝึกซ้อม 60 ด่าน",
   "practice.badge": "โหมดฝึกซ้อม",

@@ -2,6 +2,17 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — One Logo entry in Elements
+
+- Merged the source sleep-logo SVG and display PNG entries into a single **Logo** item (`logo-sleep`). Its file/preview is the PNG actually displayed in-game; specs list both PNG rendering details and the source SVG path/SSIM information. Removed the duplicate item, unused SVG preview import and redundant localized labels. Elements' existing computed counts/filtering follow the merged manifest automatically.
+- Both physical assets, sleep rendering/animation and the verified image data remain unchanged. Updated `DESIGN.md` and the logo report to match the combined catalogue. Final `pnpm build` and `git diff --check` passed; source search confirms obsolete catalogue labels/imports are absent. No tests, browser/runtime checks, git add/commit, branch/reference-frontend changes; existing staged and unstaged pose work preserved.
+
+## 2026-10-14 — Promote crisp Codi to the shared win pose
+
+- User explicitly selected “Codi สรุปการซ้อม · เส้นคม” to replace the canonical win pose. Moved its approved 4,922-byte geometry into `app/assets/sprites/codi-win.svg`; deleted the temporary `codi-win-summary.svg` and its duplicate asset/dictionary entries. Practice summary now uses `PLAYER_POSES.win` again, shared with empty-ranking art and the existing preload loop. Elements lists one “Codi ท่าชนะ · เส้นคม” entry with updated spec/usage. Other five poses and gameplay/summary data/controls are unchanged.
+- Archived the old traced win SVG in `docs/codi-svg/reference/codi-win-traced.svg`; its SHA-256 matches the historical measured file. Updated `DESIGN.md`, the Codi report link/historical qualification and the practice illustration report. Historical 98.0018% SSIM does not certify the newly approved crisp geometry; it was not remeasured. Existing 128px/512px visual preview remains applicable because the promoted file is byte-identical.
+- Final `pnpm build` passed (exit 0); `git diff --check` passed. Source search and read-only review confirm shared pose consumers, no dangling temporary references/duplicate entry, and truthful metric documentation. No tests, browser/runtime checks, git add/commit, branch switch, dependency or reference-frontend changes. User-staged changes were preserved.
+
 ## 2026-10-14 — Crisp practice-summary hero and centered title
 
 - Confirmed the previous practice-summary picture was SVG: `PLAYER_POSES.win` points to the contour-traced `codi-win.svg` with Gaussian blur 0.4px. Preserved it and all canonical movement/failure/win assets/SSIM reports; created a separate `codi-win-summary.svg` from the clean front-vector geometry with wink, raised arm and angled foot. New UI asset is 4,922 bytes/63 elements/viewBox 128×128, no raster/embed/blur, registered in Elements with accurate usage/specs.

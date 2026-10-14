@@ -2,7 +2,7 @@
 
 วันที่ 14 ตุลาคม 2026 · branch `feature/replay-same-user`
 
-รายการ asset `logo-sleep` เก็บเวกเตอร์ต้นฉบับ `app/assets/brand/logo-sleep.svg` เก็บ PNG ที่ผู้ใช้ให้ใน `app/assets/brand/logo-sleep.png` ไว้โดยไม่แก้ไข (SHA-256 `a7066c0f890285c23a37dc84f928fd3ef00ecf27ed73948796f833845dd5a4fd`)
+Elements รวมทั้งสองเวอร์ชันเป็นรายการ **Logo** (`logo-sleep`) เดียว ใช้ `logo-sleep-display.png` เป็นไฟล์/ภาพตัวอย่าง และแสดงที่ตั้งเวกเตอร์ต้นฉบับ `app/assets/brand/logo-sleep.svg` ในรายละเอียด เก็บ PNG ที่ผู้ใช้ให้ใน `app/assets/brand/logo-sleep.png` ไว้โดยไม่แก้ไข (SHA-256 `a7066c0f890285c23a37dc84f928fd3ef00ecf27ed73948796f833845dd5a4fd`)
 
 หลังผู้ใช้แจ้งว่ากระตุก หน้าพักเปลี่ยนมาแสดง `app/assets/brand/logo-sleep-display.png` ซึ่งคัดลอกตรงจาก `rendered.png` ในรายงานนี้ (SHA-256 `f1619b1d649e72b04c537238e4d7115da5483b9e9dd2318927f33c51f22a4167`, 1,101,340 bytes) จึงคงผล SSIM เดิม แต่ไม่ต้องเรนเดอร์ SVG ล้านเส้นใน browser ระหว่างลอย/เลื่อน เก็บ SVG ไว้เป็นต้นฉบับสำหรับปรับและเรนเดอร์ใหม่ ไม่ได้อ้างว่าตรวจ frame rate แล้ว
 

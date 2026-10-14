@@ -2,6 +2,8 @@
 
 วันที่ 14 ตุลาคม 2026
 
+**รายงานย้อนหลัง:** หลังการวัดนี้ ผู้ใช้เลือกท่าชนะเส้นคมให้แทนท่า trace เดิมใน `app/assets/sprites/codi-win.svg` ท่าชนะที่มีค่า 98.0018% ด้านล่างถูกเก็บใน `reference/codi-win-traced.svg` แล้ว ค่า/ภาพ/hash เก่าไม่ได้รับรองท่าชนะเส้นคมใหม่ ซึ่งยังไม่ได้วัด SSIM ท่าเดิน/แพ้ทั้ง 5 ท่าคงเดิม ดูภาพเส้นคมใน `docs/practice-summary-visuals/REPORT.md`
+
 พบ SVG วาดด้วยรูปทรงเวกเตอร์ครบ 5 ท่าอยู่แล้วใน repo จาก commit `61be56c` และเกมใช้งานผ่าน `app/utils/playerSprites.ts` อยู่แล้ว งานรอบนี้จึงตรวจยืนยันชุดที่มีอยู่และจัดหลักฐานเปรียบเทียบ ไม่ได้สร้างภาพชุดใหม่หรือวาดทับภาพเดิม
 
 งานต่อ: เพิ่ม **ท่าชนะ** เป็น SVG ใหม่ โดย trace เส้นขอบบริเวณสีจากภาพอ้างอิงที่ผู้ใช้แนบ เก็บ PNG ต้นฉบับไว้ใน `app/assets/sprites/codi-win.png` โดยไม่แก้ไข และใช้ `PLAYER_POSES.win` แทนรูปเดิมใน popup สรุปการฝึกซ้อม ท่าเดินและท่าแพ้ทั้ง 5 ไฟล์คงเดิม
@@ -15,7 +17,7 @@
 | หันซ้าย | [codi-left.svg](D:/CodeVenture/debug-master/app/assets/sprites/codi-left.svg) | 99.48% | ผ่าน |
 | หันขวา | [codi-right.svg](D:/CodeVenture/debug-master/app/assets/sprites/codi-right.svg) | 99.42% | ผ่าน |
 | ท่าแพ้ | [codi-failed.svg](D:/CodeVenture/debug-master/app/assets/sprites/codi-failed.svg) | 98.88% | ผ่าน |
-| ท่าชนะ | [codi-win.svg](D:/CodeVenture/debug-master/app/assets/sprites/codi-win.svg) | 98.0018% | ผ่าน |
+| ท่าชนะเดิม (ย้อนหลัง) | [codi-win-traced.svg](D:/CodeVenture/debug-master/docs/codi-svg/reference/codi-win-traced.svg) | 98.0018% | ผ่าน |
 
 ค่าต่ำสุดของทั้งชุด 6 ท่าคือ **0.9800183** จึงผ่านเกณฑ์ SSIM ≥ 0.98 ทุกท่า ท่าชนะผ่านใกล้เกณฑ์มาก ค่านี้อ้างอิง renderer และขนาดที่ระบุด้านล่างเท่านั้น
 
@@ -43,11 +45,11 @@
 
 ## ทำซ้ำการตรวจ
 
-เครื่องมือตรวจเป็น asset QA แยกจากเกม ไม่เพิ่ม runtime dependency ใน package.json
+เครื่องมือตรวจเป็น asset QA แยกจากเกม ไม่เพิ่ม runtime dependency ใน package.json คำสั่งด้านล่างวัดไฟล์เกม **ปัจจุบัน** รวมท่าชนะเส้นคม ไม่ใช่ชุดย้อนหลังในตาราง จึงใช้ output ชั่วคราวเพื่อไม่เขียนทับหลักฐานเดิม และไม่อ้างว่าท่าชนะใหม่ผ่านเกณฑ์โดยยังไม่ได้วัด
 
 ```powershell
-& 'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe' scripts/render-codi-svg.mjs --sharp-module 'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp' --out docs/codi-svg/rendered
-& 'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' scripts/compare-codi-svg.py --renders docs/codi-svg/rendered --out docs/codi-svg
+& 'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe' scripts/render-codi-svg.mjs --sharp-module 'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp' --out .cache/codi-current/rendered
+& 'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' scripts/compare-codi-svg.py --renders .cache/codi-current/rendered --out .cache/codi-current/qa
 ```
 
 Renderer รับ `--scale 4` สำหรับดูภาพเวกเตอร์ 512px แต่การวัดต้องใช้ 128px เท่านั้น เครื่องมือ compare บันทึกรายงานก่อนคืน exit 1 หากท่าใดต่ำกว่า 0.98
