@@ -2,6 +2,17 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — Disable gameplay text selection; remove ranking rule sentence
+
+- Added scoped `.app-shell`/deep-descendant user-select:none with the WebKit prefix in `pages/index.vue`. Covers Home/sleep, gameplay in every mode, tutorials, summaries, rankings and native gameplay dialogs, which remain DOM descendants even in the top layer. Inputs, textareas and editable content have later user-select:text overrides so nickname/search editing and text selection remain usable. No global html/body/app/shared-component selection policy; `/review`, `/players`, `/elements` and other team routes keep normal text selection.
+- Removed “รอบดีที่สุดต่อคน · คะแนนมากก่อน · คะแนนเท่ากันใช้เวลาน้อยก่อน · เวลาไทย” from Home's footer and the session ranking footer, and removed its unused dictionary key/rules CSS. Kept desktop ranking actions right-aligned and narrow actions stretched. Ranking calculations, raw records, score/timer/controls, keyboard focus, dragging and scroll are unchanged; no selection-preventing event handlers added.
+- Updated `DESIGN.md`. `pnpm build` passed (exit 0); `git diff --check` passed; source search confirms no remaining sentence/key/runtime references. Read-only review found no scope/form/dialog/excluded-route/footer issues. No tests or browser/runtime/audio checks, git add/commit, branch/reference-frontend changes; previous button-size edits remain preserved.
+
+## 2026-10-14 — History cue another 20% smaller
+
+- User requested another 20% reduction from the latest history-card button size: changed `--cta-scale` from 0.88 to **0.704** (0.88 × 0.8). No-history size/center, existing anchors, hover inputs, animations and launch handlers remain unchanged. Updated `DESIGN.md`.
+- `pnpm build` passed (exit 0); `git diff --check` passed. No tests, live browser checks, git add/commit, branch or reference-frontend changes.
+
 ## 2026-10-14 — Center full-size empty-card cue; shrink history cue by 12%
 
 - No-history cards restore Start Game to the center of the thumbnail/full art at the original size. Added `has-history` from the ranking empty state independently of `empty-board`, so this rule also works in single-mode layouts, where the full-art empty class is intentionally absent. Desktop single-mode uses the center of its art column; narrow single-mode uses half the actual cover height.

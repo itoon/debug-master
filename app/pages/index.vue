@@ -1624,6 +1624,21 @@ summary:focus-visible {
   overflow-y: auto;
 }
 
+/* Kiosk gameplay only: this route owns Home, all modes and native dialogs.
+   Keep text editing/selecting inside form fields; team routes are separate. */
+.app-shell,
+.app-shell :deep(*) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.app-shell :deep(input),
+.app-shell :deep(textarea),
+.app-shell :deep([contenteditable="true"]),
+.app-shell :deep([contenteditable="true"] *) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .game {
   display: grid;
   grid-template-columns: 1fr;

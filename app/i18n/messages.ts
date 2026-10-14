@@ -230,7 +230,6 @@ export const th = {
   "ranking.searchEmpty": "ไม่พบชื่อที่ค้นหา ลองค้นหาใหม่หรือเริ่มด้วยผู้เล่นใหม่",
   "ranking.totalPlayers": "ผู้เล่นทั้งหมดวันนี้",
   "ranking.selectPlayer": "ดูโปรไฟล์ {name} · อันดับ {rank}",
-  "ranking.bestPerPlayer": "รอบดีที่สุดต่อคน · คะแนนมากก่อน · คะแนนเท่ากันใช้เวลาน้อยก่อน · เวลาไทย",
   "player.returnTitle": "กลับมาลุยอีกครั้งไหม?",
   "player.latestScore": "คะแนนรอบล่าสุด",
   "player.scoreUnavailable": "ไม่พบข้อมูลคะแนนล่าสุด",

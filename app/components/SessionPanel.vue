@@ -167,7 +167,6 @@
           split
         />
         <div class="ranking-footer">
-          <p class="ranking-rules">{{ t('ranking.bestPerPlayer') }}</p>
           <p v-if="storageError" class="session-error" role="alert">
             {{ t('storage.error') }}
           </p>
@@ -290,8 +289,7 @@ h1 {
   font-weight: 800;
   line-height: 1.3;
 }
-.session-mode,
-.ranking-rules {
+.session-mode {
   margin: 0;
   font-size: 0.9rem;
   color: #526079;
@@ -438,12 +436,6 @@ button:disabled {
   padding-top: clamp(8px, 1.6dvh, 14px);
   border-top: 1px solid #86b5ff33;
 }
-.ranking-panel .ranking-rules {
-  flex: 1 1 260px;
-  color: #9fbde9;
-  font-size: 0.85rem;
-  text-wrap: balance;
-}
 .ranking-panel .session-error {
   flex-basis: 100%;
   order: -1;
@@ -451,6 +443,7 @@ button:disabled {
 }
 .ranking-panel .session-actions {
   flex-wrap: nowrap;
+  margin-inline-start: auto;
 }
 .ranking-panel .session-actions button {
   display: inline-flex;
@@ -505,11 +498,9 @@ button:disabled {
     align-items: stretch;
     text-align: center;
   }
-  .ranking-panel .ranking-rules {
-    flex-basis: auto;
-  }
   .ranking-panel .session-actions {
     flex-direction: column;
+    margin-inline-start: 0;
   }
   .ranking-panel .main-action {
     width: 100%;

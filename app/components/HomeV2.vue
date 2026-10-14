@@ -36,7 +36,7 @@
       @ready="detailReady" @back="closeDetails" @start="createPlayer" @select-player="selectPlayer" />
     <footer class="home-footer" :inert="motionPhase !== 'idle'">
       <button type="button" class="practice-button rest-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('sleep')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></svg>{{ t('sleep.back') }}</button>
-      <div class="home-footer-info"><span>{{ t('ranking.bestPerPlayer') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink> · <NuxtLink to="/modes">{{ t('home.modes') }}</NuxtLink></span></div>
+      <div class="home-footer-info"><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink> · <NuxtLink to="/modes">{{ t('home.modes') }}</NuxtLink></span></div>
       <button type="button" class="practice-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('practice')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 4 3 5-5 3-3-5zm10 8 3 5-5 3-3-5zM4 19h5m6-15h5" /></svg>{{ t('practice.open') }}</button>
     </footer>
     <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :repository="repository" :error="error" :busy="busy || motionPhase === 'leaving'"
@@ -410,7 +410,7 @@ onBeforeUnmount(() => {
 /* Centre the cue across the lower thumbnail edge, as in the supplied layout. */
 .start-cta { --cta-scale: 1; position: absolute; top: var(--cta-y); left: 50%; z-index: 1; display: inline-flex; align-items: center; gap: 12px; padding: 10px 28px 10px 10px; border: 3px solid #fff; border-radius: 999px; background: var(--mode-accent); color: #0c2056; font-size: clamp(1.1rem, 1.45vw, 1.4rem); font-weight: 800; line-height: 1; white-space: nowrap; box-shadow: 0 12px 30px rgba(2, 13, 51, .55); opacity: 0; transform: translate(-50%, -50%) scale(calc(var(--cta-scale) * .84)); transition: opacity 220ms ease, transform 380ms cubic-bezier(.16, 1, .3, 1); pointer-events: none; }
 .start-cta svg { width: 46px; height: 46px; flex: none; padding: 12px; border-radius: 50%; background: #0c2056; fill: var(--mode-accent); }
-.mode-board.has-history .start-cta { --cta-scale: .88; }
+.mode-board.has-history .start-cta { --cta-scale: .704; }
 .empty-board .start-cta { --cta-y: 50%; }
 .count-1 .mode-board .start-cta { --cta-y: calc(100% - 156px); left: calc(var(--single-h) * 2 / 3); }
 .count-1 .mode-board:not(.has-history) .start-cta { --cta-y: 50%; }
