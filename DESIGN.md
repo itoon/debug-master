@@ -60,6 +60,8 @@ Keep the space background and restrained blue surfaces, thin outlines and soft s
 
 The summary dialog hides its scrollbar as requested, while retaining overflow scrolling so result details, retry and navigation remain reachable on small screens. Other scroll areas keep their existing presentation.
 
+Leaderboard and player setup use the shared `.game-scrollbar` presentation in `app/assets/css/scrollbar.css`, registered through Nuxt's global CSS list. It keeps the existing leaderboard's 6px rounded translucent grey thumb (45%, 65% hover), transparent track/corner and hidden arrow buttons; Firefox uses thin native scrollbars. This changes scrollbar appearance only and leaves each component's scroll interaction and overflow sizing intact.
+
 ## Shapes
 
 Global control/container radii map to `--cv-radius` (12px) and `--cv-radius-xl` (24px). Player portraits use a full circular white border fitted to the image. The setup popup is a character-select screen: a live player card (large portrait on a landing pad, name plate and age chip, tinted with the mode accent) beside the avatar grid, nickname and age steps; every avatar is visible as a radio option, preselected at random so boards stay varied. Portrait geometry belongs to `PlayerSetupDialog.vue`, not a second global theme.

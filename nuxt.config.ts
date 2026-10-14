@@ -4,5 +4,5 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   app: { head: { htmlAttrs: { lang: "th" } } },
   modules: ["@nuxtjs/tailwindcss"],
-  css: ["~/assets/css/tailwind.css", "~/assets/css/board.css"],
+  css: ["~/assets/css/tailwind.css", "~/assets/css/board.css", "~/assets/css/scrollbar.css"],
 });

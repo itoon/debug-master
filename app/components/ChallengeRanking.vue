@@ -72,7 +72,7 @@
       </div>
       <div
         ref="creditsViewport"
-        class="credits-viewport"
+        class="credits-viewport game-scrollbar"
         :class="{ dragging: isDragging }"
         :tabindex="credits || selectable ? 0 : undefined"
         :role="credits || selectable ? 'region' : undefined"
@@ -326,8 +326,6 @@ function ageRange(age?: number): string {
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.45) transparent;
   scroll-behavior: auto;
   touch-action: pan-y;
   cursor: grab;
@@ -340,33 +338,6 @@ function ageRange(age?: number): string {
   outline: 2px solid #9fcaff;
   outline-offset: 2px;
   border-radius: 8px;
-}
-@supports selector(::-webkit-scrollbar) {
-  .with-credits .credits-viewport {
-    scrollbar-width: auto;
-    scrollbar-color: auto;
-  }
-  .credits-viewport::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-    background: transparent;
-  }
-  .credits-viewport::-webkit-scrollbar-track,
-  .credits-viewport::-webkit-scrollbar-corner {
-    background: transparent;
-  }
-  .credits-viewport::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: rgba(156, 163, 175, 0.45);
-  }
-  .credits-viewport::-webkit-scrollbar-thumb:hover {
-    background: rgba(156, 163, 175, 0.65);
-  }
-  .credits-viewport::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
-  }
 }
 .rank-podium {
   flex: none;
@@ -897,8 +868,6 @@ h3 {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 2px 6px 2px 2px;
-  scrollbar-width: thin;
-  scrollbar-color: #86b5ff66 transparent;
 }
 .space.split .challenge-rows {
   gap: 6px;

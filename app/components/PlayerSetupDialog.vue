@@ -1,5 +1,5 @@
 <template>
-  <dialog ref="dialog" class="player-setup-dialog" :class="[`setup-mode-${mode.id}`, { 'is-closing': isClosing }]"
+  <dialog ref="dialog" class="player-setup-dialog game-scrollbar" :class="[`setup-mode-${mode.id}`, { 'is-closing': isClosing }]"
     :style="{ '--popup-in-ms': `${homeConfig.modeMotion.popupInMs}ms`, '--popup-out-ms': `${homeConfig.modeMotion.popupOutMs}ms` }"
     :aria-labelledby="titleId" @cancel.prevent="!busy && emit('close')">
     <form class="setup-form" @submit.prevent="launch">
@@ -203,7 +203,7 @@ onBeforeUnmount(() => { disposed = true; unsubscribeNames?.(); popupAnimation?.c
 </script>
 
 <style scoped>
-.player-setup-dialog { --mode-accent: #ffdc53; box-sizing: border-box; width: min(940px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; margin: auto; overflow-y: auto; border: 2px solid #668eff; border-radius: 28px; background: linear-gradient(170deg, #1a3a91, #11286f 60%, #0d215e); color: #fff; font-family: var(--cv-font); box-shadow: var(--cv-shadow-window); scrollbar-width: thin; scrollbar-color: #5079e6 transparent; }
+.player-setup-dialog { --mode-accent: #ffdc53; box-sizing: border-box; width: min(940px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; margin: auto; overflow-y: auto; border: 2px solid #668eff; border-radius: 28px; background: linear-gradient(170deg, #1a3a91, #11286f 60%, #0d215e); color: #fff; font-family: var(--cv-font); box-shadow: var(--cv-shadow-window); }
 .player-setup-dialog.setup-mode-B { --mode-accent: #94deff; }
 .player-setup-dialog.setup-mode-C { --mode-accent: #d7bcff; }
 .player-setup-dialog::backdrop { background: rgba(3, 12, 40, .78); backdrop-filter: blur(5px); animation: setup-backdrop-in var(--popup-in-ms) ease both; }

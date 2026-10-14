@@ -1,0 +1,33 @@
+/* Shared presentation for leaderboard and player setup scroll areas. */
+.game-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.45) transparent;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  .game-scrollbar {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+  .game-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    background: transparent;
+  }
+  .game-scrollbar::-webkit-scrollbar-track,
+  .game-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  .game-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(156, 163, 175, 0.45);
+  }
+  .game-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.65);
+  }
+  .game-scrollbar::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}

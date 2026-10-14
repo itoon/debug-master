@@ -2,6 +2,13 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — Player setup scrollbar matches the leaderboard
+
+- Applied on the user-requested `feature/replay-same-user` branch. Extracted the leaderboard's scrollbar styling into `app/assets/css/scrollbar.css` and registered it in Nuxt's CSS list; `PlayerSetupDialog` and the ranking viewport now share `.game-scrollbar`.
+- Chromium/WebKit: 6px rounded grey thumb at 45% opacity (65% on hover), transparent track/corner and hidden arrow buttons. Firefox retains thin native scrollbars with the same colours. Removed the popup's blue native scrollbar declarations and the split ranking's scoped blue override so both follow the shared rule.
+- No form handlers, validation, overflow dimensions, manual dragging, auto-scroll animation, gameplay, score or level changes. Updated `DESIGN.md` to record the shared style owner.
+- Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review found the split-view precedence override, which was removed; source inspection confirms scrollbar rules now live only in the shared stylesheet. No tests written/run or live browser verification for this styling task. No git add/commit, branch switch or reference-frontend edits.
+
 ## 2026-10-14 — Block duplicate nicknames in new-player setup
 
 - New-player setup now checks every name in this device's score history across all dates/modes, rather than only today's Top 10. Shared `nicknameKey` uses NFKC, trimmed/collapsed whitespace and lowercase for comparison; stored/displayed spelling and emoji stay unchanged. Existing duplicate records remain separate and are not migrated.
