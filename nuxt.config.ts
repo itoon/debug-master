@@ -4,5 +4,6 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   app: { head: { htmlAttrs: { lang: "th" } } },
   modules: ["@nuxtjs/tailwindcss"],
+  runtimeConfig: { public: { liveUrl: "" } },
   css: ["~/assets/css/tailwind.css", "~/assets/css/board.css"],
 });
