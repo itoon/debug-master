@@ -1,7 +1,23 @@
 // Pure room logic for the Live Race Room. No I/O, no `cloudflare:workers` import:
 // the Durable Object owns sockets and storage and passes connectivity in as a Set of pids.
-import type { HostCommand, LivePlayer, ModeId, Phase, PlayerHello } from '../../app/utils/live/protocol'
-import { COUNTDOWN_MS, DEFAULT_DURATION_SEC, MAX_PLAYERS } from '../../app/utils/live/protocol'
+import type {
+  HostCommand,
+  LivePlayer,
+  ModeId,
+  Phase,
+  PlayerHello,
+  ProgressMsg,
+  RoomState,
+} from '../../app/utils/live/protocol'
+import {
+  COUNTDOWN_MS,
+  DEFAULT_DURATION_SEC,
+  GRACE_MS,
+  IDLE_MS,
+  MAX_LEVEL_ID,
+  MAX_PLAYERS,
+  maxLevelPoints,
+} from '../../app/utils/live/protocol'
 
 export type StoredPlayer = Omit<LivePlayer, 'connected'>
 
@@ -203,4 +219,85 @@ export function claimHost(room: StoredRoom, keyHash: string | null): boolean {
     return true
   }
   return room.hostKeyHash === keyHash
+}
+
+/**
+ * Accepts a cumulative progress report, or drops the whole message (returns false).
+ * Scores only grow when a level is cleared, so the score gain is capped per newly cleared level.
+ */
+export function applyProgress(room: StoredRoom, pid: string, msg: ProgressMsg, now: number): boolean {
+  const open =
+    room.phase === 'running' ||
+    (room.phase === 'finished' && room.endAt !== null && now <= room.endAt + GRACE_MS)
+  if (!open) return false
+  if (msg.roundId !== room.roundId) return false
+  const prev = room.players[pid]
+  if (!prev || prev.status !== 'playing') return false
+  if (msg.score < prev.score || msg.levelsCompleted < prev.levelsCompleted || msg.bestCombo < prev.bestCombo) {
+    return false
+  }
+  if (msg.levelsCompleted > MAX_LEVEL_ID) return false
+  const cleared = msg.levelsCompleted - prev.levelsCompleted
+  if (msg.score - prev.score > cleared * maxLevelPoints(msg.bestCombo)) return false
+
+  prev.score = msg.score
+  prev.levelsCompleted = msg.levelsCompleted
+  prev.bestCombo = msg.bestCombo
+  prev.combo = msg.combo
+  return true
+}
+
+/** countdown -> running -> finished only; lobby and finished rooms are never moved. */
+export function advanceClock(room: StoredRoom, now: number): boolean {
+  let changed = false
+  if (room.phase === 'countdown' && room.startAt !== null && now >= room.startAt) {
+    room.phase = 'running'
+    changed = true
+  }
+  if (room.phase === 'running' && room.endAt !== null && now >= room.endAt) {
+    room.phase = 'finished'
+    changed = true
+  }
+  return changed
+}
+
+export function nextAlarmAt(room: StoredRoom, openSockets: number): number | null {
+  if (room.phase === 'countdown') return room.startAt
+  if (room.phase === 'running') return room.endAt
+  if (openSockets === 0) return room.lastActivity + IDLE_MS
+  return null
+}
+
+export function isIdleExpired(room: StoredRoom, openSockets: number, now: number): boolean {
+  return openSockets === 0 && now >= room.lastActivity + IDLE_MS
+}
+
+export function comparePlayers(a: LivePlayer, b: LivePlayer): number {
+  if (a.status !== b.status) return a.status === 'playing' ? -1 : 1
+  if (a.status === 'queued') return (a.queuedAt ?? 0) - (b.queuedAt ?? 0)
+  return b.score - a.score || b.levelsCompleted - a.levelsCompleted || a.joinedAt - b.joinedAt
+}
+
+export function snapshot(
+  room: StoredRoom,
+  connected: Set<string>,
+  counts: { screens: number; hosts: number },
+  now: number,
+): RoomState {
+  const players: LivePlayer[] = Object.values(room.players)
+    .map((p) => ({ ...p, connected: connected.has(p.id) }))
+    .sort(comparePlayers)
+  return {
+    code: room.code,
+    phase: room.phase,
+    mode: room.mode,
+    durationSec: room.durationSec,
+    roundId: room.roundId,
+    startAt: room.startAt,
+    endAt: room.endAt,
+    serverNow: now,
+    players,
+    screens: counts.screens,
+    hosts: counts.hosts,
+  }
 }
