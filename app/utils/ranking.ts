@@ -58,7 +58,12 @@ export function scorePlayerKey(score: Score): string {
   return score.playerId || `legacy:${score.id}`;
 }
 
-/** Today's board: higher score first, then less time; challenges show each player's best run. */
+/** A zero-point run stays in history but has no leaderboard position. */
+export function hasRankingScore(score: Pick<Score, 'score'>): boolean {
+  return score.score > 0;
+}
+
+/** Today's positive-score board: higher score first, then less time; challenges show each player's best run. */
 export function todayRanking(
   scores: Score[],
   board: RankingBoard,
@@ -67,7 +72,7 @@ export function todayRanking(
 ): Score[] {
   const today = bangkokDay(now);
   const ordered = scores
-    .filter((score) => isOnBoard(score, board) && bangkokDay(score.createdAt) === today)
+    .filter((score) => hasRankingScore(score) && isOnBoard(score, board) && bangkokDay(score.createdAt) === today)
     .sort((a, b) => b.score - a.score || a.elapsedMs - b.elapsedMs);
   if (!board.challengeId) return ordered.slice(0, limit);
   const players = new Set<string>();

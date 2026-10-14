@@ -13,7 +13,8 @@ import background from "~/assets/bg.png";
 import { PLAYER_SPRITES, PLAYER_POSES } from "../utils/playerSprites";
 import { tileDefinition } from "./tiles";
 import { th } from "../i18n/messages";
-import sleepLogo from '../assets/brand/logo-sleep.png';
+import sleepLogo from '../assets/brand/logo-sleep.svg';
+import sleepLogoDisplay from '../assets/brand/logo-sleep-display.png';
 
 export type AssetStatus = "in-use" | "css" | "wanted" | "spare";
 
@@ -326,11 +327,20 @@ export const assetGroups: AssetGroup[] = [
       {
         id: 'logo-sleep',
         name: th['asset.sleepLogo'],
-        file: 'app/assets/brand/logo-sleep.png',
+        file: 'app/assets/brand/logo-sleep.svg',
         status: 'in-use',
         preview: { kind: 'image', src: sleepLogo, backdrop: 'dark' },
-        usedIn: th['asset.sleepLogoUsage'],
+        usedIn: th['asset.sleepLogoSourceUsage'],
         spec: [th['asset.sleepLogoSpec']],
+      },
+      {
+        id: 'logo-sleep-display',
+        name: th['asset.sleepLogoDisplay'],
+        file: 'app/assets/brand/logo-sleep-display.png',
+        status: 'in-use',
+        preview: { kind: 'image', src: sleepLogoDisplay, backdrop: 'dark' },
+        usedIn: th['asset.sleepLogoUsage'],
+        spec: [th['asset.sleepLogoDisplaySpec']],
       },
     ],
   },

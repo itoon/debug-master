@@ -1,8 +1,8 @@
 <template>
   <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
-    <Transition v-if="homeConfig.enabled && showSetup" name="sleep-switch" mode="out-in" @after-enter="focusHomeAfterWake">
+    <Transition v-if="homeConfig.enabled && showSetup" name="sleep-switch" mode="out-in" :duration="homeTransitionDuration" @after-enter="focusHomeAfterWake">
       <HomeSleepScreen v-if="homeSleeping" key="home-sleep" @wake="wakeHome" @unlock-audio="unlockAudio" />
-      <HomeV2 v-else ref="homeView" :key="homeResetKey"
+      <HomeV2 v-else ref="homeView" :key="homeResetKey" :entering="homeEntering"
         :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
         @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" @sleep="showHomeSleep" />
     </Transition>
@@ -399,7 +399,7 @@ import {
   newRunSeed,
   type GeneratedLevel,
 } from "../utils/levelGen";
-import { PLAYER_AGES, scorePlayerKey, type RankingBoard } from "../utils/ranking";
+import { PLAYER_AGES, scorePlayerKey, hasRankingScore, type RankingBoard } from "../utils/ranking";
 import { nicknameKey } from "../utils/playerNickname";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
 import { enabledModesFor, homeConfig, type ChallengeMode } from "../data/home-config";
@@ -418,6 +418,15 @@ const currentPlayerId = ref("");
 const currentAvatarId = ref<string | undefined>(undefined);
 const homeResetKey = ref(0);
 const homeSleeping = ref(true); // Only initial page entry and the manual Home button set this true.
+const homeEntering = ref(false);
+const homeTransitionDuration = computed(() => {
+  const sleeping = homeSleeping.value;
+  const still = import.meta.client && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return {
+    enter: still ? 0 : sleeping ? 220 : homeConfig.sleepScreen.cardInMs + homeConfig.sleepScreen.cardStaggerMs * (homeConfig.modes.length - 1) + homeConfig.sleepScreen.entryBufferMs,
+    leave: still ? 0 : sleeping ? 220 : homeConfig.sleepScreen.transitionMs,
+  };
+});
 const homeView = ref<{ focusFirstMode: () => Promise<void> } | null>(null);
 let focusAfterWake = false;
 const showTutorial = ref(false);
@@ -442,7 +451,7 @@ let practiceLaunchToken = 0;
 let practiceLaunchButton: HTMLElement | null = null;
 const summaryScore = ref<Score | undefined>();
 const returningBestScore = ref<number | null>(null);
-const showSummaryRank = computed(() => returningBestScore.value === null || (summaryScore.value?.score ?? -Infinity) > returningBestScore.value);
+const showSummaryRank = computed(() => !!summaryScore.value && hasRankingScore(summaryScore.value) && (returningBestScore.value === null || summaryScore.value.score > returningBestScore.value));
 const scoreSaved = ref(false);
 const homeStorageError = ref("");
 const scoreStorageError = ref(false);
@@ -1000,6 +1009,7 @@ function recordInteraction(): void { lastInteractionAt = Date.now(); }
 function wakeHome(input: 'keyboard' | 'pointer'): void {
   if (!showSetup.value || !homeSleeping.value) return;
   focusAfterWake = input === 'keyboard';
+  homeEntering.value = true;
   homeSleeping.value = false;
   recordInteraction();
 }
@@ -1010,6 +1020,7 @@ function showHomeSleep(): void {
   recordInteraction();
 }
 function focusHomeAfterWake(): void {
+  homeEntering.value = false;
   if (!showSetup.value || homeSleeping.value || !focusAfterWake) return;
   focusAfterWake = false;
   void homeView.value?.focusFirstMode();

@@ -115,7 +115,7 @@
           {{ result.name }} ·
           {{ t('summary.levels', { count: result.levelsCompleted }) }}
         </p>
-        <dl class="summary-metrics" :class="{ 'without-rank': !showSummaryRank }">
+        <dl class="summary-metrics" :class="{ 'without-rank': !showResultRank }">
           <div>
             <dt>{{ t('summary.score') }}</dt>
             <dd>{{ shownResultScore.toLocaleString('th-TH') }}</dd>
@@ -124,7 +124,7 @@
             <dt>{{ t('summary.time') }}</dt>
             <dd>{{ formatClock(result.elapsedMs) }}</dd>
           </div>
-          <div v-if="showSummaryRank">
+          <div v-if="showResultRank">
             <dt>{{ t('summary.rank') }}</dt>
             <dd>
               {{ rank ? t('ranking.rank', { rank }) : t('ranking.unranked') }}
@@ -159,8 +159,8 @@
           :repository="repository"
           :board="board"
           :limit="Infinity"
-          :highlight-id="saved ? result?.id : undefined"
-          :highlight-player-id="saved ? result?.playerId : undefined"
+          :highlight-id="saved ? rankedResult?.id : undefined"
+          :highlight-player-id="saved ? rankedResult?.playerId : undefined"
           variant="space"
           podium
           placeholder
@@ -198,7 +198,7 @@
 import type { ChallengeMode } from '../data/home-config'
 import type { ScoreRepository } from '../storage/contracts'
 import type { Score } from '../types/debug-game'
-import { formatClock, scorePlayerKey, type RankingBoard } from '../utils/ranking'
+import { formatClock, scorePlayerKey, hasRankingScore, type RankingBoard } from '../utils/ranking'
 import { useGameI18n } from '../composables/useGameI18n'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { TILE_TYPES, tileDefinition } from '../data/tiles'
@@ -234,9 +234,11 @@ const { rows, error } = useScoreBoard(
   computed(() => props.board),
   Infinity
 )
+const rankedResult = computed(() => props.result && hasRankingScore(props.result) ? props.result : undefined)
+const showResultRank = computed(() => props.showSummaryRank && !!rankedResult.value)
 const rank = computed(() => {
-  if (!props.saved || !props.result) return undefined
-  const result = props.result;
+  if (!props.saved || !rankedResult.value) return undefined
+  const result = rankedResult.value;
   const index = rows.value.findIndex((score) => props.board.challengeId ? scorePlayerKey(score) === scorePlayerKey(result) : score.id === result.id)
   return index < 0 ? undefined : index + 1
 })

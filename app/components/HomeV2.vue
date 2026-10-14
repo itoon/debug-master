@@ -1,5 +1,6 @@
 <template>
-  <main class="home-v2" :data-motion="motionPhase" :class="{ 'has-details': detailMode, 'selection-made': selectionMade }">
+  <main class="home-v2" :data-motion="motionPhase" :inert="entering" :class="{ 'has-details': detailMode, 'selection-made': selectionMade }"
+    :style="{ '--card-in-ms': `${homeConfig.sleepScreen.cardInMs}ms`, '--card-stagger-ms': `${homeConfig.sleepScreen.cardStaggerMs}ms` }">
     <h1 class="sr-only">{{ t('brand') }}</h1>
 
     <div v-show="!detailMode" ref="modeBoards" class="mode-boards" :class="[`count-${enabledModes.length}`, { 'modes-loading': !modesLoaded }]" :inert="motionPhase !== 'idle'">
@@ -52,7 +53,7 @@ import { formatClock, isOnBoard, scorePlayerKey, type RankingBoard } from "../ut
 import type { UiSoundEffect } from "../data/sound-effects";
 import type { Score } from "../types/debug-game";
 
-const props = defineProps<{ repository: ScoreRepository; modesRepository: ModeSettingsRepository; error?: string; busy?: boolean }>();
+const props = defineProps<{ repository: ScoreRepository; modesRepository: ModeSettingsRepository; error?: string; busy?: boolean; entering?: boolean }>();
 const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resume: [scoreId: string, mode: ChallengeMode]; practice: []; sleep: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
 const { t } = useGameI18n();
 // Saved on this device at /modes; hidden until read so SSR defaults never flash.
@@ -380,8 +381,8 @@ onBeforeUnmount(() => {
 .mode-A { border-color: #e3bd4b; }
 /* Cards are dealt in left to right once the enabled modes are known. Backwards
    fill only, so hover lift and the selection motion own transform afterwards. */
-.home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: card-deal 620ms cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--deal, 0) * 90ms); }
-@keyframes card-deal { from { opacity: 0; transform: translateY(36px) scale(.94) rotate(calc((var(--deal, 0) - 1) * -1.5deg)); } }
+.home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: card-deal var(--card-in-ms) cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--deal, 0) * var(--card-stagger-ms)); }
+@keyframes card-deal { from { opacity: 0; transform: translate3d(0, 42px, 0); } }
 .home-v2:not([data-motion="idle"]) .mode-boards { overflow: clip; }
 .home-v2:not([data-motion="idle"]) .mode-board { transform: none; transition: none; }
 .mode-board.selected-card { z-index: 2; }
@@ -434,8 +435,9 @@ onBeforeUnmount(() => {
 .empty-board .mode-heading h2 { text-shadow: 0 2px 3px #020d31, 0 0 14px #020d31b3; }
 .home-footer { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; color: #d0e2ff; font-size: .7rem; text-align: center; }
 .practice-button.rest-button { justify-self: start; }
-.home-v2.sleep-switch-enter-active, .home-v2.sleep-switch-leave-active { transition: opacity 220ms ease; }
-.home-v2.sleep-switch-enter-from, .home-v2.sleep-switch-leave-to { opacity: 0; }
+.home-v2.sleep-switch-leave-active { transition: opacity 220ms ease; }
+.home-v2.sleep-switch-leave-to { opacity: 0; }
+.home-v2.sleep-switch-enter-active .home-footer { animation: card-fade 220ms ease backwards; animation-delay: calc(var(--card-stagger-ms) * 2); }
 .home-v2.sleep-switch-leave-active { pointer-events: none; }
 .home-footer-info { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 24px; }
 .practice-button { display: inline-flex; justify-self: end; align-items: center; gap: 6px; min-height: 36px; padding: 6px 10px; border: 1px solid #84b4ff80; border-radius: 10px; background: #0b275c99; color: #e4efff; font: inherit; font-size: .75rem; font-weight: 800; cursor: pointer; }
@@ -474,8 +476,9 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .home-v2.sleep-switch-enter-active, .home-v2.sleep-switch-leave-active { transition: none; }
+  .home-v2.sleep-switch-enter-active .home-footer { animation: none; }
   .mode-board, .cover-image { transition: none; }
-  .home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: card-fade 200ms ease backwards; }
+  .home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: none; }
   .mode-board:hover, .mode-board:focus-within, .mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: none; }
   .mode-board:hover .cover-sheen, .mode-board:hover .start-cta svg { animation: none; }
   .start-cta, .mode-board:hover .start-cta { transform: translate(-50%, -50%); transition: opacity 120ms linear; }
