@@ -36,7 +36,8 @@ export interface LiveSocket {
   close(): void
 }
 
-export function openLiveSocket(url: string, hello: () => ClientMessage, handlers: LiveSocketHandlers): LiveSocket {
+/** `hello` runs on every (re)connect; returning null skips it (the socket then only listens until the caller sends one). */
+export function openLiveSocket(url: string, hello: () => ClientMessage | null, handlers: LiveSocketHandlers): LiveSocket {
   let ws: WebSocket | null = null
   let closed = false
   let attempt = 0
@@ -94,7 +95,8 @@ export function openLiveSocket(url: string, hello: () => ClientMessage, handlers
     }
     ws = sock
     sock.onopen = () => {
-      sock.send(JSON.stringify(hello()))
+      const greeting = hello()
+      if (greeting) sock.send(JSON.stringify(greeting))
       for (const data of queue.values()) sock.send(data)
       queue.clear()
       stopPing()

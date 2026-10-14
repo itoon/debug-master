@@ -84,12 +84,13 @@
 <script setup lang="ts">
 import { homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
-import { PLAYER_AVATARS } from "../data/player-avatars";
+import { PLAYER_AVATARS, isPlayerAvatarId } from "../data/player-avatars";
 import { usePlayerAvatar } from "../composables/usePlayerAvatar";
 import type { PlayerSetupInput } from "../storage/contracts";
 import { formatClock } from "../utils/ranking";
 
-const props = defineProps<{ mode: ChallengeMode; error?: string; busy?: boolean }>();
+// `initial` prefills the form (Live: the last player on this device); without it the form starts empty.
+const props = defineProps<{ mode: ChallengeMode; error?: string; busy?: boolean; initial?: PlayerSetupInput | null }>();
 const emit = defineEmits<{ close: []; start: [player: PlayerSetupInput]; popup: [] }>();
 const { t } = useGameI18n();
 const titleId = useId();
@@ -124,7 +125,7 @@ async function closeWithMotion(): Promise<void> {
 }
 defineExpose({ closeWithMotion });
 const nicknameInput = ref<HTMLInputElement | null>(null);
-const nickname = ref("");
+const nickname = ref(props.initial?.nickname ?? "");
 const avatarSrc = usePlayerAvatar();
 // Starts on a random character so the leaderboard stays varied; the player can pick any other.
 const selectedAvatar = ref<string>(PLAYER_AVATARS[0]);
@@ -140,7 +141,7 @@ const nicknameVibeKeys = [
   "nickname.vibe.godMode", "nickname.vibe.boost", "nickname.vibe.sneaky", "nickname.vibe.energy",
   "nickname.vibe.playful", "nickname.vibe.fast",
 ] as const;
-const age = ref<number | null>(null);
+const age = ref<number | null>(props.initial && homeConfig.ages.includes(props.initial.age) ? props.initial.age : null);
 const normalizedName = computed(() => nickname.value.trim());
 const valid = computed(() => normalizedName.value.length > 0 && normalizedName.value.length <= homeConfig.nicknameMaxLength && homeConfig.ages.includes(age.value as number));
 const formStatus = computed(() => t(valid.value ? "home.ready" : !normalizedName.value && age.value === null ? "home.requiredBoth" : !normalizedName.value ? "home.requiredName" : "home.requiredAge"));
@@ -162,7 +163,10 @@ function launch() {
   if (!props.busy && !isClosing.value && valid.value && age.value !== null) emit("start", { nickname: normalizedName.value, age: age.value, avatarId: selectedAvatar.value });
 }
 onMounted(() => {
-  selectedAvatar.value = PLAYER_AVATARS[Math.floor(Math.random() * PLAYER_AVATARS.length)]!;
+  const preset = props.initial?.avatarId;
+  selectedAvatar.value = isPlayerAvatarId(preset)
+    ? preset
+    : PLAYER_AVATARS[Math.floor(Math.random() * PLAYER_AVATARS.length)]!;
   dialog.value?.showModal();
   void animatePopup([
     { offset: 0, opacity: 0, transform: "scale(.72)", easing: "cubic-bezier(.2, .8, .2, 1)" },

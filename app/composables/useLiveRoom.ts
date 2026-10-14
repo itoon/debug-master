@@ -23,7 +23,7 @@ export interface LiveRoom {
 }
 
 /** Connects to a live room; with no live URL configured (or on the server) it returns an inert room. */
-export function useLiveRoom(opts: { code: string; role: Role; key?: string; hello: () => ClientMessage }): LiveRoom {
+export function useLiveRoom(opts: { code: string; role: Role; key?: string; hello: () => ClientMessage | null }): LiveRoom {
   const state = ref<RoomState | null>(null);
   const offset = ref(0);
   const connected = ref(false);

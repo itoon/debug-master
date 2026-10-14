@@ -225,6 +225,16 @@ describe('openLiveSocket', () => {
     expect(last().sent.at(-1)).toBe(JSON.stringify(p(3)))
   })
 
+  it('skips hello while the hello factory returns null', () => {
+    let greeting: { type: 'hello' } | null = null
+    const s = openLiveSocket('ws://x', () => greeting, { onMessage, onConnection })
+    last().open()
+    expect(last().sent).toEqual([])
+    greeting = { type: 'hello' }
+    s.send(greeting)
+    expect(last().sent).toEqual([JSON.stringify({ type: 'hello' })])
+  })
+
   it('close() stops reconnecting and ignores later sends', () => {
     const s = openLiveSocket('ws://x', hello, { onMessage, onConnection })
     last().open()
