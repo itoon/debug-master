@@ -5,6 +5,7 @@
       <div class="metrics">
         <div class="metric score"><span>{{ t('game.score') }}</span><strong :key="scoreBumps" :class="{ bump: scoreBumps > 0 }">{{ shownScore.toLocaleString('th-TH') }}</strong></div>
         <div v-if="timed" class="metric time" :class="{ 'time-low': timeLow }"><span>{{ t('game.timer') }}</span><strong :key="timeLow ? time : 'steady'">{{ time }}</strong></div>
+        <div v-if="liveRank" class="metric live-rank"><span>{{ t('live.rank') }}</span><strong>{{ liveRank }}</strong></div>
         <span v-if="lives !== undefined" class="hearts" role="img" :aria-label="t('game.lives', { count: lives })"><i v-for="heart in maxLives" :key="heart" :class="{ lost: heart > lives }" aria-hidden="true">♥</i></span>
       </div>
     </div>
@@ -48,6 +49,8 @@ const props = defineProps<{
   practice?: boolean;
   /** Last stretch of a timed run: the clock pulses once per second. */
   timeLow?: boolean;
+  /** Live Race Room only: own place among the round's players, e.g. "2/7". */
+  liveRank?: string;
 }>();
 const { t } = useGameI18n();
 const avatarSrc = usePlayerAvatar();
@@ -81,6 +84,7 @@ h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-h
 .metric > span { color: #bed6ff; font-size: .65rem; line-height: 1.2; }
 .metric strong { font-size: 1.2rem; line-height: 1; color: #fff; }
 .score strong { color: #ffdb58; }
+.live-rank strong { color: #87dfff; }
 .progress-info { flex: none; }
 .progress-info strong { color: #87dfff; }
 .progress-track { box-sizing: border-box; width: 100%; height: 8px; padding: 2px; border: 1px solid #82aeef55; border-radius: 8px; overflow: hidden; background: #071e49b8; }

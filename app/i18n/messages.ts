@@ -313,6 +313,19 @@ export const th = {
   "live.openScreen": "เปิดจอใหญ่",
   "live.hostDenied": "เครื่องนี้ดูได้อย่างเดียว ไม่มีสิทธิ์คุมห้องนี้",
   "live.waitStart": "รอเริ่ม",
+  "live.rank": "อันดับ",
+  "live.waitHost": "รอสตาฟฟ์กดเริ่ม",
+  "live.roundInfo": "{mode} · {minutes} นาที",
+  "live.queued": "คุณอยู่ในคิวรอบหน้า",
+  "live.queuedEta": "อีก {time} เริ่มรอบใหม่",
+  "live.full": "ห้องเต็ม รอรอบหน้านะ",
+  "live.kicked": "สตาฟฟ์นำคุณออกจากห้องแล้ว",
+  "live.countdownGo": "เริ่ม!",
+  "live.yourRank": "คุณได้อันดับ {rank} จาก {total}",
+  "live.lateScore": "บันทึกคะแนนล่าสุดที่ส่งทันเวลา",
+  "live.changePlayer": "เปลี่ยนผู้เล่น",
+  "live.leave": "ออกจากห้อง",
+  "live.home": "กลับหน้าแรก",
 } as const;
 
 export type MessageKey = keyof typeof th;
