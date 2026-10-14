@@ -131,8 +131,10 @@ watch(() => props.stage, async () => {
 </script>
 
 <style scoped>
-.live-player-panel { box-sizing: border-box; min-height: 100%; display: grid; place-items: center; padding: 12px; }
-.live-card { box-sizing: border-box; position: relative; width: min(560px, 100%); display: grid; justify-items: center; gap: 14px; padding: clamp(22px, 3vw, 32px); border: 1px solid #7faaff; border-radius: var(--cv-radius-xl); background: linear-gradient(155deg, #19387b, #0b214a); color: #fff; text-align: center; box-shadow: var(--cv-shadow-window); animation: live-arrive 380ms cubic-bezier(.2, .8, .2, 1) both; }
+/* Fills the shell (overflow: hidden on desktop) and scrolls itself; the card's auto margins centre it
+   when it fits and collapse to 0 when it doesn't, so a tall results card scrolls from its top. */
+.live-player-panel { box-sizing: border-box; height: 100%; display: grid; padding: 12px; overflow-y: auto; overscroll-behavior: contain; }
+.live-card { box-sizing: border-box; position: relative; width: min(560px, 100%); margin: auto; display: grid; justify-items: center; gap: 14px; padding: clamp(22px, 3vw, 32px); border: 1px solid #7faaff; border-radius: var(--cv-radius-xl); background: linear-gradient(155deg, #19387b, #0b214a); color: #fff; text-align: center; box-shadow: var(--cv-shadow-window); animation: live-arrive 380ms cubic-bezier(.2, .8, .2, 1) both; }
 p, h1, dl, dd, ol { margin: 0; }
 .live-brand { display: inline-flex; align-items: center; gap: 8px; color: #bdd8ff; font-size: .85rem; font-weight: 800; letter-spacing: .04em; }
 .live-brand i { width: 8px; height: 8px; border-radius: 50%; background: var(--cv-red); box-shadow: 0 0 8px #ff6b6b99; animation: live-dot 1.6s ease-in-out infinite; }
