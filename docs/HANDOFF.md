@@ -2,6 +2,13 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — Crisp practice-summary hero and centered title
+
+- Confirmed the previous practice-summary picture was SVG: `PLAYER_POSES.win` points to the contour-traced `codi-win.svg` with Gaussian blur 0.4px. Preserved it and all canonical movement/failure/win assets/SSIM reports; created a separate `codi-win-summary.svg` from the clean front-vector geometry with wink, raised arm and angled foot. New UI asset is 4,922 bytes/63 elements/viewBox 128×128, no raster/embed/blur, registered in Elements with accurate usage/specs.
+- Practice summary alone now uses this illustration at 144px (was 104), with 3 gold/cyan SVG stars in different sizes, radial glow, thin orbit and a landing ellipse. Stars twinkle gently and the pad changes opacity; all new loops stop with reduced motion. Short screens use a 100px hero/96px character. Centered brand and updated/centered localized heading “สรุปผลการซ้อม”; metrics/time/unique-level/mistake counts, native-dialog focus/cancel/scroll/home flow unchanged.
+- Rendered and visually inspected the new SVG at 128px/512px and a static hero composition; saved the preview and exact limitations in `docs/practice-summary-visuals/REPORT.md`. The previous ≥98% SSIM result is not attributed to this new UI illustration. No live browser/popup/animation verification.
+- Final `pnpm build` passed (exit 0), `git diff --check` passed; read-only review found no concrete asset/bounds/short-screen/reduced-motion/focus/action issues. No tests, game core/timer/scoring/data changes, dependency installs, git add/commit, branch switch or reference-frontend edits. Existing multi-delete/asset-cleanup work is preserved.
+
 ## 2026-10-14 — Multi-row player cleanup and obsolete sprite removal
 
 - Added row checkboxes, an indeterminate select-all checkbox for the current search results, selected count, clear selection and “ลบที่เลือก (count)” on `/players`. Search changes clear selection (stated in UI); refresh prunes absent/nonvisible IDs. Existing per-row deletion remains. Selection uses score/run IDs, so same nicknames and other rounds do not accidentally expand deletion scope.
