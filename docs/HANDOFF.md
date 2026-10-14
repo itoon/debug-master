@@ -2,6 +2,19 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — Center full-size empty-card cue; shrink history cue by 12%
+
+- No-history cards restore Start Game to the center of the thumbnail/full art at the original size. Added `has-history` from the ranking empty state independently of `empty-board`, so this rule also works in single-mode layouts, where the full-art empty class is intentionally absent. Desktop single-mode uses the center of its art column; narrow single-mode uses half the actual cover height.
+- Cards with history keep their current anchor and scale the complete cue to **0.88**, exactly 12% smaller in both axes (text/icon/padding/border included). Hidden-entry and reduced-motion transforms preserve the final size variant. No extra ranking spacing added; existing mouse-only visibility, click delegation, focus restoration and selection motion remain.
+- Updated `DESIGN.md`. `pnpm build` passed (exit 0), `git diff --check` passed; read-only review found no concrete history/size/anchor/specificity issues. No tests or browser/runtime/audio checks; rendered appearance remains unverified. No git add/commit, branch or reference-frontend changes; existing staged/unstaged work was preserved.
+
+## 2026-10-14 — Restore mouse-hover cue at the user's revised thumbnail edge
+
+- User reported the Start Game cue missing and supplied a new placement spanning the lower thumbnail edge. Replaced the primary-device `(hover:hover) and (pointer:fine)` gate with actual mouse `pointerenter`/`pointermove` state, so a mouse can reveal it even on hybrid input devices. Pointerleave and selection motion clear state; visibility additionally requires idle/not-entering. Touch/pen and restored focus cannot reveal it. This removes the restrictive gate but the reported browser configuration was not inspected live.
+- Ranked-card anchor is now `--cover-height - 14px`, horizontally centered across the lower edge, matching the revised layout intent. Removed the extra 72px ranking padding from the previous attempt, restoring ranking space. Empty/full-art and desktop single-mode anchors remain above metadata; narrow single-mode uses the shared lower-edge anchor.
+- The cue remains outside the clipped figure and absent from cover clones. Visible cues now have pointer-events:auto and bubble click to the existing section launch handler; the lower part of the pill no longer falls through to the leaderboard read region. Hidden cues have pointer-events:none. No additional click handler or launch/focus/scoring/core changes; these card hover events do not wake sleep.
+- Updated `DESIGN.md`. `pnpm build` passed (exit 0), `git diff --check` passed. Read-only review found no concrete blockers in pointer state, motion reset, click delegation, responsive anchors or ranking flow. No tests, browser/runtime/audio checks, git add/commit or branch/reference-frontend changes. User-staged prior changes were preserved; this update remains unstaged. Rendered placement and hybrid-device behavior remain unverified live.
+
 ## 2026-10-14 — Hover-only Start Game cue at the thumbnail/ranking boundary
 
 - Continued on `feature/replay-same-user`. The visible cue remained after Back because `.mode-board:focus-within .start-cta` matched the intentionally restored card/leaderboard focus. Removed that visibility trigger and the touch `hover:none` always-visible fallback. Cue reveal and thumbnail dim/zoom now require `(hover: hover) and (pointer: fine)` plus actual card hover. Keyboard focus still has the original visible outline and launch action; touch/card clicks still work.

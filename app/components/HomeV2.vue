@@ -4,10 +4,11 @@
     <h1 class="sr-only">{{ t('brand') }}</h1>
 
     <div v-show="!detailMode" ref="modeBoards" class="mode-boards" :class="[`count-${enabledModes.length}`, { 'modes-loading': !modesLoaded }]" :inert="motionPhase !== 'idle'">
-      <section v-for="(mode, index) in enabledModes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id, 'empty-board': emptyBoards[mode.id] && !singleMode }]"
+      <section v-for="(mode, index) in enabledModes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id, 'has-history': !emptyBoards[mode.id], 'empty-board': emptyBoards[mode.id] && !singleMode, 'is-mouse-hovered': hoveredMode === mode.id && motionPhase === 'idle' && !entering }]"
         :data-mode-card="mode.id" :style="{ '--deal': index }"
         :aria-labelledby="`mode-${mode.id}-title`" :aria-busy="busy || motionPhase === 'entering' || motionPhase === 'leaving'"
         @click="openModeSetup(mode, $event)"
+        @pointerenter="updateCardHover(mode.id, $event)" @pointermove="updateCardHover(mode.id, $event)" @pointerleave="leaveCardHover(mode.id)"
         @focusin="focusedMode = mode.id" @focusout="leaveCardFocus($event)">
         <!-- Keyboard target for the whole card; there is no visible Start button. -->
         <button type="button" class="card-launch-target" :disabled="busy || motionPhase !== 'idle'" aria-haspopup="dialog" :data-mode-launch="mode.id"
@@ -69,6 +70,14 @@ const selectionHasHistory = ref(false);
 const selectedPlayer = ref<Score | null>(null);
 const selectedLatestScore = ref<Score | null>(null);
 const motionPhase = ref<"idle" | "entering" | "open" | "leaving">("idle");
+const hoveredMode = ref<ChallengeId | null>(null);
+function updateCardHover(modeId: ChallengeId, event: PointerEvent): void {
+  hoveredMode.value = event.pointerType === 'mouse' && motionPhase.value === 'idle' && !props.entering ? modeId : null;
+}
+function leaveCardHover(modeId: ChallengeId): void {
+  if (hoveredMode.value === modeId) hoveredMode.value = null;
+}
+watch(motionPhase, (phase) => { if (phase !== 'idle') hoveredMode.value = null; });
 const modeBoards = ref<HTMLElement | null>(null);
 const setupDialog = ref<{ closeWithMotion: () => Promise<void> } | null>(null);
 const focusedMode = ref<ChallengeId | null>(null);
@@ -379,7 +388,7 @@ onBeforeUnmount(() => {
 .mode-boards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; min-height: 0; }
 .mode-board { --mode-accent: #ffdc53; position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; min-width: 0; min-height: 0; padding: 0 14px 12px; border: 2px solid #5c86db; border-radius: 24px; color: #fff; background: linear-gradient(165deg, #183985, #0c2056); box-shadow: 0 14px 30px rgba(3, 15, 56, .35); cursor: pointer; transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease; }
 .mode-A { border-color: #e3bd4b; }
-.mode-board { --cover-height: clamp(170px, 27dvh, 280px); --cta-y: calc(var(--cover-height) + 36px); }
+.mode-board { --cover-height: clamp(170px, 27dvh, 280px); --cta-y: calc(var(--cover-height) - 14px); }
 /* Cards are dealt in left to right once the enabled modes are known. Backwards
    fill only, so hover lift and the selection motion own transform afterwards. */
 .home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: card-deal var(--card-in-ms) cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--deal, 0) * var(--card-stagger-ms)); }
@@ -395,18 +404,18 @@ onBeforeUnmount(() => {
 .card-launch-target:focus-visible { outline: 3px solid #fff; outline-offset: 5px; }
 .mode-cover { position: relative; height: var(--cover-height); margin: 0 -14px; overflow: hidden; border-radius: 21px 21px 0 0; background: #0b3a92; }
 .cover-image { width: 100%; height: 100%; object-fit: cover; object-position: center 48%; transition: transform 650ms cubic-bezier(.2, .7, .2, 1), filter 300ms ease; }
-@media (hover: hover) and (pointer: fine) { .mode-board:hover .cover-image { transform: scale(1.06); filter: brightness(.72) saturate(1.1); } }
+.mode-board.is-mouse-hovered .cover-image { transform: scale(1.06); filter: brightness(.72) saturate(1.1); }
 .cover-sheen { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, .22) 45%, transparent 70%); transform: translateX(-120%); pointer-events: none; }
 .mode-board:hover .cover-sheen { animation: cover-sweep 900ms ease both; }
-/* Keep the hover cue below the art, clear of its title/metadata and ranking heading. */
-.start-cta { position: absolute; top: var(--cta-y); left: 50%; z-index: 1; display: inline-flex; align-items: center; gap: 12px; padding: 10px 28px 10px 10px; border: 3px solid #fff; border-radius: 999px; background: var(--mode-accent); color: #0c2056; font-size: clamp(1.1rem, 1.45vw, 1.4rem); font-weight: 800; line-height: 1; white-space: nowrap; box-shadow: 0 12px 30px rgba(2, 13, 51, .55); opacity: 0; transform: translate(-50%, -50%) scale(.84); transition: opacity 220ms ease, transform 380ms cubic-bezier(.16, 1, .3, 1); pointer-events: none; }
+/* Centre the cue across the lower thumbnail edge, as in the supplied layout. */
+.start-cta { --cta-scale: 1; position: absolute; top: var(--cta-y); left: 50%; z-index: 1; display: inline-flex; align-items: center; gap: 12px; padding: 10px 28px 10px 10px; border: 3px solid #fff; border-radius: 999px; background: var(--mode-accent); color: #0c2056; font-size: clamp(1.1rem, 1.45vw, 1.4rem); font-weight: 800; line-height: 1; white-space: nowrap; box-shadow: 0 12px 30px rgba(2, 13, 51, .55); opacity: 0; transform: translate(-50%, -50%) scale(calc(var(--cta-scale) * .84)); transition: opacity 220ms ease, transform 380ms cubic-bezier(.16, 1, .3, 1); pointer-events: none; }
 .start-cta svg { width: 46px; height: 46px; flex: none; padding: 12px; border-radius: 50%; background: #0c2056; fill: var(--mode-accent); }
-.empty-board .start-cta { --cta-y: calc(100% - 112px); }
+.mode-board.has-history .start-cta { --cta-scale: .88; }
+.empty-board .start-cta { --cta-y: 50%; }
 .count-1 .mode-board .start-cta { --cta-y: calc(100% - 156px); left: calc(var(--single-h) * 2 / 3); }
-@media (hover: hover) and (pointer: fine) {
-  .mode-board:hover .start-cta { opacity: 1; transform: translate(-50%, -50%); }
-  .mode-board:hover .start-cta svg { animation: start-nudge 900ms ease-in-out 380ms infinite; }
-}
+.count-1 .mode-board:not(.has-history) .start-cta { --cta-y: 50%; }
+.mode-board.is-mouse-hovered .start-cta { opacity: 1; transform: translate(-50%, -50%) scale(var(--cta-scale)); pointer-events: auto; }
+.mode-board.is-mouse-hovered .start-cta svg { animation: start-nudge 900ms ease-in-out 380ms infinite; }
 .count-1 .start-cta { gap: 14px; padding: 12px 34px 12px 12px; font-size: clamp(1.3rem, 1.9vw, 1.75rem); }
 .count-1 .start-cta svg { width: 58px; height: 58px; padding: 15px; }
 .home-v2:not([data-motion="idle"]) .start-cta { opacity: 0; transition: none; }
@@ -417,7 +426,7 @@ onBeforeUnmount(() => {
 .difficulty-tag { padding: 3px 8px; border: 1px solid rgba(170, 198, 255, .6); border-radius: 8px; background: #102b67; color: var(--mode-accent); font-weight: 800; }
 .time-tag { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-variant-numeric: tabular-nums; }
 .time-tag svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-.card-ranking { min-height: 0; padding-top: 72px; }
+.card-ranking { min-height: 0; }
 .modes-loading { visibility: hidden; }
 .count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 1240px; justify-self: center; }
 /* One enabled mode: the art at its own 4:3 shape beside a full leaderboard, sized to the viewport. */
@@ -458,8 +467,9 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .count-1 { grid-template-columns: minmax(0, 1fr); }
   .count-1 .mode-board { height: 760px; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 12px; padding: 0 14px 12px; }
   .count-1 .mode-cover { height: var(--cover-height); margin: 0 -14px; border-radius: 21px 21px 0 0; }
-  .count-1 .mode-board .start-cta { --cta-y: calc(var(--cover-height) + 36px); left: 50%; }
-  .count-1 .card-ranking { padding: 72px 0 0; }
+  .count-1 .mode-board .start-cta { --cta-y: calc(var(--cover-height) - 14px); left: 50%; }
+  .count-1 .mode-board:not(.has-history) .start-cta { --cta-y: calc(var(--cover-height) / 2); }
+  .count-1 .card-ranking { padding: 0; }
 }
 @media (max-height: 680px) and (min-width: 1101px) {
   .home-v2 { height: auto; min-height: 100%; grid-template-rows: auto auto; }
@@ -480,8 +490,8 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .home-v2.sleep-switch-enter-active .home-footer { animation: none; }
   .mode-board, .cover-image { transition: none; }
   .home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: none; }
-  .mode-board:hover, .mode-board:focus-within, .mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: none; }
-  .mode-board:hover .cover-sheen, .mode-board:hover .start-cta svg { animation: none; }
-  .start-cta, .mode-board:hover .start-cta { transform: translate(-50%, -50%); transition: opacity 120ms linear; }
+  .mode-board:hover, .mode-board:focus-within, .mode-board.is-mouse-hovered .cover-image { transform: none; }
+  .mode-board:hover .cover-sheen, .mode-board.is-mouse-hovered .start-cta svg { animation: none; }
+  .start-cta, .mode-board.is-mouse-hovered .start-cta { transform: translate(-50%, -50%) scale(var(--cta-scale)); transition: opacity 120ms linear; }
 }
 </style>
