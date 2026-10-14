@@ -421,7 +421,8 @@ import { livePlayerId, resetLivePlayerId } from "../utils/live/identity";
 import { clearLiveSession, loadLiveSession, saveLiveSession } from "../utils/live/session";
 import { derivePlayerStage } from "../utils/live/playerStage";
 import { countdownSec, remainingSec, serverTime } from "../utils/live/clock";
-import { GRACE_MS, PROGRESS_INTERVAL_MS, normalizeRoomCode, type PlayerHello, type ProgressMsg, type RoomState } from "../utils/live/protocol";
+import { takeInitialSearch } from "../utils/live/initialSearch";
+import { GRACE_MS, PROGRESS_INTERVAL_MS, roomCodeFromSearch, type PlayerHello, type ProgressMsg, type RoomState } from "../utils/live/protocol";
 import LivePlayerPanel from "../components/live/LivePlayerPanel.vue";
 
 const { t } = useGameI18n();
@@ -1537,7 +1538,6 @@ function formatClock(seconds: number): string {
 // Live Race Room player mode: /?room=CODE. The room code, player id (localStorage) and socket are read on the
 // client only (onMounted), so the prerendered "/" stays the normal Home and hydration matches.
 // The game itself is the same challenge run; the room supplies the mode, the clock (endAt) and the result.
-const route = useRoute();
 const router = useRouter();
 const nuxtApp = useNuxtApp();
 const liveConfig = useLiveConfig();
@@ -1610,7 +1610,9 @@ function validLiveProfile(profile: PlayerSetupInput): PlayerSetupInput | null {
 
 /** onMounted: enters Live mode when the URL carries a valid ?room=. */
 function liveEnter(): void {
-  liveCode.value = normalizeRoomCode(route.query.room);
+  // Not useRoute()/location: the prerendered Pages build hydrates `/` with its query-less route and
+  // restores `?room=` only after mount, so the first mount uses the search captured at startup.
+  liveCode.value = roomCodeFromSearch(takeInitialSearch() ?? window.location.search);
   if (!liveMode.value) return;
   showSetup.value = false; // No Home v2 / reset: the setup dialog for this room comes first.
   livePid.value = livePlayerId();

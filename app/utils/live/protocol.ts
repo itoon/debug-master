@@ -129,3 +129,8 @@ export function normalizeRoomCode(raw: unknown): string | null {
   const code = raw.trim().toUpperCase()
   return ROOM_CODE_RE.test(code) ? code : null
 }
+
+/** Room code from a URL query string such as `location.search` (`?room=CODE`), or null. */
+export function roomCodeFromSearch(search: string): string | null {
+  return normalizeRoomCode(new URLSearchParams(search).get('room'))
+}

@@ -3,7 +3,7 @@ import { challengeSets } from '../../app/data/challenge-groups'
 import { homeConfig } from '../../app/data/home-config'
 import { solveLevel } from '../../app/utils/programRunner'
 import { useProgramParser } from '../../app/composables/useProgramParser'
-import { MAX_LEVEL_ID, MAX_LEVEL_MOVES, maxLevelPoints, normalizeRoomCode, DURATION_PRESETS_SEC, MAX_DURATION_SEC } from '../../app/utils/live/protocol'
+import { MAX_LEVEL_ID, MAX_LEVEL_MOVES, maxLevelPoints, normalizeRoomCode, roomCodeFromSearch, DURATION_PRESETS_SEC, MAX_DURATION_SEC } from '../../app/utils/live/protocol'
 
 describe('protocol constants match the game data', () => {
   it('every live mode set fits MAX_LEVEL_ID and MAX_LEVEL_MOVES', () => {
@@ -30,5 +30,12 @@ describe('protocol constants match the game data', () => {
     expect(normalizeRoomCode('ab')).toBeNull()
     expect(normalizeRoomCode('BAD CODE')).toBeNull()
     expect(normalizeRoomCode(42)).toBeNull()
+  })
+  it('reads the room code from a URL query string', () => {
+    // The prerendered Pages build hydrates with the query-less route, so the page reads location.search.
+    expect(roomCodeFromSearch('?room=a12')).toBe('A12')
+    expect(roomCodeFromSearch('?x=1&room=CODI-1')).toBe('CODI-1')
+    expect(roomCodeFromSearch('?room=ab')).toBeNull()
+    expect(roomCodeFromSearch('')).toBeNull()
   })
 })
