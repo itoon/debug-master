@@ -47,6 +47,27 @@ pnpm --dir live-server deploy     # wrangler deploy -> https://debug-master-live
 The Durable Object needs a plan that supports SQLite-backed Durable Objects (migration `v1`).
 Use the deployed `https://…workers.dev` origin as `NUXT_PUBLIC_LIVE_URL` when building the game.
 
+### Wire the Worker into the GitHub Pages build
+
+`.github/workflows/deploy.yml` passes `NUXT_PUBLIC_LIVE_URL: ${{ vars.LIVE_URL }}` to the
+`Build for GitHub Pages` step. Do this once, by hand:
+
+1. Deploy the Worker (above) and copy its origin, e.g. `https://debug-master-live.<account>.workers.dev`
+   (no trailing slash, no path).
+2. In the GitHub repository go to **Settings → Secrets and variables → Actions → Variables** and
+   create a **repository variable** named `LIVE_URL` with that origin. (It is a variable, not a
+   secret: the URL ends up in the public bundle.)
+3. Re-run the `Deploy to GitHub Pages` workflow (or push to `main`).
+
+If `LIVE_URL` is unset the build gets an empty `NUXT_PUBLIC_LIVE_URL` and the game behaves exactly
+as before (no Live mode). `wrangler login` and `wrangler deploy` are run by the repo owner, not CI.
+
+### Lane textures
+
+The big screen's lanes use `public/tiles/*.png`. They must be **committed** before the Pages
+build, otherwise the textures 404 in production. (At the time of writing they are untracked local
+files; add them in their own commit.)
+
 ## `ALLOWED_ORIGINS`
 
 Comma-separated list of page origins that may open a room socket, set in `wrangler.jsonc`
@@ -69,3 +90,23 @@ new code. The old room is wiped automatically 6 hours after its last activity.
 sockets left, the room's storage is deleted 6 hours after the last activity or disconnect.
 
 **Logs:** `observability.redact_query_string` is on, so host keys in `?key=` never reach logs.
+
+## Rehearsal
+
+Run before every event. Start `pnpm --dir live-server dev` and
+`NUXT_PUBLIC_LIVE_URL=http://127.0.0.1:8787 pnpm dev --port 3000`, create a room on `/live/host`,
+open the big screen at `/live/screen?room=CODE`, and join with three more players at `/?room=CODE`
+(at least one real phone; a phone on the LAN needs its page origin added to `ALLOWED_ORIGINS`
+with `wrangler dev --var`, never by editing `wrangler.jsonc`). Each player needs its own browser
+profile or device, because the player id is stored in localStorage.
+
+1. Join the room, then pick a mode and a time (use "custom 1 minute" to rehearse quickly).
+2. Start, and check the countdown is in sync on every screen.
+3. Turn one player's network off for 10 seconds, turn it back on, and check the score catches up.
+4. Reload the big screen mid-round.
+5. Scan in during a round and check the newcomer is queued.
+6. Let the time run out and check the results match on every screen.
+7. Start a new round and check queued players get to play.
+8. Try a 13th player and check "room full" is shown.
+
+`pnpm --dir live-server smoke` covers the protocol end to end without browsers.

@@ -35,6 +35,7 @@ jobs:
         run: pnpm exec nuxt build --preset github_pages
         env:
           NUXT_APP_BASE_URL: /debug-master/
+          NUXT_PUBLIC_LIVE_URL: ${{ vars.LIVE_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
