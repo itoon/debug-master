@@ -5,9 +5,6 @@
 // that file, so both update. To add a "wanted" asset: put it at `file`, then
 // wire it up as described in `swap` and change its status to "in-use".
 
-import codiDizzy from "~/assets/sprites/cody-dizzy.webp";
-import codiHappy from "~/assets/sprites/cody-happy.webp";
-import codiIdle from "~/assets/sprites/cody-idle.webp";
 import beacon from "~/assets/sprites/beacon.png";
 import background from "~/assets/bg.png";
 import { PLAYER_SPRITES, PLAYER_POSES } from "../utils/playerSprites";
@@ -64,7 +61,7 @@ export const STATUS_LABELS: Record<AssetStatus, string> = {
 const CODI_SPEC = [
   "พื้นหลังโปร่งใส ทุกรูปตัวขนาดเท่ากัน เท้าอยู่ระดับเดียวกัน (สลับรูปแล้วตัวไม่กระโดด)",
   "ตัวเดินวาดแยกครบ 4 ทิศ เกมไม่กลับด้านรูปให้",
-  "รูปท่าทาง (ดีใจ มึน ...): WebP สูง 320 px กว้างไม่เกิน 320 px",
+  "รูปท่าทางชนะ/แพ้: SVG viewBox 128 × 128 ใช้ขนาดและแนวเท้าเดียวกับตัวเดิน",
   "ไม่ต้องใส่เงาใต้เท้า (CSS ใส่ drop-shadow ให้)",
 ];
 
@@ -83,7 +80,7 @@ export const assetGroups: AssetGroup[] = [
     id: "codi",
     title: "Codi (ตัวละคร)",
     description:
-      "ตัวที่ผู้เล่นบังคับใช้รูป 4 ทิศ (หันตามก้าวล่าสุด เริ่มด่านหันหน้าลง) ส่วนรูปท่าทางชุดเดิมยังเก็บไว้",
+      "ตัวละครใช้ SVG ครบ 4 ทิศ (เริ่มด่านหันหน้าลง) พร้อมท่าชนะและแพ้",
     common: CODI_SPEC,
     items: [
       ...(["right", "up", "down", "left"] as const).map(
@@ -97,33 +94,6 @@ export const assetGroups: AssetGroup[] = [
           spec: ["SVG viewBox 128 × 128 ทั้ง 4 ทิศตัวขนาดเท่ากัน เท้าอยู่ระดับเดียวกัน"],
         }),
       ),
-      {
-        id: "codi-idle",
-        name: "ยืนรอ (idle)",
-        file: "app/assets/sprites/cody-idle.webp",
-        status: "spare",
-        preview: { kind: "image", src: codiIdle, backdrop: "tile" },
-        usedIn: "ยังไม่ได้ใช้ (เดิมใช้ตลอดการเล่น)",
-        spec: ["ท่าที่เห็นบ่อยที่สุด ควรอ่านง่ายที่สุด"],
-      },
-      {
-        id: "codi-happy",
-        name: "ดีใจ (happy)",
-        file: "app/assets/sprites/cody-happy.webp",
-        status: "spare",
-        preview: { kind: "image", src: codiHappy, backdrop: "tile" },
-        usedIn: "ยังไม่ได้ใช้ (เดิมใช้ตอนผ่านด่าน)",
-        spec: [],
-      },
-      {
-        id: "codi-dizzy",
-        name: "มึน (dizzy)",
-        file: "app/assets/sprites/cody-dizzy.webp",
-        status: "spare",
-        preview: { kind: "image", src: codiDizzy, backdrop: "tile" },
-        usedIn: "ยังไม่ได้ใช้ (เดิมใช้ตอนกดผิด / หมดเวลา)",
-        spec: [],
-      },
       {
         id: "codi-failed",
         name: th["asset.codiFailed"],

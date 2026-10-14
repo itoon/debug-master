@@ -146,7 +146,7 @@
       <div class="codi-stand">
         <span class="landing-pad" aria-hidden="true" />
         <img
-          :src="variant === 'space' ? codiHappy : PLAYER_SPRITES.down"
+          :src="variant === 'space' ? PLAYER_POSES.win : PLAYER_SPRITES.down"
           alt="Codi"
           draggable="false"
         />
@@ -161,10 +161,9 @@ import type { ScoreRepository } from '../storage/contracts'
 import type { Score } from '../types/debug-game'
 import type { RankingBoard } from '../utils/ranking'
 import { formatClock, scorePlayerKey } from '../utils/ranking'
-import { PLAYER_SPRITES } from '../utils/playerSprites'
+import { PLAYER_SPRITES, PLAYER_POSES } from '../utils/playerSprites'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { useGameI18n } from '../composables/useGameI18n'
-import codiHappy from '~/assets/sprites/cody-happy.webp'
 import { useLeaderboardCredits } from '../composables/useLeaderboardCredits'
 import { usePlayerAvatar } from '../composables/usePlayerAvatar'
 

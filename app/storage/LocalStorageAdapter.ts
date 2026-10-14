@@ -87,10 +87,17 @@ export class LocalScoreRepository implements ScoreRepository {
     });
   }
   remove(scoreId: string): Promise<void> {
+    return this.removeMany([scoreId]);
+  }
+  removeMany(scoreIds: readonly string[]): Promise<void> {
+    if (!scoreIds.length) return Promise.resolve();
+    const selected = new Set(scoreIds);
     return this.adapter.mutate("scores", () => {
       const rows = this.list();
-      if (!rows.some((score) => score.id === scoreId)) return;
-      this.adapter.write("scores", rows.filter((score) => score.id !== scoreId));
+      const remaining = rows.filter((score) => !selected.has(score.id));
+      if (remaining.length === rows.length) return;
+      // Read the current list inside the mutation and write once: no partial batch.
+      this.adapter.write("scores", remaining);
     });
   }
   today(board: RankingBoard, now = new Date(), limit = 10): Score[] {

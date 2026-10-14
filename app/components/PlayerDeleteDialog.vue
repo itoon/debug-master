@@ -1,9 +1,13 @@
 <template>
   <dialog ref="dialog" class="delete-dialog" :aria-labelledby="titleId" :aria-describedby="descriptionId" @cancel.prevent="close">
-    <h2 :id="titleId">{{ t('players.confirmTitle', { name: entry.name }) }}</h2>
-    <p :id="descriptionId">{{ t('players.confirmDescription') }}</p>
-    <p class="entry-detail">{{ entry.name }} · {{ t('ranking.points', { score: entry.score.toLocaleString('th-TH') }) }}</p>
-    <p>{{ modeLabel }} · {{ playedAt }}</p>
+    <h2 :id="titleId">{{ entries.length === 1 ? t('players.confirmTitle', { name: entries[0]!.name }) : t('players.confirmManyTitle', { count: entries.length }) }}</h2>
+    <p :id="descriptionId">{{ t(entries.length === 1 ? 'players.confirmDescription' : 'players.confirmManyDescription') }}</p>
+    <ul class="delete-entries" :class="{ single: entries.length === 1 }">
+      <li v-for="entry in entries" :key="entry.id">
+        <p class="entry-detail">{{ entry.name }} · {{ t('ranking.points', { score: entry.score.toLocaleString('th-TH') }) }}</p>
+        <p>{{ entry.modeLabel }} · {{ entry.playedAt }}</p>
+      </li>
+    </ul>
     <p v-if="busy" role="status">{{ t('players.deleting') }}</p>
     <p v-if="error" class="delete-error" role="alert">{{ t('players.deleteError') }}</p>
     <div class="delete-actions">
@@ -16,7 +20,7 @@
 <script setup lang="ts">
 import type { Score } from '../types/debug-game';
 import { useGameI18n } from '../composables/useGameI18n';
-const props = defineProps<{ entry: Score; modeLabel: string; playedAt: string; busy: boolean; error: boolean }>();
+const props = defineProps<{ entries: Array<Score & { modeLabel: string; playedAt: string }>; busy: boolean; error: boolean }>();
 const emit = defineEmits<{ close: []; confirm: [] }>();
 const { t } = useGameI18n();
 const titleId = useId();
@@ -34,6 +38,8 @@ onBeforeUnmount(() => dialog.value?.close());
 h2 { margin: 0 0 12px; font-size: 1.25rem; overflow-wrap: anywhere; }
 p { margin: 0; line-height: 1.6; color: #d5e4ff; }
 .entry-detail { margin-top: 12px; padding: 10px; border-radius: 10px; background: #071a3c; overflow-wrap: anywhere; }
+.delete-entries { list-style: none; margin: 0; padding: 0 4px 0 0; max-height: min(36dvh, 280px); overflow-y: auto; }
+.delete-entries.single { max-height: none; overflow: visible; }
 .delete-error { margin-top: 12px; color: #ffbeb6; }
 .delete-actions { display: flex; gap: 10px; margin-top: 20px; }
 button { flex: 1; min-height: 48px; padding: 8px 12px; border: 1px solid #85b2ff66; border-radius: 12px; background: #203f76; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }

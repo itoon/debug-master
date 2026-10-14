@@ -2,6 +2,14 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — Multi-row player cleanup and obsolete sprite removal
+
+- Added row checkboxes, an indeterminate select-all checkbox for the current search results, selected count, clear selection and “ลบที่เลือก (count)” on `/players`. Search changes clear selection (stated in UI); refresh prunes absent/nonvisible IDs. Existing per-row deletion remains. Selection uses score/run IDs, so same nicknames and other rounds do not accidentally expand deletion scope.
+- Reused `PlayerDeleteDialog` for one or many entries, showing the confirmed names/scores/modes/Thai dates. Initial focus remains Cancel; busy blocks resubmission/close; errors retain the snapshot and retry path. Success clears deleted IDs and restores trigger focus, falling back to search when the trigger is removed/disabled. No deletion before confirmation.
+- Added `ScoreRepository.removeMany`: captures selected IDs, reads the latest score list inside the existing Web Lock and makes one filtered storage write. Unselected/new rows remain; score-write failure cannot produce a partly removed batch. Single remove delegates to this method. Current-profile cleanup for unique selected player IDs remains separate and follows the existing single-delete behavior. No storage schema/migration, ranking calculation, game core or level changes.
+- Removed the idle/happy/dizzy sections/imports from the Elements manifest and deleted exactly `app/assets/sprites/cody-{idle,happy,dizzy}.webp`. Source inspection found happy still referenced by the shared empty-ranking fallback; replaced that with already registered `PLAYER_POSES.win` before deleting. Updated Codi specs/group description and win usage. No remaining app references to the three files; historical HANDOFF mentions remain historical. Existing movement/failed/win SVGs, their PNG references and profile assets are unchanged.
+- Updated localized bulk-delete copy and `DESIGN.md`. Final `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review found no concrete batch-scope/current-list/error/focus/asset-reference issues. No tests written/run, live browser/game/audio checks, new dependencies, git add/commit, branch switch or reference-frontend edits. Earlier work was preserved.
+
 ## 2026-10-14 — Disable gameplay text selection; remove ranking rule sentence
 
 - Added scoped `.app-shell`/deep-descendant user-select:none with the WebKit prefix in `pages/index.vue`. Covers Home/sleep, gameplay in every mode, tutorials, summaries, rankings and native gameplay dialogs, which remain DOM descendants even in the top layer. Inputs, textareas and editable content have later user-select:text overrides so nickname/search editing and text selection remain usable. No global html/body/app/shared-component selection policy; `/review`, `/players`, `/elements` and other team routes keep normal text selection.
