@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "debug-master-live",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-29",
+  "observability": {
+    "enabled": true,
+    "redact_query_string": true // hides ?key= (host key) in logs and traces
+  },
+  // Comma list of page origins allowed to open a room socket. Requests without an Origin header pass (smoke script).
+  "vars": { "ALLOWED_ORIGINS": "https://itoon.github.io,http://localhost:3000" },
+  "durable_objects": {
+    "bindings": [{ "name": "LIVE_ROOM", "class_name": "LiveRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LiveRoom"] }]
+}

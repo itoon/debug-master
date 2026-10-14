@@ -86,13 +86,16 @@
 <script setup lang="ts">
 import { homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
-import { PLAYER_AVATARS } from "../data/player-avatars";
+import { PLAYER_AVATARS, isPlayerAvatarId } from "../data/player-avatars";
 import { usePlayerAvatar } from "../composables/usePlayerAvatar";
 import type { PlayerSetupInput, ScoreRepository } from "../storage/contracts";
 import { formatClock } from "../utils/ranking";
 import { nicknameKey } from "../utils/playerNickname";
 
-const props = defineProps<{ mode: ChallengeMode; repository: ScoreRepository; error?: string; busy?: boolean }>();
+// `initial` prefills the form (Live: the last player on this device); without it the form starts empty.
+// `repository` enables the duplicate-nickname check against saved scores; Live omits it because
+// live results never enter the local ranking.
+const props = defineProps<{ mode: ChallengeMode; repository?: ScoreRepository; error?: string; busy?: boolean; initial?: PlayerSetupInput | null }>();
 const emit = defineEmits<{ close: []; start: [player: PlayerSetupInput]; popup: []; edit: [] }>();
 const { t } = useGameI18n();
 const titleId = useId();
@@ -127,7 +130,7 @@ async function closeWithMotion(): Promise<void> {
 }
 defineExpose({ closeWithMotion });
 const nicknameInput = ref<HTMLInputElement | null>(null);
-const nickname = ref("");
+const nickname = ref(props.initial?.nickname ?? "");
 const avatarSrc = usePlayerAvatar();
 // Starts on a random character so the leaderboard stays varied; the player can pick any other.
 const selectedAvatar = ref<string>(PLAYER_AVATARS[0]);
@@ -143,7 +146,7 @@ const nicknameVibeKeys = [
   "nickname.vibe.godMode", "nickname.vibe.boost", "nickname.vibe.sneaky", "nickname.vibe.energy",
   "nickname.vibe.playful", "nickname.vibe.fast",
 ] as const;
-const age = ref<number | null>(null);
+const age = ref<number | null>(props.initial && homeConfig.ages.includes(props.initial.age) ? props.initial.age : null);
 const normalizedName = computed(() => nickname.value.trim());
 const existingNames = ref<string[]>([]);
 const namesLoaded = ref(false);
@@ -157,7 +160,7 @@ const formStatus = computed(() => nicknameError.value || t(valid.value ? "home.r
 function refreshNames(): void {
   if (disposed) return;
   try {
-    existingNames.value = props.repository.list().map(score => score.name);
+    existingNames.value = props.repository ? props.repository.list().map(score => score.name) : [];
     nameReadError.value = false;
   } catch {
     existingNames.value = [];
@@ -187,8 +190,11 @@ function launch() {
 }
 onMounted(() => {
   refreshNames();
-  unsubscribeNames = props.repository.subscribe(refreshNames);
-  selectedAvatar.value = PLAYER_AVATARS[Math.floor(Math.random() * PLAYER_AVATARS.length)]!;
+  unsubscribeNames = props.repository?.subscribe(refreshNames);
+  const preset = props.initial?.avatarId;
+  selectedAvatar.value = isPlayerAvatarId(preset)
+    ? preset
+    : PLAYER_AVATARS[Math.floor(Math.random() * PLAYER_AVATARS.length)]!;
   dialog.value?.showModal();
   void animatePopup([
     { offset: 0, opacity: 0, transform: "scale(.72)", easing: "cubic-bezier(.2, .8, .2, 1)" },

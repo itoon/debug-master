@@ -1,0 +1,116 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "tiny-text",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/host-lobby-results.html"
+        ],
+        "createdAt": "2026-10-14T08:03:28.122Z",
+        "reason": "Claude: throwaway brainstorm wireframe drawn at thumbnail scale of a 1080p TV; real screens follow DESIGN.md sizes"
+      },
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/race-track.html"
+        ],
+        "createdAt": "2026-10-14T08:04:06.828Z",
+        "reason": "Claude: throwaway brainstorm wireframe drawn at thumbnail scale of a 1080p TV; not product UI"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/race-track.html"
+        ],
+        "createdAt": "2026-10-14T08:04:06.849Z",
+        "reason": "Claude: throwaway brainstorm wireframe drawn at thumbnail scale of a 1080p TV; not product UI"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/race-track.html"
+        ],
+        "createdAt": "2026-10-14T08:04:06.871Z",
+        "reason": "Claude: throwaway brainstorm wireframe drawn at thumbnail scale of a 1080p TV; not product UI"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/race-track.html"
+        ],
+        "createdAt": "2026-10-14T08:04:06.891Z",
+        "reason": "Claude: throwaway brainstorm wireframe drawn at thumbnail scale of a 1080p TV; not product UI"
+      },
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/host-lobby-results.html"
+        ],
+        "createdAt": "2026-10-14T08:04:06.911Z",
+        "reason": "Claude: throwaway brainstorm wireframe drawn at thumbnail scale of a 1080p TV; not product UI"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/host-lobby-results.html"
+        ],
+        "createdAt": "2026-10-14T08:04:06.930Z",
+        "reason": "Claude: throwaway brainstorm wireframe drawn at thumbnail scale of a 1080p TV; not product UI"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/host-lobby-results.html"
+        ],
+        "createdAt": "2026-10-14T08:04:06.947Z",
+        "reason": "Claude: throwaway brainstorm wireframe drawn at thumbnail scale of a 1080p TV; not product UI"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/host-lobby-results.html"
+        ],
+        "createdAt": "2026-10-14T08:04:06.963Z",
+        "reason": "Claude: throwaway brainstorm wireframe drawn at thumbnail scale of a 1080p TV; not product UI"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/themed-screens.html"
+        ],
+        "createdAt": "2026-10-14T08:07:09.685Z",
+        "reason": "Claude: throwaway brainstorm mockup; hex values copied from the game's tailwind.css/component CSS, not product UI"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/themed-screens.html"
+        ],
+        "createdAt": "2026-10-14T08:07:09.710Z",
+        "reason": "Claude: throwaway brainstorm mockup; hex values copied from the game's tailwind.css/component CSS, not product UI"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/88254-1791964901/content/themed-screens.html"
+        ],
+        "createdAt": "2026-10-14T08:07:09.733Z",
+        "reason": "Claude: throwaway brainstorm mockup; hex values copied from the game's tailwind.css/component CSS, not product UI"
+      }
+    ]
+  }
+}

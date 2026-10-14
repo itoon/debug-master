@@ -14,7 +14,11 @@
       :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
       @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
     <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" @cancel="showExitConfirm = false" @confirm="confirmExit" />
-    <main v-show="!showSetup && !showTutorial && !(activeChallenge && showRanking && !showSummary)" class="game">
+    <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial" @start="liveJoin" @close="liveGoHome" />
+    <LivePlayerPanel v-if="liveMode && liveStage !== 'setup' && liveStage !== 'running'" :stage="liveStage" :state="liveState" :self-id="liveSelfId"
+      :countdown="liveCountdown" :queue-remaining-sec="liveQueueRemaining" :late-score-note="liveLateScore"
+      @change-player="liveChangePlayer" @leave="liveLeave" @home="liveGoHome" />
+    <main v-show="!showSetup && !showTutorial && !(activeChallenge && showRanking && !showSummary) && (!liveMode || liveStage === 'running')" class="game">
       <section class="board-panel">
         <GameHud :level="currentLevel" :language="languageLabel"
           :practice="practiceActive" :difficulty="practiceActive ? t('practice.badge') : activeChallenge ? t(`difficulty.${activeChallenge.id}`) : modeLabel"
@@ -23,7 +27,7 @@
           :progress="progressLabel"
           :completed-levels="hudProgressValue" :total-levels="deadRun ? 0 : activeLevels.length"
           :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES"
-          :time-low="isTimedMode && campaignStarted && timerRemaining > 0 && timerRemaining <= 30">
+          :time-low="isTimedMode && campaignStarted && timerRemaining > 0 && timerRemaining <= 30" :live-rank="liveRank">
           <template #actions>
             <button type="button" class="practice-map-button soft-button small" :disabled="practiceStarting" aria-haspopup="dialog" @click="openPracticePicker"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15" /></svg>{{ t('practice.chooseButton', { count: practiceLevels.length }) }}</button>
             <button type="button" class="soft-button small superhint-button" :class="{ 'hint-enabled': practiceSuperHint }" :disabled="practiceStarting" :aria-pressed="practiceSuperHint" :aria-label="t(practiceSuperHint ? 'practice.hidePath' : 'practice.showPath')" @click="practiceSuperHint = !practiceSuperHint"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5M13 5l-2 14" /></svg>{{ t('practice.superHint') }}<span class="hint-check" aria-hidden="true">{{ practiceSuperHint ? '✓' : '' }}</span></button>
@@ -101,10 +105,10 @@
                     :title="t(soundEnabled ? 'game.mute' : 'game.unmute')" @click="toggleSound">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path v-if="soundEnabled" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path v-else d="m17 9 5 6m0-6-5 6" /></svg>
                   </button>
-                  <button v-if="!campaignStarted && !practiceActive" type="button" class="hud-action primary-button small"
+                  <button v-if="!campaignStarted && !practiceActive && !liveMode" type="button" class="hud-action primary-button small"
                     :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
                     @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
-                  <button type="button" class="hud-action soft-button small exit-action"
+                  <button v-if="!liveMode" type="button" class="hud-action soft-button small exit-action"
                     :disabled="exitSaving || practiceStarting"
                     :title="campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
                     @click="requestExit">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</button>
@@ -412,6 +416,13 @@ import { createLocalRepositories } from "../storage/LocalStorageAdapter";
 import type { PlayerSetupInput } from "../storage/contracts";
 import { isPlayerAvatarId, PLAYER_AVATARS } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
+import { useLiveConfig, useLiveRoom, type LiveRoom } from "../composables/useLiveRoom";
+import { livePlayerId, resetLivePlayerId } from "../utils/live/identity";
+import { clearLiveSession, loadLiveSession, saveLiveSession } from "../utils/live/session";
+import { derivePlayerStage } from "../utils/live/playerStage";
+import { countdownSec, remainingSec, serverTime } from "../utils/live/clock";
+import { GRACE_MS, PROGRESS_INTERVAL_MS, normalizeRoomCode, type PlayerHello, type ProgressMsg, type RoomState } from "../utils/live/protocol";
+import LivePlayerPanel from "../components/live/LivePlayerPanel.vue";
 
 const { t } = useGameI18n();
 const { enabled: soundEnabled, unlockAudio, playSound, stopSounds, toggleSound } = useGameAudio();
@@ -764,6 +775,7 @@ function confirmExit(): void {
 
 async function exitGame(): Promise<void> {
   if (exitSaving.value) return;
+  if (liveMode.value) return liveLeave(); // Live has no score to save; leaving gives up the seat.
   if (practiceActive.value) {
     presentPracticeSummary();
     return;
@@ -1045,7 +1057,8 @@ function playUiClick(event: MouseEvent): void {
   unlockAudio();
   playSound("click");
 }
-function resetAfterBrowserNavigation(): void {
+function resetAfterBrowserNavigation(event: Event): void {
+  if (liveMode.value) return event.type === "popstate" ? liveLeave() : undefined; // Back gives up the seat.
   if (homeConfig.enabled) backToStart();
 }
 function refreshStoredScores(): void {
@@ -1078,6 +1091,7 @@ function beginTimer(): void {
     timerRemaining.value = 0;
     return;
   }
+  if (liveMode.value) return liveBeginTimer();
   timerRemaining.value = timeLimitSec.value ?? 0;
   timerId = setInterval(() => {
     timerRemaining.value -= 1;
@@ -1279,6 +1293,7 @@ function completeLevel(): void {
   }
   if (selectedLevelIndex.value >= activeLevels.value.length - 1) {
     status.value = "completed";
+    if (liveMode.value) return; // Live: nothing is saved; the clock runs on until the round result.
     saveScore();
     stopTimer();
     showRanking.value = !activeChallenge.value && !practiceActive.value;
@@ -1333,6 +1348,7 @@ function endDeadRun(): void {
 
 function timeUp(): void {
   stopTimer();
+  if (liveMode.value) return liveTimeUp();
   status.value = "timeup";
   expectedMove.value = null;
   notificationMessage.value = "หมดเวลา 5 นาที/เวลาที่ตั้งไว้ แสดง Ranking แล้ว";
@@ -1388,7 +1404,7 @@ function presentSummary(score: Score): void {
 }
 
 async function saveScore(): Promise<void> {
-  if (practiceActive.value) return;
+  if (practiceActive.value || liveMode.value) return;
   showExitConfirm.value = false;
   const score = createScoreSnapshot();
   lastScoreId.value = score.id;
@@ -1517,21 +1533,351 @@ function formatClock(seconds: number): string {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 }
 
+// ---- Live ----
+// Live Race Room player mode: /?room=CODE. The room code, player id (localStorage) and socket are read on the
+// client only (onMounted), so the prerendered "/" stays the normal Home and hydration matches.
+// The game itself is the same challenge run; the room supplies the mode, the clock (endAt) and the result.
+const route = useRoute();
+const router = useRouter();
+const nuxtApp = useNuxtApp();
+const liveConfig = useLiveConfig();
+const liveCode = ref<string | null>(null);
+const liveMode = computed(() => liveCode.value !== null);
+const liveProfile = ref<PlayerSetupInput | null>(null);
+// Prefill for the setup dialog: the last player on this device (after a reload outside a running round).
+const liveSetupInitial = ref<PlayerSetupInput | null>(null);
+// Reloaded with a saved session: the socket only listens until the first state says whether to rejoin.
+const liveResuming = ref(false);
+// Secret device id: sent only in `hello`, never compared against broadcast state.
+const livePid = ref("");
+const liveRoom = shallowRef<LiveRoom | null>(null);
+const liveState = computed(() => liveRoom.value?.state.value ?? null);
+// Public player id from the server's `you`; this is what the room state lists.
+const liveSelfId = computed(() => liveRoom.value?.you.value?.id ?? "");
+const liveOffset = computed(() => liveRoom.value?.offset.value ?? 0);
+// Last room state seen, kept after "change player" closes the socket so the setup dialog still shows the room's mode.
+const liveLastState = ref<RoomState | null>(null);
+// The roundId this device started playing; progress always carries it.
+const liveStartedRound = ref<number | null>(null);
+const liveNow = ref(Date.now());
+let liveTicker: ReturnType<typeof setInterval> | undefined;
+let liveRoundToken = 0;
+let liveProgressTimer: ReturnType<typeof setTimeout> | null = null;
+let liveLastProgressAt = 0;
+let liveHomeTimer: ReturnType<typeof setTimeout> | undefined;
+
+const liveStage = computed(() => derivePlayerStage({
+  enabled: liveConfig.enabled,
+  code: liveCode.value,
+  hasProfile: liveProfile.value !== null,
+  connected: liveRoom.value?.connected.value ?? false,
+  notice: liveRoom.value?.notice.value ?? null,
+  state: liveState.value,
+  selfId: liveSelfId.value,
+  offset: liveOffset.value,
+  now: liveNow.value,
+}));
+const liveSetupMode = computed<ChallengeMode>(() => {
+  const room = liveLastState.value;
+  const mode = homeConfig.modes.find((item) => item.id === room?.mode) ?? homeConfig.modes[0];
+  return room ? { ...mode, timeLimit: room.durationSec } : mode;
+});
+const livePlaying = computed(() => liveState.value?.players.filter((p) => p.status === "playing") ?? []);
+const liveRank = computed(() => {
+  if (!liveMode.value) return undefined;
+  const place = livePlaying.value.findIndex((p) => p.id === liveSelfId.value) + 1;
+  return place > 0 ? `${place}/${livePlaying.value.length}` : undefined;
+});
+const liveCountdown = computed(() => countdownSec(liveState.value?.startAt ?? null, liveOffset.value, liveNow.value));
+const liveQueueRemaining = computed(() => {
+  const room = liveState.value;
+  return room && (room.phase === "countdown" || room.phase === "running") ? remainingSec(room.endAt, liveOffset.value, liveNow.value) : 0;
+});
+// This device scored more than the server kept (progress arrived after endAt + grace).
+const liveLateScore = computed(() => {
+  const room = liveState.value;
+  if (liveStage.value !== "results" || !room || room.endAt === null || liveStartedRound.value !== room.roundId) return false;
+  if (serverTime(liveOffset.value, liveNow.value) <= room.endAt + GRACE_MS) return false;
+  const self = room.players.find((p) => p.id === liveSelfId.value);
+  return Boolean(self) && totalScore.value > self!.score;
+});
+
+function validLiveProfile(profile: PlayerSetupInput): PlayerSetupInput | null {
+  const nickname = profile.nickname.trim();
+  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return null;
+  return { nickname, age: profile.age, avatarId: profile.avatarId };
+}
+
+/** onMounted: enters Live mode when the URL carries a valid ?room=. */
+function liveEnter(): void {
+  liveCode.value = normalizeRoomCode(route.query.room);
+  if (!liveMode.value) return;
+  showSetup.value = false; // No Home v2 / reset: the setup dialog for this room comes first.
+  livePid.value = livePlayerId();
+  liveNow.value = Date.now();
+  liveTicker = setInterval(() => { liveNow.value = Date.now(); }, 250);
+  // Reload: the same device and room within the last round's time. Rejoin only if a round is under way.
+  const saved = loadLiveSession(livePid.value, liveCode.value!, Date.now());
+  const player = saved && validLiveProfile(saved);
+  if (player) {
+    liveSetupInitial.value = player;
+    liveConnect(player, true);
+  }
+}
+
+function liveJoin(profile: PlayerSetupInput): void {
+  if (!liveCode.value || liveRoom.value) return;
+  const player = validLiveProfile(profile);
+  if (!player) return;
+  unlockAudio(); // This tap is the gesture; the round itself starts from a socket message.
+  liveConnect(player, false);
+  liveRemember(player);
+}
+
+function liveHello(player: PlayerSetupInput): PlayerHello {
+  return { type: "hello", pid: livePid.value, name: player.nickname, avatarId: player.avatarId, age: player.age };
+}
+
+/** `resume`: connect without a hello; the first room state decides between rejoining and the setup form. */
+function liveConnect(player: PlayerSetupInput, resume: boolean): void {
+  const code = liveCode.value;
+  if (!code || liveRoom.value) return;
+  liveProfile.value = player;
+  livePid.value = livePlayerId();
+  liveResuming.value = resume;
+  // Opened outside setup, so useLiveRoom won't close it on unmount: liveClose()/liveDispose() do.
+  liveRoom.value = nuxtApp.runWithContext(() => useLiveRoom({
+    code,
+    role: "player",
+    hello: () => (liveResuming.value ? null : liveHello(player)),
+  }));
+}
+
+/** Remember this device's player so a reload mid-round rejoins without the form. */
+function liveRemember(player: PlayerSetupInput): void {
+  if (!liveCode.value || !livePid.value) return;
+  saveLiveSession({ pid: livePid.value, room: liveCode.value, ...player, savedAt: Date.now() });
+}
+
+watch(liveState, (room) => {
+  if (!room) return;
+  liveLastState.value = room;
+  liveNow.value = Date.now(); // A fresh clock with each state: the countdown opens on 3, not on a stale 4.
+  if (!liveResuming.value) return;
+  liveResuming.value = false;
+  const player = liveProfile.value;
+  if (player && (room.phase === "countdown" || room.phase === "running")) {
+    // Mid-round reload: say hello now (and on every reconnect); the server hands back the seat and score.
+    liveRoom.value?.send(liveHello(player));
+  } else {
+    // Lobby or results: maybe a new child at this booth, so ask again with the last player prefilled.
+    liveClose();
+    liveProfile.value = null;
+  }
+});
+
+watch(liveStage, (stage) => {
+  if (stage === "running") void liveStartRound();
+  else if (stage === "results") { if (campaignStarted.value) timeUp(); } // Lock now with a final progress.
+  else if (campaignStarted.value) liveStopGame();
+  if (stage === "kicked") {
+    clearLiveSession();
+    liveRoom.value?.close(); // Keep the room object: its notice drives the kicked screen.
+    clearTimeout(liveHomeTimer);
+    liveHomeTimer = setTimeout(liveGoHome, 5000);
+  }
+});
+
+// newRound: the room is back in the lobby with a new roundId. Stop any run; the profile stays.
+watch(() => liveState.value?.roundId, (roundId, previous) => {
+  if (roundId == null || previous == null || roundId === previous || liveState.value?.phase !== "lobby") return;
+  liveStopGame();
+});
+
+async function liveStartRound(): Promise<void> {
+  const room = liveState.value;
+  const profile = liveProfile.value;
+  const mode = homeConfig.modes.find((item) => item.id === room?.mode);
+  if (!room || !profile || !mode || liveStartedRound.value === room.roundId) return;
+  liveStartedRound.value = room.roundId;
+  liveRemember(profile); // Fresh savedAt: a reload any time in this round still rejoins.
+  const token = ++liveRoundToken;
+  clearLiveProgressTimer();
+  liveLastProgressAt = 0;
+  // Same inputs prepareChallenge gives a Home v2 session; the room decides mode and time.
+  activeChallenge.value = mode;
+  selectedSetId.value = mode.levelSetId;
+  selectedMode.value = "timer";
+  customMinutes.value = room.durationSec / 60;
+  playerNameDraft.value = profile.nickname;
+  playerAgeDraft.value = profile.age;
+  playerName.value = profile.nickname;
+  playerAge.value = profile.age;
+  currentAvatarId.value = profile.avatarId;
+  selectedLanguageDraft.value = "python";
+  debugModeDraft.value = false;
+  showExitConfirm.value = false;
+  await nextTick(); // The selectedSetId watcher resets the level index first.
+  if (token !== liveRoundToken || liveStage.value !== "running") return;
+  startGame();
+  // Back on the same device mid-round (e.g. after a reload): carry on from what the server already counted.
+  // Always take the larger values (the server drops progress that goes down, bestCombo included, and it can
+  // hold a combo before any clear). Restored score/levels are the server's own, so the next clear adds one level.
+  const self = liveState.value?.players.find((p) => p.id === liveSelfId.value);
+  if (self) {
+    totalScore.value = Math.max(totalScore.value, self.score);
+    completedLevels.value = Math.max(completedLevels.value, self.levelsCompleted);
+    bestCombo.value = Math.max(bestCombo.value, self.bestCombo);
+    if (self.levelsCompleted >= activeLevels.value.length) {
+      // Every level of the set is already cleared: wait for the round result, like a finished run.
+      clearPendingRunTimers();
+      clearLevelAdvanceTimer();
+      selectedLevelIndex.value = activeLevels.value.length - 1;
+      expectedMove.value = null;
+      status.value = "completed";
+    } else if (self.levelsCompleted > 0) {
+      selectedLevelIndex.value = self.levelsCompleted;
+      beginLevel();
+    }
+  }
+}
+
+/** Live clock: always derived from the room's endAt (server-adjusted), checked four times a second. */
+function liveBeginTimer(): void {
+  const tick = () => {
+    const room = liveState.value;
+    timerRemaining.value = remainingSec(room?.endAt ?? null, liveOffset.value);
+    return room;
+  };
+  tick();
+  timerId = setInterval(() => {
+    const room = tick();
+    if (timerRemaining.value <= 0 || room?.phase === "finished") timeUp();
+  }, 250);
+}
+
+function liveTimeUp(): void {
+  clearPendingRunTimers();
+  clearLevelAdvanceTimer();
+  campaignStarted.value = false;
+  expectedMove.value = null;
+  timerRemaining.value = 0;
+  status.value = "timeup";
+  notificationMessage.value = `${t("summary.score")} ${totalScore.value.toLocaleString("th-TH")}`;
+  sendLiveProgress(); // Final values at once, without waiting for the throttle.
+}
+
+function liveStopGame(): void {
+  liveRoundToken += 1;
+  clearLiveProgressTimer();
+  stopTimer();
+  clearPendingRunTimers();
+  clearLevelAdvanceTimer();
+  clearScorePopupTimer();
+  scorePopup.value = null;
+  campaignStarted.value = false;
+  expectedMove.value = null;
+  status.value = "ready";
+}
+
+// Progress: at most one message per PROGRESS_INTERVAL_MS, always ending with the latest values.
+function liveRunning(): boolean {
+  return liveStage.value === "running" && campaignStarted.value && liveStartedRound.value !== null && liveStartedRound.value === liveState.value?.roundId;
+}
+function clearLiveProgressTimer(): void {
+  if (liveProgressTimer) clearTimeout(liveProgressTimer);
+  liveProgressTimer = null;
+}
+function sendLiveProgress(): void {
+  clearLiveProgressTimer();
+  if (liveStartedRound.value === null || !liveRoom.value) return;
+  const msg: ProgressMsg = {
+    type: "progress",
+    roundId: liveStartedRound.value,
+    score: totalScore.value,
+    levelsCompleted: completedLevels.value,
+    bestCombo: bestCombo.value,
+    combo: comboStreak.value,
+  };
+  liveLastProgressAt = Date.now();
+  liveRoom.value.send(msg, "progress");
+}
+function queueLiveProgress(): void {
+  if (!liveRunning() || liveProgressTimer) return;
+  const wait = liveLastProgressAt + PROGRESS_INTERVAL_MS - Date.now();
+  if (wait <= 0) sendLiveProgress();
+  else liveProgressTimer = setTimeout(() => {
+    liveProgressTimer = null;
+    if (liveRunning()) sendLiveProgress();
+  }, wait);
+}
+watch([totalScore, completedLevels, comboStreak, bestCombo], queueLiveProgress);
+// After a reconnect mid-round, report the latest values right away (the server keeps the larger ones).
+watch(() => liveRoom.value?.connected.value, (up) => { if (up && liveRunning()) sendLiveProgress(); });
+
+function liveClose(): void {
+  liveResuming.value = false;
+  clearTimeout(liveHomeTimer);
+  clearLiveProgressTimer();
+  liveRoom.value?.close();
+  liveRoom.value = null;
+}
+
+/** Booth: give up this seat and set up a new player with a new device id. */
+function liveChangePlayer(): void {
+  liveRoom.value?.send({ type: "leave" });
+  liveClose();
+  liveStopGame();
+  clearLiveSession();
+  liveSetupInitial.value = null; // A new player starts from an empty form.
+  livePid.value = resetLivePlayerId();
+  liveProfile.value = null;
+  liveStartedRound.value = null;
+}
+
+function liveLeave(): void {
+  liveRoom.value?.send({ type: "leave" });
+  liveGoHome();
+}
+
+/** Kicked, home, setup dialog closed, or Back: close the socket and return to the normal Home. */
+function liveGoHome(): void {
+  if (!liveMode.value) return;
+  liveClose();
+  liveStopGame();
+  clearInterval(liveTicker);
+  clearLiveSession();
+  liveCode.value = null;
+  liveProfile.value = null;
+  liveSetupInitial.value = null;
+  liveStartedRound.value = null;
+  liveLastState.value = null;
+  void router.replace({ query: {} });
+  resetHomeSession();
+}
+
+function liveDispose(): void {
+  clearInterval(liveTicker);
+  liveClose();
+}
+// ---- /Live ----
+
 onMounted(async () => {
   // Load facings and the failure pose up front so switching doesn't flash.
   for (const src of [...Object.values(PLAYER_SPRITES), ...Object.values(PLAYER_POSES)]) new Image().src = src;
   refreshStoredScores();
   unsubscribeScores = repositories.scores.subscribe(refreshStoredScores);
+  liveEnter();
   if (homeConfig.enabled) {
-    resetHomeSession();
+    if (!liveMode.value) resetHomeSession();
     for (const event of ["pointerdown", "keydown", "input", "focusin"]) window.addEventListener(event, recordInteraction);
     window.addEventListener("popstate", resetAfterBrowserNavigation);
     window.addEventListener("pageshow", resetAfterBrowserNavigation);
     idleTimer = setInterval(() => {
       // No idle policy during gameplay (including level retries and transitions).
-      if (!homeStarting.value && !scoreSaving.value && !exitSaving.value && (showSetup.value || showTutorial.value || showSummary.value || practiceSummary.value || showRanking.value) && Date.now() - lastInteractionAt >= homeConfig.idleTimeoutMs) backToStart();
+      if (!liveMode.value && !homeStarting.value && !scoreSaving.value && !exitSaving.value && (showSetup.value || showTutorial.value || showSummary.value || practiceSummary.value || showRanking.value) && Date.now() - lastInteractionAt >= homeConfig.idleTimeoutMs) backToStart();
     }, 1000);
-  } else {
+  } else if (!liveMode.value) {
     await applyLevelFromQuery();
   }
   window.addEventListener("keydown", handleKeydown);
@@ -1578,6 +1924,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("pageshow", resetAfterBrowserNavigation);
   window.removeEventListener("keydown", handleKeydown);
   boardResizeObserver?.disconnect();
+  liveDispose();
   stopTimer();
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
