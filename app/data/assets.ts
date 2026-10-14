@@ -132,6 +132,15 @@ export const assetGroups: AssetGroup[] = [
         spec: [th["asset.codiFailedSpec"]],
       },
       {
+        id: "codi-win",
+        name: th["asset.codiWin"],
+        file: "app/assets/sprites/codi-win.svg",
+        status: "in-use",
+        preview: { kind: "image", src: PLAYER_POSES.win, backdrop: "tile" },
+        usedIn: th["asset.codiWinUsage"],
+        spec: [th["asset.codiWinSpec"]],
+      },
+      {
         id: "codi-wave",
         name: "โบกมือ (wave)",
         file: "app/assets/sprites/cody-wave.webp",

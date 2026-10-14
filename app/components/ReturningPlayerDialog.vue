@@ -4,6 +4,10 @@
     <img class="profile-image" :src="avatarSrc(player.avatarId)" :alt="t('home.avatar')" draggable="false" />
     <p class="profile-name">{{ player.name }}</p>
     <p class="profile-age">{{ validAge ? t('home.years', { age: player.age! }) : t('player.ageUnknown') }}</p>
+    <dl class="profile-score">
+      <dt>{{ t('player.latestScore') }}</dt>
+      <dd :class="{ 'score-unavailable': !latestScore }">{{ latestScore ? latestScore.score.toLocaleString('th-TH') : t('player.scoreUnavailable') }}</dd>
+    </dl>
     <p v-if="!canReuse" class="profile-note">{{ t('player.incomplete') }}</p>
     <p v-if="error" class="profile-error" role="alert">{{ error }}</p>
     <div class="profile-actions">
@@ -17,7 +21,7 @@ import type { Score } from '../types/debug-game';
 import { homeConfig } from '../data/home-config';
 import { useGameI18n } from '../composables/useGameI18n';
 import { usePlayerAvatar } from '../composables/usePlayerAvatar';
-const props = defineProps<{ player: Score; busy?: boolean; error?: string }>();
+const props = defineProps<{ player: Score; latestScore?: Score | null; busy?: boolean; error?: string }>();
 const emit = defineEmits<{ close: []; reuse: []; create: [] }>();
 const { t } = useGameI18n();
 const avatarSrc = usePlayerAvatar();
@@ -38,7 +42,11 @@ button { font: inherit; font-weight: 800; cursor: pointer; }
 .close-button { flex: none; width: 48px; height: 48px; border: 1px solid #87b0ef; border-radius: 12px; background: #102858; color: #fff; font-size: 1.6rem; }
 .profile-image { display: block; width: 112px; height: 112px; margin: 24px auto 16px; object-fit: contain; border: 4px solid #e5f2ff; border-radius: 50%; background: #cceaff; }
 .profile-name { margin: 0; font-size: 1.5rem; font-weight: 800; text-align: center; overflow-wrap: anywhere; }
-.profile-age { margin: 6px 0 24px; text-align: center; color: #cce1ff; }
+.profile-age { margin: 6px 0 14px; text-align: center; color: #cce1ff; }
+.profile-score { margin: 0 0 24px; text-align: center; }
+.profile-score dt { color: #cce1ff; font-size: .9rem; }
+.profile-score dd { margin: 4px 0 0; color: var(--cv-yellow); font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.profile-score .score-unavailable { font-size: 1rem; color: #cce1ff; }
 .profile-note, .profile-error { line-height: 1.5; color: #ffe0a5; }
 .profile-actions { display: grid; gap: 10px; }
 .profile-actions button { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 12px 18px; border-radius: 12px; }

@@ -1,0 +1,139 @@
+{
+  "method": "11x11 Gaussian SSIM, sigma=1.5, population covariance, RGB mean; foreground crop; minimum of 3 backgrounds and alpha",
+  "threshold": 0.98,
+  "poses": {
+    "down": {
+      "ssim": {
+        "white": 0.9895251630937094,
+        "navy": 0.9916266102660769,
+        "blue": 0.990611135173699,
+        "alpha": 0.9940314488544503
+      },
+      "minimum": 0.9895251630937094,
+      "pass": true,
+      "foreground_crop": [
+        19,
+        4,
+        109,
+        124
+      ],
+      "sha256": {
+        "original_png": "52bcdb9f7f1146e9f707edf918f90259bdd7cce642c4c76ccb7988d22b3d1b96",
+        "svg": "be280ace3058cd2654f1a92ecebd1804d853f7651a965b41d9d6d67904a9c88d",
+        "rendered_png": "699e5294ddf2bb313adda0232357fc0dec5ce8bdc83fd7f2709648a4c7617eff"
+      },
+      "vector_only": true
+    },
+    "up": {
+      "ssim": {
+        "white": 0.9939674865197718,
+        "navy": 0.9948768846620594,
+        "blue": 0.9947967064429456,
+        "alpha": 0.995328897717934
+      },
+      "minimum": 0.9939674865197718,
+      "pass": true,
+      "foreground_crop": [
+        19,
+        2,
+        110,
+        122
+      ],
+      "sha256": {
+        "original_png": "662b4454085570d785dad30e24a2a33b928bfdcb106bb27284c02b9d21a4e50e",
+        "svg": "a14e86faa7665e1472d15b756bd3685d064048c661f12dd9e57dcaeadd6fd53d",
+        "rendered_png": "947bae4beaacd2bf973526b5f307728a36860e0f490ac2df35d6219e81c1b181"
+      },
+      "vector_only": true
+    },
+    "left": {
+      "ssim": {
+        "white": 0.9961353299491802,
+        "navy": 0.9948343577980218,
+        "blue": 0.9959586246639287,
+        "alpha": 0.9957888772988231
+      },
+      "minimum": 0.9948343577980218,
+      "pass": true,
+      "foreground_crop": [
+        19,
+        1,
+        109,
+        121
+      ],
+      "sha256": {
+        "original_png": "d97cdfeaa35fca9d41c39a62d3b91c06e6a920ba3d1c98ca266d5b14127cfe73",
+        "svg": "1bcda6a9e10b73472a612b7bdc3570033a3e4f83b433e8ca4553a621bb32847d",
+        "rendered_png": "b34b862d58b8a901c63c87fd663884c93e4f0368bea8c200f4753c19d9a53865"
+      },
+      "vector_only": true
+    },
+    "right": {
+      "ssim": {
+        "white": 0.9952515641250489,
+        "navy": 0.9941769526412725,
+        "blue": 0.995203409047967,
+        "alpha": 0.9948336302498129
+      },
+      "minimum": 0.9941769526412725,
+      "pass": true,
+      "foreground_crop": [
+        19,
+        1,
+        109,
+        121
+      ],
+      "sha256": {
+        "original_png": "292ceb05127f7a40f5a11f93baf5956853f5ed079e8eb2885e56541158addd43",
+        "svg": "ac54ba71efc6f51a7cf7f4942ea0d718250a81f9d54e5742ca893b1f1094dc65",
+        "rendered_png": "fd230f4840d3b1fd248b2a1ea1fdc801c5a9bb70a74786ddf3222c3a1bd1c84a"
+      },
+      "vector_only": true
+    },
+    "failed": {
+      "ssim": {
+        "white": 0.9917744491171763,
+        "navy": 0.9887865135997116,
+        "blue": 0.9914098924225551,
+        "alpha": 0.996795053938753
+      },
+      "minimum": 0.9887865135997116,
+      "pass": true,
+      "foreground_crop": [
+        11,
+        4,
+        113,
+        123
+      ],
+      "sha256": {
+        "original_png": "0533ec104e0b36356ea82ddcd2fe023adb75ece180006f91425c7649af128622",
+        "svg": "539ba541d8d80ba9f8dd314a2229c631e64a82c138795f476957e7c1c2cf6277",
+        "rendered_png": "48dde3ed7addf014c1e61f4e58217837090f7c42fcd40869d8dc4ae1ca511099"
+      },
+      "vector_only": true
+    },
+    "win": {
+      "ssim": {
+        "white": 0.9800183013572047,
+        "navy": 0.9828533927366474,
+        "blue": 0.9826531688809382,
+        "alpha": 0.9905513488748955
+      },
+      "minimum": 0.9800183013572047,
+      "pass": true,
+      "foreground_crop": [
+        0,
+        3,
+        123,
+        123
+      ],
+      "sha256": {
+        "original_png": "801ed0ed231cba54829e55e57772b6f270c9731165a17f2f7083f8e70341eac4",
+        "svg": "d94ec83a7840173556961ced700838c39e45515b1bcd337ba23c5c2c3e75ae1d",
+        "rendered_png": "b9963bb2c449bb08ae6f2184aee29ed1e60b867a3a102505e24525524df30e01"
+      },
+      "vector_only": true
+    }
+  },
+  "all_pass": true
+}

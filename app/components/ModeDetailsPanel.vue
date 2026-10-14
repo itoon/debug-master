@@ -1,5 +1,5 @@
 <template>
-  <section class="mode-details-view" :aria-labelledby="titleId">
+  <section ref="element" class="mode-details-view" :aria-labelledby="titleId">
     <figure ref="cover" class="detail-cover">
       <img :src="thumbnailUrl" :alt="t('home.thumbnail', { mode: t(mode.nameKey) })" draggable="false" />
       <figcaption>
@@ -14,8 +14,8 @@
       </header>
       <ChallengeRanking class="detail-ranking" :repository="repository" :board="board" variant="space" podium split show-total placeholder :limit="Infinity" :search="search" selectable :selection-busy="busy" @select-player="emit('selectPlayer', $event)" />
       <footer class="detail-footer">
-        <div><button type="button" class="back-button" :disabled="busy" @click="emit('back')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16" /></svg>{{ t('home.backModes') }}</button><p>{{ t('ranking.bestPerPlayer') }}</p></div>
-        <button ref="startButton" type="button" class="start-button" :disabled="busy" @click="emit('start')">{{ t('home.start') }}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z" /></svg></button>
+        <button type="button" class="back-button" :disabled="busy" @click="emit('back')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16" /></svg>{{ t('home.backModes') }}</button>
+        <button ref="startButton" type="button" class="start-button" :disabled="busy" @click="emit('start')">{{ t('home.openSetup') }}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z" /></svg></button>
       </footer>
     </div>
   </section>
@@ -32,6 +32,7 @@ const emit = defineEmits<{ ready: []; back: []; start: []; selectPlayer: [score:
 const { t } = useGameI18n();
 const titleId = useId();
 const search = ref('');
+const element = ref<HTMLElement | null>(null);
 const cover = ref<HTMLElement | null>(null);
 const panel = ref<HTMLElement | null>(null);
 const heading = ref<HTMLHeadingElement | null>(null);
@@ -63,15 +64,12 @@ async function enter(): Promise<void> {
   emit('ready');
   heading.value?.focus({ preventScroll: true });
 }
-async function closeWithMotion(): Promise<void> {
+async function closeWithMotion(returnRect = props.fromRect): Promise<void> {
   if (closing || disposed) return;
   closing = true;
   cancelMotion();
-  if (props.fromRect && cover.value) {
-    const width = Math.min(props.fromRect.width, window.innerWidth - 32);
-    const height = Math.min(props.fromRect.height, window.innerHeight - 80);
-    const rect = { width, height, left: (window.innerWidth - width) / 2, top: (window.innerHeight - height) / 2 };
-    animate(cover.value, [{ transform: 'none', opacity: 1 }, { transform: coverTransform(rect), opacity: 1 }]);
+  if (returnRect && cover.value) {
+    animate(cover.value, [{ transform: 'none', opacity: 1 }, { transform: coverTransform(returnRect), opacity: 1 }]);
   }
   animate(panel.value, [{ transform: 'none', opacity: 1 }, { transform: 'translateX(70px)', opacity: 0 }]);
   await waitForMotion();
@@ -79,7 +77,7 @@ async function closeWithMotion(): Promise<void> {
 function settleResize(): void { cancelMotion(); }
 function focusStart(): void { startButton.value?.focus({ preventScroll: true }); }
 function focusHeading(): void { heading.value?.focus({ preventScroll: true }); }
-defineExpose({ closeWithMotion, focusStart, focusHeading });
+defineExpose({ closeWithMotion, getElement: () => element.value, focusStart, focusHeading });
 onMounted(() => { window.addEventListener('resize', settleResize); void enter(); });
 onBeforeUnmount(() => { disposed = true; cancelMotion(); window.removeEventListener('resize', settleResize); });
 </script>
@@ -102,16 +100,15 @@ figcaption :deep(.mode-badge) { width: 56px; flex: none; }
 .player-search input:focus-visible { outline: 3px solid #ffda53; outline-offset: 2px; }
 .detail-ranking { min-height: 0; min-width: 0; }
 .detail-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 14px; border-top: 1px solid #83adff44; }
-.detail-footer p { margin: 8px 0 0; max-width: 430px; font-size: .7rem; line-height: 1.5; color: #9ebce9; }
-.detail-footer button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 10px 16px; border-radius: 12px; font: inherit; font-weight: 800; cursor: pointer; }
+.detail-footer button { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 240px; max-width: 100%; min-height: 56px; padding: 12px 16px; border-radius: 12px; font: inherit; font-size: 1.1rem; font-weight: 800; cursor: pointer; }
 .detail-footer svg { width: 20px; height: 20px; }
-.back-button { border: 1px solid #789cda; background: #163565; color: #fff; font-size: .8rem !important; }
+.back-button { border: 1px solid #789cda; background: #163565; color: #fff; }
 .back-button svg { stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.start-button { border: 1px solid #ffedaa; background: #ffda53; color: #102858; min-width: 180px; font-size: 1.2rem !important; box-shadow: 0 4px 0 #b88b19; }
+.start-button { border: 1px solid #ffedaa; background: #ffda53; color: #102858; box-shadow: 0 4px 0 #b88b19; }
 button:disabled { opacity: .55; cursor: wait; }
 button:not(:disabled):hover { filter: brightness(1.08); }
 button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 @media (min-width: 1101px) and (max-height: 780px) { .detail-panel { gap: 12px; padding: 18px; } .detail-header { gap: 8px; } .detail-header h2 { font-size: 1.7rem; } .player-search { width: 220px; } }
 @media (max-width: 1100px) { .mode-details-view { height: auto; grid-template-columns: minmax(0, 1fr); } .detail-cover { height: 230px; } .detail-panel { height: min(700px, calc(100dvh - 70px)); min-height: 560px; } }
-@media (max-width: 720px) { .detail-panel { height: auto; min-height: 0; grid-template-rows: auto auto auto; } .player-search { width: 100%; } .detail-ranking :deep(.split .credits-viewport) { max-height: 420px; overflow-y: auto; } .detail-ranking :deep(.rank-podium) { min-height: 260px; } .detail-footer { align-items: stretch; } .start-button { width: 100%; } }
+@media (max-width: 720px) { .detail-panel { height: auto; min-height: 0; grid-template-rows: auto auto auto; } .player-search { width: 100%; } .detail-ranking :deep(.split .credits-viewport) { max-height: 420px; overflow-y: auto; } .detail-ranking :deep(.rank-podium) { min-height: 260px; } .detail-footer { align-items: stretch; } .detail-footer button { width: 100%; } }
 </style>

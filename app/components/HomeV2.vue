@@ -36,9 +36,9 @@
       <div class="home-footer-info"><span>{{ t('ranking.bestPerPlayer') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink> · <NuxtLink to="/modes">{{ t('home.modes') }}</NuxtLink></span></div>
       <button type="button" class="practice-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('practice')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 4 3 5-5 3-3-5zm10 8 3 5-5 3-3-5zM4 19h5m6-15h5" /></svg>{{ t('practice.open') }}</button>
     </footer>
-    <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :error="error" :busy="busy || motionPhase === 'leaving'"
-      @close="closeSetup" @start="launch" @popup="emit('sound', 'popup')" />
-    <ReturningPlayerDialog v-if="selectedPlayer" :player="selectedPlayer" :error="error" :busy="busy" @close="closePlayer" @create="createPlayer" @reuse="reusePlayer" />
+    <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :repository="repository" :error="error" :busy="busy || motionPhase === 'leaving'"
+      @close="closeSetup" @start="launch" @edit="emit('resetError')" @popup="emit('sound', 'popup')" />
+    <ReturningPlayerDialog v-if="selectedPlayer" :player="selectedPlayer" :latest-score="selectedLatestScore" :error="error" :busy="busy" @close="closePlayer" @create="createPlayer" @reuse="reusePlayer" />
   </main>
 </template>
 
@@ -47,7 +47,7 @@ import { homeConfig, type ChallengeMode, type ChallengeId } from "../data/home-c
 import { useModeSettings } from "../composables/useModeSettings";
 import { useGameI18n } from "../composables/useGameI18n";
 import type { ModeSettingsRepository, ScoreRepository, PlayerSetupInput } from "../storage/contracts";
-import { formatClock, type RankingBoard } from "../utils/ranking";
+import { formatClock, isOnBoard, scorePlayerKey, type RankingBoard } from "../utils/ranking";
 import type { UiSoundEffect } from "../data/sound-effects";
 import type { Score } from "../types/debug-game";
 
@@ -62,8 +62,10 @@ const selectedMode = ref<ChallengeMode | null>(null);
 const selectionMade = ref(false);
 const detailMode = ref<ChallengeMode | null>(null);
 const detailFromRect = ref<{ left: number; top: number; width: number; height: number }>();
-const detailPanel = ref<{ closeWithMotion: () => Promise<void>; focusStart: () => void; focusHeading: () => void } | null>(null);
+const detailPanel = ref<{ closeWithMotion: (rect?: { left: number; top: number; width: number; height: number }) => Promise<void>; getElement: () => HTMLElement | null; focusStart: () => void; focusHeading: () => void } | null>(null);
+const selectionHasHistory = ref(false);
 const selectedPlayer = ref<Score | null>(null);
+const selectedLatestScore = ref<Score | null>(null);
 const motionPhase = ref<"idle" | "entering" | "open" | "leaving">("idle");
 const modeBoards = ref<HTMLElement | null>(null);
 const setupDialog = ref<{ closeWithMotion: () => Promise<void> } | null>(null);
@@ -73,6 +75,7 @@ const baseURL = useRuntimeConfig().app.baseURL;
 let launchButton: HTMLButtonElement | null = null;
 let playerButton: HTMLElement | null = null;
 let cardAnimations: Animation[] = [];
+let expandedCover: HTMLElement | null = null;
 let motionToken = 0;
 let disposed = false;
 let viewportSize = "";
@@ -84,6 +87,8 @@ function reducedMotion(): boolean {
 function cancelCardMotion(): void {
   for (const animation of cardAnimations) animation.cancel();
   cardAnimations = [];
+  expandedCover?.remove();
+  expandedCover = null;
 }
 async function waitForCardMotion(token: number): Promise<void> {
   // Resize replaces the animations; don't mistake cancellation for completion.
@@ -121,10 +126,10 @@ function positionCards(mode: ChallengeMode, snapshots = snapshotCards(), pinned 
     const left = rect.left - matrix.e;
     const top = rect.top - matrix.f;
     const selected = index === chosenIndex;
-    const x = selected ? centerX - (left + rect.width / 2)
+    const x = selected ? selectionHasHistory.value ? 0 : centerX - (left + rect.width / 2)
       : index < chosenIndex ? -left - rect.width - 32 : window.innerWidth - left + 32;
-    const y = selected ? centerY - (top + rect.height / 2) : 0;
-    const scale = selected ? Math.min(1, (window.innerWidth - 48) / rect.width, (window.innerHeight - 48) / rect.height) : 1;
+    const y = selected && !selectionHasHistory.value ? centerY - (top + rect.height / 2) : 0;
+    const scale = selected && !selectionHasHistory.value ? Math.min(1, (window.innerWidth - 48) / rect.width, (window.innerHeight - 48) / rect.height) : 1;
     const duration = reducedMotion() ? 0 : homeConfig.modeMotion.cardsMs;
     const animation = element.animate([
       { transform, opacity: 1 },
@@ -133,11 +138,45 @@ function positionCards(mode: ChallengeMode, snapshots = snapshotCards(), pinned 
     void animation.finished.catch(() => {}); // Cancellation on resize/unmount is intentional.
     if (pinned) { animation.pause(); animation.currentTime = duration; }
     cardAnimations.push(animation);
+    if (selected && selectionHasHistory.value) expandSelectedCover(element, duration, pinned);
   });
+}
+/** A visual copy expands without changing the card/grid's layout geometry. */
+function expandSelectedCover(card: HTMLElement, duration: number, pinned: boolean): void {
+  const source = card.querySelector<HTMLElement>('.mode-cover');
+  if (!source) return;
+  const preview = source.cloneNode(true) as HTMLElement;
+  preview.removeAttribute('id');
+  preview.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+  preview.setAttribute('aria-hidden', 'true');
+  preview.inert = true;
+  preview.classList.add('expanded-cover-preview');
+  Object.assign(preview.style, { position: 'absolute', margin: '0', left: `${source.offsetLeft}px`, top: `${source.offsetTop}px`, width: `${source.offsetWidth}px`, height: `${source.offsetHeight}px`, borderRadius: '21px', zIndex: '3', pointerEvents: 'none' });
+  const image = preview.querySelector<HTMLElement>('.cover-image');
+  if (image) { image.style.transform = 'none'; image.style.filter = 'none'; }
+  card.appendChild(preview);
+  expandedCover = preview;
+  const options: KeyframeAnimationOptions = { duration, easing: 'cubic-bezier(.22, .8, .25, 1)', fill: 'both' };
+  const expansion = preview.animate([
+    { left: `${source.offsetLeft}px`, top: `${source.offsetTop}px`, width: `${source.offsetWidth}px`, height: `${source.offsetHeight}px` },
+    { left: '0px', top: '0px', width: `${card.clientWidth}px`, height: `${card.clientHeight}px` },
+  ], options);
+  const ranking = card.querySelector<HTMLElement>('.card-ranking');
+  const effects = [expansion, ...(ranking ? [ranking.animate([{ opacity: 1 }, { opacity: 0 }], options)] : [])];
+  for (const animation of effects) {
+    void animation.finished.catch(() => {});
+    if (pinned) { animation.pause(); animation.currentTime = duration; }
+    cardAnimations.push(animation);
+  }
 }
 function recenterCards(): void {
   if (detailMode.value) return;
-  if ((motionPhase.value !== "open" && motionPhase.value !== "leaving") || !selectedMode.value) return;
+  if ((motionPhase.value !== "open" && motionPhase.value !== "leaving" && !(motionPhase.value === 'entering' && selectionHasHistory.value)) || !selectedMode.value) return;
+  if (motionPhase.value === 'entering') {
+    cancelCardMotion();
+    positionCards(selectedMode.value, snapshotCards());
+    return;
+  }
   const duration = Number(cardAnimations[0]?.effect?.getTiming().duration ?? homeConfig.modeMotion.cardsMs);
   const currentTime = cardAnimations[0]?.currentTime;
   const progress = duration > 0 && typeof currentTime === "number" ? Math.max(0, Math.min(1, currentTime / duration)) : 1;
@@ -159,6 +198,9 @@ async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   if (props.busy || motionPhase.value !== "idle") return;
   emit("unlockAudio"); // Unlock on the original pointer/keyboard gesture.
   emit("sound", "select");
+  let hasPlayers = true;
+  try { hasPlayers = props.repository.today(boardFor(mode), new Date(), 1).length > 0; } catch { /* Preserve the detail storage-error state. */ }
+  selectionHasHistory.value = hasPlayers;
   const snapshots = snapshotCards();
   selectionMade.value = true; // Do not replay the initial deal when detail restores the grid.
   const token = ++motionToken;
@@ -174,8 +216,6 @@ async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   if (disposed || token !== motionToken || motionPhase.value !== "entering") return;
   motionPhase.value = "open";
   if (viewportSize !== `${window.innerWidth}:${window.innerHeight}`) recenterCards();
-  let hasPlayers = true;
-  try { hasPlayers = props.repository.today(boardFor(mode), new Date(), 1).length > 0; } catch { /* Show the detail's storage error rather than pretend the board is empty. */ }
   if (hasPlayers) {
     const rect = modeBoards.value?.querySelector<HTMLElement>(`[data-mode-card="${mode.id}"]`)?.getBoundingClientRect();
     if (rect) detailFromRect.value = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
@@ -190,12 +230,22 @@ function selectPlayer(score: Score): void {
   if (props.busy || motionPhase.value !== 'open' || !detailMode.value || setupMode.value || selectedPlayer.value) return;
   playerButton = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   emit('resetError');
+  selectedLatestScore.value = null;
+  try {
+    // Ranking rows hold the best run; the profile shows the newest stored run.
+    const board = boardFor(detailMode.value);
+    const playerKey = scorePlayerKey(score);
+    selectedLatestScore.value = props.repository.list()
+      .filter(run => isOnBoard(run, board) && scorePlayerKey(run) === playerKey)
+      .reduce<Score | null>((latest, run) => !latest || Date.parse(run.createdAt) >= Date.parse(latest.createdAt) ? run : latest, null);
+  } catch { /* Keep the profile usable; never label the best run as the latest. */ }
   selectedPlayer.value = score;
   emit('sound', 'popup');
 }
 async function closePlayer(): Promise<void> {
   if (props.busy) return;
   selectedPlayer.value = null;
+  selectedLatestScore.value = null;
   emit('resetError');
   await nextTick();
   if (disposed) return;
@@ -205,6 +255,7 @@ async function closePlayer(): Promise<void> {
 function createPlayer(): void {
   if (props.busy || motionPhase.value !== 'open' || !detailMode.value) return;
   selectedPlayer.value = null;
+  selectedLatestScore.value = null;
   emit('resetError');
   setupMode.value = detailMode.value;
 }
@@ -216,13 +267,29 @@ async function closeDetails(): Promise<void> {
   const token = ++motionToken;
   motionPhase.value = 'leaving';
   emit('sound', 'transitionBack');
-  await detailPanel.value?.closeWithMotion();
+  // Temporarily remove detail from flow to measure the restored Home grid.
+  // Restore styles synchronously before any paint; this also handles resize.
+  cancelCardMotion();
+  const grid = modeBoards.value;
+  const detail = detailPanel.value?.getElement();
+  let returnRect: { left: number; top: number; width: number; height: number } | undefined;
+  if (grid && detail && selectedMode.value) {
+    const saved = { display: grid.style.display, position: detail.style.position, width: detail.style.width, height: detail.style.height };
+    const bounds = detail.getBoundingClientRect();
+    Object.assign(detail.style, { position: 'absolute', width: `${bounds.width}px`, height: `${bounds.height}px` });
+    grid.style.display = '';
+    const rect = grid.querySelector<HTMLElement>(`[data-mode-card="${selectedMode.value.id}"]`)?.getBoundingClientRect();
+    if (rect) returnRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+    grid.style.display = saved.display;
+    Object.assign(detail.style, { position: saved.position, width: saved.width, height: saved.height });
+  }
+  await detailPanel.value?.closeWithMotion(returnRect);
   if (disposed || token !== motionToken) return;
   detailMode.value = null;
   await nextTick();
   if (disposed || token !== motionToken || !selectedMode.value) return;
   // The grid was display:none during detail. Measure its fresh responsive
-  // layout, pin the chosen card at centre, then run the existing return motion.
+  // layout, pin the expanded card in its original slot, then reverse stage one.
   cancelCardMotion();
   positionCards(selectedMode.value, snapshotCards(), true);
   cardsReturning = true;
@@ -231,6 +298,7 @@ async function closeDetails(): Promise<void> {
   cancelCardMotion();
   cardsReturning = false;
   detailFromRect.value = undefined;
+  selectionHasHistory.value = false;
   selectedMode.value = null;
   motionPhase.value = 'idle';
   await nextTick();
@@ -269,6 +337,7 @@ async function closeSetup() {
   cardsReturning = false;
   selectedMode.value = null;
   motionPhase.value = "idle";
+  selectionHasHistory.value = false;
   await nextTick();
   if (!disposed && token === motionToken) launchButton?.focus({ preventScroll: true });
 }
@@ -282,8 +351,10 @@ watch([enabledModes, () => props.busy], ([modes, busy]) => {
   cancelCardMotion();
   setupMode.value = null;
   selectedPlayer.value = null;
+  selectedLatestScore.value = null;
   detailMode.value = null;
   detailFromRect.value = undefined;
+  selectionHasHistory.value = false;
   selectedMode.value = null;
   cardsReturning = false;
   motionPhase.value = 'idle';

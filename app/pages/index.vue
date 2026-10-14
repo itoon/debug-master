@@ -8,7 +8,7 @@
     <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
       :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
-      :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError"
+      :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
       @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
     <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" @cancel="showExitConfirm = false" @confirm="confirmExit" />
     <main v-show="!showSetup && !showTutorial && !(activeChallenge && showRanking && !showSummary)" class="game">
@@ -397,6 +397,7 @@ import {
   type GeneratedLevel,
 } from "../utils/levelGen";
 import { PLAYER_AGES, scorePlayerKey, type RankingBoard } from "../utils/ranking";
+import { nicknameKey } from "../utils/playerNickname";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
 import { enabledModesFor, homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
@@ -434,6 +435,8 @@ const practiceLevels = practiceSet.levels;
 let practiceLaunchToken = 0;
 let practiceLaunchButton: HTMLElement | null = null;
 const summaryScore = ref<Score | undefined>();
+const returningBestScore = ref<number | null>(null);
+const showSummaryRank = computed(() => returningBestScore.value === null || (summaryScore.value?.score ?? -Infinity) > returningBestScore.value);
 const scoreSaved = ref(false);
 const homeStorageError = ref("");
 const scoreStorageError = ref(false);
@@ -812,10 +815,23 @@ function presentPracticeSummary(): void {
 }
 
 /** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
-async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, existingPlayerId?: string): Promise<void> {
+async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, existingPlayerId?: string, previousBestScore?: number): Promise<void> {
   if (homeStarting.value || !showSetup.value) return;
   const nickname = profile.nickname.trim();
   if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return;
+  // Recheck immediately before creating a profile; explicit identity reuse is allowed.
+  if (existingPlayerId === undefined) {
+    try {
+      const key = nicknameKey(nickname);
+      if (repositories.scores.list().some(score => nicknameKey(score.name) === key)) {
+        homeStorageError.value = t('home.nicknameTaken');
+        return;
+      }
+    } catch {
+      homeStorageError.value = t('home.nicknameCheckError');
+      return;
+    }
+  }
   let savedModeIds;
   try { savedModeIds = repositories.modes.enabledIds(); } catch { savedModeIds = undefined; }
   const configuredMode = enabledModesFor(savedModeIds).find((item) => item.id === mode.id);
@@ -839,6 +855,7 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
     window.history.pushState({ ...window.history.state, debugMasterHomeV2Session: true }, "", window.location.href);
   }
   currentPlayerId.value = playerId;
+  returningBestScore.value = existingPlayerId === undefined ? null : previousBestScore ?? null;
   currentAvatarId.value = profile.avatarId;
   playerNameDraft.value = nickname;
   playerAgeDraft.value = profile.age;
@@ -854,6 +871,9 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
   showSetup.value = false;
   showTutorial.value = true;
   lastInteractionAt = Date.now();
+  // Only explicit reuse of a stored identity skips the tutorial;
+  // newly created profiles follow the normal introduction.
+  if (existingPlayerId !== undefined) playChallenge();
 }
 
 async function resumeChallenge(scoreId: string, mode: ChallengeMode): Promise<void> {
@@ -870,7 +890,7 @@ async function resumeChallenge(scoreId: string, mode: ChallengeMode): Promise<vo
     homeStorageError.value = t('player.unavailable');
     return;
   }
-  await prepareChallenge({ nickname: score.name, age: score.age!, avatarId: isPlayerAvatarId(score.avatarId) ? score.avatarId : PLAYER_AVATARS[0] }, mode, scorePlayerKey(score));
+  await prepareChallenge({ nickname: score.name, age: score.age!, avatarId: isPlayerAvatarId(score.avatarId) ? score.avatarId : PLAYER_AVATARS[0] }, mode, scorePlayerKey(score), score.score);
 }
 
 function openPracticePicker(): void {
@@ -924,7 +944,7 @@ async function startPracticeLevel(levelId: number): Promise<void> {
 function playChallenge(): void {
   if (!activeChallenge.value || !showTutorial.value) return;
   showTutorial.value = false;
-  startGame(); // Timer starts after the tutorial, at the first gameplay level.
+  startGame(); // New players start after tutorial; validated returning players start immediately.
 }
 
 function showChallengeRanking(): void {
@@ -961,6 +981,7 @@ function resetHomeSession(): void {
   currentAvatarId.value = undefined;
   activeChallenge.value = null;
   summaryScore.value = undefined;
+  returningBestScore.value = null;
   scoreSaved.value = false;
   scoreStorageError.value = false;
   homeStorageError.value = "";

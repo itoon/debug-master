@@ -115,7 +115,7 @@
           {{ result.name }} ·
           {{ t('summary.levels', { count: result.levelsCompleted }) }}
         </p>
-        <dl class="summary-metrics">
+        <dl class="summary-metrics" :class="{ 'without-rank': !showSummaryRank }">
           <div>
             <dt>{{ t('summary.score') }}</dt>
             <dd>{{ shownResultScore.toLocaleString('th-TH') }}</dd>
@@ -124,7 +124,7 @@
             <dt>{{ t('summary.time') }}</dt>
             <dd>{{ formatClock(result.elapsedMs) }}</dd>
           </div>
-          <div>
+          <div v-if="showSummaryRank">
             <dt>{{ t('summary.rank') }}</dt>
             <dd>
               {{ rank ? t('ranking.rank', { rank }) : t('ranking.unranked') }}
@@ -208,7 +208,7 @@ import { useCountUp } from '../composables/useCountUp'
 const tutorialTiles = TILE_TYPES.map(tileDefinition)
 const avatarSrc = usePlayerAvatar()
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   stage: 'tutorial' | 'summary' | 'ranking'
   mode: ChallengeMode
   repository: ScoreRepository
@@ -217,7 +217,8 @@ const props = defineProps<{
   saved: boolean
   saving: boolean
   storageError: boolean
-}>()
+  showSummaryRank?: boolean
+}>(), { showSummaryRank: true })
 const emit = defineEmits<{ play: []; home: []; ranking: []; retry: [] }>()
 // The final score rolls up from zero once its tile has popped in.
 const shownResultScore = useCountUp(computed(() => props.result?.score ?? 0), { from: 0, delay: 420, duration: 1100 })
@@ -334,6 +335,7 @@ h1 {
   gap: 10px;
   text-align: center;
 }
+.summary-metrics.without-rank { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .summary-metrics div {
   display: grid;
   gap: 8px;
@@ -803,7 +805,8 @@ button:disabled {
   }
 }
 @media (max-width: 500px) {
-  .summary-metrics {
+  .summary-metrics,
+  .summary-metrics.without-rank {
     grid-template-columns: 1fr;
   }
   .session-actions {

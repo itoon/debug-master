@@ -3,7 +3,7 @@
     <section class="summary-card">
       <p class="summary-brand">{{ t('brand') }}</p>
       <h1 :id="titleId" ref="heading" tabindex="-1">{{ t('practice.summaryTitle') }}</h1>
-      <img class="summary-codi" :src="codiHappy" alt="" draggable="false" />
+      <img class="summary-codi" :src="PLAYER_POSES.win" alt="" draggable="false" />
       <dl class="summary-metrics">
         <div>
           <dt>{{ t('summary.time') }}</dt>
@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import codiHappy from '../assets/sprites/cody-happy.webp';
+import { PLAYER_POSES } from '../utils/playerSprites';
 import { useGameI18n } from '../composables/useGameI18n';
 import type { PracticeSummary } from '../types/debug-game';
 import { formatClock } from '../utils/ranking';
