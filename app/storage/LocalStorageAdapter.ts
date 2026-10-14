@@ -1,5 +1,5 @@
 import type { Score } from "../types/debug-game";
-import { todayRanking, type RankingBoard } from "../utils/ranking";
+import { todayRanking, scorePlayerKey, isOnBoard, bangkokDay, type RankingBoard } from "../utils/ranking";
 import { CHALLENGE_IDS, type ChallengeId } from "../data/home-config";
 import type { ModeSettingsRepository, PlayerProfile, PlayerRepository, ScoreRepository } from "./contracts";
 
@@ -97,7 +97,12 @@ export class LocalScoreRepository implements ScoreRepository {
     return todayRanking(this.list(), board, now, limit);
   }
   rank(scoreId: string, board: RankingBoard, now = new Date()): number | undefined {
-    const index = this.today(board, now, Infinity).findIndex((item) => item.id === scoreId);
+    const scores = this.list();
+    const run = scores.find((item) => item.id === scoreId && isOnBoard(item, board) && bangkokDay(item.createdAt) === bangkokDay(now));
+    if (!run) return undefined;
+    const index = todayRanking(scores, board, now, Infinity).findIndex((item) =>
+      board.challengeId ? scorePlayerKey(item) === scorePlayerKey(run) : item.id === scoreId,
+    );
     return index < 0 ? undefined : index + 1;
   }
   subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener); }

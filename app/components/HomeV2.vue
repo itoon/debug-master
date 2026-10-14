@@ -1,8 +1,8 @@
 <template>
-  <main class="home-v2" :data-motion="motionPhase">
+  <main class="home-v2" :data-motion="motionPhase" :class="{ 'has-details': detailMode, 'selection-made': selectionMade }">
     <h1 class="sr-only">{{ t('brand') }}</h1>
 
-    <div ref="modeBoards" class="mode-boards" :class="[`count-${enabledModes.length}`, { 'modes-loading': !modesLoaded }]" :inert="motionPhase !== 'idle'">
+    <div v-show="!detailMode" ref="modeBoards" class="mode-boards" :class="[`count-${enabledModes.length}`, { 'modes-loading': !modesLoaded }]" :inert="motionPhase !== 'idle'">
       <section v-for="(mode, index) in enabledModes" :key="mode.id" class="mode-board" :class="[`mode-${mode.id}`, { 'selected-card': selectedMode?.id === mode.id, 'empty-board': emptyBoards[mode.id] && !singleMode }]"
         :data-mode-card="mode.id" :style="{ '--deal': index }"
         :aria-labelledby="`mode-${mode.id}-title`" :aria-busy="busy || motionPhase === 'entering' || motionPhase === 'leaving'"
@@ -10,7 +10,7 @@
         @focusin="focusedMode = mode.id" @focusout="leaveCardFocus($event)">
         <!-- Keyboard target for the whole card; there is no visible Start button. -->
         <button type="button" class="card-launch-target" :disabled="busy || motionPhase !== 'idle'" aria-haspopup="dialog" :data-mode-launch="mode.id"
-          :aria-label="t('home.cardAction', { mode: t(mode.nameKey) })" />
+          :aria-label="t('home.modeDetail', { mode: t(mode.nameKey) })" />
         <figure class="mode-cover">
           <img class="cover-image" :src="thumbnailUrl(mode)" :alt="t('home.thumbnail', { mode: t(mode.nameKey) })" draggable="false" />
           <span class="cover-sheen" aria-hidden="true" />
@@ -30,12 +30,15 @@
       </section>
     </div>
 
-    <footer class="home-footer">
-      <div class="home-footer-info"><span>{{ t('home.rules') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink> · <NuxtLink to="/modes">{{ t('home.modes') }}</NuxtLink></span></div>
+    <ModeDetailsPanel v-if="detailMode" ref="detailPanel" :mode="detailMode" :repository="repository" :busy="busy || motionPhase !== 'open'" :from-rect="detailFromRect"
+      @ready="detailReady" @back="closeDetails" @start="createPlayer" @select-player="selectPlayer" />
+    <footer class="home-footer" :inert="motionPhase !== 'idle'">
+      <div class="home-footer-info"><span>{{ t('ranking.bestPerPlayer') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink> · <NuxtLink to="/modes">{{ t('home.modes') }}</NuxtLink></span></div>
       <button type="button" class="practice-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('practice')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 4 3 5-5 3-3-5zm10 8 3 5-5 3-3-5zM4 19h5m6-15h5" /></svg>{{ t('practice.open') }}</button>
     </footer>
     <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :error="error" :busy="busy || motionPhase === 'leaving'"
       @close="closeSetup" @start="launch" @popup="emit('sound', 'popup')" />
+    <ReturningPlayerDialog v-if="selectedPlayer" :player="selectedPlayer" :error="error" :busy="busy" @close="closePlayer" @create="createPlayer" @reuse="reusePlayer" />
   </main>
 </template>
 
@@ -46,15 +49,21 @@ import { useGameI18n } from "../composables/useGameI18n";
 import type { ModeSettingsRepository, ScoreRepository, PlayerSetupInput } from "../storage/contracts";
 import { formatClock, type RankingBoard } from "../utils/ranking";
 import type { UiSoundEffect } from "../data/sound-effects";
+import type { Score } from "../types/debug-game";
 
 const props = defineProps<{ repository: ScoreRepository; modesRepository: ModeSettingsRepository; error?: string; busy?: boolean }>();
-const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; practice: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
+const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resume: [scoreId: string, mode: ChallengeMode]; practice: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
 const { t } = useGameI18n();
 // Saved on this device at /modes; hidden until read so SSR defaults never flash.
 const { enabledModes, loaded: modesLoaded } = useModeSettings(props.modesRepository);
 const singleMode = computed(() => enabledModes.value.length === 1);
 const setupMode = ref<ChallengeMode | null>(null);
 const selectedMode = ref<ChallengeMode | null>(null);
+const selectionMade = ref(false);
+const detailMode = ref<ChallengeMode | null>(null);
+const detailFromRect = ref<{ left: number; top: number; width: number; height: number }>();
+const detailPanel = ref<{ closeWithMotion: () => Promise<void>; focusStart: () => void; focusHeading: () => void } | null>(null);
+const selectedPlayer = ref<Score | null>(null);
 const motionPhase = ref<"idle" | "entering" | "open" | "leaving">("idle");
 const modeBoards = ref<HTMLElement | null>(null);
 const setupDialog = ref<{ closeWithMotion: () => Promise<void> } | null>(null);
@@ -62,6 +71,7 @@ const focusedMode = ref<ChallengeId | null>(null);
 const emptyBoards = ref<Record<ChallengeId, boolean>>({ A: false, B: false, C: false });
 const baseURL = useRuntimeConfig().app.baseURL;
 let launchButton: HTMLButtonElement | null = null;
+let playerButton: HTMLElement | null = null;
 let cardAnimations: Animation[] = [];
 let motionToken = 0;
 let disposed = false;
@@ -126,6 +136,7 @@ function positionCards(mode: ChallengeMode, snapshots = snapshotCards(), pinned 
   });
 }
 function recenterCards(): void {
+  if (detailMode.value) return;
   if ((motionPhase.value !== "open" && motionPhase.value !== "leaving") || !selectedMode.value) return;
   const duration = Number(cardAnimations[0]?.effect?.getTiming().duration ?? homeConfig.modeMotion.cardsMs);
   const currentTime = cardAnimations[0]?.currentTime;
@@ -149,6 +160,7 @@ async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   emit("unlockAudio"); // Unlock on the original pointer/keyboard gesture.
   emit("sound", "select");
   const snapshots = snapshotCards();
+  selectionMade.value = true; // Do not replay the initial deal when detail restores the grid.
   const token = ++motionToken;
   emit("resetError");
   launchButton = (event.currentTarget as HTMLElement).querySelector<HTMLButtonElement>("[data-mode-launch]");
@@ -162,7 +174,67 @@ async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   if (disposed || token !== motionToken || motionPhase.value !== "entering") return;
   motionPhase.value = "open";
   if (viewportSize !== `${window.innerWidth}:${window.innerHeight}`) recenterCards();
-  setupMode.value = mode;
+  let hasPlayers = true;
+  try { hasPlayers = props.repository.today(boardFor(mode), new Date(), 1).length > 0; } catch { /* Show the detail's storage error rather than pretend the board is empty. */ }
+  if (hasPlayers) {
+    const rect = modeBoards.value?.querySelector<HTMLElement>(`[data-mode-card="${mode.id}"]`)?.getBoundingClientRect();
+    if (rect) detailFromRect.value = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+    motionPhase.value = "entering";
+    detailMode.value = mode;
+  } else setupMode.value = mode;
+}
+function detailReady(): void {
+  if (!disposed && detailMode.value && motionPhase.value === 'entering') motionPhase.value = 'open';
+}
+function selectPlayer(score: Score): void {
+  if (props.busy || motionPhase.value !== 'open' || !detailMode.value || setupMode.value || selectedPlayer.value) return;
+  playerButton = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  emit('resetError');
+  selectedPlayer.value = score;
+  emit('sound', 'popup');
+}
+async function closePlayer(): Promise<void> {
+  if (props.busy) return;
+  selectedPlayer.value = null;
+  emit('resetError');
+  await nextTick();
+  if (disposed) return;
+  if (playerButton?.isConnected) playerButton.focus({ preventScroll: true });
+  else detailPanel.value?.focusHeading();
+}
+function createPlayer(): void {
+  if (props.busy || motionPhase.value !== 'open' || !detailMode.value) return;
+  selectedPlayer.value = null;
+  emit('resetError');
+  setupMode.value = detailMode.value;
+}
+function reusePlayer(): void {
+  if (!props.busy && motionPhase.value === 'open' && detailMode.value && selectedPlayer.value) emit('resume', selectedPlayer.value.id, detailMode.value);
+}
+async function closeDetails(): Promise<void> {
+  if (props.busy || motionPhase.value !== 'open' || !detailMode.value || setupMode.value || selectedPlayer.value) return;
+  const token = ++motionToken;
+  motionPhase.value = 'leaving';
+  emit('sound', 'transitionBack');
+  await detailPanel.value?.closeWithMotion();
+  if (disposed || token !== motionToken) return;
+  detailMode.value = null;
+  await nextTick();
+  if (disposed || token !== motionToken || !selectedMode.value) return;
+  // The grid was display:none during detail. Measure its fresh responsive
+  // layout, pin the chosen card at centre, then run the existing return motion.
+  cancelCardMotion();
+  positionCards(selectedMode.value, snapshotCards(), true);
+  cardsReturning = true;
+  if (!reducedMotion()) { reverseCards(); await waitForCardMotion(token); }
+  if (disposed || token !== motionToken) return;
+  cancelCardMotion();
+  cardsReturning = false;
+  detailFromRect.value = undefined;
+  selectedMode.value = null;
+  motionPhase.value = 'idle';
+  await nextTick();
+  if (!disposed && token === motionToken) launchButton?.focus({ preventScroll: true });
 }
 function leaveCardFocus(event: FocusEvent) {
   if (!(event.relatedTarget instanceof Node) || !(event.currentTarget as HTMLElement).contains(event.relatedTarget)) focusedMode.value = null;
@@ -180,6 +252,12 @@ async function closeSetup() {
   setupMode.value = null;
   await nextTick();
   if (disposed || token !== motionToken) return;
+  if (detailMode.value) {
+    motionPhase.value = 'open';
+    await nextTick();
+    detailPanel.value?.focusStart();
+    return;
+  }
   emit("sound", "transitionBack");
   if (!reducedMotion()) {
     cardsReturning = true;
@@ -198,6 +276,18 @@ function launch(player: PlayerSetupInput) {
   if (motionPhase.value === "open" && setupMode.value && !props.busy) emit("start", player, setupMode.value);
 }
 onMounted(() => window.addEventListener("resize", recenterCards));
+watch([enabledModes, () => props.busy], ([modes, busy]) => {
+  if (!selectedMode.value || modes.some(mode => mode.id === selectedMode.value?.id) || busy) return;
+  motionToken += 1;
+  cancelCardMotion();
+  setupMode.value = null;
+  selectedPlayer.value = null;
+  detailMode.value = null;
+  detailFromRect.value = undefined;
+  selectedMode.value = null;
+  cardsReturning = false;
+  motionPhase.value = 'idle';
+});
 onBeforeUnmount(() => {
   disposed = true;
   motionToken += 1;
@@ -213,7 +303,7 @@ onBeforeUnmount(() => {
 .mode-A { border-color: #e3bd4b; }
 /* Cards are dealt in left to right once the enabled modes are known. Backwards
    fill only, so hover lift and the selection motion own transform afterwards. */
-.mode-boards:not(.modes-loading) .mode-board { animation: card-deal 620ms cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--deal, 0) * 90ms); }
+.home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: card-deal 620ms cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--deal, 0) * 90ms); }
 @keyframes card-deal { from { opacity: 0; transform: translateY(36px) scale(.94) rotate(calc((var(--deal, 0) - 1) * -1.5deg)); } }
 .home-v2:not([data-motion="idle"]) .mode-boards { overflow: clip; }
 .home-v2:not([data-motion="idle"]) .mode-board { transform: none; transition: none; }
@@ -303,7 +393,7 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mode-board, .cover-image { transition: none; }
-  .mode-boards:not(.modes-loading) .mode-board { animation: card-fade 200ms ease backwards; }
+  .home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: card-fade 200ms ease backwards; }
   .mode-board:hover, .mode-board:focus-within, .mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: none; }
   .mode-board:hover .cover-sheen, .mode-board:hover .start-cta svg { animation: none; }
   .start-cta, .mode-board:hover .start-cta { transform: translate(-50%, -50%); transition: opacity 120ms linear; }

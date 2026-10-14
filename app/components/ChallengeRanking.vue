@@ -68,14 +68,15 @@
             <span>{{ place.rank }}</span>
           </div>
         </div>
+        <p v-if="showTotal" class="player-total"><span>{{ t('ranking.totalPlayers') }}</span><strong>{{ rows.length }}</strong></p>
       </div>
       <div
         ref="creditsViewport"
         class="credits-viewport"
         :class="{ dragging: isDragging }"
-        :tabindex="credits ? 0 : undefined"
-        :role="credits ? 'region' : undefined"
-        :aria-label="credits ? t('ranking.readScores') : undefined"
+        :tabindex="credits || selectable ? 0 : undefined"
+        :role="credits || selectable ? 'region' : undefined"
+        :aria-label="credits || selectable ? t('ranking.readScores') : undefined"
         @click.stop="focusForInput"
         @wheel.passive="pauseForInput"
         @pointerdown="beginManualDrag"
@@ -84,16 +85,18 @@
         @pointercancel="endManualDrag"
         @lostpointercapture="endManualDrag"
       >
+        <p v-if="!visibleRows.length && rows.length" class="search-empty" role="status">{{ t('ranking.searchEmpty') }}</p>
         <ol ref="creditsContent" class="challenge-rows">
           <li
-            v-for="(score, index) in rows"
+            v-for="{ score, index } in visibleRows"
             :key="score.id"
             :style="{ '--row': index }"
             :class="[
-              { podium: index < 3, mine: score.id === highlightId },
+              { podium: index < 3, mine: isMine(score), selectable },
               `place-${index + 1}`
             ]"
           >
+            <button v-if="selectable" type="button" class="player-select" :disabled="selectionBusy" :aria-label="t('ranking.selectPlayer', { name: score.name, rank: index + 1 })" @click.stop="emit('selectPlayer', score)"><span class="sr-only">{{ t('ranking.selectPlayer', { name: score.name, rank: index + 1 }) }}</span></button>
             <span
               class="rank-number"
               :aria-label="t('ranking.rank', { rank: index + 1 })"
@@ -111,7 +114,7 @@
                 ageRange(score.age)
               }}</small>
             </span>
-            <span v-if="score.id === highlightId" class="you">{{
+            <span v-if="isMine(score)" class="you">{{
               t('ranking.you')
             }}</span>
             <span class="result">
@@ -155,8 +158,9 @@
 
 <script setup lang="ts">
 import type { ScoreRepository } from '../storage/contracts'
+import type { Score } from '../types/debug-game'
 import type { RankingBoard } from '../utils/ranking'
-import { formatClock } from '../utils/ranking'
+import { formatClock, scorePlayerKey } from '../utils/ranking'
 import { PLAYER_SPRITES } from '../utils/playerSprites'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { useGameI18n } from '../composables/useGameI18n'
@@ -169,6 +173,12 @@ const props = withDefaults(
     repository: ScoreRepository
     board: RankingBoard
     highlightId?: string
+    highlightPlayerId?: string
+    limit?: number
+    search?: string
+    selectable?: boolean
+    selectionBusy?: boolean
+    showTotal?: boolean
     variant?: 'light' | 'space'
     podium?: boolean
     credits?: boolean
@@ -186,19 +196,32 @@ const props = withDefaults(
     paused: false,
     hideEmpty: false,
     placeholder: false,
-    split: false
+    split: false,
+    limit: 10, search: '', selectable: false, selectionBusy: false, showTotal: false
   }
 )
 const emit = defineEmits<{
   viewportRemoved: []
   emptyChange: [empty: boolean]
+  selectPlayer: [score: Score]
 }>()
 const { t } = useGameI18n()
 const headingId = useId()
 const { rows, error, loaded } = useScoreBoard(
   props.repository,
-  computed(() => props.board)
+  computed(() => props.board),
+  props.limit
 )
+const visibleRows = computed(() => {
+  const query = props.search.trim().normalize('NFC').toLocaleLowerCase('th-TH');
+  return rows.value.map((score, index) => ({ score, index })).filter(({ score }) =>
+    !query || score.name.normalize('NFC').toLocaleLowerCase('th-TH').includes(query),
+  );
+});
+function isMine(score: Score): boolean {
+  return score.id === props.highlightId || Boolean(props.highlightPlayerId && scorePlayerKey(score) === props.highlightPlayerId);
+}
+watch(() => props.search, () => { if (creditsViewport.value) creditsViewport.value.scrollTop = 0; }, { flush: 'post' });
 const empty = computed(
   () => loaded.value && !error.value && rows.value.length === 0
 )
@@ -245,7 +268,7 @@ const {
 )
 // A split board scrolls on its own, so bring the highlighted run into view.
 watch(
-  [rows, () => props.highlightId],
+  [rows, () => props.highlightId, () => props.highlightPlayerId],
   () => {
     const viewport = creditsViewport.value
     const mine = creditsContent.value?.querySelector<HTMLElement>('li.mine')
@@ -270,6 +293,16 @@ function ageRange(age?: number): string {
 </script>
 
 <style scoped>
+.player-total { grid-column: 1 / -1; display: grid; gap: 6px; text-align: center; margin: 18px 0; color: #e3edff; font-weight: 800; }
+.player-total strong { font-size: clamp(1.5rem, 3vw, 2.3rem); }
+.challenge-rows li.selectable { position: relative; }
+.player-select { position: absolute; inset: 0; width: 100%; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
+.player-select:not(:disabled):hover { background: #a9caff18; }
+.player-select:focus-visible { outline: 3px solid #ffdc53; outline-offset: -3px; }
+.player-select:disabled { cursor: wait; }
+.search-empty { margin: 12px; line-height: 1.6; color: #d6e6ff; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.split:has(.player-total) .rank-podium { grid-template-rows: minmax(0, 1fr) auto; }
 .challenge-ranking {
   display: flex;
   flex-direction: column;

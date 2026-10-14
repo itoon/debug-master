@@ -1,7 +1,7 @@
 <template>
   <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
     <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
-      :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @reset-error="homeStorageError = ''"
+      :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
       @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" />
     <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
     <PracticeSummaryDialog v-if="practiceSummary" :result="practiceSummary" @home="backToStart" />
@@ -396,13 +396,13 @@ import {
   newRunSeed,
   type GeneratedLevel,
 } from "../utils/levelGen";
-import { PLAYER_AGES, type RankingBoard } from "../utils/ranking";
+import { PLAYER_AGES, scorePlayerKey, type RankingBoard } from "../utils/ranking";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
 import { enabledModesFor, homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
 import type { PlayerSetupInput } from "../storage/contracts";
-import { isPlayerAvatarId } from "../data/player-avatars";
+import { isPlayerAvatarId, PLAYER_AVATARS } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
 
 const { t } = useGameI18n();
@@ -812,7 +812,7 @@ function presentPracticeSummary(): void {
 }
 
 /** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
-async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode): Promise<void> {
+async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, existingPlayerId?: string): Promise<void> {
   if (homeStarting.value || !showSetup.value) return;
   const nickname = profile.nickname.trim();
   if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return;
@@ -820,7 +820,7 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode):
   try { savedModeIds = repositories.modes.enabledIds(); } catch { savedModeIds = undefined; }
   const configuredMode = enabledModesFor(savedModeIds).find((item) => item.id === mode.id);
   if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900 || !challengeSets.some((set) => set.id === configuredMode.levelSetId)) return;
-  const playerId = crypto.randomUUID();
+  const playerId = existingPlayerId ?? crypto.randomUUID();
   const token = ++sessionToken;
   homeStarting.value = true;
   try {
@@ -854,6 +854,23 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode):
   showSetup.value = false;
   showTutorial.value = true;
   lastInteractionAt = Date.now();
+}
+
+async function resumeChallenge(scoreId: string, mode: ChallengeMode): Promise<void> {
+  if (homeStarting.value || !showSetup.value) return;
+  let score: Score | undefined;
+  try {
+    const chosen = repositories.scores.list().find(item => item.id === scoreId);
+    if (chosen) score = repositories.scores.today({ challengeId: mode.challengeId, setId: mode.levelSetId, mode: 'timer', timeLimitSec: mode.timeLimit }, new Date(), Infinity).find(item => scorePlayerKey(item) === scorePlayerKey(chosen));
+  } catch {
+    homeStorageError.value = t('storage.loadError');
+    return;
+  }
+  if (!score || !homeConfig.ages.includes(score.age as number) || !score.name.trim() || score.name.trim().length > homeConfig.nicknameMaxLength) {
+    homeStorageError.value = t('player.unavailable');
+    return;
+  }
+  await prepareChallenge({ nickname: score.name, age: score.age!, avatarId: isPlayerAvatarId(score.avatarId) ? score.avatarId : PLAYER_AVATARS[0] }, mode, scorePlayerKey(score));
 }
 
 function openPracticePicker(): void {

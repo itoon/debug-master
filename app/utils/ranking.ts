@@ -53,7 +53,12 @@ export function isOnBoard(score: Score, board: RankingBoard): boolean {
   return true;
 }
 
-/** Today's scores on a board: higher score first, then less time. */
+/** Legacy entries without player IDs stay distinct, even with equal nicknames. */
+export function scorePlayerKey(score: Score): string {
+  return score.playerId || `legacy:${score.id}`;
+}
+
+/** Today's board: higher score first, then less time; challenges show each player's best run. */
 export function todayRanking(
   scores: Score[],
   board: RankingBoard,
@@ -61,10 +66,17 @@ export function todayRanking(
   limit = 10,
 ): Score[] {
   const today = bangkokDay(now);
-  return scores
+  const ordered = scores
     .filter((score) => isOnBoard(score, board) && bangkokDay(score.createdAt) === today)
-    .sort((a, b) => b.score - a.score || a.elapsedMs - b.elapsedMs)
-    .slice(0, limit);
+    .sort((a, b) => b.score - a.score || a.elapsedMs - b.elapsedMs);
+  if (!board.challengeId) return ordered.slice(0, limit);
+  const players = new Set<string>();
+  return ordered.filter((score) => {
+    const key = scorePlayerKey(score);
+    if (players.has(key)) return false;
+    players.add(key);
+    return true;
+  }).slice(0, limit);
 }
 
 export function formatClock(ms: number): string {

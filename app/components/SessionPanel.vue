@@ -158,14 +158,16 @@
           class="stage-ranking"
           :repository="repository"
           :board="board"
+          :limit="Infinity"
           :highlight-id="saved ? result?.id : undefined"
+          :highlight-player-id="saved ? result?.playerId : undefined"
           variant="space"
           podium
           placeholder
           split
         />
         <div class="ranking-footer">
-          <p class="ranking-rules">{{ t('home.rules') }}</p>
+          <p class="ranking-rules">{{ t('ranking.bestPerPlayer') }}</p>
           <p v-if="storageError" class="session-error" role="alert">
             {{ t('storage.error') }}
           </p>
@@ -196,7 +198,7 @@
 import type { ChallengeMode } from '../data/home-config'
 import type { ScoreRepository } from '../storage/contracts'
 import type { Score } from '../types/debug-game'
-import { formatClock, type RankingBoard } from '../utils/ranking'
+import { formatClock, scorePlayerKey, type RankingBoard } from '../utils/ranking'
 import { useGameI18n } from '../composables/useGameI18n'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { TILE_TYPES, tileDefinition } from '../data/tiles'
@@ -233,7 +235,8 @@ const { rows, error } = useScoreBoard(
 )
 const rank = computed(() => {
   if (!props.saved || !props.result) return undefined
-  const index = rows.value.findIndex((score) => score.id === props.result?.id)
+  const result = props.result;
+  const index = rows.value.findIndex((score) => props.board.challengeId ? scorePlayerKey(score) === scorePlayerKey(result) : score.id === result.id)
   return index < 0 ? undefined : index + 1
 })
 function focusPanel(): void {
