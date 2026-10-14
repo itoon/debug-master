@@ -2,6 +2,11 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — Cooler level-clear motion
+
+- Per the user ("too sweet, make it cool"), the clear sequence moved from yellow ring/diamond sparks, a looping party bounce and spring overshoots to a sharp lock-on hit: white impact frame, cyan tile-shaped frame and eight light streaks (`board.css`); one-shot crouch-jump-land `clear-pose` with a cyan brightness flash on the sprite; score card slices in skewed with a light-blade sweep and slammed points (`index.vue`); tile cascade snaps in without overshoot (18ms/diagonal, capped 220ms). Reduced motion keeps only the fading frame.
+- Landed in the user's commit `61be56c`. Verification: `pnpm build` passed (exit 0); `git diff --check` passed. No browser check under the build-only instruction.
+
 ## 2026-10-14 — Smooth edge-wrap motion
 
 - A wrapping move previously snapped Codi to the far side with no motion (`.actor.warp` disables the slide), which read as a hitch. `index.vue` now records a transient `wrapExit` (origin cell + direction) on wrapped moves: a non-interactive copy of Codi slides one pitch past the edge it left and fades (`.wrap-exit`), while the real actor's keyed `.hop` slides in from one pitch beyond the opposite edge (`.hop.wrap-in`), both 260ms ease-out like an ordinary step. The copy removes itself on `animationend`; `beginLevel` and the next non-wrap move clear it. Wrapping onto the goal keeps the slide-in alongside the party animation. Reduced motion keeps the instant snap.
