@@ -89,6 +89,8 @@ function player(pid, name) {
 
 async function main() {
   console.log(`smoke: room ${ROOM} on ${BASE}`)
+  // Whatever hangs (a socket that never opens, a missed waiter), never run longer than this.
+  setTimeout(() => fail('overall timeout'), 30_000).unref()
 
   // 1. host key A claims the room; host key B cannot control it.
   const hostA = connect('host', randomKey())
