@@ -1,5 +1,9 @@
 // Pure room logic for the Live Race Room. No I/O, no `cloudflare:workers` import:
 // the Durable Object owns sockets and storage and passes connectivity in as a Set of pids.
+//
+// Identity: a device's `pid` is a secret (it alone re-binds a seat), sent only in `hello`.
+// Every player also gets a random public `id` on first join; only that id is ever broadcast
+// (snapshot) or accepted from the host (kick). `room.players` is keyed by the secret pid.
 import type {
   HostCommand,
   LivePlayer,
@@ -19,7 +23,10 @@ import {
   maxLevelPoints,
 } from '../../app/utils/live/protocol'
 
-export type StoredPlayer = Omit<LivePlayer, 'connected'>
+export type StoredPlayer = Omit<LivePlayer, 'connected'> & {
+  /** Secret device id (also the key in StoredRoom.players). Never leaves the server. */
+  pid: string
+}
 
 export interface StoredRoom {
   code: string
@@ -29,6 +36,7 @@ export interface StoredRoom {
   roundId: number
   startAt: number | null
   endAt: number | null
+  /** Keyed by the secret pid. */
   players: Record<string, StoredPlayer>
   hostKeyHash?: string
   lastActivity: number
@@ -52,7 +60,7 @@ export function createRoom(code: string, now: number): StoredRoom {
 export function seatCount(room: StoredRoom, connected: Set<string>): number {
   let n = 0
   for (const p of Object.values(room.players)) {
-    if (p.status === 'queued' || connected.has(p.id)) n++
+    if (p.status === 'queued' || connected.has(p.pid)) n++
   }
   return n
 }
@@ -85,7 +93,8 @@ export function joinPlayer(
   if (seatCount(room, connected) >= MAX_PLAYERS) return 'full'
 
   const base = {
-    id: hello.pid,
+    id: newPublicId(room),
+    pid: hello.pid,
     name: hello.name,
     avatarId: hello.avatarId,
     age: hello.age,
@@ -106,16 +115,45 @@ export function joinPlayer(
     // Every lane is held, yet fewer than MAX_PLAYERS are connected, so some holder is offline
     // (still inside the reconnect grace window). Hand its lane to the newcomer.
     const stale = Object.values(room.players)
-      .filter((p) => p.status === 'playing' && p.lane !== null && !connected.has(p.id))
+      .filter((p) => p.status === 'playing' && p.lane !== null && !connected.has(p.pid))
       .sort((a, b) => a.lane! - b.lane!)[0]
     if (!stale) return 'full'
     lane = stale.lane
-    delete room.players[stale.id]
+    delete room.players[stale.pid]
   }
   room.players[hello.pid] = { ...base, status: 'playing', lane, queuedAt: null }
   return 'playing'
 }
 
+/** A fresh public id, unique within the room. */
+export function newPublicId(room: StoredRoom): string {
+  const taken = new Set(Object.values(room.players).map((p) => p.id))
+  let id: string
+  do id = crypto.randomUUID()
+  while (taken.has(id))
+  return id
+}
+
+/** Secret pid of the player with public id `id`, or null. */
+export function pidForPublicId(room: StoredRoom, id: string): string | null {
+  for (const p of Object.values(room.players)) if (p.id === id) return p.pid
+  return null
+}
+
+/**
+ * Rooms saved before the public/secret split keyed players by pid and broadcast it as `id`.
+ * Give such players a fresh public id so the old (leaked) one stops being their identity.
+ */
+export function migrateRoom(room: StoredRoom): StoredRoom {
+  for (const [key, p] of Object.entries(room.players)) {
+    if (typeof p.pid === 'string') continue
+    p.pid = key
+    p.id = newPublicId(room)
+  }
+  return room
+}
+
+/** Removes the player bound to the secret `pid`. */
 export function leavePlayer(room: StoredRoom, pid: string): boolean {
   if (!room.players[pid]) return false
   delete room.players[pid]
@@ -123,7 +161,7 @@ export function leavePlayer(room: StoredRoom, pid: string): boolean {
 }
 
 function startNewRound(room: StoredRoom, connected: Set<string>): void {
-  const alive = Object.values(room.players).filter((p) => connected.has(p.id))
+  const alive = Object.values(room.players).filter((p) => connected.has(p.pid))
   const staying = alive
     .filter((p) => p.status === 'playing')
     .sort((a, b) => (a.lane ?? Infinity) - (b.lane ?? Infinity))
@@ -133,7 +171,7 @@ function startNewRound(room: StoredRoom, connected: Set<string>): void {
 
   const next: Record<string, StoredPlayer> = {}
   const seat = (p: StoredPlayer, lane: number): void => {
-    next[p.id] = {
+    next[p.pid] = {
       ...p,
       status: 'playing',
       lane,
@@ -148,7 +186,7 @@ function startNewRound(room: StoredRoom, connected: Set<string>): void {
   for (const p of staying) seat(p, lane++)
   let i = 0
   for (; i < queue.length && lane < MAX_PLAYERS; i++) seat(queue[i], lane++)
-  for (; i < queue.length; i++) next[queue[i].id] = { ...queue[i] } // overflow keeps its queue position
+  for (; i < queue.length; i++) next[queue[i].pid] = { ...queue[i] } // overflow keeps its queue position
 
   room.players = next
   room.roundId += 1
@@ -179,7 +217,7 @@ export function applyHostCommand(
       break
     case 'start': {
       if (room.phase !== 'lobby') break
-      const ready = Object.values(room.players).some((p) => p.status === 'playing' && connected.has(p.id))
+      const ready = Object.values(room.players).some((p) => p.status === 'playing' && connected.has(p.pid))
       if (!ready) break
       room.phase = 'countdown'
       room.startAt = now + COUNTDOWN_MS
@@ -198,9 +236,12 @@ export function applyHostCommand(
       startNewRound(room, connected)
       changed = true
       break
-    case 'kick':
-      changed = leavePlayer(room, cmd.playerId)
+    case 'kick': {
+      // cmd.playerId is the public id; the record is keyed by the secret pid.
+      const pid = pidForPublicId(room, cmd.playerId)
+      changed = pid !== null && leavePlayer(room, pid)
       break
+    }
   }
   if (changed) room.lastActivity = now
   return changed
@@ -285,7 +326,8 @@ export function snapshot(
   now: number,
 ): RoomState {
   const players: LivePlayer[] = Object.values(room.players)
-    .map((p) => ({ ...p, connected: connected.has(p.id) }))
+    // Strip the secret pid: every socket (including keyless screens) receives this.
+    .map(({ pid, ...p }) => ({ ...p, connected: connected.has(pid) }))
     .sort(comparePlayers)
   return {
     code: room.code,

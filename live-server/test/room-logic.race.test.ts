@@ -201,7 +201,8 @@ describe('snapshot', () => {
     joinPlayer(r, hello('p-cccccc'), conn('p-aaaaaa', 'p-bbbbbb', 'p-cccccc'), 3500) // queued earlier
     r.players['p-aaaaaa'].score = 50
     const s = snapshot(r, conn('p-aaaaaa', 'p-bbbbbb'), { screens: 2, hosts: 1 }, 123_456)
-    expect(s.players.map((p) => p.id)).toEqual(['p-aaaaaa', 'p-cccccc', 'p-bbbbbb'])
+    const pub = (pid: string) => r.players[pid].id
+    expect(s.players.map((p) => p.id)).toEqual([pub('p-aaaaaa'), pub('p-cccccc'), pub('p-bbbbbb')])
     expect(s.players.map((p) => p.connected)).toEqual([true, false, true])
     expect(s.serverNow).toBe(123_456)
     expect(s.screens).toBe(2)

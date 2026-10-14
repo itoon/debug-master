@@ -22,7 +22,7 @@
           <div class="lobby-players">
             <p>{{ t('live.playersCount', { count: playing.length }) }}</p>
             <ul>
-              <li v-for="player in playing" :key="player.id" :class="{ me: player.id === pid, off: !player.connected }">
+              <li v-for="player in playing" :key="player.id" :class="{ me: player.id === selfId, off: !player.connected }">
                 <img :src="avatarSrc(player.avatarId)" :alt="player.name" :title="player.name" draggable="false" />
               </li>
             </ul>
@@ -43,7 +43,7 @@
         </template>
 
         <ol v-if="showStandings" class="standings" :aria-label="t('live.board')">
-          <li v-for="row in standings" :key="row.player.id" :class="[medal(row.rank), { me: row.player.id === pid, off: !row.player.connected }]">
+          <li v-for="row in standings" :key="row.player.id" :class="[medal(row.rank), { me: row.player.id === selfId, off: !row.player.connected }]">
             <span class="n">{{ row.rank }}</span>
             <img :src="avatarSrc(row.player.avatarId)" alt="" draggable="false" />
             <b :title="row.player.name">{{ row.player.name }}</b>
@@ -73,7 +73,8 @@ import type { RoomState } from "../../utils/live/protocol";
 const props = defineProps<{
   stage: LivePlayerStage;
   state: RoomState | null;
-  pid: string;
+  /** This device's public LivePlayer.id (from `you`); empty until known. */
+  selfId: string;
   countdown: number;
   queueRemainingSec: number;
   lateScoreNote: boolean;
@@ -85,8 +86,8 @@ const headingId = useId();
 const heading = ref<HTMLElement | null>(null);
 
 const playing = computed(() => props.state?.players.filter((p) => p.status === "playing") ?? []);
-const self = computed(() => props.state?.players.find((p) => p.id === props.pid) ?? null);
-const rank = computed(() => playing.value.findIndex((p) => p.id === props.pid) + 1);
+const self = computed(() => props.state?.players.find((p) => p.id === props.selfId) ?? null);
+const rank = computed(() => playing.value.findIndex((p) => p.id === props.selfId) + 1);
 const roundInfo = computed(() => {
   const s = props.state;
   if (!s) return "";
@@ -111,7 +112,7 @@ const showStandings = computed(() => (props.stage === "queued" || props.stage ==
 const standings = computed(() => {
   const rows = playing.value.map((player, index) => ({ player, rank: index + 1 }));
   const top = rows.slice(0, 5);
-  const mine = rows.find((row) => row.player.id === props.pid);
+  const mine = rows.find((row) => row.player.id === props.selfId);
   return mine && mine.rank > 5 ? [...top, mine] : top;
 });
 function medal(place: number): string {

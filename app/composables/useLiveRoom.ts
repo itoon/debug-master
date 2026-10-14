@@ -14,7 +14,8 @@ export interface LiveRoom {
   offset: Ref<number>;
   connected: Ref<boolean>;
   isHost: Ref<boolean | null>;
-  you: Ref<{ pid: string; status: PlayerStatus } | null>;
+  /** This device's public player id (LivePlayer.id) and seat status, from the last `you`. */
+  you: Ref<{ id: string; status: PlayerStatus } | null>;
   notice: Ref<"full" | "kicked" | null>;
   error: Ref<"not_host" | "bad_message" | null>;
   send(msg: ClientMessage, coalesceKey?: string): void;
@@ -27,7 +28,7 @@ export function useLiveRoom(opts: { code: string; role: Role; key?: string; hell
   const offset = ref(0);
   const connected = ref(false);
   const isHost = ref<boolean | null>(null);
-  const you = ref<{ pid: string; status: PlayerStatus } | null>(null);
+  const you = ref<{ id: string; status: PlayerStatus } | null>(null);
   const notice = ref<"full" | "kicked" | null>(null);
   const error = ref<"not_host" | "bad_message" | null>(null);
 
@@ -45,7 +46,7 @@ export function useLiveRoom(opts: { code: string; role: Role; key?: string; hell
                 offset.value = clockOffset(m.state.serverNow, receivedAt);
                 break;
               case "you":
-                you.value = { pid: m.pid, status: m.status };
+                you.value = { id: m.id, status: m.status };
                 break;
               case "host":
                 isHost.value = m.host === true;

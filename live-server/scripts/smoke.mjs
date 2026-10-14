@@ -121,8 +121,12 @@ async function main() {
   p2.send(player('smoke-p2', 'P2'))
   const y1 = await p1.waitFor('you', (m) => m.type === 'you')
   const y2 = await p2.waitFor('you', (m) => m.type === 'you')
-  check(y1.status === 'playing' && y1.pid === 'smoke-p1', 'P1 gets you status:playing')
-  check(y2.status === 'playing' && y2.pid === 'smoke-p2', 'P2 gets you status:playing')
+  check(y1.status === 'playing' && typeof y1.id === 'string' && y1.id !== 'smoke-p1', 'P1 gets you status:playing with a public id')
+  check(y2.status === 'playing' && typeof y2.id === 'string' && y2.id !== y1.id, 'P2 gets you status:playing with its own public id')
+  const lobby = (await screen.waitFor('both players', (m) => m.type === 'state' && m.state.players.length === 2)).state
+  const json = JSON.stringify(lobby)
+  check(!json.includes('smoke-p1') && !json.includes('smoke-p2'), 'state never carries the secret pids')
+  check(lobby.players.some((p) => p.id === y1.id) && lobby.players.some((p) => p.id === y2.id), 'state lists players by public id')
 
   // 4. setDuration + start -> countdown, then running when the alarm fires.
   hostA.send({ type: 'setDuration', durationSec: 60 })
@@ -136,8 +140,8 @@ async function main() {
 
   // 5. progress puts P1 first.
   p1.send({ type: 'progress', roundId: 1, score: 500, levelsCompleted: 1, bestCombo: 2, combo: 2 })
-  const sp = await screen.waitState('P1 score 500', (s) => s.players.some((p) => p.id === 'smoke-p1' && p.score === 500))
-  check(sp.players[0].id === 'smoke-p1' && sp.players[0].score === 500, 'P1 is ranked first after progress')
+  const sp = await screen.waitState('P1 score 500', (s) => s.players.some((p) => p.id === y1.id && p.score === 500))
+  check(sp.players[0].id === y1.id && sp.players[0].score === 500, 'P1 is ranked first after progress')
 
   // 6. a late joiner is queued.
   const p3 = connect('player')
@@ -146,18 +150,29 @@ async function main() {
   const y3 = await p3.waitFor('you', (m) => m.type === 'you')
   check(y3.status === 'queued', 'P3 gets you status:queued')
 
+  // 6b. replaying P1's public id as a pid creates a new (queued) player and leaves P1 untouched.
+  const thief = connect('player')
+  await thief.open()
+  thief.send(player(y1.id, 'Thief'))
+  const yt = await thief.waitFor('you', (m) => m.type === 'you')
+  check(yt.status === 'queued' && yt.id !== y1.id, 'a hello with P1 public id gets a new queued seat')
+  thief.send({ type: 'leave' })
+  const afterThief = await screen.waitState('thief gone', (s) => !s.players.some((p) => p.id === yt.id))
+  const p1row = afterThief.players.find((p) => p.id === y1.id)
+  check(p1row?.score === 500 && p1row.name === 'P1' && p1row.connected, 'P1 seat, name and score unchanged')
+
   // 7. endEarly -> finished, newRound -> lobby round 2 with P3 seated in lane 2.
   hostA.send({ type: 'endEarly' })
   const sf = await screen.waitState('finished', (s) => s.phase === 'finished')
   check(sf.phase === 'finished', 'endEarly -> finished')
   hostA.send({ type: 'newRound' })
   const sl = await screen.waitState('lobby round 2', (s) => s.phase === 'lobby')
-  const p3row = sl.players.find((p) => p.id === 'smoke-p3')
+  const p3row = sl.players.find((p) => p.id === y3.id)
   check(sl.roundId === 2, 'newRound -> lobby with roundId 2')
   check(p3row?.status === 'playing' && p3row.lane === 2, 'P3 is playing in lane 2')
 
   // 8. kick P2.
-  hostA.send({ type: 'kick', playerId: 'smoke-p2' })
+  hostA.send({ type: 'kick', playerId: y2.id })
   await p2.waitFor('kicked', (m) => m.type === 'kicked')
   check(true, 'P2 gets kicked')
   const closed = await p2.waitClose()

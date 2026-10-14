@@ -46,7 +46,7 @@ const base = {
   connected: true,
   notice: null as 'full' | 'kicked' | null,
   state: null as RoomState | null,
-  pid: PID,
+  selfId: PID,
   offset: 0,
   now: 5_000,
 }
@@ -81,9 +81,14 @@ describe('derivePlayerStage', () => {
     expect(derivePlayerStage({ ...base, state: null })).toBe('connecting')
   })
 
-  it('5: connecting while this pid is not in the player list', () => {
+  it('5: connecting while this player id is not in the player list', () => {
     expect(derivePlayerStage({ ...base, state: state({ phase: 'running' }, me('playing', 'p-other1')) })).toBe('connecting')
     expect(derivePlayerStage({ ...base, state: state({ phase: 'lobby' }) })).toBe('connecting')
+  })
+
+  it('5: connecting until the public id from `you` is known', () => {
+    // An empty selfId must not match anything, even a player with an empty id.
+    expect(derivePlayerStage({ ...base, selfId: '', state: state({ phase: 'lobby' }, me('playing', '')) })).toBe('connecting')
   })
 
   it('6: queued when this player is queued', () => {

@@ -21,7 +21,8 @@ export interface PlayerStageInput {
   connected: boolean // part of the input for callers; no rule depends on it
   notice: 'full' | 'kicked' | null
   state: RoomState | null
-  pid: string
+  /** This device's public LivePlayer.id (from `you`), never the secret pid. Empty until known. */
+  selfId: string
   offset: number
   now: number
 }
@@ -32,7 +33,7 @@ export function derivePlayerStage(i: PlayerStageInput): LivePlayerStage {
   if (!i.hasProfile) return 'setup'
   if (i.notice) return i.notice
   if (!i.state) return 'connecting'
-  const self = i.state.players.find(p => p.id === i.pid)
+  const self = i.selfId ? i.state.players.find(p => p.id === i.selfId) : undefined
   if (!self) return 'connecting'
   if (self.status === 'queued') return 'queued'
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PlayerHello } from '../../app/utils/live/protocol'
-import { COUNTDOWN_MS, DEFAULT_DURATION_SEC, MAX_PLAYERS } from '../../app/utils/live/protocol'
+import { COUNTDOWN_MS, DEFAULT_DURATION_SEC, MAX_PLAYERS, PLAYER_ID_RE } from '../../app/utils/live/protocol'
 import {
   applyHostCommand,
   claimHost,
@@ -8,7 +8,9 @@ import {
   hashHostKey,
   joinPlayer,
   leavePlayer,
+  migrateRoom,
   seatCount,
+  snapshot,
 } from '../src/room-logic'
 
 const hello = (pid: string, name = 'P'): PlayerHello => ({
@@ -250,7 +252,7 @@ describe('host commands', () => {
     joinPlayer(r, hello('p-queue1'), c, 2000)
     for (const [pid, at] of [['p-queue2', 2100], ['p-queue3', 2200], ['p-gone99', 2050]] as const) {
       r.players[pid] = {
-        id: pid, name: pid, avatarId: 'codi_default.svg', age: 9, status: 'queued', lane: null,
+        id: `pub-${pid}`, pid, name: pid, avatarId: 'codi_default.svg', age: 9, status: 'queued', lane: null,
         score: 0, levelsCompleted: 0, bestCombo: 0, combo: 0, joinedAt: at, queuedAt: at,
       }
       if (pid !== 'p-gone99') c.add(pid)
@@ -282,8 +284,76 @@ describe('host commands', () => {
     joinPlayer(r, hello('p-aaaaaa'), conn('p-aaaaaa'), 1)
     expect(applyHostCommand(r, { type: 'kick', playerId: 'p-zzzzzz' }, conn('p-aaaaaa'), 2)).toBe(false)
     applyHostCommand(r, { type: 'start' }, conn('p-aaaaaa'), 1000)
-    expect(applyHostCommand(r, { type: 'kick', playerId: 'p-aaaaaa' }, conn('p-aaaaaa'), 1500)).toBe(true)
+    // kick names the public id; the secret pid is not a valid target
+    expect(applyHostCommand(r, { type: 'kick', playerId: 'p-aaaaaa' }, conn('p-aaaaaa'), 1500)).toBe(false)
+    expect(applyHostCommand(r, { type: 'kick', playerId: r.players['p-aaaaaa'].id }, conn('p-aaaaaa'), 1500)).toBe(true)
     expect(r.players['p-aaaaaa']).toBeUndefined()
+  })
+})
+
+describe('public vs secret player id', () => {
+  it('gives each player a random public id distinct from its secret pid', () => {
+    const r = createRoom('CODI-1', 0)
+    joinPlayer(r, hello('p-aaaaaa'), conn('p-aaaaaa'), 1)
+    joinPlayer(r, hello('p-bbbbbb'), conn('p-aaaaaa', 'p-bbbbbb'), 2)
+    const a = r.players['p-aaaaaa']
+    const b = r.players['p-bbbbbb']
+    expect(a.pid).toBe('p-aaaaaa')
+    expect(a.id).toMatch(PLAYER_ID_RE)
+    expect(a.id).not.toBe('p-aaaaaa')
+    expect(a.id).not.toBe(b.id)
+    // a reconnect keeps the same public id
+    joinPlayer(r, hello('p-aaaaaa'), conn('p-aaaaaa', 'p-bbbbbb'), 3)
+    expect(r.players['p-aaaaaa'].id).toBe(a.id)
+  })
+
+  it('a hello whose pid equals another player\'s public id creates a new player and leaves the victim alone', () => {
+    const r = createRoom('CODI-1', 0)
+    const c = conn('p-victim')
+    joinPlayer(r, hello('p-victim', 'Victim'), c, 1)
+    applyHostCommand(r, { type: 'start' }, c, 1000)
+    r.phase = 'running'
+    r.players['p-victim'].score = 700
+    const victim = structuredClone(r.players['p-victim'])
+    const publicId = victim.id
+    // the attacker read publicId from a broadcast and replays it as its own pid
+    c.add(publicId)
+    expect(joinPlayer(r, hello(publicId, 'Attacker'), c, 2000)).toBe('queued')
+    expect(r.players['p-victim']).toEqual(victim)
+    expect(r.players[publicId]).toMatchObject({ pid: publicId, name: 'Attacker', status: 'queued', score: 0 })
+    expect(r.players[publicId].id).not.toBe(publicId)
+    // leave/progress bound to the attacker's socket cannot reach the victim either
+    expect(leavePlayer(r, publicId)).toBe(true)
+    expect(r.players['p-victim']).toEqual(victim)
+  })
+
+  it('snapshot never contains secret pids', () => {
+    const r = createRoom('CODI-1', 0)
+    joinPlayer(r, hello('secret-aaaa'), conn('secret-aaaa'), 1)
+    joinPlayer(r, hello('secret-bbbb'), conn('secret-aaaa', 'secret-bbbb'), 2)
+    const s = snapshot(r, conn('secret-aaaa'), { screens: 1, hosts: 1 }, 10)
+    const json = JSON.stringify(s)
+    expect(json).not.toContain('secret-aaaa')
+    expect(json).not.toContain('secret-bbbb')
+    for (const p of s.players) expect(p).not.toHaveProperty('pid')
+    expect(s.players.map((p) => p.id).sort()).toEqual([r.players['secret-aaaa'].id, r.players['secret-bbbb'].id].sort())
+    expect(s.players.find((p) => p.id === r.players['secret-aaaa'].id)?.connected).toBe(true)
+    expect(s.players.find((p) => p.id === r.players['secret-bbbb'].id)?.connected).toBe(false)
+  })
+
+  it('migrates rooms saved before the split: key becomes pid, id is replaced', () => {
+    const r = createRoom('CODI-1', 0)
+    r.players['old-pid-1'] = {
+      id: 'old-pid-1', name: 'Old', avatarId: 'codi_default.svg', age: 9, status: 'playing', lane: 0,
+      score: 5, levelsCompleted: 0, bestCombo: 0, combo: 0, joinedAt: 1, queuedAt: null,
+    } as never
+    migrateRoom(r)
+    expect(r.players['old-pid-1'].pid).toBe('old-pid-1')
+    expect(r.players['old-pid-1'].id).not.toBe('old-pid-1')
+    expect(r.players['old-pid-1'].score).toBe(5)
+    const id = r.players['old-pid-1'].id
+    migrateRoom(r)
+    expect(r.players['old-pid-1'].id).toBe(id)
   })
 })
 

@@ -4,6 +4,7 @@ import {
   MIN_DURATION_SEC,
   NAME_MAX,
   PID_RE,
+  PLAYER_ID_RE,
   type ClientMessage,
   type ModeId,
   type Role,
@@ -100,7 +101,8 @@ export function parseClientMessage(raw: string | ArrayBuffer, role: Role): Clien
     case 'newRound':
       return role === 'host' ? { type: m.type } : null
     case 'kick':
-      if (role !== 'host' || !isPid(m.playerId)) return null
+      // playerId is the public LivePlayer.id, never a device's secret pid.
+      if (role !== 'host' || typeof m.playerId !== 'string' || !PLAYER_ID_RE.test(m.playerId)) return null
       return { type: 'kick', playerId: m.playerId }
     default:
       return null

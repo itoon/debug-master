@@ -55,5 +55,10 @@ describe('validate', () => {
   it('validates kick playerId', () => {
     expect(parseClientMessage('{"type":"kick","playerId":"pid-abc123"}', 'host')).toEqual({ type: 'kick', playerId: 'pid-abc123' })
     expect(parseClientMessage('{"type":"kick","playerId":"x"}', 'host')).toBeNull()
+    // server-generated public ids are UUIDs
+    const uuid = '0b6f7a2e-4c1d-4f7e-9a63-2d5c8e1f0a9b'
+    expect(parseClientMessage(JSON.stringify({ type: 'kick', playerId: uuid }), 'host')).toEqual({ type: 'kick', playerId: uuid })
+    expect(parseClientMessage('{"type":"kick","playerId":"bad id!"}', 'host')).toBeNull()
+    expect(parseClientMessage('{"type":"kick","playerId":"pid-abc123"}', 'player')).toBeNull()
   })
 })

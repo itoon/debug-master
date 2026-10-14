@@ -22,7 +22,9 @@ import {
   isIdleExpired,
   joinPlayer,
   leavePlayer,
+  migrateRoom,
   nextAlarmAt,
+  pidForPublicId,
   snapshot,
   type StoredRoom,
 } from './room-logic'
@@ -30,7 +32,7 @@ import { parseClientMessage } from './validate'
 
 interface Attachment {
   role: Role
-  /** Player id bound by a successful `hello`; only then does the socket count as connected. */
+  /** Secret player pid bound by a successful `hello`; only then does the socket count as connected. */
   pid?: string
   /** Host socket that presented the room's host key. */
   host?: boolean
@@ -52,7 +54,7 @@ export class LiveRoom extends DurableObject<Env> {
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'))
     void ctx.blockConcurrencyWhile(async () => {
       const saved = await ctx.storage.get<StoredRoom>('room')
-      if (saved) this.room = saved
+      if (saved) this.room = migrateRoom(saved)
       this.alarmAt = await ctx.storage.getAlarm()
     })
   }
@@ -126,7 +128,8 @@ export class LiveRoom extends DurableObject<Env> {
         }
         att.pid = msg.pid
         ws.serializeAttachment(att)
-        this.send(ws, { type: 'you', pid: msg.pid, status })
+        // Answer with the public id only; the secret pid never leaves the hello.
+        this.send(ws, { type: 'you', id: this.room.players[msg.pid]!.id, status })
         changed = true
         break
       }
@@ -146,8 +149,10 @@ export class LiveRoom extends DurableObject<Env> {
           if (!changed) return // rejected command: no effect on the room
           break
         }
+        // kick names the public id; resolve the secret pid before the record is removed.
+        const victim = msg.type === 'kick' ? pidForPublicId(this.room, msg.playerId) : null
         if (applyHostCommand(this.room, msg, this.connectedPids(), now)) changed = true
-        if (msg.type === 'kick') changed = this.kickSockets(msg.playerId) || changed
+        if (victim) changed = this.kickSockets(victim) || changed
         break
       }
     }
@@ -241,7 +246,7 @@ export class LiveRoom extends DurableObject<Env> {
     ws.serializeAttachment(att)
   }
 
-  /** Tell every socket of `pid` it was kicked, then close it with CLOSE_KICKED. */
+  /** Tell every socket bound to the secret `pid` it was kicked, then close it with CLOSE_KICKED. */
   private kickSockets(pid: string): boolean {
     let any = false
     for (const ws of this.ctx.getWebSockets('player')) {

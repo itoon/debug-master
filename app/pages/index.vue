@@ -12,7 +12,7 @@
       @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
     <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" @cancel="showExitConfirm = false" @confirm="confirmExit" />
     <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" @start="liveJoin" @close="liveGoHome" />
-    <LivePlayerPanel v-if="liveMode && liveStage !== 'setup' && liveStage !== 'running'" :stage="liveStage" :state="liveState" :pid="livePid"
+    <LivePlayerPanel v-if="liveMode && liveStage !== 'setup' && liveStage !== 'running'" :stage="liveStage" :state="liveState" :self-id="liveSelfId"
       :countdown="liveCountdown" :queue-remaining-sec="liveQueueRemaining" :late-score-note="liveLateScore"
       @change-player="liveChangePlayer" @leave="liveLeave" @home="liveGoHome" />
     <main v-show="!showSetup && !showTutorial && !(activeChallenge && showRanking && !showSummary) && (!liveMode || liveStage === 'running')" class="game">
@@ -1471,9 +1471,12 @@ const liveConfig = useLiveConfig();
 const liveCode = ref<string | null>(null);
 const liveMode = computed(() => liveCode.value !== null);
 const liveProfile = ref<PlayerSetupInput | null>(null);
+// Secret device id: sent only in `hello`, never compared against broadcast state.
 const livePid = ref("");
 const liveRoom = shallowRef<LiveRoom | null>(null);
 const liveState = computed(() => liveRoom.value?.state.value ?? null);
+// Public player id from the server's `you`; this is what the room state lists.
+const liveSelfId = computed(() => liveRoom.value?.you.value?.id ?? "");
 const liveOffset = computed(() => liveRoom.value?.offset.value ?? 0);
 // Last room state seen, kept after "change player" closes the socket so the setup dialog still shows the room's mode.
 const liveLastState = ref<RoomState | null>(null);
@@ -1493,7 +1496,7 @@ const liveStage = computed(() => derivePlayerStage({
   connected: liveRoom.value?.connected.value ?? false,
   notice: liveRoom.value?.notice.value ?? null,
   state: liveState.value,
-  pid: livePid.value,
+  selfId: liveSelfId.value,
   offset: liveOffset.value,
   now: liveNow.value,
 }));
@@ -1505,7 +1508,7 @@ const liveSetupMode = computed<ChallengeMode>(() => {
 const livePlaying = computed(() => liveState.value?.players.filter((p) => p.status === "playing") ?? []);
 const liveRank = computed(() => {
   if (!liveMode.value) return undefined;
-  const place = livePlaying.value.findIndex((p) => p.id === livePid.value) + 1;
+  const place = livePlaying.value.findIndex((p) => p.id === liveSelfId.value) + 1;
   return place > 0 ? `${place}/${livePlaying.value.length}` : undefined;
 });
 const liveCountdown = computed(() => countdownSec(liveState.value?.startAt ?? null, liveOffset.value, liveNow.value));
@@ -1518,7 +1521,7 @@ const liveLateScore = computed(() => {
   const room = liveState.value;
   if (liveStage.value !== "results" || !room || room.endAt === null || liveStartedRound.value !== room.roundId) return false;
   if (serverTime(liveOffset.value, liveNow.value) <= room.endAt + GRACE_MS) return false;
-  const self = room.players.find((p) => p.id === livePid.value);
+  const self = room.players.find((p) => p.id === liveSelfId.value);
   return Boolean(self) && totalScore.value > self!.score;
 });
 
@@ -1597,10 +1600,10 @@ async function liveStartRound(): Promise<void> {
   await nextTick(); // The selectedSetId watcher resets the level index first.
   if (token !== liveRoundToken || liveStage.value !== "running") return;
   startGame();
-  // Back on the same pid mid-round (e.g. after a reload): carry on from what the server already counted.
+  // Back on the same device mid-round (e.g. after a reload): carry on from what the server already counted.
   // Always take the larger values (the server drops progress that goes down, bestCombo included, and it can
   // hold a combo before any clear). Restored score/levels are the server's own, so the next clear adds one level.
-  const self = liveState.value?.players.find((p) => p.id === livePid.value);
+  const self = liveState.value?.players.find((p) => p.id === liveSelfId.value);
   if (self) {
     totalScore.value = Math.max(totalScore.value, self.score);
     completedLevels.value = Math.max(completedLevels.value, self.levelsCompleted);
