@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PlayerHello } from '../../app/utils/live/protocol'
+import { MAX_LEVEL_MOVES } from '../../app/utils/live/protocol'
 import { cleanName, parseClientMessage } from '../src/validate'
 
 const hello = { type: 'hello', pid: 'pid-abc123', name: 'มิ้นท์🔥', avatarId: 'art-toy/10-party.svg', age: 9 }
@@ -34,6 +35,16 @@ describe('validate', () => {
     expect(parseClientMessage(JSON.stringify(p), 'player')).toEqual(p)
     expect(parseClientMessage(JSON.stringify({ ...p, combo: 4 }), 'player')).toBeNull()
     expect(parseClientMessage(JSON.stringify({ ...p, score: -1 }), 'player')).toBeNull()
+  })
+  it('rejects a bestCombo above (levelsCompleted + 1) x MAX_LEVEL_MOVES', () => {
+    const p = { type: 'progress', roundId: 1, score: 0, levelsCompleted: 0, bestCombo: MAX_LEVEL_MOVES, combo: 0 }
+    expect(parseClientMessage(JSON.stringify(p), 'player')).toEqual(p)
+    expect(parseClientMessage(JSON.stringify({ ...p, bestCombo: MAX_LEVEL_MOVES + 1 }), 'player')).toBeNull()
+    const two = { ...p, levelsCompleted: 2, bestCombo: 3 * MAX_LEVEL_MOVES }
+    expect(parseClientMessage(JSON.stringify(two), 'player')).toEqual(two)
+    expect(parseClientMessage(JSON.stringify({ ...two, bestCombo: 3 * MAX_LEVEL_MOVES + 1 }), 'player')).toBeNull()
+    // the huge combo that would lift the per-level score cap is refused
+    expect(parseClientMessage(JSON.stringify({ ...p, levelsCompleted: 1, bestCombo: 1_000_000 }), 'player')).toBeNull()
   })
   it('rejects oversize, binary and non-JSON input', () => {
     expect(parseClientMessage('x'.repeat(2049), 'player')).toBeNull()

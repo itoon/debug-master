@@ -1,5 +1,6 @@
 import {
   MAX_DURATION_SEC,
+  MAX_LEVEL_MOVES,
   MAX_MSG_BYTES,
   MIN_DURATION_SEC,
   NAME_MAX,
@@ -79,7 +80,10 @@ export function parseClientMessage(raw: string | ArrayBuffer, role: Role): Clien
         !isNonNegInt(levelsCompleted) ||
         !isNonNegInt(bestCombo) ||
         !isNonNegInt(combo) ||
-        combo > bestCombo
+        combo > bestCombo ||
+        // A combo counts correct moves: at most every move of the cleared levels plus the current one.
+        // Bounds bestCombo, and with it the per-level score cap (maxLevelPoints).
+        bestCombo > (levelsCompleted + 1) * MAX_LEVEL_MOVES
       ) {
         return null
       }
