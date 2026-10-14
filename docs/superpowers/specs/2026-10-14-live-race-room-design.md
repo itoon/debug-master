@@ -144,7 +144,7 @@ interface RoomState {
 | | `{type:'start'}` (ต้องมีผู้เล่นอย่างน้อย 1 คน) · `{type:'endEarly'}` · `{type:'newRound'}` · `{type:'kick', playerId}` |
 | screen → server | `{type:'hello'}` |
 | server → ทุกคน | `{type:'state', state: RoomState}` ส่งทุกครั้งที่สถานะเปลี่ยน จำกัดไม่เกิน 10 ครั้งต่อวินาที (ส่งค่าล่าสุดตามหลัง) |
-| server → คนเดียว | `{type:'you', pid, status}` · `{type:'full'}` · `{type:'kicked'}` · `{type:'error', error:'not_host' \| 'bad_message'}` |
+| server → คนเดียว | `{type:'you', pid, status}` · `{type:'host', host}` (ตอบ host `hello`) · `{type:'full'}` · `{type:'kicked'}` · `{type:'error', error:'not_host' \| 'bad_message'}` |
 
 ### การตรวจข้อความใน `room-logic`
 - ข้อความยาวไม่เกิน 2 KB ต้องเป็น JSON และ `type` ต้องรู้จัก ไม่งั้นทิ้งเงียบ ๆ
@@ -152,8 +152,8 @@ interface RoomState {
   - `phase === 'running'` (หรืออยู่ภายใน 2,000 ms หลัง `endAt`)
   - `roundId` ตรงกับรอบปัจจุบัน และผู้ส่งมี `status === 'playing'`
 - **ห้ามลด:** `score` และ `levelsCompleted` ต้องไม่น้อยกว่าค่าเดิม ถ้าน้อยกว่าให้ทิ้ง เพื่อให้ข้อความซ้ำหรือมาช้าไม่ทำอะไร
-- **เพดาน:** คะแนนที่เพิ่มต้องไม่เกิน `MAX_POINTS_PER_LEVEL × (levelsCompleted ที่เพิ่ม + 1)`
-  - `MAX_POINTS_PER_LEVEL` คำนวณครั้งเดียวจาก `calculateLevelScore` ใน `index.vue` (base สูงสุด × speed 4.5 × combo สูงสุดที่เป็นไปได้ในด่านยาวที่สุดของชุด A/B/C) และปัดขึ้น
+- **เพดาน:** คะแนนเพิ่มได้เฉพาะตอนผ่านด่าน จึงต้องเป็น `Δscore ≤ ΔlevelsCompleted × maxLevelPoints(bestCombo)`
+  - `maxLevelPoints` คือสูตร `calculateLevelScore` ใน `index.vue` ในกรณีที่แย่ที่สุด (id ด่าน 50, จำนวนก้าวมากสุดของชุด A/B/C, speed 4.5, combo = `bestCombo`)
   - เพดานนี้ใช้กันค่าผิดปกติ ไม่ใช่ระบบกันโกง
 - ชื่อตัดอักขระควบคุมออก, ตัดช่องว่างหัวท้าย, จำกัด 24 UTF-16 units โดยไม่ตัดกลาง emoji
 - ข้อความ host จากการเชื่อมต่อที่ไม่ใช่ host ได้ `error: not_host` และไม่มีผลกับห้อง
@@ -173,7 +173,7 @@ interface RoomState {
 - คะแนนสีเหลือง `#ffdb58`, progress/ข้อมูลรองสีฟ้า `#87dfff`, กล่องข้อมูลแบบ glass เดียวกับ `.metric` ของ `GameHud`
 - avatar มาจาก `player-avatars.ts` / `avatarSrc()` ในกรอบวงกลม portrait แบบเดิม
 - กระเบื้องลู่วิ่งใช้ `public/tiles/*.png` ซึ่งเป็นภาพชุดเดียวกับที่ใช้บนกระดาน
-- โพเดียมใช้สีเหรียญกับลำดับ animation เดียวกับ `ChallengeRanking` (ถ้าแยก podium ออกมาเป็น component ที่ใช้ร่วมกันได้ ให้แยก แทนการลอกโค้ด)
+- โพเดียมใช้สีเหรียญกับลำดับ animation เดียวกับ `ChallengeRanking` แต่เขียนใน `LiveResults` เอง ไม่แยกออกมาเป็น component กลาง เพราะ CSS แบบ scoped ของ `ChallengeRanking` ผูกกับ variant `split`/`space` ถ้าแยกเสี่ยงทำหน้า Home/Session พัง
 - เสียงผ่าน `useGameAudio` เท่านั้น
 - ทุก animation ต้องมีทางเลือก reduced-motion ตาม DESIGN.md
 
@@ -186,10 +186,10 @@ interface RoomState {
   - ส่วนที่วิ่งผ่านแล้วสว่าง ส่วนข้างหน้ามืด
   - ผู้เล่นที่หลุดจะเลนจางลงพร้อมป้าย "หลุด" แต่เลนไม่หาย
 - **ตำแหน่งบนลู่ (`track.ts`):**
-  - `trackMax = niceCeil(max(BASELINE[mode], leaderScore / 0.85))` และ `x = score / trackMax`
+  - `trackMax = niceCeil(max(TRACK_BASELINE, leaderScore / 0.85))` และ `x = score / trackMax`
   - `niceCeil` ปัดขึ้นเป็นขั้น 1,000/2,000/5,000
   - ขีดบอกคะแนนด้านบนเปลี่ยนตาม `trackMax` เมื่อ `trackMax` เพิ่ม ลู่จะขยายแบบนุ่มนวล (ทุกตัวขยับซ้ายพร้อมกัน 600 ms)
-  - `BASELINE` เป็นค่าคงที่ใน `track.ts` เริ่มที่ 5,000 ทุกโหมด แล้วปรับตัวเลขตอนซ้อม
+  - `TRACK_BASELINE` เป็นค่าคงที่ใน `track.ts` เริ่มที่ 5,000 ทุกโหมด แล้วปรับตัวเลขตอนซ้อม
 - **ตัวละคร:**
   - avatar วิ่ง (hop) ประมาณ 1.2 วินาทีหลังคะแนนเพิ่ม แล้วยืนนิ่ง ตำแหน่งเลื่อนแบบ ease-out
   - ป้ายชื่อ glass แสดงชื่อกับคะแนนเหลือง
