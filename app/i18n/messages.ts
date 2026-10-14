@@ -276,6 +276,23 @@ export const th = {
   "storage.loadError": "อ่านอันดับในเครื่องไม่ได้ กรุณาตรวจข้อมูลหรือสิทธิ์จัดเก็บของเบราว์เซอร์",
   "storage.retry": "ลองบันทึกอีกครั้ง",
   "storage.saving": "กำลังบันทึกคะแนน…",
+  "live.brand": "LIVE RACE",
+  "live.mode": "โหมด",
+  "live.timeLeft": "เวลาที่เหลือ",
+  "live.players": "ผู้เล่น",
+  "live.board": "อันดับสด",
+  "live.queue": "คิวรอบหน้า",
+  "live.disconnected": "หลุด",
+  "live.scanToJoin": "สแกนเข้าห้อง",
+  "live.roomCode": "รหัสห้อง",
+  "live.nextRound": "รอบถัดไป · {mode} · {minutes} นาที",
+  "live.emptySeat": "ว่าง",
+  "live.resultsTitle": "จบรอบ! ผู้ชนะ",
+  "live.enterCode": "ใส่รหัสห้อง",
+  "live.open": "เปิดห้อง",
+  "live.unavailable": "ยังไม่ได้ตั้งค่าเซิร์ฟเวอร์ Live",
+  "live.reconnecting": "กำลังเชื่อมต่อใหม่…",
+  "live.startLine": "START",
 } as const;
 
 export type MessageKey = keyof typeof th;
