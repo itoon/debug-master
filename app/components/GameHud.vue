@@ -16,6 +16,8 @@
           <p class="level-context"><span class="concept" :title="level.concept">{{ level.concept }}</span><span>{{ language }}</span><span>{{ difficulty }}</span></p>
         </div>
         <div class="metric progress-info"><span>{{ t('game.progress') }}</span><strong>{{ progress }}</strong></div>
+        <!-- Teleport target: the game page moves sound/exit here on compact layouts. -->
+        <div id="game-hud-system" class="hud-system" />
         <nav v-if="practice" class="practice-actions" :aria-label="t('game.actions')"><slot name="actions" /></nav>
       </div>
       <div v-if="totalLevels" class="progress-track" role="progressbar" :aria-valuenow="completedLevels" aria-valuemin="0" :aria-valuemax="totalLevels" :aria-label="t('game.progress')">
@@ -109,18 +111,21 @@ h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-h
 .hearts i { font-style: normal; }
 .hearts .lost { color: #ffffff40; }
 .game-hud.practice-hud { grid-template-columns: minmax(0, 1fr); }
-.practice-hud .mission-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.practice-hud .mission-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; }
+.hud-system { flex: none; display: flex; align-items: center; }
+.hud-system:empty { display: none; }
 .practice-hud .progress-info { text-align: center; }
 .practice-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 
 /* Wide enough for pilot and mission side by side (tablets, landscape phones). */
 @media (min-width: 640px) {
   .game-hud { grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: 16px; }
-  .practice-hud .mission-heading { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 16px; }
+  .practice-hud .mission-heading { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 16px; }
   .practice-actions { grid-column: auto; }
 }
 /* Desktop: the full HUD with captions and large metrics. */
 @media (min-width: 921px) and (min-height: 561px) {
+  .practice-hud .mission-heading { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   .game-hud { align-items: start; }
   .pilot-info { gap: 12px; padding-bottom: 17px; }
   .mission-info { gap: 8px; }

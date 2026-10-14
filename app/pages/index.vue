@@ -90,6 +90,9 @@
                 </div>
               </LevelBoard>
               <div ref="controlsEl" class="board-footer">
+                <!-- On phones and tablets these system buttons move up into the HUD so
+                     they never sit beside the D-pad under the player's thumb. -->
+                <Teleport to="#game-hud-system" defer :disabled="!compactLayout">
                 <nav class="game-actions" :aria-label="t('game.actions')">
                   <button type="button" class="hud-action sound-toggle" :aria-pressed="soundEnabled" :aria-label="t('game.soundEffects')"
                     :title="t(soundEnabled ? 'game.mute' : 'game.unmute')" @click="toggleSound">
@@ -103,6 +106,7 @@
                     :title="campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
                     @click="requestExit">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</button>
                 </nav>
+                </Teleport>
                 <div class="touch-controls" :aria-label="t('game.controls')">
                 <button type="button" class="arrow up" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲</button>
                 <button type="button" class="arrow left" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀</button>
@@ -485,6 +489,11 @@ const controlsEl = ref<HTMLElement | null>(null);
 const instructionEl = ref<HTMLElement | null>(null);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
 const boardReservedHeight = ref(0);
+// Matches the desktop layout query in the styles below; anything smaller is
+// the compact (phone/tablet) layout with sound and exit in the HUD.
+const compactLayout = ref(false);
+let desktopQuery: MediaQueryList | null = null;
+const syncCompactLayout = () => { compactLayout.value = !desktopQuery?.matches; };
 let boardResizeObserver: ResizeObserver | null = null;
 
 // Junior note:
@@ -1454,6 +1463,9 @@ onMounted(async () => {
     await applyLevelFromQuery();
   }
   window.addEventListener("keydown", handleKeydown);
+  desktopQuery = window.matchMedia("(min-width: 921px) and (min-height: 561px)");
+  syncCompactLayout();
+  desktopQuery.addEventListener("change", syncCompactLayout);
   if (boardWrapEl.value) {
     boardResizeObserver = new ResizeObserver(() => {
       const area = boardWrapEl.value;
@@ -1483,6 +1495,7 @@ watch(selectedSetId, () => {
 });
 
 onBeforeUnmount(() => {
+  desktopQuery?.removeEventListener("change", syncCompactLayout);
   sessionToken += 1;
   practiceLaunchToken += 1;
   clearPendingRunTimers();
@@ -1697,10 +1710,12 @@ h2 {
 }
 
 .board-and-controls { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
-/* Thumb zone: sound/exit stacked at the left, the D-pad centred in the rest. */
-.board-footer { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: end; width: 100%; }
-.game-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; }
-.board-footer .touch-controls { grid-column: 2; justify-self: center; }
+/* Thumb zone: the D-pad alone, centred. Sound/exit live in the HUD here
+   (teleported); desktop brings them back beside the D-pad. */
+.board-footer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: end; width: 100%; }
+.game-actions { display: flex; flex-direction: row; align-items: center; gap: 6px; min-width: 0; }
+.board-footer .touch-controls { grid-column: 1; justify-self: center; }
+#game-hud-system .hud-action.exit-action { min-width: 0; padding: 0 12px; }
 
 .score-popup {
   position: absolute;
@@ -2409,7 +2424,6 @@ h2 {
   .board-and-controls > .board { grid-column: 1; grid-row: 2; }
   .board-footer { grid-column: 2; grid-row: 2; grid-template-columns: auto; justify-items: center; align-self: end; }
   .board-footer .touch-controls { grid-column: 1; grid-row: 1; }
-  .game-actions { grid-row: 2; flex-direction: row; }
 }
 
 /* Desktop: board and D-pad on the left, code on the right. */
@@ -2423,8 +2437,8 @@ h2 {
   .play-cluster .code-card :deep(.code-box) { max-height: none; padding: 16px 0; }
   .board-wrap { min-height: 0; }
   .board-footer { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
-  .game-actions { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .board-footer .touch-controls { justify-self: auto; }
+  .game-actions { flex-wrap: wrap; }
+  .board-footer .touch-controls { grid-column: 2; justify-self: auto; }
 }
 
 @media (hover: none) and (pointer: coarse) {
