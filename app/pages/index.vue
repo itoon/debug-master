@@ -1598,13 +1598,17 @@ async function liveStartRound(): Promise<void> {
   if (token !== liveRoundToken || liveStage.value !== "running") return;
   startGame();
   // Back on the same pid mid-round (e.g. after a reload): carry on from what the server already counted.
+  // Always take the larger values (the server drops progress that goes down, bestCombo included, and it can
+  // hold a combo before any clear). Restored score/levels are the server's own, so the next clear adds one level.
   const self = liveState.value?.players.find((p) => p.id === livePid.value);
-  if (self && self.levelsCompleted > 0) {
+  if (self) {
     totalScore.value = Math.max(totalScore.value, self.score);
     completedLevels.value = Math.max(completedLevels.value, self.levelsCompleted);
     bestCombo.value = Math.max(bestCombo.value, self.bestCombo);
-    selectedLevelIndex.value = Math.min(self.levelsCompleted, activeLevels.value.length - 1);
-    beginLevel();
+    if (self.levelsCompleted > 0) {
+      selectedLevelIndex.value = Math.min(self.levelsCompleted, activeLevels.value.length - 1);
+      beginLevel();
+    }
   }
 }
 
