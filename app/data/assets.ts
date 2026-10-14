@@ -12,7 +12,6 @@ import { tileDefinition } from "./tiles";
 import { th } from "../i18n/messages";
 import sleepLogo from '../assets/brand/logo-sleep.svg';
 import sleepLogoDisplay from '../assets/brand/logo-sleep-display.png';
-import summaryCodi from '../assets/sprites/codi-win-summary.svg';
 
 export type AssetStatus = "in-use" | "css" | "wanted" | "spare";
 
@@ -112,15 +111,6 @@ export const assetGroups: AssetGroup[] = [
         preview: { kind: "image", src: PLAYER_POSES.win, backdrop: "tile" },
         usedIn: th["asset.codiWinUsage"],
         spec: [th["asset.codiWinSpec"]],
-      },
-      {
-        id: 'codi-win-summary',
-        name: th['asset.codiWinSummary'],
-        file: 'app/assets/sprites/codi-win-summary.svg',
-        status: 'in-use',
-        preview: { kind: 'image', src: summaryCodi, backdrop: 'dark' },
-        usedIn: th['asset.codiWinSummaryUsage'],
-        spec: [th['asset.codiWinSummarySpec']],
       },
       {
         id: "codi-wave",

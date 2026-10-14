@@ -7,7 +7,7 @@
         <span class="hero-glow" />
         <span class="hero-orbit" />
         <span class="hero-pad" />
-        <img class="summary-codi" :src="summaryCodi" width="128" height="128" alt="" draggable="false" />
+        <img class="summary-codi" :src="PLAYER_POSES.win" width="128" height="128" alt="" draggable="false" />
         <svg v-for="star in 3" :key="star" class="hero-star" :class="`star-${star}`" viewBox="0 0 24 24" :style="{ '--twinkle-delay': `${(star - 1) * 380}ms` }">
           <path d="M12 1.5 15.1 8.9 22.5 12 15.1 15.1 12 22.5 8.9 15.1 1.5 12 8.9 8.9Z" />
           <path class="star-shine" d="m12 5 1.5 4.5L18 12l-4.5 1.5L12 18l-1.5-4.5L6 12l4.5-2.5Z" />
@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import summaryCodi from '../assets/sprites/codi-win-summary.svg';
+import { PLAYER_POSES } from '../utils/playerSprites';
 import { useGameI18n } from '../composables/useGameI18n';
 import type { PracticeSummary } from '../types/debug-game';
 import { formatClock } from '../utils/ranking';
