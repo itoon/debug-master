@@ -1,5 +1,5 @@
 <template>
-  <dialog ref="dialog" class="player-setup-dialog" :class="[`setup-mode-${mode.id}`, { 'is-closing': isClosing }]"
+  <dialog ref="dialog" class="player-setup-dialog game-scrollbar" :class="[`setup-mode-${mode.id}`, { 'is-closing': isClosing }]"
     :style="{ '--popup-in-ms': `${homeConfig.modeMotion.popupInMs}ms`, '--popup-out-ms': `${homeConfig.modeMotion.popupOutMs}ms` }"
     :aria-labelledby="titleId" @cancel.prevent="!busy && emit('close')">
     <form class="setup-form" @submit.prevent="launch">
@@ -41,11 +41,12 @@
           </fieldset>
 
           <div class="step nickname-field">
-            <label class="step-title" for="setup-nickname"><span class="step-pip" :class="{ done: !!normalizedName }" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" /></svg></span>{{ t('home.nickname') }}</label>
+            <label class="step-title" for="setup-nickname"><span class="step-pip" :class="{ done: !!normalizedName && !nicknameError && namesLoaded }" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" /></svg></span>{{ t('home.nickname') }}</label>
             <div class="nickname-entry">
               <input id="setup-nickname" ref="nicknameInput" v-model="nickname" type="text"
                 :maxlength="homeConfig.nicknameMaxLength" :placeholder="t('home.nicknamePlaceholder')"
                 autocomplete="off" autocapitalize="off" spellcheck="false" required aria-describedby="nickname-note"
+                :disabled="busy || isClosing" :aria-invalid="!!nicknameError || undefined"
                 @input="generatedAnnouncement = ''" />
               <button type="button" class="random-name-button" :disabled="busy" @click="randomizeNickname">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8" cy="8" r="1.5" /><circle cx="16" cy="8" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="8" cy="16" r="1.5" /><circle cx="16" cy="16" r="1.5" /></svg>
@@ -53,7 +54,8 @@
               </button>
             </div>
             <span class="sr-only" role="status">{{ generatedAnnouncement }}</span>
-            <small id="nickname-note">{{ t('home.nicknameLimit', { max: homeConfig.nicknameMaxLength }) }}</small>
+            <small id="nickname-note" :class="{ 'nickname-error': nicknameError }" role="status">{{ nicknameError || t('home.nicknameLimit', { max: homeConfig.nicknameMaxLength }) }}</small>
+            <button v-if="nameReadError" type="button" class="name-retry" :disabled="busy" @click="refreshNames">{{ t('home.retryNameCheck') }}</button>
           </div>
 
           <fieldset class="step">
@@ -86,12 +88,15 @@ import { homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { PLAYER_AVATARS, isPlayerAvatarId } from "../data/player-avatars";
 import { usePlayerAvatar } from "../composables/usePlayerAvatar";
-import type { PlayerSetupInput } from "../storage/contracts";
+import type { PlayerSetupInput, ScoreRepository } from "../storage/contracts";
 import { formatClock } from "../utils/ranking";
+import { nicknameKey } from "../utils/playerNickname";
 
 // `initial` prefills the form (Live: the last player on this device); without it the form starts empty.
-const props = defineProps<{ mode: ChallengeMode; error?: string; busy?: boolean; initial?: PlayerSetupInput | null }>();
-const emit = defineEmits<{ close: []; start: [player: PlayerSetupInput]; popup: [] }>();
+// `repository` enables the duplicate-nickname check against saved scores; Live omits it because
+// live results never enter the local ranking.
+const props = defineProps<{ mode: ChallengeMode; repository?: ScoreRepository; error?: string; busy?: boolean; initial?: PlayerSetupInput | null }>();
+const emit = defineEmits<{ close: []; start: [player: PlayerSetupInput]; popup: []; edit: [] }>();
 const { t } = useGameI18n();
 const titleId = useId();
 const dialog = ref<HTMLDialogElement | null>(null);
@@ -143,16 +148,36 @@ const nicknameVibeKeys = [
 ] as const;
 const age = ref<number | null>(props.initial && homeConfig.ages.includes(props.initial.age) ? props.initial.age : null);
 const normalizedName = computed(() => nickname.value.trim());
-const valid = computed(() => normalizedName.value.length > 0 && normalizedName.value.length <= homeConfig.nicknameMaxLength && homeConfig.ages.includes(age.value as number));
-const formStatus = computed(() => t(valid.value ? "home.ready" : !normalizedName.value && age.value === null ? "home.requiredBoth" : !normalizedName.value ? "home.requiredName" : "home.requiredAge"));
+const existingNames = ref<string[]>([]);
+const namesLoaded = ref(false);
+const nameReadError = ref(false);
+let unsubscribeNames: (() => void) | undefined;
+const usedNameKeys = computed(() => new Set(existingNames.value.map(nicknameKey)));
+const duplicateName = computed(() => !!normalizedName.value && usedNameKeys.value.has(nicknameKey(normalizedName.value)));
+const nicknameError = computed(() => nameReadError.value ? t('home.nicknameCheckError') : duplicateName.value ? t('home.nicknameTaken') : '');
+const valid = computed(() => namesLoaded.value && !nicknameError.value && normalizedName.value.length > 0 && normalizedName.value.length <= homeConfig.nicknameMaxLength && homeConfig.ages.includes(age.value as number));
+const formStatus = computed(() => nicknameError.value || t(valid.value ? "home.ready" : !normalizedName.value && age.value === null ? "home.requiredBoth" : !normalizedName.value ? "home.requiredName" : "home.requiredAge"));
+function refreshNames(): void {
+  if (disposed) return;
+  try {
+    existingNames.value = props.repository ? props.repository.list().map(score => score.name) : [];
+    nameReadError.value = false;
+  } catch {
+    existingNames.value = [];
+    nameReadError.value = true;
+  } finally { namesLoaded.value = true; }
+}
+watch(nickname, () => emit('edit'));
 
 function randomizeNickname(): void {
+  refreshNames();
+  if (nameReadError.value) return;
   const names = nicknameBaseKeys.flatMap((nameKey) =>
     nicknameVibeKeys.map((vibeKey) => t("nickname.combined", { name: t(nameKey), vibe: t(vibeKey) })),
   );
   const candidates = names.flatMap((name) => homeConfig.nicknameEmojis.map((emoji) =>
     t("nickname.generated", { name, emoji }),
-  )).filter((candidate) => candidate.length <= homeConfig.nicknameMaxLength && candidate !== normalizedName.value);
+  )).filter((candidate) => candidate.length <= homeConfig.nicknameMaxLength && nicknameKey(candidate) !== nicknameKey(normalizedName.value) && !usedNameKeys.value.has(nicknameKey(candidate)));
   if (!candidates.length) return;
   nickname.value = candidates[Math.floor(Math.random() * candidates.length)]!;
   nameRolls.value += 1;
@@ -160,9 +185,12 @@ function randomizeNickname(): void {
 }
 
 function launch() {
+  refreshNames();
   if (!props.busy && !isClosing.value && valid.value && age.value !== null) emit("start", { nickname: normalizedName.value, age: age.value, avatarId: selectedAvatar.value });
 }
 onMounted(() => {
+  refreshNames();
+  unsubscribeNames = props.repository?.subscribe(refreshNames);
   const preset = props.initial?.avatarId;
   selectedAvatar.value = isPlayerAvatarId(preset)
     ? preset
@@ -177,11 +205,11 @@ onMounted(() => {
   emit("popup");
   nicknameInput.value?.focus();
 });
-onBeforeUnmount(() => { disposed = true; popupAnimation?.cancel(); dialog.value?.close(); });
+onBeforeUnmount(() => { disposed = true; unsubscribeNames?.(); popupAnimation?.cancel(); dialog.value?.close(); });
 </script>
 
 <style scoped>
-.player-setup-dialog { --mode-accent: #ffdc53; box-sizing: border-box; width: min(940px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; margin: auto; overflow-y: auto; border: 2px solid #668eff; border-radius: 28px; background: linear-gradient(170deg, #1a3a91, #11286f 60%, #0d215e); color: #fff; font-family: var(--cv-font); box-shadow: var(--cv-shadow-window); scrollbar-width: thin; scrollbar-color: #5079e6 transparent; }
+.player-setup-dialog { --mode-accent: #ffdc53; box-sizing: border-box; width: min(940px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; margin: auto; overflow-y: auto; border: 2px solid #668eff; border-radius: 28px; background: linear-gradient(170deg, #1a3a91, #11286f 60%, #0d215e); color: #fff; font-family: var(--cv-font); box-shadow: var(--cv-shadow-window); }
 .player-setup-dialog.setup-mode-B { --mode-accent: #94deff; }
 .player-setup-dialog.setup-mode-C { --mode-accent: #d7bcff; }
 .player-setup-dialog::backdrop { background: rgba(3, 12, 40, .78); backdrop-filter: blur(5px); animation: setup-backdrop-in var(--popup-in-ms) ease both; }
@@ -265,6 +293,9 @@ legend.step-title { margin-bottom: 12px; }
 .random-name-button:not(:disabled):active { transform: translateY(3px); box-shadow: 0 1px 0 #c59a1c; }
 .random-name-button:disabled { opacity: .5; cursor: not-allowed; }
 .nickname-field small { color: #c2d8ff; font-size: .78rem; }
+.nickname-field .nickname-error { color: #ffb9b9; }
+.nickname-entry input[aria-invalid="true"] { border-color: var(--cv-red); }
+.name-retry { justify-self: start; padding: 8px 12px; border: 1px solid #7d9cfa; border-radius: 10px; background: #0c225e; color: #fff; font-weight: 700; }
 
 .age-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
 .age-option { display: grid; place-items: center; min-height: 52px; border: 2px solid #3d63c9; border-radius: 14px; background: #0c225e; color: #e0e9ff; font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; cursor: pointer; box-shadow: 0 3px 0 #081845; transition: transform 120ms ease, background 150ms ease, border-color 150ms ease, box-shadow 120ms ease; }

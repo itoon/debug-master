@@ -1,0 +1,29 @@
+{
+  "method": "11x11 Gaussian SSIM, sigma=1.5, population covariance; RGB channel mean; foreground crop; minimum of white/navy/blue/alpha",
+  "native_size": [
+    1448,
+    980
+  ],
+  "foreground_crop": [
+    5,
+    95,
+    1448,
+    907
+  ],
+  "threshold": 0.98,
+  "ssim": {
+    "white": 0.9813961495712844,
+    "navy": 0.9837865963349622,
+    "blue": 0.9831009242739235,
+    "alpha": 0.9983204151922128
+  },
+  "minimum": 0.9813961495712844,
+  "pass": true,
+  "vector_only": true,
+  "path_elements": 196,
+  "sha256": {
+    "original_png": "a7066c0f890285c23a37dc84f928fd3ef00ecf27ed73948796f833845dd5a4fd",
+    "svg": "da2a4b796f9f1b7c22b5dffb3a068a289c7fe0743d24474a0471d3372184689c",
+    "rendered_png": "f1619b1d649e72b04c537238e4d7115da5483b9e9dd2318927f33c51f22a4167"
+  }
+}

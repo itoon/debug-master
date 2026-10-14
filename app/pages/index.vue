@@ -1,14 +1,17 @@
 <template>
   <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
-    <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
-      :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @reset-error="homeStorageError = ''"
-      @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" />
+    <Transition v-if="homeConfig.enabled && showSetup" name="sleep-switch" mode="out-in" :duration="homeTransitionDuration" @after-enter="focusHomeAfterWake">
+      <HomeSleepScreen v-if="homeSleeping" key="home-sleep" @wake="wakeHome" @unlock-audio="unlockAudio" />
+      <HomeV2 v-else ref="homeView" :key="homeResetKey" :entering="homeEntering"
+        :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
+        @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" @sleep="showHomeSleep" />
+    </Transition>
     <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
     <PracticeSummaryDialog v-if="practiceSummary" :result="practiceSummary" @home="backToStart" />
     <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
       :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
-      :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError"
+      :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
       @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
     <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" @cancel="showExitConfirm = false" @confirm="confirmExit" />
     <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial" @start="liveJoin" @close="liveGoHome" />
@@ -404,13 +407,14 @@ import {
   newRunSeed,
   type GeneratedLevel,
 } from "../utils/levelGen";
-import { PLAYER_AGES, type RankingBoard } from "../utils/ranking";
+import { PLAYER_AGES, scorePlayerKey, hasRankingScore, type RankingBoard } from "../utils/ranking";
+import { nicknameKey } from "../utils/playerNickname";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
 import { enabledModesFor, homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
 import type { PlayerSetupInput } from "../storage/contracts";
-import { isPlayerAvatarId } from "../data/player-avatars";
+import { isPlayerAvatarId, PLAYER_AVATARS } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
 import { useLiveConfig, useLiveRoom, type LiveRoom } from "../composables/useLiveRoom";
 import { livePlayerId, resetLivePlayerId } from "../utils/live/identity";
@@ -428,6 +432,18 @@ const activeChallenge = ref<ChallengeMode | null>(null);
 const currentPlayerId = ref("");
 const currentAvatarId = ref<string | undefined>(undefined);
 const homeResetKey = ref(0);
+const homeSleeping = ref(true); // Only initial page entry and the manual Home button set this true.
+const homeEntering = ref(false);
+const homeTransitionDuration = computed(() => {
+  const sleeping = homeSleeping.value;
+  const still = import.meta.client && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return {
+    enter: still ? 0 : sleeping ? 220 : homeConfig.sleepScreen.cardInMs + homeConfig.sleepScreen.cardStaggerMs * (homeConfig.modes.length - 1) + homeConfig.sleepScreen.entryBufferMs,
+    leave: still ? 0 : sleeping ? 220 : homeConfig.sleepScreen.transitionMs,
+  };
+});
+const homeView = ref<{ focusFirstMode: () => Promise<void> } | null>(null);
+let focusAfterWake = false;
 const showTutorial = ref(false);
 const showSummary = ref(false);
 const showExitConfirm = ref(false);
@@ -449,6 +465,8 @@ const practiceLevels = practiceSet.levels;
 let practiceLaunchToken = 0;
 let practiceLaunchButton: HTMLElement | null = null;
 const summaryScore = ref<Score | undefined>();
+const returningBestScore = ref<number | null>(null);
+const showSummaryRank = computed(() => !!summaryScore.value && hasRankingScore(summaryScore.value) && (returningBestScore.value === null || summaryScore.value.score > returningBestScore.value));
 const scoreSaved = ref(false);
 const homeStorageError = ref("");
 const scoreStorageError = ref(false);
@@ -833,15 +851,28 @@ function presentPracticeSummary(): void {
 }
 
 /** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
-async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode): Promise<void> {
+async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, existingPlayerId?: string, previousBestScore?: number): Promise<void> {
   if (homeStarting.value || !showSetup.value) return;
   const nickname = profile.nickname.trim();
   if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return;
+  // Recheck immediately before creating a profile; explicit identity reuse is allowed.
+  if (existingPlayerId === undefined) {
+    try {
+      const key = nicknameKey(nickname);
+      if (repositories.scores.list().some(score => nicknameKey(score.name) === key)) {
+        homeStorageError.value = t('home.nicknameTaken');
+        return;
+      }
+    } catch {
+      homeStorageError.value = t('home.nicknameCheckError');
+      return;
+    }
+  }
   let savedModeIds;
   try { savedModeIds = repositories.modes.enabledIds(); } catch { savedModeIds = undefined; }
   const configuredMode = enabledModesFor(savedModeIds).find((item) => item.id === mode.id);
   if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900 || !challengeSets.some((set) => set.id === configuredMode.levelSetId)) return;
-  const playerId = crypto.randomUUID();
+  const playerId = existingPlayerId ?? crypto.randomUUID();
   const token = ++sessionToken;
   homeStarting.value = true;
   try {
@@ -860,6 +891,7 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode):
     window.history.pushState({ ...window.history.state, debugMasterHomeV2Session: true }, "", window.location.href);
   }
   currentPlayerId.value = playerId;
+  returningBestScore.value = existingPlayerId === undefined ? null : previousBestScore ?? null;
   currentAvatarId.value = profile.avatarId;
   playerNameDraft.value = nickname;
   playerAgeDraft.value = profile.age;
@@ -875,6 +907,26 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode):
   showSetup.value = false;
   showTutorial.value = true;
   lastInteractionAt = Date.now();
+  // Only explicit reuse of a stored identity skips the tutorial;
+  // newly created profiles follow the normal introduction.
+  if (existingPlayerId !== undefined) playChallenge();
+}
+
+async function resumeChallenge(scoreId: string, mode: ChallengeMode): Promise<void> {
+  if (homeStarting.value || !showSetup.value) return;
+  let score: Score | undefined;
+  try {
+    const chosen = repositories.scores.list().find(item => item.id === scoreId);
+    if (chosen) score = repositories.scores.today({ challengeId: mode.challengeId, setId: mode.levelSetId, mode: 'timer', timeLimitSec: mode.timeLimit }, new Date(), Infinity).find(item => scorePlayerKey(item) === scorePlayerKey(chosen));
+  } catch {
+    homeStorageError.value = t('storage.loadError');
+    return;
+  }
+  if (!score || !homeConfig.ages.includes(score.age as number) || !score.name.trim() || score.name.trim().length > homeConfig.nicknameMaxLength) {
+    homeStorageError.value = t('player.unavailable');
+    return;
+  }
+  await prepareChallenge({ nickname: score.name, age: score.age!, avatarId: isPlayerAvatarId(score.avatarId) ? score.avatarId : PLAYER_AVATARS[0] }, mode, scorePlayerKey(score), score.score);
 }
 
 function openPracticePicker(): void {
@@ -928,7 +980,7 @@ async function startPracticeLevel(levelId: number): Promise<void> {
 function playChallenge(): void {
   if (!activeChallenge.value || !showTutorial.value) return;
   showTutorial.value = false;
-  startGame(); // Timer starts after the tutorial, at the first gameplay level.
+  startGame(); // New players start after tutorial; validated returning players start immediately.
 }
 
 function showChallengeRanking(): void {
@@ -965,6 +1017,7 @@ function resetHomeSession(): void {
   currentAvatarId.value = undefined;
   activeChallenge.value = null;
   summaryScore.value = undefined;
+  returningBestScore.value = null;
   scoreSaved.value = false;
   scoreStorageError.value = false;
   homeStorageError.value = "";
@@ -974,6 +1027,25 @@ function resetHomeSession(): void {
 }
 
 function recordInteraction(): void { lastInteractionAt = Date.now(); }
+function wakeHome(input: 'keyboard' | 'pointer'): void {
+  if (!showSetup.value || !homeSleeping.value) return;
+  focusAfterWake = input === 'keyboard';
+  homeEntering.value = true;
+  homeSleeping.value = false;
+  recordInteraction();
+}
+function showHomeSleep(): void {
+  if (!showSetup.value || homeStarting.value || scoreSaving.value || exitSaving.value) return;
+  focusAfterWake = false;
+  homeSleeping.value = true;
+  recordInteraction();
+}
+function focusHomeAfterWake(): void {
+  homeEntering.value = false;
+  if (!showSetup.value || homeSleeping.value || !focusAfterWake) return;
+  focusAfterWake = false;
+  void homeView.value?.focusFirstMode();
+}
 
 function playUiClick(event: MouseEvent): void {
   if (!event.isTrusted || !(event.target instanceof Element)) return;
@@ -1910,6 +1982,21 @@ summary:focus-visible {
 
 .home-flow-shell {
   overflow-y: auto;
+}
+
+/* Kiosk gameplay only: this route owns Home, all modes and native dialogs.
+   Keep text editing/selecting inside form fields; team routes are separate. */
+.app-shell,
+.app-shell :deep(*) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.app-shell :deep(input),
+.app-shell :deep(textarea),
+.app-shell :deep([contenteditable="true"]),
+.app-shell :deep([contenteditable="true"] *) {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .game {

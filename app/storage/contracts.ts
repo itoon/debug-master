@@ -15,6 +15,7 @@ export interface ScoreRepository {
   list(): Score[];
   save(score: Score): Promise<void>;
   remove(scoreId: string): Promise<void>;
+  removeMany(scoreIds: readonly string[]): Promise<void>;
   today(board: RankingBoard, now?: Date, limit?: number): Score[];
   rank(scoreId: string, board: RankingBoard, now?: Date): number | undefined;
   subscribe(listener: () => void): () => void;

@@ -12,7 +12,7 @@
         <p class="chip">{{ roundInfo[0] }}<em>{{ modeLabel }}</em>{{ roundInfo[1] }}</p>
       </div>
     </div>
-    <img class="codi" :src="codiHappy" alt="" draggable="false" />
+    <img class="codi" :src="PLAYER_POSES.win" alt="" draggable="false" />
     <ol class="startrow" :aria-label="t('live.players')">
       <li v-for="seat in seats" :key="seat.index" class="slot" :class="{ empty: !seat.player, off: seat.player && !seat.player.connected }">
         <img v-if="seat.player" :key="seat.player.id" class="av filled" :src="avatarSrc(seat.player.avatarId)" alt="" draggable="false" />
@@ -27,7 +27,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { renderSVG } from "uqr";
-import codiHappy from "~/assets/sprites/cody-happy.webp";
+import { PLAYER_POSES } from "../../utils/playerSprites";
 import { useGameI18n } from "../../composables/useGameI18n";
 import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import { MAX_PLAYERS, type LivePlayer, type ModeId } from "../../utils/live/protocol";

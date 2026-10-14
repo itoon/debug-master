@@ -115,7 +115,7 @@
           {{ result.name }} ·
           {{ t('summary.levels', { count: result.levelsCompleted }) }}
         </p>
-        <dl class="summary-metrics">
+        <dl class="summary-metrics" :class="{ 'without-rank': !showResultRank }">
           <div>
             <dt>{{ t('summary.score') }}</dt>
             <dd>{{ shownResultScore.toLocaleString('th-TH') }}</dd>
@@ -124,7 +124,7 @@
             <dt>{{ t('summary.time') }}</dt>
             <dd>{{ formatClock(result.elapsedMs) }}</dd>
           </div>
-          <div>
+          <div v-if="showResultRank">
             <dt>{{ t('summary.rank') }}</dt>
             <dd>
               {{ rank ? t('ranking.rank', { rank }) : t('ranking.unranked') }}
@@ -158,14 +158,15 @@
           class="stage-ranking"
           :repository="repository"
           :board="board"
-          :highlight-id="saved ? result?.id : undefined"
+          :limit="Infinity"
+          :highlight-id="saved ? rankedResult?.id : undefined"
+          :highlight-player-id="saved ? rankedResult?.playerId : undefined"
           variant="space"
           podium
           placeholder
           split
         />
         <div class="ranking-footer">
-          <p class="ranking-rules">{{ t('home.rules') }}</p>
           <p v-if="storageError" class="session-error" role="alert">
             {{ t('storage.error') }}
           </p>
@@ -196,7 +197,7 @@
 import type { ChallengeMode } from '../data/home-config'
 import type { ScoreRepository } from '../storage/contracts'
 import type { Score } from '../types/debug-game'
-import { formatClock, type RankingBoard } from '../utils/ranking'
+import { formatClock, scorePlayerKey, hasRankingScore, type RankingBoard } from '../utils/ranking'
 import { useGameI18n } from '../composables/useGameI18n'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { TILE_TYPES, tileDefinition } from '../data/tiles'
@@ -206,7 +207,7 @@ import { useCountUp } from '../composables/useCountUp'
 const tutorialTiles = TILE_TYPES.map(tileDefinition)
 const avatarSrc = usePlayerAvatar()
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   stage: 'tutorial' | 'summary' | 'ranking'
   mode: ChallengeMode
   repository: ScoreRepository
@@ -215,7 +216,8 @@ const props = defineProps<{
   saved: boolean
   saving: boolean
   storageError: boolean
-}>()
+  showSummaryRank?: boolean
+}>(), { showSummaryRank: true })
 const emit = defineEmits<{ play: []; home: []; ranking: []; retry: [] }>()
 // The final score rolls up from zero once its tile has popped in.
 const shownResultScore = useCountUp(computed(() => props.result?.score ?? 0), { from: 0, delay: 420, duration: 1100 })
@@ -231,9 +233,12 @@ const { rows, error } = useScoreBoard(
   computed(() => props.board),
   Infinity
 )
+const rankedResult = computed(() => props.result && hasRankingScore(props.result) ? props.result : undefined)
+const showResultRank = computed(() => props.showSummaryRank && !!rankedResult.value)
 const rank = computed(() => {
-  if (!props.saved || !props.result) return undefined
-  const index = rows.value.findIndex((score) => score.id === props.result?.id)
+  if (!props.saved || !rankedResult.value) return undefined
+  const result = rankedResult.value;
+  const index = rows.value.findIndex((score) => props.board.challengeId ? scorePlayerKey(score) === scorePlayerKey(result) : score.id === result.id)
   return index < 0 ? undefined : index + 1
 })
 function focusPanel(): void {
@@ -284,8 +289,7 @@ h1 {
   font-weight: 800;
   line-height: 1.3;
 }
-.session-mode,
-.ranking-rules {
+.session-mode {
   margin: 0;
   font-size: 0.9rem;
   color: #526079;
@@ -331,6 +335,7 @@ h1 {
   gap: 10px;
   text-align: center;
 }
+.summary-metrics.without-rank { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .summary-metrics div {
   display: grid;
   gap: 8px;
@@ -431,12 +436,6 @@ button:disabled {
   padding-top: clamp(8px, 1.6dvh, 14px);
   border-top: 1px solid #86b5ff33;
 }
-.ranking-panel .ranking-rules {
-  flex: 1 1 260px;
-  color: #9fbde9;
-  font-size: 0.85rem;
-  text-wrap: balance;
-}
 .ranking-panel .session-error {
   flex-basis: 100%;
   order: -1;
@@ -444,6 +443,7 @@ button:disabled {
 }
 .ranking-panel .session-actions {
   flex-wrap: nowrap;
+  margin-inline-start: auto;
 }
 .ranking-panel .session-actions button {
   display: inline-flex;
@@ -498,11 +498,9 @@ button:disabled {
     align-items: stretch;
     text-align: center;
   }
-  .ranking-panel .ranking-rules {
-    flex-basis: auto;
-  }
   .ranking-panel .session-actions {
     flex-direction: column;
+    margin-inline-start: 0;
   }
   .ranking-panel .main-action {
     width: 100%;
@@ -800,7 +798,8 @@ button:disabled {
   }
 }
 @media (max-width: 500px) {
-  .summary-metrics {
+  .summary-metrics,
+  .summary-metrics.without-rank {
     grid-template-columns: 1fr;
   }
   .session-actions {

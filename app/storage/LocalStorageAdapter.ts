@@ -1,5 +1,5 @@
 import type { Score } from "../types/debug-game";
-import { todayRanking, type RankingBoard } from "../utils/ranking";
+import { todayRanking, scorePlayerKey, hasRankingScore, isOnBoard, bangkokDay, type RankingBoard } from "../utils/ranking";
 import { CHALLENGE_IDS, type ChallengeId } from "../data/home-config";
 import type { ModeSettingsRepository, PlayerProfile, PlayerRepository, ScoreRepository } from "./contracts";
 
@@ -87,17 +87,29 @@ export class LocalScoreRepository implements ScoreRepository {
     });
   }
   remove(scoreId: string): Promise<void> {
+    return this.removeMany([scoreId]);
+  }
+  removeMany(scoreIds: readonly string[]): Promise<void> {
+    if (!scoreIds.length) return Promise.resolve();
+    const selected = new Set(scoreIds);
     return this.adapter.mutate("scores", () => {
       const rows = this.list();
-      if (!rows.some((score) => score.id === scoreId)) return;
-      this.adapter.write("scores", rows.filter((score) => score.id !== scoreId));
+      const remaining = rows.filter((score) => !selected.has(score.id));
+      if (remaining.length === rows.length) return;
+      // Read the current list inside the mutation and write once: no partial batch.
+      this.adapter.write("scores", remaining);
     });
   }
   today(board: RankingBoard, now = new Date(), limit = 10): Score[] {
     return todayRanking(this.list(), board, now, limit);
   }
   rank(scoreId: string, board: RankingBoard, now = new Date()): number | undefined {
-    const index = this.today(board, now, Infinity).findIndex((item) => item.id === scoreId);
+    const scores = this.list();
+    const run = scores.find((item) => item.id === scoreId && isOnBoard(item, board) && bangkokDay(item.createdAt) === bangkokDay(now));
+    if (!run || !hasRankingScore(run)) return undefined;
+    const index = todayRanking(scores, board, now, Infinity).findIndex((item) =>
+      board.challengeId ? scorePlayerKey(item) === scorePlayerKey(run) : item.id === scoreId,
+    );
     return index < 0 ? undefined : index + 1;
   }
   subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener); }

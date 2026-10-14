@@ -17,6 +17,7 @@ export const homeConfig = {
   schemaVersion: 1,
   enabled: true, // false restores Dev's original setup and modes.
   idleTimeoutMs: 90_000,
+  sleepScreen: { floatMs: 4200, transitionMs: 650, cardInMs: 520, cardStaggerMs: 150, entryBufferMs: 80 }, // Entry/manual only; idle does not activate it.
   nicknameMaxLength: 24,
   nicknameEmojis: ['🎮', '🔥', '🚀', '✨', '😎', '⚡', '🌟', '🤖', '🐱', '🦖', '🍀', '🍉'],
   practice: { levelSetId: "set-01" },

@@ -9,5 +9,5 @@ export default defineNuxtConfig({
   // and still emit /live/host and /live/screen as static pages (GitHub Pages has no server).
   routeRules: { "/live/**": { ssr: false } },
   nitro: { prerender: { routes: ["/live/host", "/live/screen"] } },
-  css: ["~/assets/css/tailwind.css", "~/assets/css/board.css"],
+  css: ["~/assets/css/tailwind.css", "~/assets/css/board.css", "~/assets/css/scrollbar.css"],
 });
