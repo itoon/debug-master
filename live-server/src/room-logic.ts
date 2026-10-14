@@ -302,11 +302,39 @@ export function advanceClock(room: StoredRoom, now: number): boolean {
   return changed
 }
 
-export function nextAlarmAt(room: StoredRoom, openSockets: number): number | null {
-  if (room.phase === 'countdown') return room.startAt
-  if (room.phase === 'running') return room.endAt
-  if (openSockets === 0) return room.lastActivity + IDLE_MS
-  return null
+/**
+ * A player socket counts as connected only while it has been heard from recently: the last
+ * auto-answered 'ping' or the last message, whichever is later. Clients ping every 20 s, but
+ * Chrome throttles timers in hidden tabs to once a minute, hence 75 s.
+ */
+export const STALE_MS = 75_000
+/** While player sockets are open, an alarm at least this often closes stale ones. */
+export const SWEEP_MS = 30_000
+
+export function isSocketFresh(lastAutoResponse: number | null, lastMessage: number, now: number): boolean {
+  return now - Math.max(lastAutoResponse ?? 0, lastMessage) <= STALE_MS
+}
+
+/**
+ * Earliest of the phase alarm (countdown/running), the stale-socket sweep (while player sockets are
+ * open) and the idle cleanup (no sockets). `current` is the alarm already armed: a sweep alarm that
+ * already fires within SWEEP_MS is kept, so the alarm is not rewritten on every message.
+ */
+export function nextAlarmAt(
+  room: StoredRoom,
+  sockets: { open: number; players: number },
+  now: number,
+  current: number | null = null,
+): number | null {
+  let at: number | null = null
+  if (room.phase === 'countdown') at = room.startAt
+  else if (room.phase === 'running') at = room.endAt
+  else if (sockets.open === 0) at = room.lastActivity + IDLE_MS
+  if (sockets.players > 0) {
+    const sweep = current !== null && current > now && current <= now + SWEEP_MS ? current : now + SWEEP_MS
+    at = at === null ? sweep : Math.min(at, sweep)
+  }
+  return at
 }
 
 export function isIdleExpired(room: StoredRoom, openSockets: number, now: number): boolean {

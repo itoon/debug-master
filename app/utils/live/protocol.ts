@@ -104,6 +104,8 @@ export const PLAYER_ID_RE = PID_RE
 
 export const CLOSE_KICKED = 4001
 export const CLOSE_FULL = 4002
+/** Server closed a socket it has not heard from in a while; clients reconnect. */
+export const CLOSE_STALE = 4003
 
 /** Highest level id used by any live mode set. */
 export const MAX_LEVEL_ID = 50

@@ -83,6 +83,7 @@ describe('openLiveSocket', () => {
     last().open()
     vi.advanceTimersByTime(20_000)
     expect(last().sent).toContain('ping')
+    last().recv('pong')
     vi.advanceTimersByTime(20_000)
     expect(last().sent.filter((s) => s === 'ping')).toHaveLength(2)
   })
@@ -102,7 +103,8 @@ describe('openLiveSocket', () => {
     }
     last().open()
     expect(last().sent[0]).toBe(JSON.stringify({ type: 'hello' }))
-    // a successful connect resets the backoff
+    // a connection that delivers a message resets the backoff
+    last().recv('pong')
     last().drop()
     vi.advanceTimersByTime(500)
     expect(FakeWS.instances.length).toBeGreaterThan(delays.length + 1)
@@ -123,6 +125,83 @@ describe('openLiveSocket', () => {
     last().drop()
     vi.advanceTimersByTime(8000)
     expect(FakeWS.instances).toHaveLength(n + 1)
+  })
+
+  it('does not reset the backoff for a socket that opens but never answers', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    openLiveSocket('ws://x', hello, { onMessage, onConnection })
+    last().drop()
+    vi.advanceTimersByTime(500)
+    last().open() // accepted, but silent
+    last().drop()
+    vi.advanceTimersByTime(999)
+    expect(FakeWS.instances).toHaveLength(2)
+    vi.advanceTimersByTime(1)
+    expect(FakeWS.instances).toHaveLength(3)
+  })
+
+  it('abandons a socket that does not answer a ping within 10 s and reconnects at once', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    openLiveSocket('ws://x', hello, { onMessage, onConnection })
+    const first = last()
+    first.open()
+    first.recv('pong')
+    vi.advanceTimersByTime(20_000)
+    expect(first.sent.at(-1)).toBe('ping')
+    vi.advanceTimersByTime(9_999)
+    expect(FakeWS.instances).toHaveLength(1)
+    vi.advanceTimersByTime(1)
+    expect(first.closedWith).toBe(4000)
+    expect(onConnection).toHaveBeenLastCalledWith(false)
+    expect(FakeWS.instances).toHaveLength(2) // no backoff wait
+    // a late close event from the abandoned socket changes nothing
+    first.drop()
+    expect(FakeWS.instances).toHaveLength(2)
+    // the new socket resends hello
+    last().open()
+    expect(last().sent[0]).toBe(JSON.stringify({ type: 'hello' }))
+    expect(onConnection).toHaveBeenLastCalledWith(true)
+  })
+
+  it('counts an abandoned socket as a drop: a following failure backs off', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    openLiveSocket('ws://x', hello, { onMessage, onConnection })
+    last().open()
+    last().recv('pong')
+    vi.advanceTimersByTime(30_000) // ping, then no pong -> abandoned, new socket opened
+    expect(FakeWS.instances).toHaveLength(2)
+    last().drop() // network still down
+    vi.advanceTimersByTime(999)
+    expect(FakeWS.instances).toHaveLength(2)
+    vi.advanceTimersByTime(1)
+    expect(FakeWS.instances).toHaveLength(3)
+  })
+
+  it('keeps the socket when pong (or any message) arrives in time', () => {
+    openLiveSocket('ws://x', hello, { onMessage, onConnection })
+    last().open()
+    vi.advanceTimersByTime(20_000) // ping at 20 s
+    vi.advanceTimersByTime(9_999)
+    last().recv('pong')
+    vi.advanceTimersByTime(10_001) // ping at 40 s
+    vi.advanceTimersByTime(5_000)
+    last().recv({ type: 'state' }) // any message counts
+    for (let i = 0; i < 5; i++) {
+      vi.advanceTimersByTime(20_000)
+      last().recv('pong')
+    }
+    vi.advanceTimersByTime(9_000)
+    expect(FakeWS.instances).toHaveLength(1)
+    expect(last().closedWith).toBeNull()
+  })
+
+  it('close() also stops the pong watchdog', () => {
+    const s = openLiveSocket('ws://x', hello, { onMessage, onConnection })
+    last().open()
+    vi.advanceTimersByTime(20_000)
+    s.close()
+    vi.advanceTimersByTime(60_000)
+    expect(FakeWS.instances).toHaveLength(1)
   })
 
   it.each([CLOSE_KICKED, CLOSE_FULL])('stops retrying after close code %i', (code) => {

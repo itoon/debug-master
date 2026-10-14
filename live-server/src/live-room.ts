@@ -7,6 +7,7 @@ import {
   BROADCAST_INTERVAL_MS,
   CLOSE_FULL,
   CLOSE_KICKED,
+  CLOSE_STALE,
   HOST_KEY_RE,
   normalizeRoomCode,
   type Role,
@@ -20,6 +21,7 @@ import {
   createRoom,
   hashHostKey,
   isIdleExpired,
+  isSocketFresh,
   joinPlayer,
   leavePlayer,
   migrateRoom,
@@ -36,6 +38,8 @@ interface Attachment {
   pid?: string
   /** Host socket that presented the room's host key. */
   host?: boolean
+  /** Epoch ms of the last message on this socket (or of the upgrade); see isSocketFresh. */
+  seen?: number
 }
 
 const ROLES: readonly Role[] = ['player', 'host', 'screen']
@@ -80,7 +84,7 @@ export class LiveRoom extends DurableObject<Env> {
     this.room.code = code
     advanceClock(this.room, now)
 
-    const att: Attachment = { role }
+    const att: Attachment = { role, seen: now }
     if (role === 'host') {
       const key = url.searchParams.get('key')
       // Hash first, then claim synchronously, so two racing hosts cannot both reserve the room.
@@ -101,13 +105,15 @@ export class LiveRoom extends DurableObject<Env> {
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
     const att = this.attachment(ws)
     if (!att) return
+    const now = Date.now()
+    att.seen = now // any message proves the socket is alive (isSocketFresh)
+    ws.serializeAttachment(att)
     const msg = parseClientMessage(message, att.role)
     if (!msg) {
       this.send(ws, { type: 'error', error: 'bad_message' })
       return
     }
 
-    const now = Date.now()
     // The clock is authoritative on every event, not only when the alarm fires.
     let changed = advanceClock(this.room, now)
 
@@ -183,10 +189,11 @@ export class LiveRoom extends DurableObject<Env> {
     this.alarmAt = null // the runtime clears an alarm once it fires
     const now = Date.now()
     // Advance first: an abandoned running room still finishes, then falls through to the idle alarm.
-    if (advanceClock(this.room, now)) {
-      await this.save()
-      this.broadcast()
-    }
+    const advanced = advanceClock(this.room, now)
+    if (advanced) await this.save()
+    // Half-open player sockets: close them so they show as disconnected in every phase.
+    const swept = this.closeStaleSockets(now)
+    if (advanced || swept) this.broadcast()
     if (isIdleExpired(this.room, this.openSockets().length, now)) {
       await this.ctx.storage.deleteAll()
       await this.ctx.storage.deleteAlarm() // deleteAll() does not remove alarms
@@ -211,7 +218,11 @@ export class LiveRoom extends DurableObject<Env> {
   }
 
   private async scheduleAlarm(closing?: WebSocket): Promise<void> {
-    const at = nextAlarmAt(this.room, this.openSockets(closing).length)
+    const sockets = {
+      open: this.openSockets(closing).length,
+      players: this.openSockets(closing, 'player').length,
+    }
+    const at = nextAlarmAt(this.room, sockets, Date.now(), this.alarmAt)
     if (at === this.alarmAt) return
     // An `at` already in the past fires right away; alarm() then advances the clock, so it cannot loop.
     if (at === null) await this.ctx.storage.deleteAlarm()
@@ -230,14 +241,31 @@ export class LiveRoom extends DurableObject<Env> {
     return this.ctx.getWebSockets(tag).filter((ws) => ws !== exclude && ws.readyState === WebSocket.OPEN)
   }
 
-  /** Pids attached to open player sockets. */
+  private isFresh(ws: WebSocket, att: Attachment | null, now: number): boolean {
+    const auto = this.ctx.getWebSocketAutoResponseTimestamp(ws)?.getTime() ?? null
+    return isSocketFresh(auto, att?.seen ?? 0, now)
+  }
+
+  /** Secret pids bound to open player sockets that were heard from recently. */
   private connectedPids(exclude?: WebSocket): Set<string> {
+    const now = Date.now()
     const set = new Set<string>()
     for (const ws of this.openSockets(exclude, 'player')) {
-      const pid = this.attachment(ws)?.pid
-      if (pid) set.add(pid)
+      const att = this.attachment(ws)
+      if (att?.pid && this.isFresh(ws, att, now)) set.add(att.pid)
     }
     return set
+  }
+
+  /** Closes player sockets that went quiet (CLOSE_STALE: the client reconnects). Returns true if any. */
+  private closeStaleSockets(now: number): boolean {
+    let any = false
+    for (const ws of this.openSockets(undefined, 'player')) {
+      if (this.isFresh(ws, this.attachment(ws), now)) continue
+      this.close(ws, CLOSE_STALE, 'stale')
+      any = true
+    }
+    return any
   }
 
   private unbind(ws: WebSocket, att: Attachment): void {

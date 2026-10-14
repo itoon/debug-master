@@ -2,10 +2,14 @@
 // Behaviour adapted from codeventure-signal-lost-main/src/live.ts `connect()`:
 // exponential backoff, hello resent on every (re)connect, 'ping' heartbeat every
 // 20s (answered by the Durable Object auto-response), unsent messages queued.
+// Pong watchdog: if nothing (not even 'pong') arrives within PONG_TIMEOUT_MS of a ping, the
+// socket is treated as half-open: it is abandoned and a new one opened at once. The backoff
+// resets only once a socket actually delivers a message, so a dead network still backs off.
 import { CLOSE_FULL, CLOSE_KICKED, normalizeRoomCode } from './protocol'
 import type { ClientMessage, Role, ServerMessage } from './protocol'
 
 const PING_MS = 20_000
+const PONG_TIMEOUT_MS = 10_000
 const BACKOFF_MIN_MS = 500
 const BACKOFF_MAX_MS = 8_000
 const WS_OPEN = 1
@@ -37,13 +41,36 @@ export function openLiveSocket(url: string, hello: () => ClientMessage, handlers
   let closed = false
   let attempt = 0
   let ping: ReturnType<typeof setInterval> | null = null
+  let watchdog: ReturnType<typeof setTimeout> | null = null
   let retry: ReturnType<typeof setTimeout> | null = null
   const queue = new Map<string, string>()
   let seq = 0
 
+  const stopWatchdog = () => {
+    if (watchdog) clearTimeout(watchdog)
+    watchdog = null
+  }
+
   const stopPing = () => {
     if (ping) clearInterval(ping)
     ping = null
+    stopWatchdog()
+  }
+
+  /** No reply to a ping: give up on this socket without waiting for a close that may never come. */
+  const abandon = (sock: WebSocket) => {
+    if (ws !== sock || closed) return
+    stopPing()
+    sock.onopen = sock.onmessage = sock.onclose = sock.onerror = null
+    ws = null
+    try {
+      sock.close(4000, 'no pong')
+    } catch {
+      /* ignore */
+    }
+    handlers.onConnection(false)
+    attempt++ // a drop like any other: the next failure backs off from here
+    open()
   }
 
   const schedule = () => {
@@ -67,17 +94,24 @@ export function openLiveSocket(url: string, hello: () => ClientMessage, handlers
     }
     ws = sock
     sock.onopen = () => {
-      attempt = 0
       sock.send(JSON.stringify(hello()))
       for (const data of queue.values()) sock.send(data)
       queue.clear()
       stopPing()
       ping = setInterval(() => {
-        if (sock.readyState === WS_OPEN) sock.send('ping')
+        if (sock.readyState !== WS_OPEN) return
+        sock.send('ping')
+        watchdog ??= setTimeout(() => {
+          watchdog = null
+          abandon(sock)
+        }, PONG_TIMEOUT_MS)
       }, PING_MS)
       handlers.onConnection(true)
     }
     sock.onmessage = (e) => {
+      // Anything from the server proves the socket works: clear the watchdog and the backoff.
+      stopWatchdog()
+      attempt = 0
       if (typeof e.data !== 'string' || e.data === 'pong') return
       let msg: unknown
       try {

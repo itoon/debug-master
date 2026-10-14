@@ -8,9 +8,12 @@ import {
   comparePlayers,
   createRoom,
   isIdleExpired,
+  isSocketFresh,
   joinPlayer,
   nextAlarmAt,
   snapshot,
+  STALE_MS,
+  SWEEP_MS,
 } from '../src/room-logic'
 import type { StoredRoom } from '../src/room-logic'
 
@@ -150,11 +153,38 @@ describe('alarms', () => {
     const countdownRoom = running0()
     const runningRoom = running()
     const lobbyRoom = createRoom('CODI-1', 100)
-    expect(nextAlarmAt(countdownRoom, 3)).toBe(3000)
-    expect(nextAlarmAt(runningRoom, 3)).toBe(483_000)
-    expect(nextAlarmAt(lobbyRoom, 0)).toBe(lobbyRoom.lastActivity + IDLE_MS)
-    expect(nextAlarmAt(lobbyRoom, 2)).toBeNull()
-    expect(nextAlarmAt(countdownRoom, 0)).toBe(3000)
+    const only = (open: number) => ({ open, players: 0 }) // host/screen sockets only
+    expect(nextAlarmAt(countdownRoom, only(3), 1000)).toBe(3000)
+    expect(nextAlarmAt(runningRoom, only(3), 4000)).toBe(483_000)
+    expect(nextAlarmAt(lobbyRoom, only(0), 200)).toBe(lobbyRoom.lastActivity + IDLE_MS)
+    expect(nextAlarmAt(lobbyRoom, only(2), 200)).toBeNull()
+    expect(nextAlarmAt(countdownRoom, only(0), 1000)).toBe(3000)
+  })
+
+  it('adds a stale-socket sweep while player sockets are open', () => {
+    const lobbyRoom = createRoom('CODI-1', 100)
+    const players = { open: 3, players: 2 }
+    // lobby/finished: sweep only
+    expect(nextAlarmAt(lobbyRoom, players, 1000)).toBe(1000 + SWEEP_MS)
+    // running: the earlier of endAt and the sweep
+    const runningRoom = running()
+    expect(nextAlarmAt(runningRoom, players, 4000)).toBe(4000 + SWEEP_MS)
+    expect(nextAlarmAt(runningRoom, players, 470_000)).toBe(483_000)
+    // countdown ends before the sweep
+    expect(nextAlarmAt(running0(), players, 1000)).toBe(3000)
+  })
+
+  it('keeps an armed sweep alarm instead of pushing it back on every message', () => {
+    const r = createRoom('CODI-1', 100)
+    const players = { open: 1, players: 1 }
+    const armed = nextAlarmAt(r, players, 1000, null)!
+    expect(armed).toBe(1000 + SWEEP_MS)
+    expect(nextAlarmAt(r, players, 5000, armed)).toBe(armed) // unchanged -> no storage write
+    expect(nextAlarmAt(r, players, armed, armed)).toBe(armed + SWEEP_MS) // already due: re-arm
+    expect(nextAlarmAt(r, players, 1000, 1000 + IDLE_MS)).toBe(1000 + SWEEP_MS) // a far idle alarm is pulled in
+    // a phase alarm earlier than the armed sweep still wins
+    const run = running()
+    expect(nextAlarmAt(run, players, 470_000, 470_000 + SWEEP_MS)).toBe(483_000)
   })
 
   it('detects idle expiry only with no open sockets', () => {
@@ -162,6 +192,21 @@ describe('alarms', () => {
     expect(isIdleExpired(r, 0, 100 + IDLE_MS - 1)).toBe(false)
     expect(isIdleExpired(r, 0, 100 + IDLE_MS)).toBe(true)
     expect(isIdleExpired(r, 1, 100 + IDLE_MS)).toBe(false)
+  })
+})
+
+describe('isSocketFresh', () => {
+  it('uses the later of the last auto-answered ping and the last message', () => {
+    expect(isSocketFresh(null, 1000, 1000 + STALE_MS)).toBe(true)
+    expect(isSocketFresh(null, 1000, 1001 + STALE_MS)).toBe(false)
+    expect(isSocketFresh(50_000, 1000, 50_000 + STALE_MS)).toBe(true) // pings keep a quiet player fresh
+    expect(isSocketFresh(50_000, 1000, 50_001 + STALE_MS)).toBe(false)
+    expect(isSocketFresh(1000, 60_000, 60_000 + STALE_MS)).toBe(true) // messages count too
+  })
+
+  it('tolerates a hidden tab pinging once a minute', () => {
+    expect(STALE_MS).toBeGreaterThan(60_000)
+    expect(isSocketFresh(0, 0, 61_000)).toBe(true)
   })
 })
 
