@@ -30,7 +30,11 @@ import {
   snapshot,
   type StoredRoom,
 } from './room-logic'
+import { SaveScheduler } from './save-scheduler'
 import { parseClientMessage } from './validate'
+
+/** How a handled event affects storage: no write, a throttled progress write, or a write now. */
+type Persist = 'none' | 'progress' | 'now'
 
 interface Attachment {
   role: Role
@@ -51,6 +55,7 @@ export class LiveRoom extends DurableObject<Env> {
   private alarmAt: number | null = null
   private lastBroadcast = 0
   private trailing: ReturnType<typeof setTimeout> | null = null
+  private readonly saver = new SaveScheduler(() => this.ctx.storage.put('room', this.room))
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env)
@@ -81,8 +86,9 @@ export class LiveRoom extends DurableObject<Env> {
     if (!isRole(role)) return new Response('bad role', { status: 400 })
 
     const now = Date.now()
+    const before = { code: this.room.code, hostKeyHash: this.room.hostKeyHash }
     this.room.code = code
-    advanceClock(this.room, now)
+    const advanced = advanceClock(this.room, now)
 
     const att: Attachment = { role, seen: now }
     if (role === 'host') {
@@ -91,6 +97,7 @@ export class LiveRoom extends DurableObject<Env> {
       const keyHash = key && HOST_KEY_RE.test(key) ? await hashHostKey(key) : null
       att.host = claimHost(this.room, keyHash)
     }
+    const roomChanged = advanced || before.code !== this.room.code || before.hostKeyHash !== this.room.hostKeyHash
 
     const pair = new WebSocketPair()
     const [client, server] = Object.values(pair) as [WebSocket, WebSocket]
@@ -98,7 +105,7 @@ export class LiveRoom extends DurableObject<Env> {
     server.serializeAttachment(att)
 
     this.room.lastActivity = now
-    await this.commit(true)
+    await this.commit(true, roomChanged ? 'now' : 'none')
     return new Response(null, { status: 101, webSocket: client })
   }
 
@@ -116,6 +123,8 @@ export class LiveRoom extends DurableObject<Env> {
 
     // The clock is authoritative on every event, not only when the alarm fires.
     let changed = advanceClock(this.room, now)
+    // Only real room changes are written; rejected or no-op messages cost no storage write.
+    let persist: Persist = changed ? 'now' : 'none'
 
     switch (msg.type) {
       case 'hello': {
@@ -137,13 +146,17 @@ export class LiveRoom extends DurableObject<Env> {
         // Answer with the public id only; the secret pid never leaves the hello.
         this.send(ws, { type: 'you', id: this.room.players[msg.pid]!.id, status })
         changed = true
+        persist = 'now' // a join, or a profile edit
         break
       }
       case 'progress':
-        if (att.pid && applyProgress(this.room, att.pid, msg, now)) changed = true
+        if (att.pid && applyProgress(this.room, att.pid, msg, now)) {
+          changed = true
+          if (persist === 'none') persist = 'progress'
+        }
         break
       case 'leave':
-        if (att.pid && leavePlayer(this.room, att.pid)) changed = true
+        if (att.pid && leavePlayer(this.room, att.pid)) persist = 'now'
         this.unbind(ws, att)
         this.close(ws, 1000, 'left')
         changed = true // the socket count changed
@@ -157,14 +170,17 @@ export class LiveRoom extends DurableObject<Env> {
         }
         // kick names the public id; resolve the secret pid before the record is removed.
         const victim = msg.type === 'kick' ? pidForPublicId(this.room, msg.playerId) : null
-        if (applyHostCommand(this.room, msg, this.connectedPids(), now)) changed = true
+        if (applyHostCommand(this.room, msg, this.connectedPids(), now)) {
+          changed = true
+          persist = 'now'
+        }
         if (victim) changed = this.kickSockets(victim) || changed
         break
       }
     }
 
     this.room.lastActivity = now
-    await this.commit(changed)
+    await this.commit(changed, persist)
   }
 
   async webSocketClose(ws: WebSocket): Promise<void> {
@@ -178,9 +194,9 @@ export class LiveRoom extends DurableObject<Env> {
   private async onSocketGone(ws: WebSocket): Promise<void> {
     this.close(ws, 1000, 'bye') // complete the close handshake if the runtime has not
     const now = Date.now()
-    advanceClock(this.room, now)
+    const advanced = advanceClock(this.room, now)
     this.room.lastActivity = now
-    await this.commit(true, ws)
+    await this.commit(true, advanced ? 'now' : 'none', ws)
   }
 
   // ---- alarm: countdown -> running -> finished, then idle cleanup -----------
@@ -190,11 +206,12 @@ export class LiveRoom extends DurableObject<Env> {
     const now = Date.now()
     // Advance first: an abandoned running room still finishes, then falls through to the idle alarm.
     const advanced = advanceClock(this.room, now)
-    if (advanced) await this.save()
+    if (advanced) await this.saver.saveNow()
     // Half-open player sockets: close them so they show as disconnected in every phase.
     const swept = this.closeStaleSockets(now)
     if (advanced || swept) this.broadcast()
     if (isIdleExpired(this.room, this.openSockets().length, now)) {
+      this.saver.cancel() // nothing may re-save the room after this
       await this.ctx.storage.deleteAll()
       await this.ctx.storage.deleteAlarm() // deleteAll() does not remove alarms
       // A fresh room is not persisted and needs no alarm: the next connection starts it again.
@@ -206,15 +223,15 @@ export class LiveRoom extends DurableObject<Env> {
 
   // ---- persistence ------------------------------------------------------------
 
-  /** Persist the room, re-arm the alarm, and broadcast when the room (or its sockets) changed. */
-  private async commit(changed: boolean, closing?: WebSocket): Promise<void> {
-    await this.save()
+  /**
+   * Persist the room as `persist` says (lastActivity alone is not worth a write: the idle alarm is
+   * computed from memory), re-arm the alarm, and broadcast when the room (or its sockets) changed.
+   */
+  private async commit(changed: boolean, persist: Persist, closing?: WebSocket): Promise<void> {
+    if (persist === 'now') await this.saver.saveNow()
+    else if (persist === 'progress') await this.saver.saveSoon()
     await this.scheduleAlarm(closing)
     if (changed) this.broadcast(closing)
-  }
-
-  private async save(): Promise<void> {
-    await this.ctx.storage.put('room', this.room)
   }
 
   private async scheduleAlarm(closing?: WebSocket): Promise<void> {
