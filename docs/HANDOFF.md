@@ -2,6 +2,14 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-14 — Entry/manual Home sleep screen
+
+- Added `HomeSleepScreen.vue` on `feature/replay-same-user`: the supplied transparent `logo-main@2x.png` is copied unchanged to `app/assets/brand/logo-sleep.png` (1448×980; matching SHA-256 `a7066c0f890285c23a37dc84f928fd3ef00ecf27ed73948796f833845dd5a4fd`). Registered `logo-sleep` in the asset inventory. No redraw, vectorization or external asset calls.
+- The initial/refresh Home view shows the large logo floating vertically (4.2s loop). Pointer/touch, deliberate mouse movement, wheel, click or keyboard release triggers a guarded wake: the logo slides up over 650ms, then the existing mode-card screen appears via an out-in transition. The first gesture cannot directly select a mode; keyboard wake focuses its first launch button after entry. Keyboard activation waits for key release to avoid held Enter/Space carrying into mode selection. Timing is configurable in `homeConfig.sleepScreen`.
+- Added a small screen-icon “หน้าพัก” button at the left of Home's footer, with the same disabled/busy rules as other footer controls. The stronger `.practice-button.rest-button` selector keeps it left-aligned even when the mobile footer becomes one column. Returning to sleep unmounts Home, cleaning up its existing local form/motion/subscriptions; waking mounts fresh mode cards.
+- User explicitly chose sleep only on page entry/refresh or this manual button. `homeSleeping` is transient page state; existing `resetHomeSession` and the 90-second idle policy do not set it true. Normal game/tutorial/summary return retains awake cards. Gameplay timers/scoring/levels and the existing no-idle-during-play rule remain unchanged. Legacy Dev Home bypasses this screen when Home v2 is disabled.
+- Added localized prompt/action/asset copy and updated `DESIGN.md`. Reduced motion removes float, slide and the new fade transitions. Verification: final `pnpm build` passed (exit 0); `git diff --check` passed. Read-only review found the button-alignment precedence issue, already corrected; no remaining concrete state/gesture/focus/sizing findings. No tests written/run, live browser/animation/audio verification, git add/commit, branch changes or reference-frontend edits.
+
 ## 2026-10-14 — Player setup scrollbar matches the leaderboard
 
 - Applied on the user-requested `feature/replay-same-user` branch. Extracted the leaderboard's scrollbar styling into `app/assets/css/scrollbar.css` and registered it in Nuxt's CSS list; `PlayerSetupDialog` and the ranking viewport now share `.game-scrollbar`.

@@ -33,6 +33,7 @@
     <ModeDetailsPanel v-if="detailMode" ref="detailPanel" :mode="detailMode" :repository="repository" :busy="busy || motionPhase !== 'open'" :from-rect="detailFromRect"
       @ready="detailReady" @back="closeDetails" @start="createPlayer" @select-player="selectPlayer" />
     <footer class="home-footer" :inert="motionPhase !== 'idle'">
+      <button type="button" class="practice-button rest-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('sleep')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></svg>{{ t('sleep.back') }}</button>
       <div class="home-footer-info"><span>{{ t('ranking.bestPerPlayer') }}</span><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink> · <NuxtLink to="/modes">{{ t('home.modes') }}</NuxtLink></span></div>
       <button type="button" class="practice-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('practice')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 4 3 5-5 3-3-5zm10 8 3 5-5 3-3-5zM4 19h5m6-15h5" /></svg>{{ t('practice.open') }}</button>
     </footer>
@@ -52,7 +53,7 @@ import type { UiSoundEffect } from "../data/sound-effects";
 import type { Score } from "../types/debug-game";
 
 const props = defineProps<{ repository: ScoreRepository; modesRepository: ModeSettingsRepository; error?: string; busy?: boolean }>();
-const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resume: [scoreId: string, mode: ChallengeMode]; practice: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
+const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resume: [scoreId: string, mode: ChallengeMode]; practice: []; sleep: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
 const { t } = useGameI18n();
 // Saved on this device at /modes; hidden until read so SSR defaults never flash.
 const { enabledModes, loaded: modesLoaded } = useModeSettings(props.modesRepository);
@@ -344,6 +345,11 @@ async function closeSetup() {
 function launch(player: PlayerSetupInput) {
   if (motionPhase.value === "open" && setupMode.value && !props.busy) emit("start", player, setupMode.value);
 }
+async function focusFirstMode(): Promise<void> {
+  await nextTick();
+  if (!disposed && motionPhase.value === 'idle') modeBoards.value?.querySelector<HTMLButtonElement>('[data-mode-launch]:not(:disabled)')?.focus({ preventScroll: true });
+}
+defineExpose({ focusFirstMode });
 onMounted(() => window.addEventListener("resize", recenterCards));
 watch([enabledModes, () => props.busy], ([modes, busy]) => {
   if (!selectedMode.value || modes.some(mode => mode.id === selectedMode.value?.id) || busy) return;
@@ -426,7 +432,11 @@ onBeforeUnmount(() => {
 .empty-board .mode-cover { height: 100%; min-height: 0; border-radius: 21px; }
 .empty-board .mode-heading { inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 18px 18px; background: linear-gradient(180deg, #020d31ed, #04123980 90px, transparent 200px), linear-gradient(0deg, #020d31f2, #04123999 75px, transparent 180px); }
 .empty-board .mode-heading h2 { text-shadow: 0 2px 3px #020d31, 0 0 14px #020d31b3; }
-.home-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; color: #d0e2ff; font-size: .7rem; text-align: center; }
+.home-footer { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; color: #d0e2ff; font-size: .7rem; text-align: center; }
+.practice-button.rest-button { justify-self: start; }
+.home-v2.sleep-switch-enter-active, .home-v2.sleep-switch-leave-active { transition: opacity 220ms ease; }
+.home-v2.sleep-switch-enter-from, .home-v2.sleep-switch-leave-to { opacity: 0; }
+.home-v2.sleep-switch-leave-active { pointer-events: none; }
 .home-footer-info { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 24px; }
 .practice-button { display: inline-flex; justify-self: end; align-items: center; gap: 6px; min-height: 36px; padding: 6px 10px; border: 1px solid #84b4ff80; border-radius: 10px; background: #0b275c99; color: #e4efff; font: inherit; font-size: .75rem; font-weight: 800; cursor: pointer; }
 .practice-button svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -463,6 +473,7 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .start-cta svg, .count-1 .start-cta svg { width: 40px; height: 40px; padding: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .home-v2.sleep-switch-enter-active, .home-v2.sleep-switch-leave-active { transition: none; }
   .mode-board, .cover-image { transition: none; }
   .home-v2:not(.selection-made) .mode-boards:not(.modes-loading) .mode-board { animation: card-fade 200ms ease backwards; }
   .mode-board:hover, .mode-board:focus-within, .mode-board:hover .cover-image, .mode-board:focus-within .cover-image { transform: none; }

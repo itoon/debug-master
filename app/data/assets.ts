@@ -13,6 +13,7 @@ import background from "~/assets/bg.png";
 import { PLAYER_SPRITES, PLAYER_POSES } from "../utils/playerSprites";
 import { tileDefinition } from "./tiles";
 import { th } from "../i18n/messages";
+import sleepLogo from '../assets/brand/logo-sleep.png';
 
 export type AssetStatus = "in-use" | "css" | "wanted" | "spare";
 
@@ -321,6 +322,15 @@ export const assetGroups: AssetGroup[] = [
         usedIn: "แท็บเบราว์เซอร์ (ตอนนี้เป็นไอคอน Nuxt)",
         spec: ["SVG หรือ PNG 512 × 512 px อ่านออกที่ 16 px"],
         swap: "วางทับ public/favicon.ico (หรือเพิ่ม favicon.svg แล้วตั้งใน nuxt.config)",
+      },
+      {
+        id: 'logo-sleep',
+        name: th['asset.sleepLogo'],
+        file: 'app/assets/brand/logo-sleep.png',
+        status: 'in-use',
+        preview: { kind: 'image', src: sleepLogo, backdrop: 'dark' },
+        usedIn: th['asset.sleepLogoUsage'],
+        spec: [th['asset.sleepLogoSpec']],
       },
     ],
   },

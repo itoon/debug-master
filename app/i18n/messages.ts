@@ -1,4 +1,9 @@
 export const th = {
+  "sleep.wake": "แตะหน้าจอหรือกดปุ่มเพื่อเริ่มเล่น",
+  "sleep.back": "หน้าพัก",
+  "asset.sleepLogo": "โลโก้หน้าพัก Debug Master",
+  "asset.sleepLogoUsage": "หน้าโลโก้เต็มจอก่อนเลือกโหมด ลอยขึ้นลงแล้วเลื่อนขึ้นเมื่อมี interaction",
+  "asset.sleepLogoSpec": "PNG โปร่งใส 1448 × 980 ใช้ไฟล์ที่ผู้ใช้ให้โดยไม่แก้รูป",
   "practice.open": "ฝึกซ้อม 60 ด่าน",
   "practice.badge": "โหมดฝึกซ้อม",
   "practice.chooseTitle": "เลือกเล่นโจทย์เดิม {count} ด่าน",

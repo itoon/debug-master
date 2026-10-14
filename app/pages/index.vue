@@ -1,8 +1,11 @@
 <template>
   <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
-    <HomeV2 v-if="homeConfig.enabled && showSetup" :key="homeResetKey"
-      :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
-      @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" />
+    <Transition v-if="homeConfig.enabled && showSetup" name="sleep-switch" mode="out-in" @after-enter="focusHomeAfterWake">
+      <HomeSleepScreen v-if="homeSleeping" key="home-sleep" @wake="wakeHome" @unlock-audio="unlockAudio" />
+      <HomeV2 v-else ref="homeView" :key="homeResetKey"
+        :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
+        @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" @sleep="showHomeSleep" />
+    </Transition>
     <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
     <PracticeSummaryDialog v-if="practiceSummary" :result="practiceSummary" @home="backToStart" />
     <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
@@ -414,6 +417,9 @@ const activeChallenge = ref<ChallengeMode | null>(null);
 const currentPlayerId = ref("");
 const currentAvatarId = ref<string | undefined>(undefined);
 const homeResetKey = ref(0);
+const homeSleeping = ref(true); // Only initial page entry and the manual Home button set this true.
+const homeView = ref<{ focusFirstMode: () => Promise<void> } | null>(null);
+let focusAfterWake = false;
 const showTutorial = ref(false);
 const showSummary = ref(false);
 const showExitConfirm = ref(false);
@@ -991,6 +997,23 @@ function resetHomeSession(): void {
 }
 
 function recordInteraction(): void { lastInteractionAt = Date.now(); }
+function wakeHome(input: 'keyboard' | 'pointer'): void {
+  if (!showSetup.value || !homeSleeping.value) return;
+  focusAfterWake = input === 'keyboard';
+  homeSleeping.value = false;
+  recordInteraction();
+}
+function showHomeSleep(): void {
+  if (!showSetup.value || homeStarting.value || scoreSaving.value || exitSaving.value) return;
+  focusAfterWake = false;
+  homeSleeping.value = true;
+  recordInteraction();
+}
+function focusHomeAfterWake(): void {
+  if (!showSetup.value || homeSleeping.value || !focusAfterWake) return;
+  focusAfterWake = false;
+  void homeView.value?.focusFirstMode();
+}
 
 function playUiClick(event: MouseEvent): void {
   if (!event.isTrusted || !(event.target instanceof Element)) return;
