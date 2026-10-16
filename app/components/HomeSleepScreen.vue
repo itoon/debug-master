@@ -1,10 +1,12 @@
 <template>
-  <button ref="wakeButton" type="button" class="home-sleep-screen" :aria-label="t('sleep.wake')"
+  <button ref="wakeButton" type="button" class="home-sleep-screen" :aria-label="t('sleep.open')"
     :style="{ '--sleep-float-ms': `${homeConfig.sleepScreen.floatMs}ms`, '--sleep-transition-ms': `${homeConfig.sleepScreen.transitionMs}ms` }"
     @wheel.stop.prevent="wake" @click.stop.prevent="wake"
+    @touchstart.passive="startTouch" @touchend.stop.prevent="endTouch" @touchcancel="touchStart = null"
     @keydown.space.stop.prevent @keyup.space.stop.prevent="wake" @keydown.enter.stop.prevent>
     <span class="sleep-logo-wrap"><img class="sleep-logo" :src="sleepLogo" width="1448" height="980" alt="Debug Master" draggable="false" /></span>
-    <span class="sleep-prompt">{{ t('sleep.wake') }}</span>
+    <span class="sleep-prompt sleep-prompt-desktop">{{ t('sleep.wake') }}</span>
+    <span class="sleep-prompt sleep-prompt-touch">{{ t('sleep.wakeTouch') }}</span>
   </button>
 </template>
 <script setup lang="ts">
@@ -19,6 +21,22 @@ const baseURL = useRuntimeConfig().app.baseURL;
 useHead({ link: homeConfig.modes.map((mode) => ({ rel: 'preload', as: 'image', href: `${baseURL.endsWith('/') ? baseURL : `${baseURL}/`}${mode.thumbnail}` })) });
 const wakeButton = ref<HTMLButtonElement | null>(null);
 let waking = false;
+let touchStart: { id: number; x: number; y: number } | null = null;
+function startTouch(event: TouchEvent): void {
+  const touch = event.touches.length === 1 ? event.touches[0] : undefined;
+  touchStart = touch ? { id: touch.identifier, x: touch.clientX, y: touch.clientY } : null;
+}
+function endTouch(event: TouchEvent): void {
+  const start = touchStart;
+  touchStart = null;
+  if (!start || event.touches.length) return;
+  const touch = Array.from(event.changedTouches).find((item) => item.identifier === start.id);
+  if (!touch) return;
+  const dx = Math.abs(touch.clientX - start.x);
+  const up = start.y - touch.clientY;
+  const tap = dx <= 12 && Math.abs(up) <= 12;
+  if (tap || (up >= 40 && up > dx)) wake(event);
+}
 function wake(event: Event): void {
   if (waking) return;
   waking = true;
@@ -33,6 +51,12 @@ onMounted(() => wakeButton.value?.focus({ preventScroll: true }));
 .sleep-logo-wrap { display: block; width: min(90vw, 115dvh, 1200px); max-width: 100%; will-change: transform; }
 .sleep-logo { display: block; width: 100%; height: auto; animation: sleep-float var(--sleep-float-ms) ease-in-out infinite; will-change: transform; }
 .sleep-prompt { font-size: clamp(.85rem, 1.3vw, 1.1rem); font-weight: 700; text-align: center; }
+.sleep-prompt-touch { display: none; }
+.home-sleep-screen { touch-action: pinch-zoom; }
+@media (max-width: 639px), (pointer: coarse) {
+  .sleep-prompt-desktop { display: none; }
+  .sleep-prompt-touch { display: inline; }
+}
 .home-sleep-screen:focus-visible { outline: 2px solid #c7e7ff; outline-offset: -4px; }
 .home-sleep-screen.sleep-switch-enter-active { transition: opacity 220ms ease; }
 .home-sleep-screen.sleep-switch-enter-from { opacity: 0; }

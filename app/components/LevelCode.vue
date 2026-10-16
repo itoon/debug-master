@@ -1,21 +1,25 @@
 <template>
-  <section class="code-card" :class="{ 'code-card-readable': readable }">
+  <section class="code-card" :class="{ 'code-card-readable': readable, 'teaching-guidance': teachingGuidance }">
     <div class="window-bar">
       <span class="window-dots" aria-hidden="true"><i /><i /><i /></span>
       <h2>{{ title }}</h2>
+      <span v-if="scrollHint" class="code-scroll-hint">{{ t('game.scrollCode') }}</span>
     </div>
 
     <pre
       ref="codeBox"
       class="code-box"
+      :class="{ 'game-scrollbar': readable, 'follow-executed': followExecuted, 'follow-upcoming': followUpcoming }"
       :style="codeBoxStyle"
       :aria-label="`Level ${level.id} code`"
+      :tabindex="readable ? 0 : undefined"
+      @pointerdown.passive="cancelUpcomingFollow" @touchstart.passive="cancelUpcomingFollow" @wheel.passive="cancelUpcomingFollow"
     ><code><span
       v-for="entry in codeLineEntries"
       :key="`${level.id}-${entry.index}`"
       class="code-line"
-      :class="{ active: isActiveLine?.(entry.line, entry.index) }"
-      :aria-current="followActiveLine && isActiveLine?.(entry.line, entry.index) ? 'step' : undefined"
+      :class="{ active: visibleActiveLineIndex === entry.index }"
+      :aria-current="followActiveLine && visibleActiveLineIndex === entry.index ? 'step' : undefined"
     ><span
       v-if="lineNumbers"
       class="code-line-number"
@@ -63,6 +67,7 @@ import type { LevelLike } from "../types/debug-game";
 import type { CodeLanguage } from "../utils/codeLanguage";
 import { tileDefinition } from "../data/tiles";
 import { useGameI18n } from "../composables/useGameI18n";
+import { createViewportScroller } from "../utils/viewportScroll";
 
 const { t } = useGameI18n();
 function tileDescription(value: string): string {
@@ -78,18 +83,35 @@ const props = withDefaults(
     lineNumbers?: boolean;
     /** Gameplay keeps readable text and scrolls instead of shrinking long code. */
     readable?: boolean;
+    /** Compact gameplay cue; tutorial/review keep their existing header. */
+    scrollHint?: boolean;
     /** Highlights a source line (the game uses it in Debug Mode). */
     isActiveLine?: (line: string, index: number) => boolean;
     /** Follow teaching hints within the code viewport only. */
     followActiveLine?: boolean;
+    /** Presentation-only feedback from the last accepted move, not the next. */
+    executedStep?: { line: number; sequence: number };
+    /** Keep two source lines below the accepted move in compact gameplay. */
+    followExecuted?: boolean;
+    /** Compact gameplay scrolls to the real next command, including loop jumps. */
+    followUpcoming?: boolean;
+    upcomingLine?: number;
+    /** Next-command teaching cue; never overlay yellow move history. */
+    teachingGuidance?: boolean;
   }>(),
   {
     language: "python",
     title: "Read the program",
     lineNumbers: false,
     readable: false,
+    scrollHint: false,
     isActiveLine: undefined,
     followActiveLine: false,
+    executedStep: undefined,
+    followExecuted: false,
+    followUpcoming: false,
+    upcomingLine: undefined,
+    teachingGuidance: false,
   },
 );
 
@@ -98,15 +120,59 @@ const { codeLineEntries, codeBoxStyle } = useCodePresentation(
   computed(() => props.language),
 );
 const codeBox = ref<HTMLPreElement | null>(null);
-const activeLineIndex = computed(() => props.followActiveLine
-  ? codeLineEntries.value.findIndex(entry => props.isActiveLine?.(entry.line, entry.index))
-  : -1);
+const upcomingScroller = createViewportScroller();
+let upcomingGeneration = 0;
+let codeResizeObserver: ResizeObserver | undefined;
+function cancelUpcomingFollow(): void {
+  upcomingGeneration += 1;
+  upcomingScroller.cancel();
+}
+async function followUpcomingLine(): Promise<void> {
+  cancelUpcomingFollow();
+  const token = upcomingGeneration;
+  const index = props.upcomingLine;
+  const level = props.level;
+  if (!props.readable || !props.followUpcoming || !index) return;
+  await nextTick();
+  if (token !== upcomingGeneration || !props.followUpcoming || props.level !== level || props.upcomingLine !== index) return;
+  const box = codeBox.value;
+  const line = box?.querySelectorAll<HTMLElement>('.code-line')[index - 1];
+  if (!box?.isConnected || !box.clientHeight || !line) return;
+  const viewportTop = box.getBoundingClientRect().top + box.clientTop;
+  const position = line.getBoundingClientRect();
+  const above = Math.min(position.height * 2, box.clientHeight * .3);
+  const below = Math.min(position.height * 2, box.clientHeight * .3);
+  // Keep context around the next move, not just the last executed row.
+  // When repeat/while jumps backwards the real sourceLine naturally follows it.
+  if (position.top < viewportTop + above || position.bottom > viewportTop + box.clientHeight - below) {
+    upcomingScroller.to(box, { top: box.scrollTop + position.top - viewportTop - above, left: box.scrollLeft });
+  }
+}
+watch([() => props.followUpcoming, () => props.upcomingLine, () => props.level], followUpcomingLine, { flush: 'post', immediate: true });
+onMounted(() => {
+  if (!codeBox.value) return;
+  codeResizeObserver = new ResizeObserver(() => { void followUpcomingLine(); });
+  codeResizeObserver.observe(codeBox.value);
+});
+onBeforeUnmount(() => { cancelUpcomingFollow(); codeResizeObserver?.disconnect(); });
+// A new program starts at its first line, not the previous level's scroll.
+// Teaching mode retains ownership of scrolling to its active source line.
+watch(() => props.level, () => {
+  if (props.readable && (props.followUpcoming || !props.followActiveLine || props.followExecuted) && codeBox.value) {
+    codeBox.value.scrollTop = 0;
+    codeBox.value.scrollLeft = 0;
+  }
+}, { flush: 'post' });
+// A teaching/debug caller may identify several identical commands. Display
+// only its first matching row, and never overlay executed feedback on it.
+const visibleActiveLineIndex = computed(() => codeLineEntries.value.findIndex(entry => props.isActiveLine?.(entry.line, entry.index)));
+const activeLineIndex = computed(() => props.followActiveLine ? visibleActiveLineIndex.value : -1);
 watch([() => props.followActiveLine, () => props.level, activeLineIndex], async () => {
   const index = activeLineIndex.value;
   const level = props.level;
-  if (!props.followActiveLine || index < 0) return;
+  if (!props.followActiveLine || props.followExecuted || props.followUpcoming || index < 0) return;
   await nextTick();
-  if (!props.followActiveLine || props.level !== level || activeLineIndex.value !== index) return;
+  if (!props.followActiveLine || props.followExecuted || props.followUpcoming || props.level !== level || activeLineIndex.value !== index) return;
   const box = codeBox.value;
   const line = box?.querySelectorAll<HTMLElement>('.code-line')[index];
   if (!box?.isConnected || !line) return;
@@ -117,11 +183,77 @@ watch([() => props.followActiveLine, () => props.level, activeLineIndex], async 
     box.scrollTop = Math.max(0, box.scrollTop + position.top - viewport.top - box.clientHeight / 2 + position.height / 2);
   }
 }, { flush: 'post', immediate: true });
+
+let executedAnimation: Animation | null = null;
+let feedbackGeneration = 0;
+function cancelExecutedAnimation(): void {
+  feedbackGeneration += 1;
+  executedAnimation?.cancel();
+  executedAnimation = null;
+}
+// One animation owner per code window. Cancel synchronously before a new
+// source row is painted; stable row keys also avoid orphaned fading nodes.
+watch([
+  () => props.executedStep,
+  () => props.level,
+  () => props.followExecuted,
+  () => props.teachingGuidance,
+  visibleActiveLineIndex,
+], async () => {
+  cancelExecutedAnimation();
+  const generation = feedbackGeneration;
+  const step = props.executedStep;
+  if (!step || !props.followExecuted || props.teachingGuidance || visibleActiveLineIndex.value >= 0) return;
+  await nextTick();
+  if (generation !== feedbackGeneration) return;
+  const line = codeBox.value?.querySelectorAll<HTMLElement>('.code-line')[step.line - 1];
+  if (!line?.isConnected || typeof line.animate !== 'function') return;
+  const yellow = getComputedStyle(line).getPropertyValue('--cv-yellow').trim() || '#fdca3f';
+  const animation = line.animate([
+    { backgroundColor: '#fdca3f38', borderLeftColor: yellow, offset: 0 },
+    { backgroundColor: '#fdca3f38', borderLeftColor: yellow, offset: .2 },
+    { backgroundColor: 'transparent', borderLeftColor: 'transparent', offset: 1 },
+  ], { duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 1100, easing: 'ease-out' });
+  executedAnimation = animation;
+  animation.onfinish = () => {
+    if (executedAnimation !== animation) return;
+    animation.cancel();
+    executedAnimation = null;
+  };
+}, { flush: 'sync' });
+onBeforeUnmount(cancelExecutedAnimation);
+
+watch(() => props.executedStep, async (step) => {
+  if (!props.followExecuted || props.followUpcoming || !step) return;
+  const level = props.level;
+  await nextTick();
+  if (!props.followExecuted || props.followUpcoming || props.level !== level || props.executedStep !== step) return;
+  const box = codeBox.value;
+  const line = box?.querySelectorAll<HTMLElement>('.code-line')[step.line - 1];
+  if (!box?.isConnected || !line) return;
+  const viewport = box.getBoundingClientRect();
+  const position = line.getBoundingClientRect();
+  const lineHeight = position.height;
+  const clearance = Math.min(lineHeight * 2, Math.max(0, box.clientHeight - lineHeight));
+  if (position.top < viewport.top || position.bottom > viewport.top + box.clientHeight - clearance) {
+    // No scrollIntoView: do not move the page or enqueue smooth scrolls while
+    // the player presses quickly. Manual pan remains until the next move.
+    box.scrollTop = Math.max(0, box.scrollTop + position.bottom - viewport.top - box.clientHeight + clearance);
+  }
+}, { flush: 'post' });
 </script>
 
 <style scoped>
-.code-card-readable .code-box { font-size: clamp(1rem, 1.15vw, 1.3rem); line-height: 1.65; overflow: auto; padding: 16px 0; }
+.code-card-readable .code-box { min-width: 0; max-width: 100%; font-size: clamp(1rem, 1.15vw, 1.3rem); line-height: 1.65; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; padding: 16px 0 var(--code-bottom-space, 16px); }
+.code-card-readable .code-box:focus-visible { outline: 2px solid var(--cv-yellow); outline-offset: -2px; }
 .code-card-readable .code-line { white-space: pre; flex-wrap: nowrap; width: max-content; min-width: 100%; padding: 0 18px; }
 .code-card-readable .code-token { white-space: pre; flex: none; }
 .code-card-readable .window-bar { padding: 14px 18px; }
+.code-card-readable .window-bar h2 { min-width: 0; overflow-wrap: anywhere; }
+.code-card-readable .code-box.follow-executed, .code-card-readable .code-box.follow-upcoming { --code-bottom-space: calc(10px + 3.3em); }
+.teaching-guidance .code-line.active { background: #1f75ff33; border-left-color: #87dfff; }
+.code-scroll-hint { flex: none; margin-left: auto; color: #bdd6ff; font: 700 .65rem/1.3 var(--cv-font); white-space: nowrap; }
+@media (min-width: 921px) and (min-height: 561px) {
+  .code-scroll-hint { display: none; }
+}
 </style>

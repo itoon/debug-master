@@ -22,7 +22,8 @@
           )
         }}
       </h1>
-      <p class="session-mode">
+      <p v-if="practiceIntroCount !== undefined" class="session-mode">{{ t('practice.tutorialInfo', { count: practiceIntroCount }) }}</p>
+      <p v-else-if="mode" class="session-mode">
         {{ mode.id }} · {{ t(mode.nameKey) }} ·
         {{
           t('home.levels', { from: mode.levelRange[0], to: mode.levelRange[1] })
@@ -147,7 +148,7 @@
           <button type="button" class="main-action" :disabled="saving" @click="emit('home')">
             {{ t('flow.home') }}
           </button>
-          <button type="button" class="text-action" @click="emit('ranking')">
+          <button type="button" class="text-action summary-ranking-action" @click="emit('ranking')">
             {{ t('summary.leaderboard') }}
           </button>
         </div>
@@ -209,7 +210,9 @@ const avatarSrc = usePlayerAvatar()
 
 const props = withDefaults(defineProps<{
   stage: 'tutorial' | 'summary' | 'ranking'
-  mode: ChallengeMode
+  mode?: ChallengeMode
+  /** Reuse the animated introduction without competitive mode/time metadata. */
+  practiceIntroCount?: number
   repository: ScoreRepository
   board: RankingBoard
   result?: Score
@@ -796,6 +799,9 @@ button:disabled {
   .ranking-panel .main-action svg {
     transition: none;
   }
+}
+@media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .summary-ranking-action { display: none; }
 }
 @media (max-width: 500px) {
   .summary-metrics,

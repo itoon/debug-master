@@ -1,4 +1,4 @@
-import { defaultEnabledIds, enabledModesFor, type ChallengeId } from "../data/home-config";
+import { competitionTime, defaultEnabledIds, enabledModesFor, type ChallengeId } from "../data/home-config";
 import type { ModeSettingsRepository } from "../storage/contracts";
 
 /**
@@ -8,19 +8,23 @@ import type { ModeSettingsRepository } from "../storage/contracts";
  */
 export function useModeSettings(repository: ModeSettingsRepository) {
   const savedIds = ref<ChallengeId[] | undefined>(undefined);
+  const savedDuration = ref<number | undefined>(undefined);
   const loaded = ref(false);
   const loadError = ref(false);
-  const enabledModes = computed(() => enabledModesFor(savedIds.value));
+  const durationSec = computed(() => savedDuration.value ?? competitionTime.defaultSeconds);
+  const enabledModes = computed(() => enabledModesFor(savedIds.value, savedDuration.value));
   const enabledIds = computed(() => enabledModes.value.map((mode) => mode.id));
-  const customized = computed(() => savedIds.value !== undefined);
+  const customized = computed(() => savedIds.value !== undefined || savedDuration.value !== undefined);
   let unsubscribe: (() => void) | undefined;
 
   function refresh(): void {
     try {
       savedIds.value = repository.enabledIds();
+      savedDuration.value = repository.durationSec();
       loadError.value = false;
     } catch {
       savedIds.value = undefined;
+      savedDuration.value = undefined;
       loadError.value = true;
     }
     loaded.value = true;
@@ -34,6 +38,10 @@ export function useModeSettings(repository: ModeSettingsRepository) {
     await repository.reset();
     refresh();
   }
+  async function setDuration(seconds: number): Promise<void> {
+    await repository.saveDuration(seconds);
+    refresh();
+  }
 
   onMounted(() => {
     refresh();
@@ -41,5 +49,5 @@ export function useModeSettings(repository: ModeSettingsRepository) {
   });
   onBeforeUnmount(() => unsubscribe?.());
 
-  return { enabledModes, enabledIds, customized, loaded, loadError, setEnabled, reset, defaultEnabledIds };
+  return { enabledModes, enabledIds, durationSec, customized, loaded, loadError, setEnabled, setDuration, reset, defaultEnabledIds };
 }
