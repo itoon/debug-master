@@ -167,11 +167,13 @@ h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-h
   .game-hud .level-info { position: absolute; width: 1px; height: 1px; min-width: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; padding: 0; border: 0; }
   .game-hud:not(.practice-hud) .progress-track { grid-column: 1 / -1; grid-row: 2; height: 10px; }
   .game-hud.practice-hud, .practice-hud .mission-info { gap: 4px; }
-  .practice-hud .mission-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
+  .practice-hud .mission-heading { display: grid; grid-template-columns: minmax(72px, 1fr) auto 40px; gap: 4px; }
   .practice-hud .level-info { position: absolute; width: 1px; height: 1px; min-width: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .practice-hud .progress-info { grid-column: 1; grid-row: 1; justify-self: start; }
-  .practice-hud .hud-system { grid-column: 2; grid-row: 1; justify-content: flex-end; }
-  .practice-hud .practice-actions { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .practice-hud .progress-info { grid-column: 1; grid-row: 1; box-sizing: border-box; width: 100%; min-width: 72px; min-height: 44px; padding: 4px 8px; gap: 6px; border-radius: 10px; white-space: nowrap; }
+  .practice-hud .progress-info > span { font-size: .55rem; }
+  .practice-hud .progress-info strong { font-size: 1rem; }
+  .practice-hud .hud-system { grid-column: 3; grid-row: 1; justify-content: flex-end; }
+  .practice-hud .practice-actions { grid-column: 2; grid-row: 1; display: grid; grid-template-columns: auto auto; gap: 4px; }
   .practice-hud .progress-track { height: 10px; }
 }
 /* Desktop: the full HUD with captions and large metrics. */

@@ -29,7 +29,7 @@
           :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES"
           :time-low="isTimedMode && campaignStarted && timerRemaining > 0 && timerRemaining <= 30" :live-rank="liveRank">
           <template #actions>
-            <button type="button" class="practice-map-button soft-button small" :disabled="practiceStarting" aria-haspopup="dialog" @click="openPracticePicker"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15" /></svg>{{ t('practice.chooseButton', { count: practiceLevels.length }) }}</button>
+            <button type="button" class="practice-map-button soft-button small" :disabled="practiceStarting" aria-haspopup="dialog" :aria-label="t('practice.chooseButton', { count: practiceLevels.length })" @click="openPracticePicker"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15" /></svg><span class="practice-label-full">{{ t('practice.chooseButton', { count: practiceLevels.length }) }}</span><span class="practice-label-short" aria-hidden="true">{{ t('practice.chooseShort') }}</span></button>
             <button type="button" class="soft-button small superhint-button" :class="{ 'hint-enabled': practiceSuperHint }" :disabled="practiceStarting" :aria-pressed="practiceSuperHint" :aria-label="t(practiceSuperHint ? 'practice.hidePath' : 'practice.showPath')" @click="practiceSuperHint = !practiceSuperHint"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5M13 5l-2 14" /></svg>{{ t('practice.superHint') }}<span class="hint-check" aria-hidden="true">{{ practiceSuperHint ? '✓' : '' }}</span></button>
           </template>
         </GameHud>
@@ -2181,6 +2181,7 @@ summary:focus-visible {
 .practice-map-button svg, .superhint-button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .board-panel .superhint-button.hint-enabled { background: var(--cv-blue); color: #fff; border-color: #a8c9ff; }
 .hint-check { width: 1em; }
+.practice-label-short { display: none; }
 .practice-map-button:focus-visible, .superhint-button:focus-visible { outline: 3px solid #ffe36b; outline-offset: 3px; }
 
 /* ---------- Typography ---------- */
@@ -2976,8 +2977,11 @@ h2 {
    the verbose level header; values and existing system actions stay visible. */
 @media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
   .play-cluster .code-card.python-code :deep(.code-box) { font-size: .875rem; }
-  .board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { width: 100%; min-width: 0; min-height: 44px; padding: 6px 8px; gap: 5px; font-size: .7rem; line-height: 1.2; white-space: normal; }
-  .practice-map-button svg, .superhint-button svg { flex: none; width: 16px; height: 16px; }
+  .board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { width: auto; min-width: 0; min-height: 44px; padding: 2px; gap: 2px; font-size: .6875rem; line-height: 1.2; white-space: nowrap; }
+  .practice-map-button svg { flex: none; width: 14px; height: 14px; }
+  .superhint-button svg, .practice-label-full { display: none; }
+  .practice-label-short { display: inline; }
+  .board-panel:has(.practice-hud) #game-hud-system .hud-action.exit-action { padding: 0; }
   .board-panel:has(.practice-hud) .board-combo { display: none; }
   .notification.practice-success-notice { display: block; position: fixed; top: 50%; width: min(340px, calc(100vw - 40px)); transform: translate(-50%, -50%); background: #123e32; color: #bbf7d0; animation-name: practice-notice-pop; }
 }

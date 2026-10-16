@@ -2,6 +2,28 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-16 — Give phone practice progress more room
+
+- Phone `GameHud.vue` lets progress use the remaining row width (minimum 72px), with 8px inline padding, a 6px caption/value gap and slightly larger caption. Map/SuperHint now size to content instead of stretching, using 2px padding/internal gaps in `index.vue`; keep 44px minimum touch height and the one-row order/progress bar.
+- Desktop, competition, handlers and gameplay remain unchanged. Updated `DESIGN.md`; previous staged/unstaged work preserved. Verification: `pnpm build` passed (exit 0, `mobile-practice-hud-padding-build.log`); staged/unstaged `git diff --check` passed. No tests, browser/device checks, staging/commit or branch switch; actual phone rendering remains unverified.
+
+## 2026-10-16 — One-row practice HUD on phones
+
+- `GameHud.vue` phone practice layout combines compact progress, the existing Map/SuperHint action slot and teleported exit into one row, with the progress bar below. Fixed 52px progress and 40px exit columns leave a shrinking middle grid for the two 44px-high actions. Portrait/short-landscape phone breakpoints only; desktop/tall tablet and competitive HUD layouts remain unchanged.
+- `index.vue` displays localized short “เลือกด่าน” on phones, retaining the full count in its accessible label and original desktop text. SuperHint keeps text/check/pressed state while hiding its code icon on phones. Compact spacing/typography and a practice-only exit-padding override keep actions within their columns. Existing handlers, Teleport, audio behavior, hint state, progress calculation, gameplay and exit confirmation remain unchanged.
+- Updated `DESIGN.md` and i18n; prior staged/unstaged work preserved. Verification: `pnpm build` passed (exit 0, `mobile-practice-hud-row-build.log`); staged/unstaged `git diff --check` passed. No tests, browser/device checks, staging/commit or branch switch; actual phone rendering remains unverified.
+
+## 2026-10-16 — Lift phone setup controls to avoid normal-view scrolling
+
+- `PlayerSetupDialog.vue` reduces phone-only form/header/body/step/footer gaps and preview padding, with a 72px portrait/90px stage. A visual-height class below 660px shrinks the preview to 56px/70px, bringing the age row and Start upward on shorter phones. Preserve the original preview arrangement, 16px nickname input, 44px controls, rails and all form/gameplay behavior; desktop is unchanged.
+- Keep the existing overflow/short-keyboard fallback for exceptional height, errors or enlarged content so controls cannot become inaccessible. Updated `DESIGN.md`; prior user-staged work preserved. Verification: `pnpm build` passed (exit 0, `mobile-setup-spacing-build.log`); staged/unstaged `git diff --check` passed. No tests, browser/device checks, staging/commit or branch switch; actual phone fit remains unverified.
+
+## 2026-10-16 — Restore the original phone profile preview above the form
+
+- `PlayerSetupDialog.vue` reuses its original player card beneath the heading on phones: large circular portrait/landing pad at left, live name plate and age chip at right, with the existing star-pattern background and mode accent. Removed the small footer preview and its styles. Full names can wrap; the phone preview retains its localized accessible group label.
+- Input steps scroll independently below the preview, keeping it visible in normal viewports and Start in the footer. Compact keyboard heights shrink the card; the existing extremely short-height fallback lets header/card/steps scroll with a sticky Start footer. Avatar/age rails, nickname/random-name sizing, validation and solo/Live starts remain unchanged. Desktop geometry is unchanged.
+- Updated `DESIGN.md`; prior user-staged work preserved. Verification: `pnpm build` passed (exit 0, `mobile-profile-preview-top-build.log`); staged/unstaged `git diff --check` passed. No tests, browser/device checks, staging/commit or branch switch; actual phone rendering remains unverified.
+
 ## 2026-10-16 — Refine phone profile/age rails and remove practice picker copy
 
 - `PracticeLevelDialog.vue` removes both requested explanatory paragraphs on every screen size, with obsolete description aria binding/id, CSS and unused i18n keys removed. Level selection/groups and practice behavior remain unchanged.

@@ -11,6 +11,7 @@ export const th = {
   "practice.badge": "โหมดฝึกซ้อม",
   "practice.chooseTitle": "เลือกเล่นโจทย์เดิม {count} ด่าน",
   "practice.chooseButton": "เลือกด่าน {count} ด่าน",
+  "practice.chooseShort": "เลือกด่าน",
   "practice.groupCount": "{count} ด่าน",
   "practice.concept.sequence": "Sequence and repeat loops",
   "practice.concept.conditionals": "Conditionals · If / Else",
