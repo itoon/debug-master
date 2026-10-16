@@ -13,7 +13,7 @@
       :mode="activeChallenge ?? undefined" :practice-intro-count="pendingPracticeIntro !== null ? practiceLevels.length : undefined" :repository="repositories.scores" :board="rankingBoard"
       :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
       @play="startFromTutorial" @home="backFromTutorial" @ranking="showChallengeRanking" @retry="retryScoreSave" />
-    <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" @cancel="showExitConfirm = false" @confirm="confirmExit" />
+    <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" :live="liveMode" @cancel="showExitConfirm = false" @confirm="confirmExit" />
     <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial" @start="liveJoin" @close="liveGoHome" />
     <LivePlayerPanel v-if="liveMode && liveStage !== 'setup' && liveStage !== 'running'" :stage="liveStage" :state="liveState" :self-id="liveSelfId"
       :countdown="liveCountdown" :queue-remaining-sec="liveQueueRemaining" :late-score-note="liveLateScore"
@@ -112,10 +112,11 @@
                   <button v-if="!campaignStarted && !practiceActive && !liveMode" type="button" class="hud-action primary-button small"
                     :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
                     @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
-                  <button v-if="!liveMode" type="button" class="hud-action soft-button small exit-action"
+                  <button v-if="!liveMode || compactLayout" type="button" class="hud-action soft-button small exit-action" :class="{ 'live-only-exit': liveMode }"
                     :disabled="exitSaving || practiceStarting"
-                    :title="campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
-                    @click="requestExit">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</button>
+                    :aria-label="liveMode ? t('live.leave') : pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu')"
+                    :title="liveMode ? t('live.leave') : campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
+                    @click="requestExit"><svg class="exit-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 4H4v16h5m6-12 4 4-4 4M8 12h11" /></svg><span class="exit-text">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</span></button>
                 </nav>
                 </Teleport>
                 <div class="touch-controls" :aria-label="t('game.controls')">
@@ -2138,7 +2139,8 @@ summary:focus-visible {
   box-shadow: var(--cv-shadow-window);
 }
 
-/* Read, look, press: code first, then the board with the D-pad under it. */
+/* Wider stacked layout: code, then board/D-pad. Phone overrides below put
+   map first, then code, then the full-width D-pad using the same DOM. */
 .play-cluster {
   flex: 1;
   min-height: 0;
@@ -2173,6 +2175,7 @@ summary:focus-visible {
 .board-panel .hud-action { min-height: 44px; min-width: 72px; padding: 0 12px; border-radius: 10px; font-size: .8rem; }
 .board-panel .hud-action.sound-toggle { min-width: 44px; width: 44px; padding: 0; }
 .board-panel .hud-action.exit-action { color: #c4d9ff; background: #122b5744; border-color: #759bd94d; }
+.exit-icon, .live-only-exit { display: none; }
 .exit-save-error { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border: 1px solid #f3bc76; border-radius: 12px; background: #412d36; color: #ffe2c1; font-size: .9rem; }
 .board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { display: inline-flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: .85rem; white-space: nowrap; }
 .practice-map-button svg, .superhint-button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -3035,6 +3038,27 @@ h2 {
 @media (max-width: 359px), (orientation: landscape) and (max-height: 560px) {
   .touch-controls { grid-template-columns: repeat(3, 60px); gap: 6px; }
   .arrow { width: 60px; height: 50px; font-size: 1.1rem; }
+}
+
+/* Phone experiment: map above code, with a full-width thumb pad below both.
+   Flatten layout wrappers only; the observed scroll viewports and input DOM
+   remain the same elements, including the teleported system actions. */
+@media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .board-panel { min-height: 560px; padding: 8px; gap: 6px; }
+  .play-cluster { position: relative; grid-template-columns: minmax(0, 1fr); grid-template-rows: clamp(120px, 22dvh, 180px) minmax(180px, 1fr) auto; gap: 8px; }
+  .board-wrap, .board-and-controls { display: contents; }
+  .board-combo { display: none; }
+  .board-viewport { grid-column: 1; grid-row: 1; }
+  .play-cluster .code-card { grid-column: 1; grid-row: 2; order: 0; height: 100%; }
+  .play-cluster .code-card :deep(.code-box) { max-height: none; }
+  .board-footer { grid-column: 1; grid-row: 3; align-self: end; }
+  .board-footer .touch-controls { grid-column: 1; grid-row: 1; width: 100%; justify-self: stretch; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: ". up ." "left down right"; gap: 6px; }
+  .touch-controls .arrow { width: 100%; min-width: 0; height: 52px; font-size: 1.15rem; }
+  .touch-controls :deep(.tap-finger) { right: 6px; bottom: 2px; width: 22px; height: 28px; }
+  .board-panel .hud-action.sound-toggle { display: none; }
+  .board-panel .hud-action.exit-action { display: inline-grid; place-items: center; width: 40px; min-width: 40px; min-height: 44px; padding: 0; }
+  .exit-action .exit-text { display: none; }
+  .exit-action .exit-icon { display: block; width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 }
 
 @media (prefers-reduced-motion: reduce) {

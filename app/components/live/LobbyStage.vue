@@ -79,7 +79,9 @@ figcaption { font-size: 1.8cqw; font-weight: 800; }
 .code { color: #ffdb58; font-size: 7.5cqw; font-weight: 900; line-height: 1.05; letter-spacing: .4cqw; text-shadow: 0 .5cqw 0 #8a5a00; overflow-wrap: anywhere; }
 .room .chip { display: inline-block; margin-top: 1.4cqw; padding: .7cqw 1.8cqw; border: 1px solid #6e9fe866; border-radius: 999px; background: #071e49d0; font-size: 1.7cqw; font-weight: 700; }
 .chip em { font-style: normal; color: #87dfff; }
-.brand-logo { --float-offset: clamp(3px, .65cqw, 12px); position: absolute; right: 4cqw; top: 4cqw; width: 38cqw; height: auto; object-fit: contain; pointer-events: none; animation: logo-float v-bind(logoFloatDuration) ease-in-out infinite; will-change: transform; }
+/* Match the QR/room grid's center after its 5cqw top / 15cqw bottom padding.
+   Individual translate keeps centering separate from the floating transform. */
+.brand-logo { --float-offset: clamp(3px, .65cqw, 12px); position: absolute; right: 4cqw; top: calc(50% - 5cqw); translate: 0 -50%; width: 38cqw; height: auto; object-fit: contain; pointer-events: none; animation: logo-float v-bind(logoFloatDuration) ease-in-out infinite; will-change: transform; }
 .startrow { position: absolute; left: 0; right: 0; bottom: 2.6cqw; display: flex; justify-content: center; gap: 1cqw; margin: 0; padding: 0; list-style: none; }
 .slot { position: relative; display: grid; justify-items: center; gap: .3cqw; width: 6.6cqw; font-size: 1.25cqw; font-weight: 700; }
 .slot.off { opacity: .45; }

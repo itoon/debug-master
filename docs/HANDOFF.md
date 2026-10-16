@@ -2,10 +2,29 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-16 — Prioritize phone code space and restore equal Up/Down widths
+
+- Phone `index.vue` grid keeps map above code but caps the secondary map at clamp(120px, 22dvh, 180px). Python/code now receives the remaining flexible space with a 180px minimum. Original observed viewports, smooth followers and short-window scroll fallback remain unchanged.
+- Up returns to the center column above Down, exactly the same width; Left/Down/Right continue dividing the available bottom width equally. Button height/handlers/guidance and desktop/tall-tablet rules remain unchanged. Updated `DESIGN.md`; earlier work preserved.
+- Verification: `pnpm build` passed (exit 0, `mobile-code-primary-build.log`); `git diff --check` passed. No tests or browser checks, staging/commit or branch switch.
+
+## 2026-10-16 — Vertically align the Live lobby logo with QR
+
+- `LobbyStage.vue` moves the logo's center onto the QR/room grid's vertical center, accounting for the existing asymmetric lobby padding. Independent CSS translate handles centering while the existing transform handles floating, preserving its 38cqw size and right offset. QR, room text, seats and realtime behavior remain unchanged.
+- Updated `DESIGN.md`; earlier phone-layout work preserved. Verification: `pnpm build` passed (exit 0, `live-lobby-logo-align-build.log`); `git diff --check` passed. No tests or browser checks, staging/commit or branch switch.
+
+## 2026-10-16 — Phone map-first experiment, wide D-pad and one-row HUD
+
+- Phone breakpoints (max-width 639px, or landscape up to 920px/560px) now show the Codi map above the code, with controls below both. `display: contents` flattens only the two layout wrappers; the original observed/scrollable board viewport, LevelCode, control ref, DOM input handlers and Teleport target remain intact. Map gets flexible space above a bounded clamp(136px, 25dvh, 220px) code row; a 560px panel minimum preserves readable scrollable fallback on short screens. Desktop/tall-tablet layout is unchanged.
+- D-pad fills the available width: Up spans the first row, Left/Down/Right share the second equally, 52px height and 6px gaps. Existing guidance hands move inside button bounds so they cannot overflow the viewport. Smooth Codi/code followers remain connected to their original viewport elements; no game movement/scoring/time changes.
+- `GameHud.vue` fits competitive profile/name, score, time and exit into one row, retaining full score/time values and allowing name ellipsis. Progress bar stays below; redundant progress/rank/level captions remain accessible but visually hidden on phones. Practice keeps its progress/map/SuperHint variant. Phone mute buttons hide, while sound behavior/preferences stay unchanged. Exit becomes a 40×44px icon with localized accessible name; desktop keeps text.
+- Phone Live running also exposes that exit icon through the existing requestExit/confirmExit/liveLeave path. `ExitConfirmDialog.vue` adds Live-specific copy so leaving does not promise a locally saved summary; existing room-leave behavior is unchanged. Non-Live confirmation variants retain their existing behavior.
+- Updated `DESIGN.md` and localized Live exit copy. Earlier work preserved; no tests, browser/device checks, staging/commit or branch switch. Verification: `pnpm build` passed (exit 0, `mobile-map-first-hud-build.log`); `git diff --check` passed; read-only source review found no concrete phone cascade/grid/follower or desktop/Live-exit regressions. Actual viewport rendering remains unverified.
+
 ## 2026-10-16 — Remove the mobile teaching caption
 
 - Removed the “กดตามมือ · ด่านสอน 1/2 / 2/2” caption, unused computed lesson number, CSS row and message key. The expected D-pad hand, direction arrow, code highlights and two-level teaching eligibility remain unchanged across solo/practice/Live. Updated `DESIGN.md`; prior working-tree changes preserved.
-- Verification pending: build/whitespace only; no tests or browser checks, staging/commit or branch switch.
+- Verification: `pnpm build` passed (exit 0, `mobile-remove-guide-caption-build.log`); `git diff --check` passed; source search found no remaining caption references in `app`. No tests or browser checks, staging/commit or branch switch.
 
 ## 2026-10-16 — Smooth mobile code and Codi viewport following
 
