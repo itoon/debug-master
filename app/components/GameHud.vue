@@ -146,12 +146,10 @@ h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-h
   .game-hud:not(.practice-hud) .score { grid-column: 3; grid-row: 2; }
   .game-hud:not(.practice-hud) .time { grid-column: 4; grid-row: 2; }
   .game-hud:not(.practice-hud) :is(.live-rank, .hearts) { grid-column: 2; grid-row: 2; }
-  .game-hud:not(.practice-hud) .progress-track { grid-column: 1 / -1; grid-row: 3; height: 6px; }
+  /* Keep 4px of fill after the track's 2px padding and 1px borders. */
+  .game-hud:not(.practice-hud) .progress-track { grid-column: 1 / -1; grid-row: 3; height: 10px; }
   /* Retain the heading for assistive technology while freeing visual space. */
   .level-info { position: absolute; width: 1px; height: 1px; min-width: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .practice-hud .mission-heading { display: flex; flex-wrap: wrap; }
-  .practice-hud .hud-system { margin-left: auto; }
-  .practice-actions { flex-basis: 100%; }
 }
 /* Wide enough for pilot and mission side by side (tablets, landscape phones). */
 @media (min-width: 640px) {
@@ -162,6 +160,16 @@ h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-h
 @media (min-width: 640px) and (max-width: 920px) {
   .pilot-info { flex-wrap: wrap; justify-content: flex-start; }
   .mission-heading { flex-wrap: wrap; }
+}
+/* Phone practice keeps progress/system actions above two compact hint tools. */
+@media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .game-hud.practice-hud, .practice-hud .mission-info { gap: 4px; }
+  .practice-hud .mission-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
+  .practice-hud .level-info { position: absolute; width: 1px; height: 1px; min-width: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .practice-hud .progress-info { grid-column: 1; grid-row: 1; justify-self: start; }
+  .practice-hud .hud-system { grid-column: 2; grid-row: 1; justify-content: flex-end; }
+  .practice-hud .practice-actions { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .practice-hud .progress-track { height: 10px; }
 }
 /* Desktop: the full HUD with captions and large metrics. */
 @media (min-width: 921px) and (min-height: 561px) {

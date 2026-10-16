@@ -126,6 +126,7 @@
           </div>
 
           <LevelCode
+            :class="{ 'python-code': displayLanguage === 'python' }"
             :level="currentLevel"
             :language="displayLanguage"
             :title="t('game.readCode', { language: languageLabel })"
@@ -2904,6 +2905,11 @@ h2 {
 
 /* The phone composition gives the program and map the space removed from
    the verbose level header; values and existing system actions stay visible. */
+@media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .play-cluster .code-card.python-code :deep(.code-box) { font-size: .875rem; }
+  .board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { width: 100%; min-width: 0; min-height: 44px; padding: 6px 8px; gap: 5px; font-size: .7rem; line-height: 1.2; white-space: normal; }
+  .practice-map-button svg, .superhint-button svg { flex: none; width: 16px; height: 16px; }
+}
 @media (max-width: 639px) {
   .board-panel { padding: 8px; gap: 6px; }
   .play-cluster { grid-template-rows: clamp(156px, 30dvh, 260px) minmax(0, 1fr); gap: 6px; }

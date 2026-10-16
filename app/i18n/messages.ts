@@ -1,5 +1,7 @@
 export const th = {
   "sleep.wake": "คลิก เลื่อนหน้าจอ หรือกด Space เพื่อเริ่มเล่น",
+  "sleep.wakeTouch": "แตะหรือปัดขึ้นเพื่อเริ่มเล่น",
+  "sleep.open": "เปิดหน้าเลือกโหมด",
   "sleep.back": "หน้าพัก",
   "asset.sleepLogo": "Logo",
   "asset.sleepLogoUsage": "หน้าโลโก้เต็มจอก่อนเลือกโหมด ลอยขึ้นลงแล้วเลื่อนขึ้นเมื่อมี interaction",

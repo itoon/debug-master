@@ -2,6 +2,33 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-16 — Compact practice HUD matching the phone layout
+
+- `GameHud.vue` gives phone practice an explicit two-row grid: progress left and original teleported sound/exit right; equal-width Map/SuperHint actions beneath. Reduced internal gaps to 4px bring the visible 10px progress track up toward the buttons. Level/context remain available to assistive technology.
+- `index.vue` styles those phone actions at 0.7rem with 16px icons, full column width and 44px minimum touch height. Narrow labels may wrap instead of overflowing. Uses the same portrait/short-landscape phone query as other recent changes; desktop practice and competitive/Live HUD are untouched. No game, hint-toggle, picker, progress-data, score, clock or room-flow changes.
+- Updated `DESIGN.md`; existing working-tree changes preserved. Verification: `pnpm build` passed (exit 0, `mobile-practice-hud-build.log`); `git diff --check` passed. No tests or browser/device checks. No staging/commit or branch switch.
+
+## 2026-10-16 — Restore the phone HUD progress fill
+
+- Root cause in `GameHud.vue`: phone non-practice track was a 6px border-box with 2px vertical padding and 1px borders, leaving zero content height for its 100%-height fill. Changed this phone-only track to 10px, leaving 4px of visible cyan fill. Existing ratio/animation/ARIA and gameplay progress data remain unchanged; practice and wider HUD rules are untouched.
+- Updated `DESIGN.md`, preserved earlier working-tree changes. Verification: `pnpm build` passed (exit 0, `mobile-progress-fill-build.log`); `git diff --check` passed. No tests or device/browser checks. No staging/commit or branch switch.
+
+## 2026-10-16 — Smaller gameplay Python text on phones
+
+- `index.vue` adds a Python-only presentation class and scoped 0.875rem code-font override at the compact phone breakpoints (portrait max-width 639px; landscape max-width 920px/max-height 560px). Default phone code changes from 16px to 14px, including solo/practice/Live gameplay. Header, line-height, scrolling/highlights, desktop/tablet, JavaScript and separate training/review code remain unchanged.
+- Updated `DESIGN.md`; prior working-tree edits preserved. Verification: `pnpm build` passed (exit 0, `mobile-python-font-build.log`); `git diff --check` passed. No tests or device/browser checks. No staging/commit or branch switch.
+
+## 2026-10-16 — Hide the summary ranking action on phones
+
+- `SessionPanel.vue` hides only the summary's View mode ranking button at the same portrait/landscape phone breakpoints as the compact Home picker. Desktop retains it; CSS also removes it from mobile keyboard/accessibility navigation. Result metrics, Home/retry actions, storage, score rules and Live standings remain unchanged.
+- Verification: `pnpm build` passed (exit 0, `mobile-summary-ranking-build.log`); `git diff --check` passed. No tests or device/browser checks. Prior rest-screen changes preserved; no staging/commit or branch switch.
+
+## 2026-10-16 — Touch instructions and swipe-up on the rest screen
+
+- `HomeSleepScreen.vue` shows “แตะหรือปัดขึ้นเพื่อเริ่มเล่น” on phones (max-width 639px) and coarse-pointer devices, with no keyboard hint. Desktop keeps its existing click/wheel/Space prompt; localized labels live in `messages.ts`.
+- Added single-touch tap/upward-swipe detection (40px minimum, vertical-dominant); horizontal/downward/multi-touch/cancelled gestures do not wake. Touch-end prevents duplicate synthetic clicks, the existing waking guard emits once, and pinch zoom remains available. Uses the original logo/card transition with no gameplay, room, score, timer or level-data changes.
+- Verification: `pnpm build` passed (exit 0, `sleep-touch-build.log`); `git diff --check` passed. No tests or browser/device checks under the standing instruction; actual touch behavior remains unverified on-device. No staging/commit or branch switch.
+
 ## 2026-10-16 — Four visible Home choices on backup phones
 
 - `HomeV2.vue` fixes the source of the oversized phone Home: old responsive CSS set every card to 690px (760px on wider narrow screens). The compact picker now divides the available grid height into three thumbnail banners with 104px minima, plus a 44px practice action alongside Rest. Compact landscape puts the banners in one row with 132px minima. Query: max-width 639px, or landscape max-width 920px/max-height 560px; 380px portrait/220px landscape panel floors allow short-window fallback scrolling. Count-1/count-2 settings and empty/populated card classes have explicit compatible overrides.

@@ -147,7 +147,7 @@
           <button type="button" class="main-action" :disabled="saving" @click="emit('home')">
             {{ t('flow.home') }}
           </button>
-          <button type="button" class="text-action" @click="emit('ranking')">
+          <button type="button" class="text-action summary-ranking-action" @click="emit('ranking')">
             {{ t('summary.leaderboard') }}
           </button>
         </div>
@@ -796,6 +796,9 @@ button:disabled {
   .ranking-panel .main-action svg {
     transition: none;
   }
+}
+@media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .summary-ranking-action { display: none; }
 }
 @media (max-width: 500px) {
   .summary-metrics,
