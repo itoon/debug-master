@@ -131,6 +131,8 @@ export const th = {
   "game.notificationTitle": "แจ้งเตือน",
   "game.readCode": "อ่านโปรแกรม · {language}",
   "game.controls": "ปุ่มลูกศรควบคุมการเดิน",
+  "game.boardViewport": "กระดานด่าน {level} เลื่อนเพื่อดูช่องที่อยู่นอกจอ",
+  "game.scrollCode": "ปัดอ่านโค้ด ↕",
   "game.up": "เดินขึ้น (↑ / W)",
   "game.left": "เดินซ้าย (← / A)",
   "game.down": "เดินลง (↓ / S)",

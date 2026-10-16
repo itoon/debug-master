@@ -3,13 +3,16 @@
     <div class="window-bar">
       <span class="window-dots" aria-hidden="true"><i /><i /><i /></span>
       <h2>{{ title }}</h2>
+      <span v-if="scrollHint" class="code-scroll-hint">{{ t('game.scrollCode') }}</span>
     </div>
 
     <pre
       ref="codeBox"
       class="code-box"
+      :class="{ 'game-scrollbar': readable }"
       :style="codeBoxStyle"
       :aria-label="`Level ${level.id} code`"
+      :tabindex="readable ? 0 : undefined"
     ><code><span
       v-for="entry in codeLineEntries"
       :key="`${level.id}-${entry.index}`"
@@ -78,6 +81,8 @@ const props = withDefaults(
     lineNumbers?: boolean;
     /** Gameplay keeps readable text and scrolls instead of shrinking long code. */
     readable?: boolean;
+    /** Compact gameplay cue; tutorial/review keep their existing header. */
+    scrollHint?: boolean;
     /** Highlights a source line (the game uses it in Debug Mode). */
     isActiveLine?: (line: string, index: number) => boolean;
     /** Follow teaching hints within the code viewport only. */
@@ -88,6 +93,7 @@ const props = withDefaults(
     title: "Read the program",
     lineNumbers: false,
     readable: false,
+    scrollHint: false,
     isActiveLine: undefined,
     followActiveLine: false,
   },
@@ -98,6 +104,14 @@ const { codeLineEntries, codeBoxStyle } = useCodePresentation(
   computed(() => props.language),
 );
 const codeBox = ref<HTMLPreElement | null>(null);
+// A new program starts at its first line, not the previous level's scroll.
+// Teaching mode retains ownership of scrolling to its active source line.
+watch(() => props.level, () => {
+  if (props.readable && !props.followActiveLine && codeBox.value) {
+    codeBox.value.scrollTop = 0;
+    codeBox.value.scrollLeft = 0;
+  }
+}, { flush: 'post' });
 const activeLineIndex = computed(() => props.followActiveLine
   ? codeLineEntries.value.findIndex(entry => props.isActiveLine?.(entry.line, entry.index))
   : -1);
@@ -120,8 +134,14 @@ watch([() => props.followActiveLine, () => props.level, activeLineIndex], async 
 </script>
 
 <style scoped>
-.code-card-readable .code-box { font-size: clamp(1rem, 1.15vw, 1.3rem); line-height: 1.65; overflow: auto; padding: 16px 0; }
+.code-card-readable .code-box { min-width: 0; max-width: 100%; font-size: clamp(1rem, 1.15vw, 1.3rem); line-height: 1.65; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; padding: 16px 0; }
+.code-card-readable .code-box:focus-visible { outline: 2px solid var(--cv-yellow); outline-offset: -2px; }
 .code-card-readable .code-line { white-space: pre; flex-wrap: nowrap; width: max-content; min-width: 100%; padding: 0 18px; }
 .code-card-readable .code-token { white-space: pre; flex: none; }
 .code-card-readable .window-bar { padding: 14px 18px; }
+.code-card-readable .window-bar h2 { min-width: 0; overflow-wrap: anywhere; }
+.code-scroll-hint { flex: none; margin-left: auto; color: #bdd6ff; font: 700 .65rem/1.3 var(--cv-font); white-space: nowrap; }
+@media (min-width: 921px) and (min-height: 561px) {
+  .code-scroll-hint { display: none; }
+}
 </style>

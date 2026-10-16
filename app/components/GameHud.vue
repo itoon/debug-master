@@ -121,11 +121,31 @@ h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-h
 .practice-hud .progress-info { text-align: center; }
 .practice-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 
+/* Room play adds an extra rank metric. Reserve space for every value before
+   the optional long nickname; do not let it widen a phone's viewport. */
+@media (max-width: 639px) {
+  .pilot-info { gap: 6px; }
+  .player-profile { gap: 5px; padding-right: 6px; }
+  .player-profile img { width: 30px; height: 30px; }
+  .player-profile strong { font-size: .9rem; }
+  .metrics { gap: 4px; }
+  .metric { min-width: 52px; padding: 6px; }
+  .metric strong { font-size: clamp(.95rem, 4vw, 1.2rem); }
+  .mission-heading { flex-wrap: wrap; gap: 6px; }
+  .level-info { flex: 1; min-width: min(160px, 100%); }
+  .practice-hud .level-info { min-width: 0; }
+  .level-number { font-size: 1.15rem; }
+  .level-title { font-size: .85rem; }
+}
 /* Wide enough for pilot and mission side by side (tablets, landscape phones). */
 @media (min-width: 640px) {
-  .game-hud { grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: 16px; }
+  .game-hud { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 16px; }
   .practice-hud .mission-heading { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 16px; }
   .practice-actions { grid-column: auto; }
+}
+@media (min-width: 640px) and (max-width: 920px) {
+  .pilot-info { flex-wrap: wrap; justify-content: flex-start; }
+  .mission-heading { flex-wrap: wrap; }
 }
 /* Desktop: the full HUD with captions and large metrics. */
 @media (min-width: 921px) and (min-height: 561px) {

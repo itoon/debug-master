@@ -40,11 +40,8 @@
           <button type="button" class="soft-button small" :disabled="exitSaving" @click="exitGame">{{ t('game.retryExit') }}</button>
         </div>
 
-        <div class="play-cluster" :style="{
-          '--minimum-board-height': `${currentLevel.rows * 24 + Math.max(0, currentLevel.rows - 1) * 5 + 24}px`,
-          '--board-reserved-height': `${boardReservedHeight}px`,
-        }">
-          <div ref="boardWrapEl" class="board-wrap">
+        <div class="play-cluster">
+          <div class="board-wrap">
             <div
               v-if="notificationMessage && status !== 'success'"
               class="notification"
@@ -56,7 +53,8 @@
             </div>
             <p v-if="practiceSuperHint && practiceActive && practiceHintSolution?.error && !notificationMessage" class="notification" role="alert">{{ t('practice.pathError') }}</p>
             <div class="board-and-controls">
-              <p ref="instructionEl" class="board-combo" :role="practiceActive ? 'status' : undefined"><span v-if="practiceActive && (status === 'success' || status === 'completed')" class="practice-passed">✓ {{ t('practice.passed') }}</span><span v-else-if="!practiceActive && comboStreak > 1" :key="comboStreak" class="combo-pop" :class="{ 'combo-hot': comboStreak >= 5 }">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
+              <p class="board-combo" :role="practiceActive ? 'status' : undefined"><span v-if="practiceActive && (status === 'success' || status === 'completed')" class="practice-passed">✓ {{ t('practice.passed') }}</span><span v-else-if="!practiceActive && comboStreak > 1" :key="comboStreak" class="combo-pop" :class="{ 'combo-hot': comboStreak >= 5 }">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
+              <div ref="boardViewportEl" class="board-viewport game-scrollbar" role="region" :aria-label="t('game.boardViewport', { level: currentLevel.id })" tabindex="0">
               <LevelBoard
                 :key="boardRound"
                 :level="currentLevel"
@@ -96,6 +94,7 @@
                   <NextMoveHint v-if="practiceActive && practiceSuperHint && canControl && !showExitConfirm && expectedMove" :direction="expectedMove.direction" />
                 </div>
               </LevelBoard>
+              </div>
               <div ref="controlsEl" class="board-footer">
                 <!-- On phones and tablets these system buttons move up into the HUD so
                      they never sit beside the D-pad under the player's thumb. -->
@@ -129,6 +128,7 @@
             :language="displayLanguage"
             :title="t('game.readCode', { language: languageLabel })"
             :readable="true"
+            scroll-hint
             :is-active-line="isGameCodeLineActive"
             :follow-active-line="practiceActive && practiceSuperHint"
           />
@@ -514,11 +514,9 @@ const currentLevel = computed(
 );
 const { parseProgram } = useProgramParser(() => currentLevel.value.id);
 // The board area is measured so tiles scale to fill it (see fitCellSize).
-const boardWrapEl = ref<HTMLElement | null>(null);
+const boardViewportEl = ref<HTMLElement | null>(null);
 const controlsEl = ref<HTMLElement | null>(null);
-const instructionEl = ref<HTMLElement | null>(null);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
-const boardReservedHeight = ref(0);
 // Matches the desktop layout query in the styles below; anything smaller is
 // the compact (phone/tablet) layout with sound and exit in the HUD.
 const compactLayout = ref(false);
@@ -537,6 +535,12 @@ const player = reactive({
 const playerHop = ref(0);
 // Remounts the board each round so its tiles cascade in after a start, retry or clear.
 const boardRound = ref(0);
+// Panning a large map never carries into a new level or a fresh attempt.
+watch(boardRound, () => {
+  if (!boardViewportEl.value) return;
+  boardViewportEl.value.scrollTop = 0;
+  boardViewportEl.value.scrollLeft = 0;
+}, { flush: 'post' });
 const playerWarped = ref(false);
 // Edge wrap: a copy of Codi slides out past the edge it left while the real
 // actor slides in from the opposite edge, so a wrap reads as one ordinary step.
@@ -1886,26 +1890,18 @@ onMounted(async () => {
   desktopQuery = window.matchMedia("(min-width: 921px) and (min-height: 561px)");
   syncCompactLayout();
   desktopQuery.addEventListener("change", syncCompactLayout);
-  if (boardWrapEl.value) {
+  if (boardViewportEl.value) {
     boardResizeObserver = new ResizeObserver(() => {
-      const area = boardWrapEl.value;
+      const area = boardViewportEl.value;
       if (!area) return;
-      // Measure the available stage, then reserve the real footer/combo
-      // heights and two 12px gaps. The board remains adjacent to the D-pad.
-      // Landscape phones put the footer beside the board (CSS sets
-      // --footer-beside), so its width is reserved instead of its height.
-      const beside = getComputedStyle(area).getPropertyValue("--footer-beside").trim() === "1";
-      const footerHeight = beside ? 0 : (controlsEl.value?.offsetHeight ?? 0) + 12;
-      const footerWidth = beside ? (controlsEl.value?.offsetWidth ?? 0) + 12 : 0;
-      boardReservedHeight.value = footerHeight + (instructionEl.value?.offsetHeight ?? 0) + 24;
+      // Measure only the board's actual viewport, excluding its 6px padding.
+      // CSS reserves HUD/code/controls; oversized 24px-cell maps scroll here.
       boardSpace.value = {
-        width: Math.max(0, area.clientWidth - 12 - footerWidth),
-        height: Math.max(0, area.clientHeight - boardReservedHeight.value),
+        width: Math.max(0, area.clientWidth - 12),
+        height: Math.max(0, area.clientHeight - 12),
       };
     });
-    boardResizeObserver.observe(boardWrapEl.value);
-    if (controlsEl.value) boardResizeObserver.observe(controlsEl.value);
-    if (instructionEl.value) boardResizeObserver.observe(instructionEl.value);
+    boardResizeObserver.observe(boardViewportEl.value);
   }
 });
 
@@ -1971,12 +1967,11 @@ summary:focus-visible {
 
 /* ---------- Shell: navy hero background like codeventure.app ---------- */
 
-/* Layout is mobile first: base rules fit a portrait phone on one screen
-   (code above the board, D-pad at the bottom). Landscape phones put code
-   beside the board; desktop restores the two-column game. */
+/* Portrait phones reserve bounded code/board viewports and a separate D-pad.
+   Exceptionally short screens can scroll the game instead of clipping it. */
 .app-shell {
   height: 100dvh;
-  padding: 8px;
+  padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   overflow-y: auto;
   background: var(--cv-navy-900) url("~/assets/bg.png") center bottom / cover
     no-repeat;
@@ -2006,12 +2001,14 @@ summary:focus-visible {
   grid-template-columns: 1fr;
   height: 100%;
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
 }
 
 .board-panel {
   min-width: 0;
-  min-height: 100%;
+  height: 100%;
+  min-height: 620px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2032,9 +2029,9 @@ summary:focus-visible {
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  /* The board keeps its minimum readable size; the code window gives up
-     height first (down to about three lines) and scrolls inside. */
-  grid-template-rows: minmax(120px, auto) minmax(calc(var(--minimum-board-height) + var(--board-reserved-height)), 1fr);
+  /* The program scrolls at readable size; map dimensions cannot grow either
+     row or push the D-pad out of the available game area. */
+  grid-template-rows: clamp(136px, 25dvh, 220px) minmax(0, 1fr);
   gap: 8px;
   align-items: stretch;
   justify-content: center;
@@ -2051,7 +2048,7 @@ summary:focus-visible {
 }
 .play-cluster .code-card :deep(.window-bar) { padding: 8px 14px; }
 .play-cluster .code-card :deep(.window-bar h2) { font-size: .8rem; }
-.play-cluster .code-card :deep(.code-box) { max-height: min(30dvh, 240px); padding: 10px 0; }
+.play-cluster .code-card :deep(.code-box) { padding: 10px 0; }
 .play-cluster .code-card { overflow: hidden; }
 
 .sound-toggle { display: inline-grid; place-items: center; flex: none; width: 44px; min-height: 44px; padding: 0; border: 1px solid #759bd966; border-radius: 10px; background: #14357499; color: #e4edff; }
@@ -2131,21 +2128,25 @@ h2 {
 @keyframes combo-punch { 0% { transform: scale(.6); opacity: 0; } 45% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); } }
 @keyframes passed-pop { from { transform: scale(.5); opacity: 0; } }
 
-/* fitCellSize keeps 24px cells, 5px gaps, 10px padding and 2px borders:
-   never squeeze the board below that plus the measured footer; the game
-   scrolls instead on very short screens. */
+/* fitCellSize retains its original 24px tile minimum. If a map cannot fit at
+   that size, only its viewport pans; controls are never part of that scroll. */
 .board-wrap {
-  min-height: calc(var(--minimum-board-height) + var(--board-reserved-height));
+  min-height: 0;
+  min-width: 0;
   display: grid;
   place-items: center;
   position: relative;
   justify-self: center;
   width: 100%;
   height: 100%;
-  padding: 6px;
 }
 
-.board-and-controls { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.board-and-controls { display: grid; grid-template-rows: auto minmax(80px, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.board-viewport { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 6px; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; border-radius: var(--cv-radius-lg); }
+/* Auto margins center fitting maps and become zero on an overflowing axis,
+   so the first row/column stays reachable from the scroll origin. */
+.board-viewport > .board { flex: none; max-width: none; max-height: none; margin: auto; }
+.board-viewport:focus-visible { outline: 2px solid var(--cv-yellow); outline-offset: -2px; }
 /* Thumb zone: the D-pad alone, centred. Sound/exit live in the HUD here
    (teleported); desktop brings them back beside the D-pad. */
 .board-footer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: end; width: 100%; }
@@ -2848,23 +2849,23 @@ h2 {
   }
 }
 
-/* Landscape phones: the screen is short, so code moves beside the board and
-   the D-pad beside the board (the resize observer reserves width instead). */
-@media (orientation: landscape) and (max-height: 560px) {
+/* Wide landscape phones put code and the D-pad beside the board. Narrow
+   landscape windows keep the stacked, scrollable layout so tiles have width. */
+@media (min-width: 640px) and (orientation: landscape) and (max-height: 560px) {
+  .board-panel { min-height: 300px; }
   .play-cluster { grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.7fr); grid-template-rows: minmax(0, 1fr); }
   .play-cluster .code-card { order: 0; height: 100%; }
   .play-cluster .code-card :deep(.code-box) { max-height: none; }
-  .board-wrap { --footer-beside: 1; min-height: calc(var(--minimum-board-height) + var(--board-reserved-height)); }
   .board-and-controls { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); }
   .board-combo { grid-column: 1 / -1; }
-  .board-and-controls > .board { grid-column: 1; grid-row: 2; }
+  .board-viewport { grid-column: 1; grid-row: 2; }
   .board-footer { grid-column: 2; grid-row: 2; grid-template-columns: auto; justify-items: center; align-self: end; }
   .board-footer .touch-controls { grid-column: 1; grid-row: 1; }
 }
 
 /* Desktop: board and D-pad on the left, code on the right. */
 @media (min-width: 921px) and (min-height: 561px) {
-  .app-shell { padding: 14px; overflow: hidden; }
+  .app-shell { padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); overflow: hidden; }
   .board-panel { height: 100%; min-height: 0; gap: 10px; padding: 14px; border-radius: var(--cv-radius-xl); }
   .play-cluster { min-height: 320px; grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr); grid-template-rows: none; gap: 16px; }
   .play-cluster .code-card { order: 0; height: 100%; max-height: 100%; }
