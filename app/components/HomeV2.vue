@@ -374,7 +374,9 @@ onMounted(() => {
   window.addEventListener("resize", recenterCards);
 });
 watch([enabledModes, () => props.busy], ([modes, busy]) => {
-  if (!selectedMode.value || modes.some(mode => mode.id === selectedMode.value?.id) || busy) return;
+  const selected = selectedMode.value;
+  if (!selected || busy) return;
+  if (modes.some(mode => mode.id === selected.id && mode.timeLimit === selected.timeLimit)) return;
   motionToken += 1;
   cancelCardMotion();
   setupMode.value = null;

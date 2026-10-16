@@ -2,6 +2,13 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-16 — Five-minute defaults and one shared competition-time setting
+
+- User confirmed one time setting shared by Beginner/Intermediate/Pro. `home-config.ts` defaults all three to 300 seconds and defines shared whole-minute validation (1–15). `/modes` adds an explicit Save duration form, inline bounds/error/status, updated saved duration on all three rows and reset/recovery; labels use i18n. The setting applies to new solo rounds on this device.
+- Extended the existing mode-settings repository/composable with `durationSec`/`saveDuration`, a separate namespaced `mode-duration` envelope and multi-key subscriptions. Original enabled-mode arrays/schema, score/profile keys and data remain unchanged. All mode/time/reset writes use the existing common modes lock (including HTTP coordination); Reset clears both settings. Home cards and launch snapshots resolve the stored duration; stale open selections close on time changes and launch rechecks reject a mismatched displayed duration. Running rounds retain their captured time; original duration-based ranking separation remains.
+- Live's shared protocol constants now default new rooms to 5 minutes and offer 5/10/15 presets; existing custom host time controls still accept 1–15 minutes. Persisted room durations are not overwritten, and `/modes` does not control Live rooms. No runner, scoring formula, authored levels, room commands, timer implementation or score-history changes. Updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `competition-time-settings-build.log`), `pnpm --dir live-server typecheck` passed, and `git diff --check` passed. Read-only source review found no concrete persistence/start/ranking/Live-state defect. It identified the existing `tests/live/protocol.test.ts:25` assertion still expecting [480,600,900]; the intentional new presets are [300,600,900]. This assertion needs updating before the suite can pass; it was left unchanged because the user explicitly forbids writing/running tests. No tests, browser/device checks, staging/commit or branch switch; runtime settings/phone behavior remain unverified.
+
 ## 2026-10-16 — Match phone practice HUD proportions to reference
 
 - Rebalanced the one-row phone practice HUD to the user's image: small progress box at left, equal Map/SuperHint middle buttons, then exit. `GameHud.vue` uses .8fr/2.2fr/40px columns (64px progress minimum), 6px gutters and a 4px progress caption/value gap. Controls share 44px heights.

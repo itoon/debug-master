@@ -1,5 +1,10 @@
 export type ChallengeId = "A" | "B" | "C";
 
+export const competitionTime = { defaultSeconds: 300, minMinutes: 1, maxMinutes: 15 } as const;
+export function isCompetitionTime(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value / 60) && value >= competitionTime.minMinutes * 60 && value <= competitionTime.maxMinutes * 60;
+}
+
 export type ChallengeMode = {
   id: ChallengeId;
   /** Default only: the team can switch modes on and off at /modes (saved on this device). */
@@ -7,7 +12,7 @@ export type ChallengeMode = {
   nameKey: "mode.A" | "mode.B" | "mode.C";
   levelRange: readonly [number, number];
   levelSetId: string;
-  /** Seconds. Placeholder until the booth playthrough; maximum 15 minutes. */
+  /** Seconds. Defaults to five minutes; staff can configure whole minutes at /modes. */
   timeLimit: number;
   challengeId: ChallengeId;
   thumbnail: string;
@@ -25,9 +30,9 @@ export const homeConfig = {
   ages: Array.from({ length: 14 }, (_, index) => index + 5),
   leaderboardScroll: { pixelsPerSecond: 18, returnPixelsPerSecond: 12, startPauseMs: 1400, endPauseMs: 1800, interactionPauseMs: 3000 },
   modes: [
-    { id: "A", enabled: true, nameKey: "mode.A", levelRange: [1, 50], levelSetId: "challenge-beginner", timeLimit: 900, challengeId: "A", thumbnail: "thumbnail-game-1.png" },
-    { id: "B", enabled: true, nameKey: "mode.B", levelRange: [1, 50], levelSetId: "challenge-intermediate", timeLimit: 900, challengeId: "B", thumbnail: "thumbnail-game-2.png" },
-    { id: "C", enabled: true, nameKey: "mode.C", levelRange: [1, 50], levelSetId: "challenge-pro", timeLimit: 900, challengeId: "C", thumbnail: "thumbnail-game-3.png" },
+    { id: "A", enabled: true, nameKey: "mode.A", levelRange: [1, 50], levelSetId: "challenge-beginner", timeLimit: competitionTime.defaultSeconds, challengeId: "A", thumbnail: "thumbnail-game-1.png" },
+    { id: "B", enabled: true, nameKey: "mode.B", levelRange: [1, 50], levelSetId: "challenge-intermediate", timeLimit: competitionTime.defaultSeconds, challengeId: "B", thumbnail: "thumbnail-game-2.png" },
+    { id: "C", enabled: true, nameKey: "mode.C", levelRange: [1, 50], levelSetId: "challenge-pro", timeLimit: competitionTime.defaultSeconds, challengeId: "C", thumbnail: "thumbnail-game-3.png" },
   ] satisfies ChallengeMode[],
 } as const;
 
@@ -35,8 +40,9 @@ export const CHALLENGE_IDS: readonly ChallengeId[] = homeConfig.modes.map((mode)
 export const defaultEnabledIds: readonly ChallengeId[] = homeConfig.modes.filter((mode) => mode.enabled).map((mode) => mode.id);
 
 /** Configured modes that are switched on, in config order. Never empty: falls back to the defaults. */
-export function enabledModesFor(ids: readonly ChallengeId[] | undefined): ChallengeMode[] {
+export function enabledModesFor(ids: readonly ChallengeId[] | undefined, durationSec?: number): ChallengeMode[] {
   const valid = ids?.filter((id) => CHALLENGE_IDS.includes(id)) ?? [];
   const chosen = valid.length ? valid : defaultEnabledIds;
-  return homeConfig.modes.filter((mode) => chosen.includes(mode.id));
+  return homeConfig.modes.filter((mode) => chosen.includes(mode.id))
+    .map(mode => ({ ...mode, timeLimit: isCompetitionTime(durationSec) ? durationSec : mode.timeLimit }));
 }

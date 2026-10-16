@@ -1,6 +1,6 @@
 import type { Score } from "../types/debug-game";
 import { todayRanking, scorePlayerKey, hasRankingScore, isOnBoard, bangkokDay, type RankingBoard } from "../utils/ranking";
-import { CHALLENGE_IDS, type ChallengeId } from "../data/home-config";
+import { CHALLENGE_IDS, isCompetitionTime, type ChallengeId } from "../data/home-config";
 import type { ModeSettingsRepository, PlayerProfile, PlayerRepository, ScoreRepository } from "./contracts";
 
 const SCHEMA_VERSION = 1;
@@ -77,9 +77,10 @@ export class LocalStorageAdapter {
     window.dispatchEvent(new Event(CHANGE_EVENT));
   }
 
-  subscribe(listener: () => void, key = "scores"): () => void {
+  subscribe(listener: () => void, key: string | readonly string[] = "scores"): () => void {
+    const keys = typeof key === 'string' ? [key] : key;
     const onStorage = (event: StorageEvent) => {
-      if (event.key === null || event.key === NAMESPACE + key) listener();
+      if (event.key === null || keys.some(item => event.key === NAMESPACE + item)) listener();
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener(CHANGE_EVENT, listener);
@@ -164,12 +165,24 @@ function validModeIds(value: unknown): value is ChallengeId[] | undefined {
 export class LocalModeSettingsRepository implements ModeSettingsRepository {
   constructor(private readonly adapter: LocalStorageAdapter) {}
   enabledIds(): ChallengeId[] | undefined { return this.adapter.read("modes", undefined, validModeIds); }
+  durationSec(): number | undefined {
+    return this.adapter.read<number | undefined>('mode-duration', undefined, (value): value is number | undefined => value === undefined || isCompetitionTime(value));
+  }
   save(ids: ChallengeId[]): Promise<void> {
     if (!ids.length || !validModeIds(ids)) return Promise.reject(new Error("At least one valid mode must stay enabled"));
     return this.adapter.mutate("modes", () => this.adapter.write("modes", [...new Set(ids)]));
   }
-  reset(): Promise<void> { return this.adapter.mutate("modes", () => this.adapter.remove("modes")); }
-  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, "modes"); }
+  saveDuration(seconds: number): Promise<void> {
+    if (!isCompetitionTime(seconds)) return Promise.reject(new Error('Competition time must be whole minutes within the configured range'));
+    return this.adapter.mutate('modes', () => this.adapter.write('mode-duration', seconds));
+  }
+  reset(): Promise<void> {
+    return this.adapter.mutate('modes', () => {
+      this.adapter.remove('mode-duration');
+      this.adapter.remove('modes');
+    });
+  }
+  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, ['modes', 'mode-duration']); }
 }
 
 export function createLocalRepositories() {

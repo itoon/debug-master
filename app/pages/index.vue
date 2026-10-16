@@ -907,9 +907,12 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
     }
   }
   let savedModeIds;
-  try { savedModeIds = repositories.modes.enabledIds(); } catch { savedModeIds = undefined; }
-  const configuredMode = enabledModesFor(savedModeIds).find((item) => item.id === mode.id);
+  let savedDuration;
+  try { savedModeIds = repositories.modes.enabledIds(); savedDuration = repositories.modes.durationSec(); }
+  catch { savedModeIds = undefined; savedDuration = undefined; }
+  const configuredMode = enabledModesFor(savedModeIds, savedDuration).find((item) => item.id === mode.id);
   if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900 || !challengeSets.some((set) => set.id === configuredMode.levelSetId)) return;
+  if (configuredMode.timeLimit !== mode.timeLimit) { homeStorageError.value = t('modes.durationChanged'); return; }
   let playerId: string;
   const token = ++sessionToken;
   homeStarting.value = true;

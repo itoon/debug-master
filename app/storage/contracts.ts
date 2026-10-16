@@ -24,7 +24,10 @@ export interface ScoreRepository {
 export interface ModeSettingsRepository {
   /** Modes switched on at /modes, or undefined when the team kept the home-config defaults. */
   enabledIds(): ChallengeId[] | undefined;
+  /** Shared solo competition duration; undefined uses the five-minute config default. */
+  durationSec(): number | undefined;
   save(ids: ChallengeId[]): Promise<void>;
+  saveDuration(seconds: number): Promise<void>;
   reset(): Promise<void>;
   subscribe(listener: () => void): () => void;
 }
