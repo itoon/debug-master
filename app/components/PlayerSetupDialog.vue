@@ -1,8 +1,8 @@
 <template>
-  <dialog ref="dialog" class="player-setup-dialog game-scrollbar" :class="[`setup-mode-${mode.id}`, { 'is-closing': isClosing }]"
-    :style="{ '--popup-in-ms': `${homeConfig.modeMotion.popupInMs}ms`, '--popup-out-ms': `${homeConfig.modeMotion.popupOutMs}ms` }"
+  <dialog ref="dialog" class="player-setup-dialog game-scrollbar" :class="[`setup-mode-${mode.id}`, { 'is-closing': isClosing, 'compact-height': mobileSetup && visibleHeight < 440, 'scrolling-form': mobileSetup && visibleHeight < 340 }]"
+    :style="{ '--popup-in-ms': `${homeConfig.modeMotion.popupInMs}ms`, '--popup-out-ms': `${homeConfig.modeMotion.popupOutMs}ms`, '--setup-visible-height': `${visibleHeight}px`, '--setup-visible-top': `${visibleTop}px` }"
     :aria-labelledby="titleId" @cancel.prevent="!busy && emit('close')">
-    <form class="setup-form" @submit.prevent="launch">
+    <form class="setup-form game-scrollbar" @submit.prevent="launch">
       <header class="setup-header">
         <div class="mission">
           <p class="mission-chip">
@@ -10,14 +10,14 @@
             <span>{{ t('home.levels', { from: mode.levelRange[0], to: mode.levelRange[1] }) }}</span>
             <span class="mission-time"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="M10 5v5l3 2" /></svg>{{ formatClock(mode.timeLimit * 1000) }}</span>
           </p>
-          <h2 :id="titleId">{{ t('home.player') }}</h2>
+          <h2 :id="titleId" ref="heading" tabindex="-1">{{ t('home.player') }}</h2>
         </div>
         <button type="button" class="close-button" :disabled="busy || isClosing" :aria-label="t('home.closeSetup')" @click="emit('close')">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
       </header>
 
-      <div class="setup-body">
+      <div class="setup-body game-scrollbar">
         <!-- Live player card: what the leaderboard will show once the run is saved. -->
         <aside class="player-card" aria-hidden="true">
           <div class="hero-stage">
@@ -31,7 +31,11 @@
         <div class="steps">
           <fieldset class="step">
             <legend class="step-title"><span class="step-pip done" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" /></svg></span>{{ t('home.pickAvatar') }}</legend>
-            <div class="avatar-grid">
+            <HorizontalChoiceRail v-if="mobileSetup" v-model="selectedAvatar" :items="PLAYER_AVATARS" loop variant="avatar"
+              :label="t('home.pickAvatar')" :item-label="avatarLabel" :previous-label="t('home.previousAvatar')" :next-label="t('home.nextAvatar')" :disabled="busy || isClosing">
+              <template #default="{ item }"><img class="rail-avatar-image" :src="avatarSrc(item)" alt="" draggable="false" /></template>
+            </HorizontalChoiceRail>
+            <div v-else class="avatar-grid">
               <label v-for="(avatar, index) in PLAYER_AVATARS" :key="avatar" class="avatar-option" :class="{ selected: selectedAvatar === avatar }">
                 <input v-model="selectedAvatar" class="sr-only" type="radio" name="setup-avatar" :value="avatar" :disabled="busy"
                   :aria-label="t('home.selectedAvatar', { number: index + 1, total: PLAYER_AVATARS.length })" />
@@ -60,7 +64,11 @@
 
           <fieldset class="step">
             <legend class="step-title"><span class="step-pip" :class="{ done: age !== null }" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" /></svg></span>{{ t('home.age') }}</legend>
-            <div class="age-grid">
+            <HorizontalChoiceRail v-if="mobileSetup" v-model="age" :items="homeConfig.ages" variant="age"
+              :label="t('home.age')" :item-label="ageLabel" :previous-label="t('home.previousAge')" :next-label="t('home.nextAge')" :disabled="busy || isClosing">
+              <template #default="{ item }">{{ item }}</template>
+            </HorizontalChoiceRail>
+            <div v-else class="age-grid">
               <label v-for="option in homeConfig.ages" :key="option" class="age-option" :class="{ selected: age === option }">
                 <input v-model="age" class="sr-only" type="radio" name="setup-age" :value="option" :disabled="busy"
                   :aria-label="t('home.years', { age: option })" />
@@ -72,6 +80,11 @@
       </div>
 
       <footer class="setup-footer">
+        <div class="mobile-preview" role="group" :aria-label="t('home.playerPreview')">
+          <img :src="avatarSrc(selectedAvatar)" alt="" width="40" height="40" draggable="false" />
+          <div><p class="preview-name">{{ normalizedName || t('home.namePlatePlaceholder') }}</p>
+            <p class="preview-age">{{ age === null ? t('home.ageUnselected') : t('home.years', { age }) }}</p></div>
+        </div>
         <p id="setup-form-status" class="form-status" :class="{ ready: valid }" role="status">{{ formStatus }}</p>
         <p v-if="error" class="save-error" role="alert">{{ error }}</p>
         <button type="submit" class="confirm-button" :disabled="!valid || busy" aria-describedby="setup-form-status">
@@ -100,6 +113,16 @@ const emit = defineEmits<{ close: []; start: [player: PlayerSetupInput]; popup: 
 const { t } = useGameI18n();
 const titleId = useId();
 const dialog = ref<HTMLDialogElement | null>(null);
+const heading = ref<HTMLHeadingElement | null>(null);
+const mobileSetup = ref(false);
+const visibleHeight = ref(800);
+const visibleTop = ref(0);
+let phoneQuery: MediaQueryList | undefined;
+function syncPhoneLayout(): void { mobileSetup.value = phoneQuery?.matches ?? false; }
+function syncVisibleViewport(): void {
+  visibleHeight.value = window.visualViewport?.height ?? window.innerHeight;
+  visibleTop.value = window.visualViewport?.offsetTop ?? 0;
+}
 const isClosing = ref(false);
 let popupAnimation: Animation | undefined;
 let disposed = false;
@@ -132,6 +155,8 @@ defineExpose({ closeWithMotion });
 const nicknameInput = ref<HTMLInputElement | null>(null);
 const nickname = ref(props.initial?.nickname ?? "");
 const avatarSrc = usePlayerAvatar();
+const avatarLabel = (_avatar: string, index: number): string => t('home.selectedAvatar', { number: index + 1, total: PLAYER_AVATARS.length });
+const ageLabel = (value: number): string => t('home.years', { age: value });
 // Starts on a random character so the leaderboard stays varied; the player can pick any other.
 const selectedAvatar = ref<string>(PLAYER_AVATARS[0]);
 const generatedAnnouncement = ref("");
@@ -189,6 +214,13 @@ function launch() {
   if (!props.busy && !isClosing.value && valid.value && age.value !== null) emit("start", { nickname: normalizedName.value, age: age.value, avatarId: selectedAvatar.value });
 }
 onMounted(() => {
+  phoneQuery = window.matchMedia('(max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px)');
+  syncPhoneLayout();
+  syncVisibleViewport();
+  phoneQuery.addEventListener('change', syncPhoneLayout);
+  window.addEventListener('resize', syncVisibleViewport);
+  window.visualViewport?.addEventListener('resize', syncVisibleViewport);
+  window.visualViewport?.addEventListener('scroll', syncVisibleViewport);
   refreshNames();
   unsubscribeNames = props.repository?.subscribe(refreshNames);
   const preset = props.initial?.avatarId;
@@ -203,9 +235,18 @@ onMounted(() => {
     { offset: 1, opacity: 1, transform: "none" },
   ], homeConfig.modeMotion.popupInMs);
   emit("popup");
-  nicknameInput.value?.focus();
+  // Let phone users see the complete form before opening the software keyboard.
+  if (mobileSetup.value) heading.value?.focus({ preventScroll: true });
+  else nicknameInput.value?.focus();
 });
-onBeforeUnmount(() => { disposed = true; unsubscribeNames?.(); popupAnimation?.cancel(); dialog.value?.close(); });
+onBeforeUnmount(() => {
+  disposed = true;
+  phoneQuery?.removeEventListener('change', syncPhoneLayout);
+  window.removeEventListener('resize', syncVisibleViewport);
+  window.visualViewport?.removeEventListener('resize', syncVisibleViewport);
+  window.visualViewport?.removeEventListener('scroll', syncVisibleViewport);
+  unsubscribeNames?.(); popupAnimation?.cancel(); dialog.value?.close();
+});
 </script>
 
 <style scoped>
@@ -305,6 +346,7 @@ legend.step-title { margin-bottom: 12px; }
 
 /* Footer: status, then the launch button. */
 .setup-footer { display: grid; justify-items: center; gap: 10px; padding-top: 10px; }
+.mobile-preview { display: none; }
 .form-status, .privacy-note, .save-error { margin: 0; font-size: .85rem; text-align: center; }
 .form-status { color: #ffdc5a; font-weight: 700; }
 .form-status.ready { color: #9ff0b8; }
@@ -340,6 +382,64 @@ button:focus-visible, input:focus-visible { outline: 3px solid #ffdc5a; outline-
   .age-grid { gap: 6px; }
   .age-option { min-height: 48px; font-size: 1.1rem; }
   .avatar-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding: 4px 0; }
+}
+/* Phone form: one scrolling control area, with the current player and Start
+   always outside it. VisualViewport keeps the footer above the keyboard. */
+@media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .player-setup-dialog {
+    position: fixed; top: calc(var(--setup-visible-top) + max(8px, (var(--setup-visible-height) - 660px) / 2)); bottom: auto;
+    left: 0; right: 0; width: min(440px, calc(100vw - 16px)); max-width: none; height: min(660px, calc(var(--setup-visible-height) - 16px));
+    max-height: calc(var(--setup-visible-height) - 16px); margin: 0 auto; overflow: hidden; border-radius: 18px;
+  }
+  .setup-form { box-sizing: border-box; display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 10px; padding: 12px; }
+  .setup-header { flex: none; display: grid; grid-template-columns: minmax(0, 1fr) 40px; align-items: center; gap: 8px; }
+  .mission { display: contents; }
+  .mission-chip { grid-column: 1; grid-row: 1; box-sizing: border-box; max-width: 100%; flex-wrap: nowrap; gap: 5px; padding: 6px; font-size: 10px; white-space: nowrap; }
+  .mission-chip strong { font-size: 12px; }
+  .mission-chip :deep(.mode-badge) { width: 20px; height: 14px; }
+  .mission-time { gap: 3px; }
+  .mission-time svg { width: 12px; height: 12px; }
+  h2 { grid-column: 1 / -1; grid-row: 2; font-size: clamp(14px, 4.2vw, 18px); line-height: 1.45; white-space: nowrap; text-wrap: nowrap; outline: none; }
+  .close-button { grid-column: 2; grid-row: 1; width: 40px; height: 44px; border-radius: 10px; }
+  .close-button svg { width: 20px; height: 20px; }
+  .setup-body { flex: 1; display: block; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; padding: 2px 4px 6px; scroll-padding-block: 8px; }
+  .player-card { display: none; }
+  .steps { gap: 16px; }
+  .step { gap: 8px; }
+  legend.step-title { margin-bottom: 4px; }
+  .step-title { gap: 6px; font-size: 13px; }
+  .step-pip { box-sizing: border-box; width: 18px; height: 18px; }
+  .step-pip svg { width: 12px; height: 12px; }
+  .rail-avatar-image { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; pointer-events: none; }
+  .nickname-entry { flex-direction: row; gap: 8px; }
+  .nickname-entry input { box-sizing: border-box; height: 44px; min-height: 44px; padding: 8px 10px; border-radius: 10px; font-size: 16px; }
+  .random-name-button { min-width: 78px; min-height: 44px; gap: 4px; padding: 6px 8px; border-radius: 10px; font-size: 12px; box-shadow: 0 2px 0 #c59a1c; }
+  .random-name-button svg { width: 16px; height: 16px; }
+  .nickname-field small { margin-top: 0; font-size: 11px; line-height: 1.5; }
+  .name-retry { min-height: 44px; font-size: 12px; }
+  .setup-footer { flex: none; align-content: start; gap: 6px; padding-top: 8px; border-top: 1px solid #789ceb55; background: #10266a; border-radius: 0 0 8px 8px; }
+  .mobile-preview { box-sizing: border-box; display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 10px; border: 1px solid #7297e877; border-radius: 12px; background: #0b2058; }
+  .mobile-preview img { flex: none; width: 40px; height: 40px; border: 2px solid var(--mode-accent); border-radius: 50%; background: #cceaff; }
+  .mobile-preview > div { min-width: 0; }
+  .preview-name, .preview-age { margin: 0; overflow-wrap: anywhere; }
+  .preview-name { color: #fff; font-size: 13px; font-weight: 800; line-height: 1.5; }
+  .preview-age { color: #c9dcff; font-size: 11px; line-height: 1.5; }
+  .form-status, .save-error { font-size: 11px; line-height: 1.45; }
+  .save-error { max-height: 48px; overflow-y: auto; }
+  .confirm-button { box-sizing: border-box; width: 100%; min-height: 44px; padding: 8px 14px; gap: 8px; border-radius: 12px; font-size: 14px; box-shadow: 0 3px 0 #c59a1c; }
+  .confirm-button:disabled { box-shadow: 0 3px 0 #3e4d78; }
+  .confirm-button svg { width: 18px; height: 18px; }
+  .privacy-note { margin-top: 2px; font-size: 10px; line-height: 1.45; }
+  .compact-height .setup-form { gap: 6px; padding-block: 8px; }
+  .compact-height .setup-header { gap: 3px 8px; }
+  .compact-height .setup-footer { gap: 4px; padding-top: 4px; }
+  .compact-height .mobile-preview { padding-block: 3px; }
+  .compact-height .privacy-note { display: none; }
+  /* A tall software keyboard can leave too little room for a fixed header,
+     controls and footer. Let the header scroll away and keep Start sticky. */
+  .scrolling-form .setup-form { overflow-y: auto; overscroll-behavior-y: contain; scroll-padding-bottom: 180px; }
+  .scrolling-form .setup-body { flex: none; overflow: visible; }
+  .scrolling-form .setup-footer { position: sticky; bottom: 0; z-index: 1; box-shadow: 0 -8px 12px #10266a; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-avatar, .landing-pad, .step-pip.done, .step-pip.done path, .name-plate.rolled, .age-plate:not(.empty), .confirm-button:not(:disabled)::after, .confirm-button:not(:disabled) svg { animation: none; }

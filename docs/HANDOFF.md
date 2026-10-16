@@ -2,6 +2,13 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-16 — Compact phone player setup and visible launch preview
+
+- `PlayerSetupDialog.vue` now uses a phone-only compact form at the established portrait/short-landscape breakpoints. Mode/range/time stay on one line; the full heading uses 14–18px without wrapping or ellipsis. Labels/helpers/buttons shrink, nickname remains 16px to avoid phone focus zoom, and touch controls retain 44px heights. Random name sits beside the input instead of a separate full-width row.
+- New `HorizontalChoiceRail.vue` renders a single horizontal avatar row with previous/next controls, touch scrolling and cyclic unique-item recycling (last followed by first). Age 5–18 uses one finite horizontal row. Native button radio semantics, localized labels, roving keyboard focus, selected rings, cancellation/reduced motion, timer/observer cleanup are retained; no cloned selected radios or new dependencies.
+- Move the phone preview to the footer immediately before the form status/Start: avatar, full nickname and age update live. The input area scrolls independently. VisualViewport sizing follows the keyboard without opening it automatically; extremely short viewports (<340px) let the header/form scroll while the footer stays sticky. Desktop layout/autofocus and all solo/Live validation, name checks, submissions and gameplay behavior are unchanged.
+- Updated `DESIGN.md` and i18n labels. Read-only source review found the initial short-keyboard clipping risk; added the scroll fallback and re-review found no remaining concrete issues. Verification: `pnpm build` passed (exit 0, `mobile-player-setup-build.log`); `git diff --check` passed. No tests, browser/device checks, staging/commit or branch switch. Actual phone rendering/interaction remains unverified.
+
 ## 2026-10-16 — Prioritize phone code space and restore equal Up/Down widths
 
 - Phone `index.vue` grid keeps map above code but caps the secondary map at clamp(120px, 22dvh, 180px). Python/code now receives the remaining flexible space with a 180px minimum. Original observed viewports, smooth followers and short-window scroll fallback remain unchanged.
