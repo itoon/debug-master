@@ -2,6 +2,18 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-16 — Refine phone profile/age rails and remove practice picker copy
+
+- `PracticeLevelDialog.vue` removes both requested explanatory paragraphs on every screen size, with obsolete description aria binding/id, CSS and unused i18n keys removed. Level selection/groups and practice behavior remain unchanged.
+- Phone `HorizontalChoiceRail.vue` avatar arrows are small filled triangles without button backgrounds/borders; horizontal scrollbars hide while touch/cyclic selection remains. Ages have no arrow controls: a finite 5–18 horizontal wheel snaps numbers to a center marker and commits the settled age after user scrolling, retaining tap/keyboard selection. An untouched age stays unselected. Touch guards, debounce/scrollend fallback, explicit reveal cancellation and unmount cleanup prevent stale commits; native smooth snap respects reduced motion.
+- `PlayerSetupDialog.vue` constrains nickname input sizing with a minmax(0,1fr) grid plus 64px random-name action, preventing intrinsic input sizing from clipping that button. Input remains 16px and controls 44px high. Current preview/footer and desktop layouts remain. Existing validation, solo/Live submit and all gameplay data/logic are unchanged. Earlier countdown-dim work preserved.
+- Updated `DESIGN.md`. Verification: `pnpm build` passed (exit 0, `mobile-setup-rails-refine-build.log`); `git diff --check` passed; removed-copy search found no remaining app references. Read-only source review found no concrete selection/lifecycle/sizing issues. No tests, browser/device checks, staging/commit or branch switch; actual phone rendering/interaction remains unverified.
+
+## 2026-10-16 — Full-viewport Live screen countdown dim
+
+- Root cause: `/live/screen` rendered the countdown overlay inside its overflow-hidden 16:9 stage, leaving viewport letterbox margins undimmed. Moved the overlay directly under the fixed full-viewport screen root; its inset now covers the entire web viewport. An inner container shares the original stage geometry/cqw sizing, preserving number scale/centering, animation, dim color and server-adjusted countdown timing.
+- Updated `DESIGN.md`. Host controls, room state/protocol, lobby content and gameplay are unchanged. Verification: `pnpm build` passed (exit 0, `live-countdown-dim-build.log`); `git diff --check` passed. No tests, browser/device checks, staging/commit or branch switch; actual viewport rendering remains unverified.
+
 ## 2026-10-16 — Compact phone player setup and visible launch preview
 
 - `PlayerSetupDialog.vue` now uses a phone-only compact form at the established portrait/short-landscape breakpoints. Mode/range/time stay on one line; the full heading uses 14–18px without wrapping or ellipsis. Labels/helpers/buttons shrink, nickname remains 16px to avoid phone focus zoom, and touch controls retain 44px heights. Random name sits beside the input instead of a separate full-width row.

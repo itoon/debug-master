@@ -1,8 +1,8 @@
 <template>
   <div class="choice-rail" :class="`rail-${variant}`">
-    <button type="button" class="rail-arrow" :aria-label="previousLabel" :disabled="disabled || (!loop && modelValue === items[0])" @click="step(-1)">‹</button>
-    <div ref="viewport" class="rail-options game-scrollbar" role="radiogroup" :aria-label="label"
-      @scroll.passive="normalizeLoop" @pointerdown.passive="cancelReveal" @touchstart.passive="cancelReveal" @wheel.passive="cancelReveal">
+    <button v-if="variant === 'avatar'" type="button" class="rail-arrow" :aria-label="previousLabel" :disabled="disabled || (!loop && modelValue === items[0])" @click="step(-1)"><svg viewBox="0 0 8 12" aria-hidden="true"><path d="M8 0 0 6l8 6Z" /></svg></button>
+    <div ref="viewport" class="rail-options" role="radiogroup" :aria-label="label"
+      @scroll.passive="onScroll" @scrollend="commitCenteredAge" @pointerdown.passive="beginInteraction" @touchstart.passive="startTouch" @touchend.passive="endTouch" @touchcancel.passive="endTouch" @wheel.passive="beginInteraction">
       <button v-for="item in ordered" :key="item" type="button" class="rail-option" :class="{ selected: modelValue === item }"
         role="radio" :aria-checked="modelValue === item" :aria-label="itemLabel(item, items.indexOf(item))"
         :tabindex="modelValue === item || (modelValue === null && item === items[0]) ? 0 : -1"
@@ -10,7 +10,7 @@
         <slot :item="item" />
       </button>
     </div>
-    <button type="button" class="rail-arrow" :aria-label="nextLabel" :disabled="disabled || (!loop && modelValue === items[items.length - 1])" @click="step(1)">›</button>
+    <button v-if="variant === 'avatar'" type="button" class="rail-arrow" :aria-label="nextLabel" :disabled="disabled || (!loop && modelValue === items[items.length - 1])" @click="step(1)"><svg viewBox="0 0 8 12" aria-hidden="true"><path d="m0 0 8 6-8 6Z" /></svg></button>
   </div>
 </template>
 
@@ -31,11 +31,46 @@ let focusAfterSelection = false;
 let observer: ResizeObserver | undefined;
 let settling: ReturnType<typeof setTimeout> | undefined;
 let revealing = false;
+let ageGesture = false;
+let touchActive = false;
+let scrollSelection = false;
+let ageSettling: ReturnType<typeof setTimeout> | undefined;
 function cancelReveal(): void {
   generation += 1;
   scroller.cancel();
   clearTimeout(settling);
   revealing = false;
+}
+function beginInteraction(): void {
+  if (props.variant === 'age' && revealing && viewport.value) viewport.value.scrollTo({ left: viewport.value.scrollLeft, behavior: 'instant' });
+  cancelReveal();
+  clearTimeout(ageSettling);
+  ageGesture = props.variant === 'age' && !props.disabled;
+}
+function startTouch(): void { touchActive = true; beginInteraction(); }
+function endTouch(): void { touchActive = false; onScroll(); }
+function onScroll(): void {
+  if (props.variant !== 'age') { normalizeLoop(); return; }
+  if (!ageGesture || revealing || props.disabled) return;
+  clearTimeout(ageSettling);
+  // scrollend handles modern browsers; debounce also covers older phone browsers.
+  ageSettling = setTimeout(commitCenteredAge, 160);
+}
+function commitCenteredAge(): void {
+  const area = viewport.value;
+  if (disposed || props.variant !== 'age' || !ageGesture || touchActive || revealing || props.disabled || !area) return;
+  clearTimeout(ageSettling);
+  const center = area.scrollLeft + area.clientWidth / 2;
+  const buttons = Array.from(area.querySelectorAll<HTMLButtonElement>('.rail-option'));
+  const nearest = buttons.reduce((best, item, index) => Math.abs(item.offsetLeft + item.offsetWidth / 2 - center) < best.distance
+    ? { index, distance: Math.abs(item.offsetLeft + item.offsetWidth / 2 - center) } : best, { index: -1, distance: Infinity });
+  const item = ordered.value[nearest.index];
+  if (item === undefined) return;
+  ageGesture = false;
+  if (props.modelValue !== item) {
+    scrollSelection = true;
+    emit('update:modelValue', item);
+  }
 }
 function pitch(): number {
   const item = viewport.value?.querySelector<HTMLElement>('.rail-option');
@@ -67,6 +102,8 @@ function normalizeLoop(): void {
   else if (area.scrollLeft > area.scrollWidth - area.clientWidth - size) void rebase(false);
 }
 async function revealSelected(animate = true, focus = false): Promise<void> {
+  ageGesture = false;
+  clearTimeout(ageSettling);
   cancelReveal();
   const token = generation;
   await nextTick();
@@ -85,13 +122,16 @@ async function revealSelected(animate = true, focus = false): Promise<void> {
   const left = item.offsetLeft - (area.clientWidth - item.offsetWidth) / 2;
   // Finish this move before recycling the edge; recycling cancels RAF scrolling.
   revealing = true;
-  if (animate) scroller.to(area, { left, top: 0 });
+  if (props.variant === 'age') area.scrollTo({ left, behavior: animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'instant' });
+  else if (animate) scroller.to(area, { left, top: 0 });
   else area.scrollTo({ left, behavior: 'instant' });
   settling = setTimeout(() => { revealing = false; normalizeLoop(); }, animate ? 340 : 0);
   if (focus) item.focus({ preventScroll: true });
 }
 function choose(item: T, focus = false): void {
   if (props.disabled) return;
+  ageGesture = false;
+  clearTimeout(ageSettling);
   focusAfterSelection = focus;
   if (props.modelValue === item) void revealSelected(true, focus);
   else emit('update:modelValue', item);
@@ -113,6 +153,8 @@ function keyChoice(event: KeyboardEvent, item: T): void {
   if (target !== undefined) choose(target, true);
 }
 watch(() => props.modelValue, () => {
+  // Native snapping already centered a swiped age. Do not start another scroll.
+  if (scrollSelection) { scrollSelection = false; return; }
   const focus = focusAfterSelection;
   focusAfterSelection = false;
   void revealSelected(true, focus);
@@ -122,18 +164,24 @@ onMounted(() => {
   observer = new ResizeObserver(() => { void revealSelected(false); });
   if (viewport.value) observer.observe(viewport.value);
 });
-onBeforeUnmount(() => { disposed = true; cancelReveal(); observer?.disconnect(); });
+onBeforeUnmount(() => { disposed = true; cancelReveal(); clearTimeout(ageSettling); observer?.disconnect(); });
 </script>
 
 <style scoped>
-.choice-rail { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 2px; min-width: 0; }
-.rail-options { position: relative; display: flex; gap: 8px; min-width: 0; padding: 8px 6px; overflow-x: auto; overflow-y: hidden; overflow-anchor: none; overscroll-behavior-x: contain; touch-action: pan-x; }
+.choice-rail { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr) 24px; min-width: 0; }
+.rail-options { position: relative; display: flex; gap: 8px; min-width: 0; padding: 8px 6px; overflow-x: auto; overflow-y: hidden; overflow-anchor: none; overscroll-behavior-x: contain; touch-action: pan-x; scrollbar-width: none; }
+.rail-options::-webkit-scrollbar { display: none; width: 0; height: 0; }
 button { font: inherit; cursor: pointer; }
-.rail-arrow { align-self: center; min-height: 44px; padding: 0; border: 1px solid #7199ea66; border-radius: 10px; background: #0c225e; color: #d8eaff; font-size: 26px; }
+.rail-arrow { display: grid; place-items: center; align-self: center; min-height: 44px; padding: 0; border: 0; background: transparent; color: #d8eaff; }
+.rail-arrow svg { width: 8px; height: 12px; fill: currentColor; }
 .rail-option { box-sizing: border-box; position: relative; flex: 0 0 44px; display: grid; place-items: center; height: 44px; padding: 0; border: 2px solid #5a80d8; border-radius: 10px; background: #0c225e; color: #e0e9ff; font-size: 14px; font-weight: 800; }
 .rail-avatar .rail-option { flex-basis: 48px; height: 48px; border-radius: 50%; background: #cceaff; }
 .rail-option.selected { border-color: #ffe889; box-shadow: 0 0 0 2px #112760, 0 0 0 4px #ffd440; }
-.rail-age .rail-option.selected { background: #ffd440; color: #112760; }
+.rail-age { display: block; }
+.rail-age::before { content: ''; position: absolute; top: 8px; left: 50%; width: 48px; height: 44px; transform: translateX(-50%); border: 1px solid #8db7ff88; border-radius: 10px; background: #0b2058; pointer-events: none; }
+.rail-age .rail-options { gap: 12px; padding-inline: calc(50% - 22px); scroll-snap-type: x mandatory; mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); }
+.rail-age .rail-option { border: 0; background: transparent; border-radius: 0; box-shadow: none; font-size: 18px; color: #aec4ed; scroll-snap-align: center; }
+.rail-age .rail-option.selected { background: transparent; color: #ffdc53; box-shadow: none; font-size: 22px; }
 button:not(:disabled):hover { border-color: #b6d7ff; }
 button:active { filter: brightness(1.15); }
 button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }

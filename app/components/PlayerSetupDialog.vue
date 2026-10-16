@@ -411,10 +411,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid #ffdc5a; outline-
   .step-pip { box-sizing: border-box; width: 18px; height: 18px; }
   .step-pip svg { width: 12px; height: 12px; }
   .rail-avatar-image { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; pointer-events: none; }
-  .nickname-entry { flex-direction: row; gap: 8px; }
-  .nickname-entry input { box-sizing: border-box; height: 44px; min-height: 44px; padding: 8px 10px; border-radius: 10px; font-size: 16px; }
-  .random-name-button { min-width: 78px; min-height: 44px; gap: 4px; padding: 6px 8px; border-radius: 10px; font-size: 12px; box-shadow: 0 2px 0 #c59a1c; }
-  .random-name-button svg { width: 16px; height: 16px; }
+  .nickname-field { grid-template-columns: minmax(0, 1fr); }
+  .nickname-entry { display: grid; grid-template-columns: minmax(0, 1fr) 64px; width: 100%; min-width: 0; gap: 6px; }
+  .nickname-entry input { box-sizing: border-box; width: 100%; height: 44px; min-height: 44px; padding: 8px 10px; border-radius: 10px; font-size: 16px; }
+  .random-name-button { width: 64px; min-width: 0; min-height: 44px; gap: 3px; padding: 6px; border-radius: 10px; font-size: 11px; white-space: nowrap; box-shadow: 0 2px 0 #c59a1c; }
+  .random-name-button svg { width: 14px; height: 14px; }
   .nickname-field small { margin-top: 0; font-size: 11px; line-height: 1.5; }
   .name-retry { min-height: 44px; font-size: 12px; }
   .setup-footer { flex: none; align-content: start; gap: 6px; padding-top: 8px; border-top: 1px solid #789ceb55; background: #10266a; border-radius: 0 0 8px 8px; }
