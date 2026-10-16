@@ -22,7 +22,8 @@
           )
         }}
       </h1>
-      <p class="session-mode">
+      <p v-if="practiceIntroCount !== undefined" class="session-mode">{{ t('practice.tutorialInfo', { count: practiceIntroCount }) }}</p>
+      <p v-else-if="mode" class="session-mode">
         {{ mode.id }} · {{ t(mode.nameKey) }} ·
         {{
           t('home.levels', { from: mode.levelRange[0], to: mode.levelRange[1] })
@@ -209,7 +210,9 @@ const avatarSrc = usePlayerAvatar()
 
 const props = withDefaults(defineProps<{
   stage: 'tutorial' | 'summary' | 'ranking'
-  mode: ChallengeMode
+  mode?: ChallengeMode
+  /** Reuse the animated introduction without competitive mode/time metadata. */
+  practiceIntroCount?: number
   repository: ScoreRepository
   board: RankingBoard
   result?: Score

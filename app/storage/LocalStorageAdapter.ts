@@ -7,11 +7,53 @@ const SCHEMA_VERSION = 1;
 const NAMESPACE = "codeventure:debug-master:home-v2:v1:";
 const CHANGE_EVENT = `${NAMESPACE}changed`;
 
+/** HTTP LAN pages lack Web Locks. A shared readwrite transaction serializes
+ * synchronous localStorage mutations across tabs without changing score storage.
+ * Only the coordination store lives in IndexedDB; no profile/score data moves. */
+function mutateOnLocalHttp(key: string, operation: () => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = window.indexedDB.open(`${NAMESPACE}mutation-lock`, 1);
+    let blocked = false;
+    request.onupgradeneeded = () => request.result.createObjectStore("mutations");
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => {
+      blocked = true;
+      reject(new Error("Local storage coordination is blocked"));
+    };
+    request.onsuccess = () => {
+      const database = request.result;
+      // A delayed open must not write after reporting a blocked operation.
+      if (blocked) { database.close(); return; }
+      database.onversionchange = () => database.close();
+      try {
+        const transaction = database.transaction("mutations", "readwrite");
+        let operationError: unknown;
+        transaction.oncomplete = () => { database.close(); resolve(); };
+        transaction.onabort = () => {
+          database.close();
+          reject(operationError ?? transaction.error ?? new Error("Local storage coordination failed"));
+        };
+        // This callback runs only after this transaction owns the shared store.
+        // Do not await inside it: keep the read/modify/write under the same lock.
+        transaction.objectStore("mutations").get(key).onsuccess = () => {
+          try { operation(); }
+          catch (error) { operationError = error; transaction.abort(); }
+        };
+      } catch (error) { database.close(); reject(error); }
+    };
+  });
+}
+
 /** The only layer that touches browser storage. Old Dev keys are untouched. */
 export class LocalStorageAdapter {
   async mutate(key: string, operation: () => void): Promise<void> {
-    // All read/modify/write operations share one origin-wide lock per key.
-    // Fail closed when unavailable rather than overwrite another tab's data.
+    // All tabs on a non-secure origin use the same transaction coordinator.
+    // Secure origins keep their existing Web Locks path, with no mixed locks.
+    if (!window.isSecureContext) {
+      await mutateOnLocalHttp(key, operation);
+      return;
+    }
+    // Fail closed if coordination is unavailable; never write without a lock.
     if (!navigator.locks) throw new Error("Web Locks are required for safe local storage updates");
     await navigator.locks.request(NAMESPACE + key, operation);
   }
