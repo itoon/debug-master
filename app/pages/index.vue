@@ -8,14 +8,14 @@
     </Transition>
     <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="requestPracticeLevel" />
     <PracticeSummaryDialog v-if="practiceSummary" :result="practiceSummary" @home="backToStart" />
-    <MobileTutorialDialog v-if="mobileTraining || (showTutorial && mobileChallengeTutorial)" @complete="completeMobileTraining" @cancel="cancelMobileTraining" @sound="playSound" @unlock-audio="unlockAudio" />
+    <MobileTutorialDialog v-if="mobileTraining || (showTutorial && mobileChallengeTutorial)" @complete="completeMobileTraining" @skip="completeMobileTraining" @cancel="cancelMobileTraining" @sound="playSound" @unlock-audio="unlockAudio" />
     <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking) && !(showTutorial && mobileChallengeTutorial)"
       :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
       :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
       @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
     <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" @cancel="showExitConfirm = false" @confirm="confirmExit" />
-    <PlayerSetupDialog v-if="liveMode && liveStage === 'setup' && !mobileTraining" :mode="liveSetupMode" :initial="liveSetupInitial" @start="requestLiveJoin" @close="liveGoHome" />
+    <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial" @start="liveJoin" @close="liveGoHome" />
     <LivePlayerPanel v-if="liveMode && liveStage !== 'setup' && liveStage !== 'running'" :stage="liveStage" :state="liveState" :self-id="liveSelfId"
       :countdown="liveCountdown" :queue-remaining-sec="liveQueueRemaining" :late-score-note="liveLateScore"
       @change-player="liveChangePlayer" @leave="liveLeave" @home="liveGoHome" />
@@ -92,7 +92,7 @@
                       draggable="false"
                     />
                   </div>
-                  <NextMoveHint v-if="practiceActive && practiceSuperHint && canControl && !showExitConfirm && expectedMove" :direction="expectedMove.direction" />
+                  <NextMoveHint v-if="((practiceActive && practiceSuperHint) || liveMobileGuidance) && canControl && !showExitConfirm && expectedMove" :direction="expectedMove.direction" />
                 </div>
               </LevelBoard>
               </div>
@@ -115,10 +115,11 @@
                 </nav>
                 </Teleport>
                 <div class="touch-controls" :aria-label="t('game.controls')">
-                <button type="button" class="arrow up" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲</button>
-                <button type="button" class="arrow left" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀</button>
-                <button type="button" class="arrow down" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼</button>
-                <button type="button" class="arrow right" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶</button>
+                <button type="button" class="arrow up" :class="{ 'guided-arrow': liveGuidedMove === 'up' }" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲<TouchTapHint v-if="liveGuidedMove === 'up'" /></button>
+                <button type="button" class="arrow left" :class="{ 'guided-arrow': liveGuidedMove === 'left' }" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀<TouchTapHint v-if="liveGuidedMove === 'left'" /></button>
+                <button type="button" class="arrow down" :class="{ 'guided-arrow': liveGuidedMove === 'down' }" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼<TouchTapHint v-if="liveGuidedMove === 'down'" /></button>
+                <button type="button" class="arrow right" :class="{ 'guided-arrow': liveGuidedMove === 'right' }" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶<TouchTapHint v-if="liveGuidedMove === 'right'" /></button>
+                <p v-if="liveMobileGuidance" class="live-guide-label" role="status">{{ t('mobileTutorial.liveGuide', { level: selectedLevelIndex + 1 }) }}</p>
                 </div>
               </div>
             </div>
@@ -131,10 +132,10 @@
             :readable="true"
             scroll-hint
             :is-active-line="isGameCodeLineActive"
-            :follow-active-line="practiceActive && practiceSuperHint"
-            :practice-guidance="practiceActive"
+            :follow-active-line="(practiceActive && practiceSuperHint) || liveMobileGuidance"
+            :teaching-guidance="practiceActive || liveMobileGuidance"
             :executed-step="executedCodeStep ?? undefined"
-            :follow-executed="compactLayout && displayLanguage === 'python'"
+            :follow-executed="compactLayout && displayLanguage === 'python' && !liveMobileGuidance"
           />
         </div>
 
@@ -451,7 +452,7 @@ const homeView = ref<{ focusFirstMode: () => Promise<void> } | null>(null);
 let focusAfterWake = false;
 const showTutorial = ref(false);
 const mobileChallengeTutorial = ref(false);
-const mobileTraining = shallowRef<{ kind: 'live'; profile: PlayerSetupInput } | { kind: 'practice'; levelId: number } | null>(null);
+const mobileTraining = shallowRef<{ levelId: number } | null>(null);
 const showSummary = ref(false);
 const showExitConfirm = ref(false);
 const practiceActive = ref(false);
@@ -960,40 +961,25 @@ function openPracticePicker(): void {
 function requestPracticeLevel(levelId: number): void {
   if (!practiceActive.value && compactLayout.value && showPracticePicker.value && practiceLevels.some(level => level.id === levelId)) {
     showPracticePicker.value = false;
-    mobileTraining.value = { kind: 'practice', levelId };
+    mobileTraining.value = { levelId };
     lastInteractionAt = Date.now();
     return;
   }
   void startPracticeLevel(levelId);
 }
-function requestLiveJoin(profile: PlayerSetupInput): void {
-  if (compactLayout.value && liveMode.value && liveStage.value === 'setup' && !liveRoom.value) {
-    const player = validLiveProfile(profile);
-    if (!player) return;
-    unlockAudio();
-    mobileTraining.value = { kind: 'live', profile: player };
-    return;
-  }
-  liveJoin(profile);
-}
 function completeMobileTraining(): void {
   const pending = mobileTraining.value;
   mobileTraining.value = null;
   if (!pending) { playChallenge(); return; }
-  if (pending.kind === 'live') {
-    if (liveMode.value && liveStage.value === 'setup') liveJoin(pending.profile);
-  } else {
-    // Restore the existing picker's precondition, then use its original start.
-    showPracticePicker.value = true;
-    void startPracticeLevel(pending.levelId);
-  }
+  // Restore the existing picker's precondition, then use its original start.
+  showPracticePicker.value = true;
+  void startPracticeLevel(pending.levelId);
 }
 function cancelMobileTraining(): void {
   const pending = mobileTraining.value;
   mobileTraining.value = null;
   if (!pending) { backToStart(); return; }
-  if (pending.kind === 'live') liveSetupInitial.value = pending.profile;
-  else showPracticePicker.value = true;
+  showPracticePicker.value = true;
 }
 async function closePracticePicker(): Promise<void> {
   if (practiceStarting.value) return;
@@ -1515,6 +1501,7 @@ function showNextHint(): void {
 }
 
 function isGameCodeLineActive(line: string, index: number): boolean {
+  if (liveMobileGuidance.value) return canControl.value && expectedMove.value?.sourceLine === index + 1;
   if (practiceActive.value) {
     return practiceSuperHint.value && !practiceStarting.value && displayLanguage.value === "python" && activeNode.value?.sourceLine === index + 1;
   }
@@ -1638,6 +1625,10 @@ const liveStage = computed(() => derivePlayerStage({
   offset: liveOffset.value,
   now: liveNow.value,
 }));
+// Guidance reads the current real run; it does not pre-play levels, alter
+// accepted keys or pause the shared round. It ends on the third level.
+const liveMobileGuidance = computed(() => liveMode.value && compactLayout.value && liveStage.value === 'running' && selectedLevelIndex.value < 2 && displayLanguage.value === 'python');
+const liveGuidedMove = computed(() => liveMobileGuidance.value && canControl.value ? expectedMove.value?.direction ?? null : null);
 const liveSetupMode = computed<ChallengeMode>(() => {
   const room = liveLastState.value;
   const mode = homeConfig.modes.find((item) => item.id === room?.mode) ?? homeConfig.modes[0];
@@ -2256,6 +2247,7 @@ h2 {
 }
 
 .arrow {
+  position: relative;
   width: 68px;
   height: 52px;
   border: 1px solid #a8ceff;
@@ -2268,6 +2260,9 @@ h2 {
     inset 0 -4px 0 rgba(6, 26, 56, 0.12),
     var(--cv-shadow-md);
 }
+
+.arrow.guided-arrow:not(:disabled) { background: #ffe36b; outline: 3px solid #87dfff88; outline-offset: 2px; }
+.live-guide-label { grid-column: 1 / -1; grid-row: 3; margin: 0; color: #b9e8ff; text-align: center; font-size: .65rem; line-height: 1.3; }
 
 .arrow:not(:disabled):hover {
   background: var(--cv-blue-soft);

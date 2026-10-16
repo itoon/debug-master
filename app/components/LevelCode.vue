@@ -1,5 +1,5 @@
 <template>
-  <section class="code-card" :class="{ 'code-card-readable': readable, 'practice-guidance': practiceGuidance }">
+  <section class="code-card" :class="{ 'code-card-readable': readable, 'teaching-guidance': teachingGuidance }">
     <div class="window-bar">
       <span class="window-dots" aria-hidden="true"><i /><i /><i /></span>
       <h2>{{ title }}</h2>
@@ -91,8 +91,8 @@ const props = withDefaults(
     executedStep?: { line: number; sequence: number };
     /** Keep two source lines below the accepted move in compact gameplay. */
     followExecuted?: boolean;
-    /** Practice's next-command teaching cue; never show yellow move history. */
-    practiceGuidance?: boolean;
+    /** Next-command teaching cue; never overlay yellow move history. */
+    teachingGuidance?: boolean;
   }>(),
   {
     language: "python",
@@ -104,7 +104,7 @@ const props = withDefaults(
     followActiveLine: false,
     executedStep: undefined,
     followExecuted: false,
-    practiceGuidance: false,
+    teachingGuidance: false,
   },
 );
 
@@ -155,13 +155,13 @@ watch([
   () => props.executedStep,
   () => props.level,
   () => props.followExecuted,
-  () => props.practiceGuidance,
+  () => props.teachingGuidance,
   visibleActiveLineIndex,
 ], async () => {
   cancelExecutedAnimation();
   const generation = feedbackGeneration;
   const step = props.executedStep;
-  if (!step || !props.followExecuted || props.practiceGuidance || visibleActiveLineIndex.value >= 0) return;
+  if (!step || !props.followExecuted || props.teachingGuidance || visibleActiveLineIndex.value >= 0) return;
   await nextTick();
   if (generation !== feedbackGeneration) return;
   const line = codeBox.value?.querySelectorAll<HTMLElement>('.code-line')[step.line - 1];
@@ -209,7 +209,7 @@ watch(() => props.executedStep, async (step) => {
 .code-card-readable .window-bar { padding: 14px 18px; }
 .code-card-readable .window-bar h2 { min-width: 0; overflow-wrap: anywhere; }
 .code-card-readable .code-box.follow-executed { --code-bottom-space: calc(10px + 3.3em); }
-.practice-guidance .code-line.active { background: #1f75ff33; border-left-color: #87dfff; }
+.teaching-guidance .code-line.active { background: #1f75ff33; border-left-color: #87dfff; }
 .code-scroll-hint { flex: none; margin-left: auto; color: #bdd6ff; font: 700 .65rem/1.3 var(--cv-font); white-space: nowrap; }
 @media (min-width: 921px) and (min-height: 561px) {
   .code-scroll-hint { display: none; }

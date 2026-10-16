@@ -141,6 +141,8 @@ export const th = {
   "mobileTutorial.done": "เยี่ยม! ผ่านด่านฝึกแล้ว",
   "mobileTutorial.next": "ด่านฝึกถัดไป",
   "mobileTutorial.start": "เริ่มเกม",
+  "mobileTutorial.skip": "ข้ามการฝึก",
+  "mobileTutorial.liveGuide": "กดตามมือ · ด่านสอน {level}/2",
   "game.up": "เดินขึ้น (↑ / W)",
   "game.left": "เดินซ้าย (← / A)",
   "game.down": "เดินลง (↓ / S)",

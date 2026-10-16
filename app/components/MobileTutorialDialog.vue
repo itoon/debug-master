@@ -1,8 +1,8 @@
 <template>
-  <dialog ref="dialog" class="training-dialog game-scrollbar" :class="{ 'is-hidden': hidden }" :aria-labelledby="titleId" :aria-describedby="descriptionId" @cancel.prevent="emit('cancel')">
+  <dialog ref="dialog" class="training-dialog game-scrollbar" :aria-labelledby="titleId" :aria-describedby="descriptionId" @cancel.prevent="emit('cancel')">
     <header class="training-heading">
       <div><p class="eyebrow">{{ t('mobileTutorial.badge') }}</p><h2 :id="titleId" ref="heading" tabindex="-1">{{ t('mobileTutorial.title') }}</h2></div>
-      <span class="lesson-count">{{ lessonIndex + 1 }}/{{ lessons.length }}</span>
+      <div class="training-tools"><span class="lesson-count">{{ lessonIndex + 1 }}/{{ lessons.length }}</span><button type="button" class="skip-button" @click="emit('skip')">{{ t('mobileTutorial.skip') }}<span aria-hidden="true">»</span></button></div>
     </header>
     <ol class="lesson-track" :aria-label="t('mobileTutorial.progress')">
       <li v-for="(_, index) in lessons" :key="index" :class="{ current: index === lessonIndex, done: index < lessonIndex }" :aria-current="index === lessonIndex ? 'step' : undefined">
@@ -30,7 +30,7 @@
         <button v-for="direction in directions" :key="direction" type="button" class="arrow" :class="[direction, { suggested: nextMove?.direction === direction && !moving }]"
           :disabled="completed || moving" :aria-label="t(`game.${direction}`)" @click="press(direction)">
           {{ arrows[direction] }}
-          <svg v-if="nextMove?.direction === direction && !moving" class="tap-finger" viewBox="0 0 32 40" fill="none" aria-hidden="true"><path d="M12 23V6a3 3 0 0 1 6 0v13l2-2a3 3 0 0 1 4 0l5 5v9c0 4-3 7-7 7h-7l-10-12a3 3 0 0 1 4-4l3 1Z" fill="white" stroke="#102754" stroke-width="2" stroke-linejoin="round" /></svg>
+          <TouchTapHint v-if="nextMove?.direction === direction && !moving" />
         </button>
       </div>
     </div>
@@ -50,7 +50,7 @@ import type { Direction } from '../types/debug-game';
 import { createRunState, runUntilMove, stepPosition } from '../utils/programRunner';
 import { PLAYER_SPRITES } from '../utils/playerSprites';
 
-const emit = defineEmits<{ complete: []; cancel: []; sound: [effect: 'move' | 'wrong' | 'clear']; unlockAudio: [] }>();
+const emit = defineEmits<{ complete: []; skip: []; cancel: []; sound: [effect: 'move' | 'wrong' | 'clear']; unlockAudio: [] }>();
 const { t } = useGameI18n();
 const titleId = useId();
 const descriptionId = useId();
@@ -86,7 +86,6 @@ const facing = computed<Direction>(() => step.value ? lesson.value.moves[step.va
 const executedStep = shallowRef<{ line: number; sequence: number }>();
 const moving = ref(false);
 const wrong = ref(false);
-const hidden = ref(false);
 let sequence = 0;
 let moveTimer: ReturnType<typeof setTimeout> | undefined;
 let observer: ResizeObserver | undefined;
@@ -126,7 +125,6 @@ function onKeydown(event: KeyboardEvent): void {
   event.stopImmediatePropagation();
   if (!event.repeat) press(direction);
 }
-function syncVisibility(): void { hidden.value = document.hidden; }
 onMounted(() => {
   dialog.value?.showModal();
   heading.value?.focus();
@@ -135,15 +133,12 @@ onMounted(() => {
   });
   if (boardArea.value) observer.observe(boardArea.value);
   window.addEventListener('keydown', onKeydown, true);
-  document.addEventListener('visibilitychange', syncVisibility);
-  syncVisibility();
 });
 onBeforeUnmount(() => {
   disposed = true;
   clearTimeout(moveTimer);
   observer?.disconnect();
   window.removeEventListener('keydown', onKeydown, true);
-  document.removeEventListener('visibilitychange', syncVisibility);
   dialog.value?.close();
 });
 </script>
@@ -156,6 +151,8 @@ onBeforeUnmount(() => {
 .eyebrow { color: #bed9ff; margin: 0; font-size: .65rem; }
 h2 { margin: 0; color: #ffe36b; font-size: 1.05rem; font-weight: 800; }
 .lesson-count { font-size: 1.2rem; font-weight: 800; color: #87dfff; }
+.training-tools { display: flex; flex: none; align-items: center; gap: 8px; }
+.skip-button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 44px; padding: 6px 8px; border: 1px solid #85b2ff66; border-radius: 10px; color: #d9eaff; background: #133165; font-size: .7rem; white-space: nowrap; }
 .lesson-track { display: flex; gap: 6px; padding: 0; margin: 0; list-style: none; flex: none; }
 .lesson-track li { flex: 1; padding: 2px 8px; border-radius: 6px; background: #071e4988; text-align: center; font-size: .65rem; color: #bed9ff; }
 .lesson-track .current { background: #ffe36b; color: #102754; font-weight: 800; }
@@ -178,8 +175,6 @@ h2 { margin: 0; color: #ffe36b; font-size: 1.05rem; font-weight: 800; }
 .training-pad button { position: relative; height: 48px; border: 1px solid #a8ceff; border-radius: 12px; background: #fff; color: var(--cv-blue); font-size: 1.2rem; box-shadow: inset 0 -4px 0 #061a381f; }
 .up { grid-area: up; } .left { grid-area: left; } .down { grid-area: down; } .right { grid-area: right; }
 .training-pad button.suggested { background: #ffe36b; outline: 3px solid #ffe36b66; outline-offset: 3px; }
-.tap-finger { position: absolute; width: 26px; height: 34px; right: -8px; bottom: -12px; z-index: 2; pointer-events: none; animation: tap-guide 1100ms ease-in-out infinite; }
-.is-hidden .tap-finger { animation-play-state: paused; }
 .training-actions { display: flex; gap: 10px; flex: none; }
 button { font: inherit; font-weight: 800; cursor: pointer; transition: background 120ms; }
 .training-actions button { flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; padding: 8px 10px; font-size: .9rem; }
@@ -189,7 +184,6 @@ button:not(:disabled):hover { filter: brightness(1.12); }
 button:not(:disabled):active { transform: translateY(2px); }
 button:disabled { opacity: .55; cursor: default; }
 button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-@keyframes tap-guide { 0%, 100% { transform: translateY(3px) scale(.94); } 50% { transform: translateY(-5px); } }
 @media (max-height: 650px) {
   .training-dialog { padding: 10px; }
   .training-dialog[open] { gap: 6px; }
@@ -197,7 +191,6 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
   .training-pad button { height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tap-finger { animation: none; }
   .training-actor, .training-actor :deep(.hop) { animation: none; transition: none; }
   button { transition: none; }
 }
