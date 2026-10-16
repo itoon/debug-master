@@ -132,6 +132,7 @@
             scroll-hint
             :is-active-line="isGameCodeLineActive"
             :follow-active-line="practiceActive && practiceSuperHint"
+            :practice-guidance="practiceActive"
             :executed-step="executedCodeStep ?? undefined"
             :follow-executed="compactLayout && displayLanguage === 'python'"
           />

@@ -1,5 +1,5 @@
 <template>
-  <section class="code-card" :class="{ 'code-card-readable': readable }">
+  <section class="code-card" :class="{ 'code-card-readable': readable, 'practice-guidance': practiceGuidance }">
     <div class="window-bar">
       <span class="window-dots" aria-hidden="true"><i /><i /><i /></span>
       <h2>{{ title }}</h2>
@@ -15,10 +15,10 @@
       :tabindex="readable ? 0 : undefined"
     ><code><span
       v-for="entry in codeLineEntries"
-      :key="`${level.id}-${entry.index}-${followExecuted && executedStep?.line === entry.index + 1 ? executedStep.sequence : 0}`"
+      :key="`${level.id}-${entry.index}`"
       class="code-line"
-      :class="{ active: isActiveLine?.(entry.line, entry.index), 'code-line-executed': followExecuted && executedStep?.line === entry.index + 1 }"
-      :aria-current="followActiveLine && isActiveLine?.(entry.line, entry.index) ? 'step' : undefined"
+      :class="{ active: visibleActiveLineIndex === entry.index }"
+      :aria-current="followActiveLine && visibleActiveLineIndex === entry.index ? 'step' : undefined"
     ><span
       v-if="lineNumbers"
       class="code-line-number"
@@ -91,6 +91,8 @@ const props = withDefaults(
     executedStep?: { line: number; sequence: number };
     /** Keep two source lines below the accepted move in compact gameplay. */
     followExecuted?: boolean;
+    /** Practice's next-command teaching cue; never show yellow move history. */
+    practiceGuidance?: boolean;
   }>(),
   {
     language: "python",
@@ -102,6 +104,7 @@ const props = withDefaults(
     followActiveLine: false,
     executedStep: undefined,
     followExecuted: false,
+    practiceGuidance: false,
   },
 );
 
@@ -118,9 +121,10 @@ watch(() => props.level, () => {
     codeBox.value.scrollLeft = 0;
   }
 }, { flush: 'post' });
-const activeLineIndex = computed(() => props.followActiveLine
-  ? codeLineEntries.value.findIndex(entry => props.isActiveLine?.(entry.line, entry.index))
-  : -1);
+// A teaching/debug caller may identify several identical commands. Display
+// only its first matching row, and never overlay executed feedback on it.
+const visibleActiveLineIndex = computed(() => codeLineEntries.value.findIndex(entry => props.isActiveLine?.(entry.line, entry.index)));
+const activeLineIndex = computed(() => props.followActiveLine ? visibleActiveLineIndex.value : -1);
 watch([() => props.followActiveLine, () => props.level, activeLineIndex], async () => {
   const index = activeLineIndex.value;
   const level = props.level;
@@ -137,6 +141,45 @@ watch([() => props.followActiveLine, () => props.level, activeLineIndex], async 
     box.scrollTop = Math.max(0, box.scrollTop + position.top - viewport.top - box.clientHeight / 2 + position.height / 2);
   }
 }, { flush: 'post', immediate: true });
+
+let executedAnimation: Animation | null = null;
+let feedbackGeneration = 0;
+function cancelExecutedAnimation(): void {
+  feedbackGeneration += 1;
+  executedAnimation?.cancel();
+  executedAnimation = null;
+}
+// One animation owner per code window. Cancel synchronously before a new
+// source row is painted; stable row keys also avoid orphaned fading nodes.
+watch([
+  () => props.executedStep,
+  () => props.level,
+  () => props.followExecuted,
+  () => props.practiceGuidance,
+  visibleActiveLineIndex,
+], async () => {
+  cancelExecutedAnimation();
+  const generation = feedbackGeneration;
+  const step = props.executedStep;
+  if (!step || !props.followExecuted || props.practiceGuidance || visibleActiveLineIndex.value >= 0) return;
+  await nextTick();
+  if (generation !== feedbackGeneration) return;
+  const line = codeBox.value?.querySelectorAll<HTMLElement>('.code-line')[step.line - 1];
+  if (!line?.isConnected || typeof line.animate !== 'function') return;
+  const yellow = getComputedStyle(line).getPropertyValue('--cv-yellow').trim() || '#fdca3f';
+  const animation = line.animate([
+    { backgroundColor: '#fdca3f38', borderLeftColor: yellow, offset: 0 },
+    { backgroundColor: '#fdca3f38', borderLeftColor: yellow, offset: .2 },
+    { backgroundColor: 'transparent', borderLeftColor: 'transparent', offset: 1 },
+  ], { duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 1100, easing: 'ease-out' });
+  executedAnimation = animation;
+  animation.onfinish = () => {
+    if (executedAnimation !== animation) return;
+    animation.cancel();
+    executedAnimation = null;
+  };
+}, { flush: 'sync' });
+onBeforeUnmount(cancelExecutedAnimation);
 
 watch(() => props.executedStep, async (step) => {
   if (!props.followExecuted || !step) return;
@@ -166,16 +209,9 @@ watch(() => props.executedStep, async (step) => {
 .code-card-readable .window-bar { padding: 14px 18px; }
 .code-card-readable .window-bar h2 { min-width: 0; overflow-wrap: anywhere; }
 .code-card-readable .code-box.follow-executed { --code-bottom-space: calc(10px + 3.3em); }
-.code-line-executed:not(.active) { animation: executed-line-fade 1100ms ease-out both; }
-@keyframes executed-line-fade {
-  0%, 20% { background: #fdca3f38; border-left-color: var(--cv-yellow); }
-  100% { background: transparent; border-left-color: transparent; }
-}
+.practice-guidance .code-line.active { background: #1f75ff33; border-left-color: #87dfff; }
 .code-scroll-hint { flex: none; margin-left: auto; color: #bdd6ff; font: 700 .65rem/1.3 var(--cv-font); white-space: nowrap; }
 @media (min-width: 921px) and (min-height: 561px) {
   .code-scroll-hint { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .code-line-executed:not(.active) { animation-duration: 1ms; }
 }
 </style>
