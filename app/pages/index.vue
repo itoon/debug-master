@@ -51,10 +51,15 @@
               <strong>{{ notificationTitle }}</strong>
               <p>{{ notificationMessage }}</p>
             </div>
+            <div v-if="practiceActive && (status === 'success' || status === 'completed')" :key="`practice-pass-${boardRound}`"
+              class="notification notification-success practice-success-notice" role="status">
+              <strong>✓ {{ t('practice.passed') }}</strong>
+            </div>
             <p v-if="practiceSuperHint && practiceActive && practiceHintSolution?.error && !notificationMessage" class="notification" role="alert">{{ t('practice.pathError') }}</p>
             <div class="board-and-controls">
               <p class="board-combo" :role="practiceActive ? 'status' : undefined"><span v-if="practiceActive && (status === 'success' || status === 'completed')" class="practice-passed">✓ {{ t('practice.passed') }}</span><span v-else-if="!practiceActive && comboStreak > 1" :key="comboStreak" class="combo-pop" :class="{ 'combo-hot': comboStreak >= 5 }">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
-              <div ref="boardViewportEl" class="board-viewport game-scrollbar" role="region" :aria-label="t('game.boardViewport', { level: currentLevel.id })" tabindex="0">
+              <div ref="boardViewportEl" class="board-viewport game-scrollbar" role="region" :aria-label="t('game.boardViewport', { level: currentLevel.id })" tabindex="0"
+                @pointerdown.passive="cancelBoardFollow" @touchstart.passive="cancelBoardFollow" @wheel.passive="cancelBoardFollow">
               <LevelBoard
                 :key="boardRound"
                 :level="currentLevel"
@@ -118,7 +123,6 @@
                 <button type="button" class="arrow left" :class="{ 'guided-arrow': mobileGuidedMove === 'left' }" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀<TouchTapHint v-if="mobileGuidedMove === 'left'" /></button>
                 <button type="button" class="arrow down" :class="{ 'guided-arrow': mobileGuidedMove === 'down' }" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼<TouchTapHint v-if="mobileGuidedMove === 'down'" /></button>
                 <button type="button" class="arrow right" :class="{ 'guided-arrow': mobileGuidedMove === 'right' }" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶<TouchTapHint v-if="mobileGuidedMove === 'right'" /></button>
-                <p v-if="mobileGuidance" class="mobile-guide-label" role="status">{{ t('game.mobileGuide', { level: mobileGuidanceStep }) }}</p>
                 </div>
               </div>
             </div>
@@ -136,6 +140,8 @@
             :teaching-guidance="practiceActive || mobileGuidance"
             :executed-step="executedCodeStep ?? undefined"
             :follow-executed="compactLayout && displayLanguage === 'python' && !mobileGuidance"
+            :follow-upcoming="followMobileViewports && displayLanguage === 'python'"
+            :upcoming-line="expectedMove?.sourceLine"
           />
         </div>
 
@@ -415,6 +421,7 @@ import {
 import { PLAYER_AGES, scorePlayerKey, hasRankingScore, type RankingBoard } from "../utils/ranking";
 import { nicknameKey } from "../utils/playerNickname";
 import { newPlayerId } from "../utils/playerIdentity";
+import { createViewportScroller } from "../utils/viewportScroll";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
 import { enabledModesFor, homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
@@ -523,6 +530,12 @@ const currentLevel = computed(
 const { parseProgram } = useProgramParser(() => currentLevel.value.id);
 // The board area is measured so tiles scale to fill it (see fitCellSize).
 const boardViewportEl = ref<HTMLElement | null>(null);
+const boardScroller = createViewportScroller();
+let boardFollowGeneration = 0;
+function cancelBoardFollow(): void {
+  boardFollowGeneration += 1;
+  boardScroller.cancel();
+}
 const controlsEl = ref<HTMLElement | null>(null);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
 // Matches the desktop layout query in the styles below; anything smaller is
@@ -545,6 +558,7 @@ const playerHop = ref(0);
 const boardRound = ref(0);
 // Panning a large map never carries into a new level or a fresh attempt.
 watch(boardRound, () => {
+  cancelBoardFollow();
   if (!boardViewportEl.value) return;
   boardViewportEl.value.scrollTop = 0;
   boardViewportEl.value.scrollLeft = 0;
@@ -1641,8 +1655,45 @@ const mobileGuidance = computed(() => {
   if (practiceActive.value) return !practiceStarting.value && practiceTeachingLevels.value.includes(currentLevel.value.id);
   return !!activeChallenge.value && selectedLevelIndex.value < 2;
 });
-const mobileGuidanceStep = computed(() => practiceActive.value ? practiceTeachingLevels.value.indexOf(currentLevel.value.id) + 1 : selectedLevelIndex.value + 1);
 const mobileGuidedMove = computed(() => mobileGuidance.value && canControl.value ? expectedMove.value?.direction ?? null : null);
+const followMobileViewports = computed(() => compactLayout.value && campaignStarted.value && !practiceStarting.value &&
+  !showSetup.value && !showTutorial.value && !showSummary.value && !practiceSummary.value && !showRanking.value &&
+  !showPracticePicker.value && !showExitConfirm.value && ['playing', 'success', 'completed'].includes(status.value) &&
+  (!liveMode.value || liveStage.value === 'running'));
+
+// Follow the final cell geometry, not the actor's in-flight hop/slide. Moving
+// either scroller never calls the runner or scrolls the surrounding game page.
+watch([
+  () => player.row, () => player.col, boardRound, followMobileViewports,
+  () => boardSpace.value.width, () => boardSpace.value.height,
+], async () => {
+  cancelBoardFollow();
+  const token = boardFollowGeneration;
+  if (!followMobileViewports.value) return;
+  await nextTick();
+  if (token !== boardFollowGeneration) return;
+  const area = boardViewportEl.value;
+  const board = area?.querySelector<HTMLElement>('.board');
+  if (!area?.isConnected || !area.clientWidth || !area.clientHeight || !board) return;
+  const style = getComputedStyle(board);
+  const cell = parseFloat(style.getPropertyValue('--cell-size'));
+  if (!Number.isFinite(cell)) return;
+  const map = board.getBoundingClientRect();
+  const viewport = area.getBoundingClientRect();
+  const left = map.left + board.clientLeft + parseFloat(style.paddingLeft) + player.col * (cell + parseFloat(style.columnGap));
+  const top = map.top + board.clientTop + parseFloat(style.paddingTop) + player.row * (cell + parseFloat(style.rowGap));
+  const viewportLeft = viewport.left + area.clientLeft;
+  const viewportTop = viewport.top + area.clientTop;
+  const marginX = Math.min(Math.max(12, cell * .5), area.clientWidth * .2);
+  const marginY = Math.min(Math.max(12, cell * .5), area.clientHeight * .2);
+  let nextLeft = area.scrollLeft;
+  let nextTop = area.scrollTop;
+  if (left < viewportLeft + marginX) nextLeft += left - viewportLeft - marginX;
+  else if (left + cell > viewportLeft + area.clientWidth - marginX) nextLeft += left + cell - viewportLeft - area.clientWidth + marginX;
+  if (top < viewportTop + marginY) nextTop += top - viewportTop - marginY;
+  else if (top + cell > viewportTop + area.clientHeight - marginY) nextTop += top + cell - viewportTop - area.clientHeight + marginY;
+  boardScroller.to(area, { left: nextLeft, top: nextTop });
+}, { flush: 'post' });
 const liveSetupMode = computed<ChallengeMode>(() => {
   const room = liveLastState.value;
   const mode = homeConfig.modes.find((item) => item.id === room?.mode) ?? homeConfig.modes[0];
@@ -1974,6 +2025,7 @@ watch(selectedSetId, () => {
 });
 
 onBeforeUnmount(() => {
+  cancelBoardFollow();
   desktopQuery?.removeEventListener("change", syncCompactLayout);
   sessionToken += 1;
   practiceLaunchToken += 1;
@@ -2276,7 +2328,6 @@ h2 {
 }
 
 .arrow.guided-arrow:not(:disabled) { background: #ffe36b; outline: 3px solid #87dfff88; outline-offset: 2px; }
-.mobile-guide-label { grid-column: 1 / -1; grid-row: 3; margin: 0; color: #b9e8ff; text-align: center; font-size: .65rem; line-height: 1.3; }
 
 .arrow:not(:disabled):hover {
   background: var(--cv-blue-soft);
@@ -2440,6 +2491,8 @@ h2 {
 @keyframes notice-pop { from { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.86); } }
 .notification strong { display: block; font-size: 1.1rem; font-weight: 800; }
 .notification p { margin: 3px 0 0; font-size: .95rem; }
+.notification.practice-success-notice { display: none; }
+@keyframes practice-notice-pop { from { opacity: 0; transform: translate(-50%, calc(-50% - 10px)) scale(.86); } }
 
 /* Score card slices in skewed from the left, a light blade sweeps across it
    and the points slam down. Sharp ease-outs only, no overshoot. */
@@ -2922,6 +2975,8 @@ h2 {
   .play-cluster .code-card.python-code :deep(.code-box) { font-size: .875rem; }
   .board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { width: 100%; min-width: 0; min-height: 44px; padding: 6px 8px; gap: 5px; font-size: .7rem; line-height: 1.2; white-space: normal; }
   .practice-map-button svg, .superhint-button svg { flex: none; width: 16px; height: 16px; }
+  .board-panel:has(.practice-hud) .board-combo { display: none; }
+  .notification.practice-success-notice { display: block; position: fixed; top: 50%; width: min(340px, calc(100vw - 40px)); transform: translate(-50%, -50%); background: #123e32; color: #bbf7d0; animation-name: practice-notice-pop; }
 }
 @media (max-width: 639px) {
   .board-panel { padding: 8px; gap: 6px; }
@@ -2933,7 +2988,6 @@ h2 {
   .play-cluster .code-card :deep(.code-scroll-hint) { font-size: .55rem; }
   .board-and-controls { grid-template-rows: minmax(80px, 1fr) auto; gap: 8px; position: relative; }
   .board-combo { display: none; }
-  .board-combo:has(.practice-passed) { display: block; position: absolute; top: 6px; left: 12px; width: auto; z-index: 5; pointer-events: none; }
 }
 
 /* Wide landscape phones put code and the D-pad beside the board. Narrow

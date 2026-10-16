@@ -2,6 +2,33 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-16 — Remove the mobile teaching caption
+
+- Removed the “กดตามมือ · ด่านสอน 1/2 / 2/2” caption, unused computed lesson number, CSS row and message key. The expected D-pad hand, direction arrow, code highlights and two-level teaching eligibility remain unchanged across solo/practice/Live. Updated `DESIGN.md`; prior working-tree changes preserved.
+- Verification pending: build/whitespace only; no tests or browser checks, staging/commit or branch switch.
+
+## 2026-10-16 — Smooth mobile code and Codi viewport following
+
+- `LevelCode.vue` adds opt-in `followUpcoming`/`upcomingLine`. Active compact Python gameplay passes the real `expectedMove.sourceLine`, so repeat/while and branch jumps follow the actual next command instead of the last accepted one. Retains roughly two source lines of surrounding context (30% height cap), final-line bottom reserve, original manual horizontal scrolling and existing blue teaching/yellow single-row feedback. Legacy active/executed scroll paths yield to this owner only when opted in; desktop/review/animated tutorial remain unchanged.
+- `index.vue` follows Codi in oversized compact board viewports with a bounded half-cell edge margin, using final cell geometry from the board's computed grid size/gap/padding/border rather than the actor's ongoing slide/hop. Measures both axes after moves, viewport resizing and new rounds; preserves the original tile-fitting logic and round scroll reset. `followMobileViewports` disables both followers for hidden gameplay, dialogs, failures/end states and desktop.
+- New shared `app/utils/viewportScroll.ts` owns one 300ms ease-out RAF scroll per viewport, clamped to its scroll range. Retargets from current offsets without queuing, cancels on manual touch/pointer/wheel, rejects stale deferred starts, releases frames/observers on unmount and uses instant positioning for reduced motion. Only code/map scroll; no page focus or scrollIntoView calls and no dependencies.
+- Updated `DESIGN.md`. No game runner/parser, expected-move generation, input acceptance, score calculations, timers, levels, storage or Live protocol changes. Prior working-tree logo/success edits preserved; no tests, browser/device checks, staging/commit or branch switch.
+- Verification: `pnpm build` passed (exit 0, `mobile-smooth-follow-build.log`); `git diff --check` passed. Read-only source review found no concrete lifecycle, loop-following, board-geometry or gameplay-isolation issues. Actual smooth behavior remains unverified on-device.
+
+## 2026-10-16 — Debug Master logo in the Live lobby corner
+
+- Size follow-up: increased the logo from 22cqw to 38cqw to match the user's red reference frame, retaining its aspect ratio, top/right offsets and floating animation. `pnpm build` passed (exit 0, `live-lobby-logo-size-build.log`); `git diff --check` passed. No runtime visual checks.
+- Follow-up: added a gentle transform-only floating loop to the corner logo, sharing `homeConfig.sleepScreen.floatMs` (4.2s) with the Home attract logo. Responsive 3–12px offset, ease-in-out, no JS timer or layout movement, disabled for reduced motion. `pnpm build` passed (exit 0, `live-lobby-logo-float-build.log`); `git diff --check` passed. No tests or runtime browser checks.
+- `LobbyStage.vue` replaces the upper-right win-pose Codi with the existing local `app/assets/brand/logo-sleep-display.png`, also used by Home. Full logo at 22cqw with original corner offsets, intrinsic 1448×980 dimensions, alt text and preserved aspect ratio; no link, duplicated asset or new artwork.
+- Updated Elements' shared logo usage copy and `DESIGN.md`. QR, room code/settings, seats, countdown and realtime behavior are unchanged. Earlier practice-success edits preserved.
+- Verification: `pnpm build` passed (exit 0, `live-lobby-logo-build.log`); `git diff --check` passed. No tests or browser checks, staging/commit or branch switch.
+
+## 2026-10-16 — Centered green practice-success notice on phones
+
+- `index.vue` reuses the existing notification presentation for a mobile-only green “✓ ผ่านด่านแล้ว” status notice fixed at the viewport center. Visible on practice success/completed, keyed per board round; original failure notices, 520ms level advance, progression and all game data remain unchanged. Existing reduced-motion overrides apply; the notice never intercepts touches or takes layout space.
+- Hide the former board-corner practice passed label at the existing portrait/short-landscape phone breakpoints. Desktop practice keeps its prior label, and competition/Live feedback is unchanged. Updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `mobile-practice-success-build.log`); `git diff --check` passed. No tests or browser/device checks, staging/commit or branch switch.
+
 ## 2026-10-16 — Shared animated intro and teaching in the first two real mobile levels
 
 - Removed `MobileTutorialDialog.vue`, its three-lesson routing/state and unused localized copy. New solo A/B/C profiles now see the same `SessionPanel`/`TutorialDemo` automatic animation as desktop. Start enters the original game; Back returns Home. Existing-player reuse still skips the intro, and Live still joins directly.

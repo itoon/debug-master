@@ -9,10 +9,11 @@
     <pre
       ref="codeBox"
       class="code-box"
-      :class="{ 'game-scrollbar': readable, 'follow-executed': followExecuted }"
+      :class="{ 'game-scrollbar': readable, 'follow-executed': followExecuted, 'follow-upcoming': followUpcoming }"
       :style="codeBoxStyle"
       :aria-label="`Level ${level.id} code`"
       :tabindex="readable ? 0 : undefined"
+      @pointerdown.passive="cancelUpcomingFollow" @touchstart.passive="cancelUpcomingFollow" @wheel.passive="cancelUpcomingFollow"
     ><code><span
       v-for="entry in codeLineEntries"
       :key="`${level.id}-${entry.index}`"
@@ -66,6 +67,7 @@ import type { LevelLike } from "../types/debug-game";
 import type { CodeLanguage } from "../utils/codeLanguage";
 import { tileDefinition } from "../data/tiles";
 import { useGameI18n } from "../composables/useGameI18n";
+import { createViewportScroller } from "../utils/viewportScroll";
 
 const { t } = useGameI18n();
 function tileDescription(value: string): string {
@@ -91,6 +93,9 @@ const props = withDefaults(
     executedStep?: { line: number; sequence: number };
     /** Keep two source lines below the accepted move in compact gameplay. */
     followExecuted?: boolean;
+    /** Compact gameplay scrolls to the real next command, including loop jumps. */
+    followUpcoming?: boolean;
+    upcomingLine?: number;
     /** Next-command teaching cue; never overlay yellow move history. */
     teachingGuidance?: boolean;
   }>(),
@@ -104,6 +109,8 @@ const props = withDefaults(
     followActiveLine: false,
     executedStep: undefined,
     followExecuted: false,
+    followUpcoming: false,
+    upcomingLine: undefined,
     teachingGuidance: false,
   },
 );
@@ -113,10 +120,45 @@ const { codeLineEntries, codeBoxStyle } = useCodePresentation(
   computed(() => props.language),
 );
 const codeBox = ref<HTMLPreElement | null>(null);
+const upcomingScroller = createViewportScroller();
+let upcomingGeneration = 0;
+let codeResizeObserver: ResizeObserver | undefined;
+function cancelUpcomingFollow(): void {
+  upcomingGeneration += 1;
+  upcomingScroller.cancel();
+}
+async function followUpcomingLine(): Promise<void> {
+  cancelUpcomingFollow();
+  const token = upcomingGeneration;
+  const index = props.upcomingLine;
+  const level = props.level;
+  if (!props.readable || !props.followUpcoming || !index) return;
+  await nextTick();
+  if (token !== upcomingGeneration || !props.followUpcoming || props.level !== level || props.upcomingLine !== index) return;
+  const box = codeBox.value;
+  const line = box?.querySelectorAll<HTMLElement>('.code-line')[index - 1];
+  if (!box?.isConnected || !box.clientHeight || !line) return;
+  const viewportTop = box.getBoundingClientRect().top + box.clientTop;
+  const position = line.getBoundingClientRect();
+  const above = Math.min(position.height * 2, box.clientHeight * .3);
+  const below = Math.min(position.height * 2, box.clientHeight * .3);
+  // Keep context around the next move, not just the last executed row.
+  // When repeat/while jumps backwards the real sourceLine naturally follows it.
+  if (position.top < viewportTop + above || position.bottom > viewportTop + box.clientHeight - below) {
+    upcomingScroller.to(box, { top: box.scrollTop + position.top - viewportTop - above, left: box.scrollLeft });
+  }
+}
+watch([() => props.followUpcoming, () => props.upcomingLine, () => props.level], followUpcomingLine, { flush: 'post', immediate: true });
+onMounted(() => {
+  if (!codeBox.value) return;
+  codeResizeObserver = new ResizeObserver(() => { void followUpcomingLine(); });
+  codeResizeObserver.observe(codeBox.value);
+});
+onBeforeUnmount(() => { cancelUpcomingFollow(); codeResizeObserver?.disconnect(); });
 // A new program starts at its first line, not the previous level's scroll.
 // Teaching mode retains ownership of scrolling to its active source line.
 watch(() => props.level, () => {
-  if (props.readable && (!props.followActiveLine || props.followExecuted) && codeBox.value) {
+  if (props.readable && (props.followUpcoming || !props.followActiveLine || props.followExecuted) && codeBox.value) {
     codeBox.value.scrollTop = 0;
     codeBox.value.scrollLeft = 0;
   }
@@ -128,9 +170,9 @@ const activeLineIndex = computed(() => props.followActiveLine ? visibleActiveLin
 watch([() => props.followActiveLine, () => props.level, activeLineIndex], async () => {
   const index = activeLineIndex.value;
   const level = props.level;
-  if (!props.followActiveLine || props.followExecuted || index < 0) return;
+  if (!props.followActiveLine || props.followExecuted || props.followUpcoming || index < 0) return;
   await nextTick();
-  if (!props.followActiveLine || props.followExecuted || props.level !== level || activeLineIndex.value !== index) return;
+  if (!props.followActiveLine || props.followExecuted || props.followUpcoming || props.level !== level || activeLineIndex.value !== index) return;
   const box = codeBox.value;
   const line = box?.querySelectorAll<HTMLElement>('.code-line')[index];
   if (!box?.isConnected || !line) return;
@@ -182,10 +224,10 @@ watch([
 onBeforeUnmount(cancelExecutedAnimation);
 
 watch(() => props.executedStep, async (step) => {
-  if (!props.followExecuted || !step) return;
+  if (!props.followExecuted || props.followUpcoming || !step) return;
   const level = props.level;
   await nextTick();
-  if (!props.followExecuted || props.level !== level || props.executedStep !== step) return;
+  if (!props.followExecuted || props.followUpcoming || props.level !== level || props.executedStep !== step) return;
   const box = codeBox.value;
   const line = box?.querySelectorAll<HTMLElement>('.code-line')[step.line - 1];
   if (!box?.isConnected || !line) return;
@@ -208,7 +250,7 @@ watch(() => props.executedStep, async (step) => {
 .code-card-readable .code-token { white-space: pre; flex: none; }
 .code-card-readable .window-bar { padding: 14px 18px; }
 .code-card-readable .window-bar h2 { min-width: 0; overflow-wrap: anywhere; }
-.code-card-readable .code-box.follow-executed { --code-bottom-space: calc(10px + 3.3em); }
+.code-card-readable .code-box.follow-executed, .code-card-readable .code-box.follow-upcoming { --code-bottom-space: calc(10px + 3.3em); }
 .teaching-guidance .code-line.active { background: #1f75ff33; border-left-color: #87dfff; }
 .code-scroll-hint { flex: none; margin-left: auto; color: #bdd6ff; font: 700 .65rem/1.3 var(--cv-font); white-space: nowrap; }
 @media (min-width: 921px) and (min-height: 561px) {

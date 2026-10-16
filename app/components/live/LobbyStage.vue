@@ -12,7 +12,7 @@
         <p class="chip">{{ roundInfo[0] }}<em>{{ modeLabel }}</em>{{ roundInfo[1] }}</p>
       </div>
     </div>
-    <img class="codi" :src="PLAYER_POSES.win" alt="" draggable="false" />
+    <img class="brand-logo" :src="debugMasterLogo" width="1448" height="980" alt="Debug Master" draggable="false" />
     <ol class="startrow" :aria-label="t('live.players')">
       <li v-for="seat in seats" :key="seat.index" class="slot" :class="{ empty: !seat.player, off: seat.player && !seat.player.connected }">
         <img v-if="seat.player" :key="seat.player.id" class="av filled" :src="avatarSrc(seat.player.avatarId)" alt="" draggable="false" />
@@ -27,7 +27,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { renderSVG } from "uqr";
-import { PLAYER_POSES } from "../../utils/playerSprites";
+import debugMasterLogo from "../../assets/brand/logo-sleep-display.png";
+import { homeConfig } from "../../data/home-config";
 import { useGameI18n } from "../../composables/useGameI18n";
 import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import { MAX_PLAYERS, type LivePlayer, type ModeId } from "../../utils/live/protocol";
@@ -35,6 +36,7 @@ import { MAX_PLAYERS, type LivePlayer, type ModeId } from "../../utils/live/prot
 const props = defineProps<{ code: string; joinUrl: string; mode: ModeId; durationSec: number; players: LivePlayer[] }>();
 const { t } = useGameI18n();
 const avatarSrc = usePlayerAvatar();
+const logoFloatDuration = `${homeConfig.sleepScreen.floatMs}ms`;
 const baseURL = useRuntimeConfig().app.baseURL;
 const grassTile = `url(${baseURL.endsWith("/") ? baseURL : `${baseURL}/`}tiles/grass.png)`;
 
@@ -77,7 +79,7 @@ figcaption { font-size: 1.8cqw; font-weight: 800; }
 .code { color: #ffdb58; font-size: 7.5cqw; font-weight: 900; line-height: 1.05; letter-spacing: .4cqw; text-shadow: 0 .5cqw 0 #8a5a00; overflow-wrap: anywhere; }
 .room .chip { display: inline-block; margin-top: 1.4cqw; padding: .7cqw 1.8cqw; border: 1px solid #6e9fe866; border-radius: 999px; background: #071e49d0; font-size: 1.7cqw; font-weight: 700; }
 .chip em { font-style: normal; color: #87dfff; }
-.codi { position: absolute; right: 4cqw; top: 4cqw; width: 14cqw; pointer-events: none; }
+.brand-logo { --float-offset: clamp(3px, .65cqw, 12px); position: absolute; right: 4cqw; top: 4cqw; width: 38cqw; height: auto; object-fit: contain; pointer-events: none; animation: logo-float v-bind(logoFloatDuration) ease-in-out infinite; will-change: transform; }
 .startrow { position: absolute; left: 0; right: 0; bottom: 2.6cqw; display: flex; justify-content: center; gap: 1cqw; margin: 0; padding: 0; list-style: none; }
 .slot { position: relative; display: grid; justify-items: center; gap: .3cqw; width: 6.6cqw; font-size: 1.25cqw; font-weight: 700; }
 .slot.off { opacity: .45; }
@@ -90,7 +92,8 @@ figcaption { font-size: 1.8cqw; font-weight: 800; }
 .empty b { color: #bed6ff; font-weight: 400; }
 @keyframes seat-drop { from { opacity: 0; transform: translateY(-3cqw); } }
 @keyframes idle-hop { to { transform: translateY(-.6cqw); } }
+@keyframes logo-float { 0%, 100% { transform: translate3d(0, var(--float-offset), 0); } 50% { transform: translate3d(0, calc(-1 * var(--float-offset)), 0); } }
 @media (prefers-reduced-motion: reduce) {
-  .av.filled { animation: none; }
+  .av.filled, .brand-logo { animation: none; }
 }
 </style>
