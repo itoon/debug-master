@@ -2977,13 +2977,16 @@ h2 {
    the verbose level header; values and existing system actions stay visible. */
 @media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
   .play-cluster .code-card.python-code :deep(.code-box) { font-size: .875rem; }
-  .board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { width: auto; min-width: 0; min-height: 44px; padding: 2px; gap: 2px; font-size: .6875rem; line-height: 1.2; white-space: nowrap; }
-  .practice-map-button svg { flex: none; width: 14px; height: 14px; }
-  .superhint-button svg, .practice-label-full { display: none; }
+  .board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { width: 100%; min-width: 0; height: 44px; min-height: 44px; padding: 2px; gap: 3px; font-size: clamp(10px, 2.7vw, 11px); line-height: 1.2; white-space: nowrap; }
+  .practice-map-button svg, .superhint-button svg { display: block; flex: none; width: 14px; height: 14px; }
+  .practice-label-full { display: none; }
   .practice-label-short { display: inline; }
   .board-panel:has(.practice-hud) #game-hud-system .hud-action.exit-action { padding: 0; }
   .board-panel:has(.practice-hud) .board-combo { display: none; }
   .notification.practice-success-notice { display: block; position: fixed; top: 50%; width: min(340px, calc(100vw - 40px)); transform: translate(-50%, -50%); background: #123e32; color: #bbf7d0; animation-name: practice-notice-pop; }
+}
+@media (max-width: 359px) {
+  .board-panel .superhint-button svg { display: none; }
 }
 @media (max-width: 639px) {
   .board-panel { padding: 8px; gap: 6px; }

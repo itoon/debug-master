@@ -2,6 +2,12 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-16 — Match phone practice HUD proportions to reference
+
+- Rebalanced the one-row phone practice HUD to the user's image: small progress box at left, equal Map/SuperHint middle buttons, then exit. `GameHud.vue` uses .8fr/2.2fr/40px columns (64px progress minimum), 6px gutters and a 4px progress caption/value gap. Controls share 44px heights.
+- `index.vue` restores the SuperHint icon alongside its text/check at normal phone widths, uses 10–11px button labels, and fills the equal columns while retaining 2px padding. Below 360px only the code icon hides to protect label fit. Desktop/competition behavior, handlers, state and progress bar remain unchanged. Updated `DESIGN.md`; previous working-tree changes preserved.
+- Verification: `pnpm build` passed (exit 0, `mobile-practice-hud-proportions-build.log`); `git diff --check` passed. No tests, browser/device checks, staging/commit or branch switch; actual phone rendering remains unverified.
+
 ## 2026-10-16 — Give phone practice progress more room
 
 - Phone `GameHud.vue` lets progress use the remaining row width (minimum 72px), with 8px inline padding, a 6px caption/value gap and slightly larger caption. Map/SuperHint now size to content instead of stretching, using 2px padding/internal gaps in `index.vue`; keep 44px minimum touch height and the one-row order/progress bar.
