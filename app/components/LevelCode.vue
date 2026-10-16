@@ -9,15 +9,15 @@
     <pre
       ref="codeBox"
       class="code-box"
-      :class="{ 'game-scrollbar': readable }"
+      :class="{ 'game-scrollbar': readable, 'follow-executed': followExecuted }"
       :style="codeBoxStyle"
       :aria-label="`Level ${level.id} code`"
       :tabindex="readable ? 0 : undefined"
     ><code><span
       v-for="entry in codeLineEntries"
-      :key="`${level.id}-${entry.index}`"
+      :key="`${level.id}-${entry.index}-${followExecuted && executedStep?.line === entry.index + 1 ? executedStep.sequence : 0}`"
       class="code-line"
-      :class="{ active: isActiveLine?.(entry.line, entry.index) }"
+      :class="{ active: isActiveLine?.(entry.line, entry.index), 'code-line-executed': followExecuted && executedStep?.line === entry.index + 1 }"
       :aria-current="followActiveLine && isActiveLine?.(entry.line, entry.index) ? 'step' : undefined"
     ><span
       v-if="lineNumbers"
@@ -87,6 +87,10 @@ const props = withDefaults(
     isActiveLine?: (line: string, index: number) => boolean;
     /** Follow teaching hints within the code viewport only. */
     followActiveLine?: boolean;
+    /** Presentation-only feedback from the last accepted move, not the next. */
+    executedStep?: { line: number; sequence: number };
+    /** Keep two source lines below the accepted move in compact gameplay. */
+    followExecuted?: boolean;
   }>(),
   {
     language: "python",
@@ -96,6 +100,8 @@ const props = withDefaults(
     scrollHint: false,
     isActiveLine: undefined,
     followActiveLine: false,
+    executedStep: undefined,
+    followExecuted: false,
   },
 );
 
@@ -107,7 +113,7 @@ const codeBox = ref<HTMLPreElement | null>(null);
 // A new program starts at its first line, not the previous level's scroll.
 // Teaching mode retains ownership of scrolling to its active source line.
 watch(() => props.level, () => {
-  if (props.readable && !props.followActiveLine && codeBox.value) {
+  if (props.readable && (!props.followActiveLine || props.followExecuted) && codeBox.value) {
     codeBox.value.scrollTop = 0;
     codeBox.value.scrollLeft = 0;
   }
@@ -118,9 +124,9 @@ const activeLineIndex = computed(() => props.followActiveLine
 watch([() => props.followActiveLine, () => props.level, activeLineIndex], async () => {
   const index = activeLineIndex.value;
   const level = props.level;
-  if (!props.followActiveLine || index < 0) return;
+  if (!props.followActiveLine || props.followExecuted || index < 0) return;
   await nextTick();
-  if (!props.followActiveLine || props.level !== level || activeLineIndex.value !== index) return;
+  if (!props.followActiveLine || props.followExecuted || props.level !== level || activeLineIndex.value !== index) return;
   const box = codeBox.value;
   const line = box?.querySelectorAll<HTMLElement>('.code-line')[index];
   if (!box?.isConnected || !line) return;
@@ -131,17 +137,45 @@ watch([() => props.followActiveLine, () => props.level, activeLineIndex], async 
     box.scrollTop = Math.max(0, box.scrollTop + position.top - viewport.top - box.clientHeight / 2 + position.height / 2);
   }
 }, { flush: 'post', immediate: true });
+
+watch(() => props.executedStep, async (step) => {
+  if (!props.followExecuted || !step) return;
+  const level = props.level;
+  await nextTick();
+  if (!props.followExecuted || props.level !== level || props.executedStep !== step) return;
+  const box = codeBox.value;
+  const line = box?.querySelectorAll<HTMLElement>('.code-line')[step.line - 1];
+  if (!box?.isConnected || !line) return;
+  const viewport = box.getBoundingClientRect();
+  const position = line.getBoundingClientRect();
+  const lineHeight = position.height;
+  const clearance = Math.min(lineHeight * 2, Math.max(0, box.clientHeight - lineHeight));
+  if (position.top < viewport.top || position.bottom > viewport.top + box.clientHeight - clearance) {
+    // No scrollIntoView: do not move the page or enqueue smooth scrolls while
+    // the player presses quickly. Manual pan remains until the next move.
+    box.scrollTop = Math.max(0, box.scrollTop + position.bottom - viewport.top - box.clientHeight + clearance);
+  }
+}, { flush: 'post' });
 </script>
 
 <style scoped>
-.code-card-readable .code-box { min-width: 0; max-width: 100%; font-size: clamp(1rem, 1.15vw, 1.3rem); line-height: 1.65; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; padding: 16px 0; }
+.code-card-readable .code-box { min-width: 0; max-width: 100%; font-size: clamp(1rem, 1.15vw, 1.3rem); line-height: 1.65; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; padding: 16px 0 var(--code-bottom-space, 16px); }
 .code-card-readable .code-box:focus-visible { outline: 2px solid var(--cv-yellow); outline-offset: -2px; }
 .code-card-readable .code-line { white-space: pre; flex-wrap: nowrap; width: max-content; min-width: 100%; padding: 0 18px; }
 .code-card-readable .code-token { white-space: pre; flex: none; }
 .code-card-readable .window-bar { padding: 14px 18px; }
 .code-card-readable .window-bar h2 { min-width: 0; overflow-wrap: anywhere; }
+.code-card-readable .code-box.follow-executed { --code-bottom-space: calc(10px + 3.3em); }
+.code-line-executed:not(.active) { animation: executed-line-fade 1100ms ease-out both; }
+@keyframes executed-line-fade {
+  0%, 20% { background: #fdca3f38; border-left-color: var(--cv-yellow); }
+  100% { background: transparent; border-left-color: transparent; }
+}
 .code-scroll-hint { flex: none; margin-left: auto; color: #bdd6ff; font: 700 .65rem/1.3 var(--cv-font); white-space: nowrap; }
 @media (min-width: 921px) and (min-height: 561px) {
   .code-scroll-hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .code-line-executed:not(.active) { animation-duration: 1ms; }
 }
 </style>

@@ -6,15 +6,16 @@
         :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
         @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" @sleep="showHomeSleep" />
     </Transition>
-    <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
+    <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="requestPracticeLevel" />
     <PracticeSummaryDialog v-if="practiceSummary" :result="practiceSummary" @home="backToStart" />
-    <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
+    <MobileTutorialDialog v-if="mobileTraining || (showTutorial && mobileChallengeTutorial)" @complete="completeMobileTraining" @cancel="cancelMobileTraining" @sound="playSound" @unlock-audio="unlockAudio" />
+    <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking) && !(showTutorial && mobileChallengeTutorial)"
       :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
       :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
       @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
     <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" @cancel="showExitConfirm = false" @confirm="confirmExit" />
-    <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial" @start="liveJoin" @close="liveGoHome" />
+    <PlayerSetupDialog v-if="liveMode && liveStage === 'setup' && !mobileTraining" :mode="liveSetupMode" :initial="liveSetupInitial" @start="requestLiveJoin" @close="liveGoHome" />
     <LivePlayerPanel v-if="liveMode && liveStage !== 'setup' && liveStage !== 'running'" :stage="liveStage" :state="liveState" :self-id="liveSelfId"
       :countdown="liveCountdown" :queue-remaining-sec="liveQueueRemaining" :late-score-note="liveLateScore"
       @change-player="liveChangePlayer" @leave="liveLeave" @home="liveGoHome" />
@@ -131,6 +132,8 @@
             scroll-hint
             :is-active-line="isGameCodeLineActive"
             :follow-active-line="practiceActive && practiceSuperHint"
+            :executed-step="executedCodeStep ?? undefined"
+            :follow-executed="compactLayout && displayLanguage === 'python'"
           />
         </div>
 
@@ -446,6 +449,8 @@ const homeTransitionDuration = computed(() => {
 const homeView = ref<{ focusFirstMode: () => Promise<void> } | null>(null);
 let focusAfterWake = false;
 const showTutorial = ref(false);
+const mobileChallengeTutorial = ref(false);
+const mobileTraining = shallowRef<{ kind: 'live'; profile: PlayerSetupInput } | { kind: 'practice'; levelId: number } | null>(null);
 const showSummary = ref(false);
 const showExitConfirm = ref(false);
 const practiceActive = ref(false);
@@ -569,6 +574,16 @@ const timerRemaining = ref(0);
 const startedAt = ref(0);
 const levelStartedAt = ref(0);
 const levelCorrectInputs = ref(0);
+const executedCodeStep = shallowRef<{ line: number; sequence: number } | null>(null);
+let executedCodeSequence = 0;
+// Observe accepted inputs before the existing runner clears expectedMove.
+// Never advance the interpreter or change input/scoring/timer behavior here.
+watch(levelCorrectInputs, (count, previous) => {
+  if (count <= previous) return;
+  const line = expectedMove.value?.sourceLine;
+  if (line) executedCodeStep.value = { line, sequence: ++executedCodeSequence };
+}, { flush: 'sync' });
+watch(boardRound, () => { executedCodeStep.value = null; }, { flush: 'sync' });
 let timerId: ReturnType<typeof setInterval> | null = null;
 let levelAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
 let scorePopupTimer: ReturnType<typeof setTimeout> | null = null;
@@ -910,6 +925,7 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
   debugModeDraft.value = false;
   deadRun.value = null;
   showSetup.value = false;
+  mobileChallengeTutorial.value = compactLayout.value;
   showTutorial.value = true;
   lastInteractionAt = Date.now();
   // Only explicit reuse of a stored identity skips the tutorial;
@@ -939,6 +955,44 @@ function openPracticePicker(): void {
   practiceLaunchButton = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   showPracticePicker.value = true;
   lastInteractionAt = Date.now();
+}
+function requestPracticeLevel(levelId: number): void {
+  if (!practiceActive.value && compactLayout.value && showPracticePicker.value && practiceLevels.some(level => level.id === levelId)) {
+    showPracticePicker.value = false;
+    mobileTraining.value = { kind: 'practice', levelId };
+    lastInteractionAt = Date.now();
+    return;
+  }
+  void startPracticeLevel(levelId);
+}
+function requestLiveJoin(profile: PlayerSetupInput): void {
+  if (compactLayout.value && liveMode.value && liveStage.value === 'setup' && !liveRoom.value) {
+    const player = validLiveProfile(profile);
+    if (!player) return;
+    unlockAudio();
+    mobileTraining.value = { kind: 'live', profile: player };
+    return;
+  }
+  liveJoin(profile);
+}
+function completeMobileTraining(): void {
+  const pending = mobileTraining.value;
+  mobileTraining.value = null;
+  if (!pending) { playChallenge(); return; }
+  if (pending.kind === 'live') {
+    if (liveMode.value && liveStage.value === 'setup') liveJoin(pending.profile);
+  } else {
+    // Restore the existing picker's precondition, then use its original start.
+    showPracticePicker.value = true;
+    void startPracticeLevel(pending.levelId);
+  }
+}
+function cancelMobileTraining(): void {
+  const pending = mobileTraining.value;
+  mobileTraining.value = null;
+  if (!pending) { backToStart(); return; }
+  if (pending.kind === 'live') liveSetupInitial.value = pending.profile;
+  else showPracticePicker.value = true;
 }
 async function closePracticePicker(): Promise<void> {
   if (practiceStarting.value) return;
@@ -995,6 +1049,8 @@ function showChallengeRanking(): void {
 }
 
 function resetHomeSession(): void {
+  mobileTraining.value = null;
+  mobileChallengeTutorial.value = false;
   homeAfterSave = false;
   sessionToken += 1;
   homeStarting.value = false;
@@ -1849,6 +1905,7 @@ function liveLeave(): void {
 /** Kicked, home, setup dialog closed, or Back: close the socket and return to the normal Home. */
 function liveGoHome(): void {
   if (!liveMode.value) return;
+  mobileTraining.value = null;
   liveClose();
   liveStopGame();
   clearInterval(liveTicker);
@@ -2048,7 +2105,7 @@ summary:focus-visible {
 }
 .play-cluster .code-card :deep(.window-bar) { padding: 8px 14px; }
 .play-cluster .code-card :deep(.window-bar h2) { font-size: .8rem; }
-.play-cluster .code-card :deep(.code-box) { padding: 10px 0; }
+.play-cluster .code-card :deep(.code-box) { padding: 10px 0 var(--code-bottom-space, 10px); }
 .play-cluster .code-card { overflow: hidden; }
 
 .sound-toggle { display: inline-grid; place-items: center; flex: none; width: 44px; min-height: 44px; padding: 0; border: 1px solid #759bd966; border-radius: 10px; background: #14357499; color: #e4edff; }
@@ -2849,6 +2906,21 @@ h2 {
   }
 }
 
+/* The phone composition gives the program and map the space removed from
+   the verbose level header; values and existing system actions stay visible. */
+@media (max-width: 639px) {
+  .board-panel { padding: 8px; gap: 6px; }
+  .play-cluster { grid-template-rows: clamp(156px, 30dvh, 260px) minmax(0, 1fr); gap: 6px; }
+  .play-cluster .code-card :deep(.window-bar) { padding: 4px 10px; gap: 7px; }
+  .play-cluster .code-card :deep(.window-bar h2) { font-size: .7rem; line-height: 1.3; }
+  .play-cluster .code-card :deep(.window-dots) { gap: 4px; }
+  .play-cluster .code-card :deep(.window-dots i) { width: 7px; height: 7px; }
+  .play-cluster .code-card :deep(.code-scroll-hint) { font-size: .55rem; }
+  .board-and-controls { grid-template-rows: minmax(80px, 1fr) auto; gap: 8px; position: relative; }
+  .board-combo { display: none; }
+  .board-combo:has(.practice-passed) { display: block; position: absolute; top: 6px; left: 12px; width: auto; z-index: 5; pointer-events: none; }
+}
+
 /* Wide landscape phones put code and the D-pad beside the board. Narrow
    landscape windows keep the stacked, scrollable layout so tiles have width. */
 @media (min-width: 640px) and (orientation: landscape) and (max-height: 560px) {
@@ -2871,7 +2943,7 @@ h2 {
   .play-cluster .code-card { order: 0; height: 100%; max-height: 100%; }
   .play-cluster .code-card :deep(.window-bar) { padding: 14px 18px; }
   .play-cluster .code-card :deep(.window-bar h2) { font-size: .9rem; }
-  .play-cluster .code-card :deep(.code-box) { max-height: none; padding: 16px 0; }
+  .play-cluster .code-card :deep(.code-box) { max-height: none; padding: 16px 0 var(--code-bottom-space, 16px); }
   .board-wrap { min-height: 0; }
   .board-footer { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   .game-actions { flex-wrap: wrap; }

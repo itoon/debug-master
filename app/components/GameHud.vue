@@ -136,6 +136,22 @@ h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-h
   .practice-hud .level-info { min-width: 0; }
   .level-number { font-size: 1.15rem; }
   .level-title { font-size: .85rem; }
+  /* Phone composition: identity + system actions, then progress + metrics.
+     Contents stay in one DOM tree; desktop and room data remain intact. */
+  .game-hud:not(.practice-hud) { grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 6px; }
+  .game-hud:not(.practice-hud) :is(.pilot-info, .metrics, .mission-info, .mission-heading) { display: contents; }
+  .game-hud:not(.practice-hud) .player-profile { grid-column: 1 / 3; grid-row: 1; min-height: 40px; }
+  .game-hud:not(.practice-hud) .hud-system { grid-column: 3 / 5; grid-row: 1; justify-content: flex-end; }
+  .game-hud:not(.practice-hud) .progress-info { grid-column: 1; grid-row: 2; justify-self: start; }
+  .game-hud:not(.practice-hud) .score { grid-column: 3; grid-row: 2; }
+  .game-hud:not(.practice-hud) .time { grid-column: 4; grid-row: 2; }
+  .game-hud:not(.practice-hud) :is(.live-rank, .hearts) { grid-column: 2; grid-row: 2; }
+  .game-hud:not(.practice-hud) .progress-track { grid-column: 1 / -1; grid-row: 3; height: 6px; }
+  /* Retain the heading for assistive technology while freeing visual space. */
+  .level-info { position: absolute; width: 1px; height: 1px; min-width: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .practice-hud .mission-heading { display: flex; flex-wrap: wrap; }
+  .practice-hud .hud-system { margin-left: auto; }
+  .practice-actions { flex-basis: 100%; }
 }
 /* Wide enough for pilot and mission side by side (tablets, landscape phones). */
 @media (min-width: 640px) {
