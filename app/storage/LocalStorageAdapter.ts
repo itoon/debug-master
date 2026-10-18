@@ -1,4 +1,6 @@
 import type { Score } from "../types/debug-game";
+import { CompetitionSessionRepository } from "./CompetitionSessionRepository";
+import { toScore } from "../utils/competition/session";
 import { todayRanking, scorePlayerKey, hasRankingScore, isOnBoard, bangkokDay, type RankingBoard } from "../utils/ranking";
 import { CHALLENGE_IDS, type ChallengeId } from "../data/home-config";
 import type { ModeSettingsRepository, PlayerProfile, PlayerRepository, ScoreRepository } from "./contracts";
@@ -9,11 +11,11 @@ const CHANGE_EVENT = `${NAMESPACE}changed`;
 
 /** The only layer that touches browser storage. Old Dev keys are untouched. */
 export class LocalStorageAdapter {
-  async mutate(key: string, operation: () => void): Promise<void> {
+  async mutate<T>(key: string, operation: () => T): Promise<T> {
     // All read/modify/write operations share one origin-wide lock per key.
     // Fail closed when unavailable rather than overwrite another tab's data.
     if (!navigator.locks) throw new Error("Web Locks are required for safe local storage updates");
-    await navigator.locks.request(NAMESPACE + key, operation);
+    return await navigator.locks.request(NAMESPACE + key, operation);
   }
   read<T>(key: string, fallback: T, valid: (value: unknown) => value is T): T {
     const raw = window.localStorage.getItem(NAMESPACE + key);
@@ -48,18 +50,6 @@ export class LocalStorageAdapter {
   }
 }
 
-function validScores(value: unknown): value is Score[] {
-  return Array.isArray(value) && value.every((score) =>
-    score && typeof score.id === "string" && typeof score.name === "string" &&
-    typeof score.setId === "string" &&
-    ["campaign", "timer", "ranking", "dead"].includes(score.mode) &&
-    Number.isFinite(score.score) && Number.isFinite(score.elapsedMs) && score.elapsedMs >= 0 &&
-    typeof score.createdAt === "string" && Number.isFinite(Date.parse(score.createdAt)) &&
-    (score.challengeId === undefined || ["A", "B", "C"].includes(score.challengeId)) &&
-    (score.avatarId === undefined || typeof score.avatarId === "string"),
-  );
-}
-
 export class LocalPlayerRepository implements PlayerRepository {
   constructor(private readonly adapter: LocalStorageAdapter) {}
   save(player: PlayerProfile): Promise<void> { return this.adapter.mutate("player", () => this.adapter.write("player", player)); }
@@ -77,29 +67,20 @@ export class LocalPlayerRepository implements PlayerRepository {
 }
 
 export class LocalScoreRepository implements ScoreRepository {
-  constructor(private readonly adapter: LocalStorageAdapter) {}
-  list(): Score[] { return this.adapter.read("scores", [], validScores); }
-  save(score: Score): Promise<void> {
-    return this.adapter.mutate("scores", () => {
-      // Upsert makes a retry idempotent and never duplicates a finished run.
-      const rows = this.list().filter((item) => item.id !== score.id);
-      this.adapter.write("scores", [...rows, score]);
+  constructor(private readonly sessions: CompetitionSessionRepository) {}
+  list(): Score[] { return this.sessions.list().filter(session => session.status === "finished").map(toScore); }
+  /** Transitional caller adapter: finish the existing session, never accept a copied total. */
+  async save(score: Score): Promise<void> {
+    const session = this.sessions.get(score.id);
+    if (!session) throw new Error("Competition session not found");
+    if (session.status === "finished") return;
+    await this.sessions.apply(session.id, {
+      id: `score-save:${session.id}`, type: "finish", expectedRevision: session.revision,
+      at: Math.max(session.updatedAt, session.startedAt + score.elapsedMs),
     });
   }
-  remove(scoreId: string): Promise<void> {
-    return this.removeMany([scoreId]);
-  }
-  removeMany(scoreIds: readonly string[]): Promise<void> {
-    if (!scoreIds.length) return Promise.resolve();
-    const selected = new Set(scoreIds);
-    return this.adapter.mutate("scores", () => {
-      const rows = this.list();
-      const remaining = rows.filter((score) => !selected.has(score.id));
-      if (remaining.length === rows.length) return;
-      // Read the current list inside the mutation and write once: no partial batch.
-      this.adapter.write("scores", remaining);
-    });
-  }
+  remove(scoreId: string): Promise<void> { return this.removeMany([scoreId]); }
+  removeMany(scoreIds: readonly string[]): Promise<void> { return this.sessions.removeMany(scoreIds); }
   today(board: RankingBoard, now = new Date(), limit = 10): Score[] {
     return todayRanking(this.list(), board, now, limit);
   }
@@ -112,7 +93,7 @@ export class LocalScoreRepository implements ScoreRepository {
     );
     return index < 0 ? undefined : index + 1;
   }
-  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener); }
+  subscribe(listener: () => void): () => void { return this.sessions.subscribe(listener); }
 }
 
 function validModeIds(value: unknown): value is ChallengeId[] | undefined {
@@ -132,9 +113,11 @@ export class LocalModeSettingsRepository implements ModeSettingsRepository {
 
 export function createLocalRepositories() {
   const adapter = new LocalStorageAdapter();
+  const sessions = new CompetitionSessionRepository(adapter);
   return {
     players: new LocalPlayerRepository(adapter),
-    scores: new LocalScoreRepository(adapter),
+    scores: new LocalScoreRepository(sessions),
+    sessions,
     modes: new LocalModeSettingsRepository(adapter),
   };
 }

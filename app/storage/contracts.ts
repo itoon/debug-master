@@ -1,3 +1,4 @@
+import type { CompetitionSession, SessionOperation, SessionReceipt } from "../types/competition";
 import type { Score } from "../types/debug-game";
 import type { RankingBoard } from "../utils/ranking";
 import type { ChallengeId } from "../data/home-config";
@@ -26,5 +27,14 @@ export interface ModeSettingsRepository {
   enabledIds(): ChallengeId[] | undefined;
   save(ids: ChallengeId[]): Promise<void>;
   reset(): Promise<void>;
+  subscribe(listener: () => void): () => void;
+}
+
+export interface CompetitionSessionStore {
+  list(): CompetitionSession[];
+  get(id: string): CompetitionSession | undefined;
+  create(session: CompetitionSession): Promise<void>;
+  apply(id: string, operation: SessionOperation): Promise<SessionReceipt>;
+  removeMany(ids: readonly string[]): Promise<void>;
   subscribe(listener: () => void): () => void;
 }

@@ -63,10 +63,10 @@ export type Frame = {
 };
 
 export type Score = {
-  /** Home v2 boards use their own identity; legacy results never enter A/B/C. */
+  /** The challenge board frozen for this competition session. */
   challengeId?: "A" | "B" | "C";
   playerId?: string;
-  /** Optional so existing stored scores remain valid without migration. */
+  /** Avatar selected when the player starts the session. */
   avatarId?: string;
   id: string;
   name: string;
