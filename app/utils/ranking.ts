@@ -20,7 +20,7 @@ export function ageBand(age?: number): string {
   return band ? `อายุ ${band[0]}–${band[1]}` : "";
 }
 
-/** Scores compete only with the same challenge, set, mode, time limit and scoring config. */
+/** Board identity uses challenge, set, mode, time limit and difficulty; strategy selects its sessions. */
 export type RankingBoard = CompetitionConfig & {
   challengeId?: "A" | "B" | "C";
   setId: string;
@@ -42,7 +42,7 @@ export function bangkokDay(date: Date | string): string {
 export function isOnBoard(score: Score, board: RankingBoard): boolean {
   if (board.challengeId ? score.challengeId !== board.challengeId : !!score.challengeId) return false;
   if (score.setId !== board.setId || score.mode !== board.mode) return false;
-  if (score.difficulty !== board.difficulty || score.scoringStrategy !== board.scoringStrategy) return false;
+  if (score.difficulty !== board.difficulty) return false;
   if (board.mode === "ranking" || board.mode === "timer") {
     return score.timeLimitSec === board.timeLimitSec;
   }

@@ -49,14 +49,38 @@ describe('competition board selection', () => {
     expect(todayRanking(rows, { ...board, challengeId: undefined }, now, 2).map(row => row.id)).toEqual(['best', 'bob'])
   })
 
-  it('isolates Bangkok calendar day, numeric difficulty, strategy and board settings', () => {
+  it('isolates Bangkok calendar day, numeric difficulty and board settings', () => {
     const rows = [score('before-midnight', { createdAt: '2026-10-17T16:59:59.999Z' }), score('midnight', { createdAt: '2026-10-17T17:00:00.000Z' }),
       score('next-midnight', { createdAt: '2026-10-18T17:00:00Z' }), score('harder', { difficulty: 2, score: 999 }),
-      score('other-strategy', { scoringStrategy: 'LATEST', score: 999 }), score('other-set', { setId: 'other', score: 999 }),
+      score('other-set', { setId: 'other', score: 999 }),
       score('other-challenge', { challengeId: 'B', score: 999 }), score('other-mode', { mode: 'timer', score: 999 }), score('other-time', { timeLimitSec: 60, score: 999 })]
     expect(todayRanking(rows, board, now).map(row => row.id)).toEqual(['midnight'])
     expect(todayRanking(rows, { ...board, difficulty: 2 }, now).map(row => row.id)).toEqual(['harder'])
     expect(bestPlayerScore(rows, board, 'nobody')).toBeUndefined()
+  })
+
+  it('changing board policy selects across sessions with mixed frozen strategies', () => {
+    const rows = [score('alice-best-era', { score: 900 }),
+      score('alice-latest-era', { score: 20, scoringStrategy: 'LATEST', updatedAt: '2026-10-18T01:00:00Z' }),
+      score('bob-best-era', { playerId: 'bob', score: 800 })]
+    expect(todayRanking(rows, board, now).map(row => row.id)).toEqual(['alice-best-era', 'bob-best-era'])
+    expect(todayRanking(rows, latestBoard, now).map(row => row.id)).toEqual(['bob-best-era', 'alice-latest-era'])
+  })
+
+  it.each([board, latestBoard])('profile history spans frozen strategies under $scoringStrategy policy', activeBoard => {
+    const rows = [score('best-era', { score: 900 }),
+      score('latest-era', { score: 20, scoringStrategy: 'LATEST', updatedAt: '2026-10-18T01:00:00Z' })]
+    expect(bestPlayerScore(rows, activeBoard, 'alice')?.id).toBe('best-era')
+    expect(latestPlayerScore(rows, activeBoard, 'alice')?.id).toBe('latest-era')
+  })
+
+  it('switching to LATEST retains BEST-era history and selects its latest zero', () => {
+    const rows = [score('old-best', { score: 900 }),
+      score('latest-zero', { score: 0, updatedAt: '2026-10-18T01:00:00Z' }),
+      score('bob-best', { playerId: 'bob', score: 800 })]
+    expect(todayRanking(rows, latestBoard, now).map(row => row.id)).toEqual(['bob-best'])
+    expect(bestPlayerScore(rows, latestBoard, 'alice')?.id).toBe('old-best')
+    expect(latestPlayerScore(rows, latestBoard, 'alice')?.id).toBe('latest-zero')
   })
 
   it('profile latest uses update time even when a different session started later', () => {
