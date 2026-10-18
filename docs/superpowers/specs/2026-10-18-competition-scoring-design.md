@@ -1,7 +1,7 @@
 # Debug Master Competition scoring
 
 Date: 2026-10-18
-Status: Proposed design for review. Product code is unchanged.
+Status: Design approved by the user on 2026-10-18. Product code is unchanged.
 
 ## Outcome and agreed requirements
 
@@ -18,14 +18,14 @@ Existing unscored Practice remains unscored and outside leaderboards. The projec
 - `app/pages/index.vue` calculates `base × speed × combo` and adds points in `completeLevel()`.
 - `beginLevel()` clears the level timer and per-attempt input counters. Both failed retries and manual restarts call it, which currently grants a fresh scoring timer.
 - `app/storage/LocalStorageAdapter.ts` stores finished score rows in localStorage, uses Web Locks for mutations, and upserts rows by ID. It does not persist an active scoring session.
-- `app/utils/ranking.ts` orders results by score and elapsed time. Challenge boards select one best run per player. Rows have `createdAt`, but no session `updatedAt`, scoring version, or per-level score ledger.
+- `app/utils/ranking.ts` orders results by score and elapsed time. Challenge boards select one best run per player. Rows have `createdAt`, but no session `updatedAt` or per-level score ledger.
 - `app/utils/live/protocol.ts` sends cumulative client scores through `progress`. `live-server/src/room-logic.ts` checks growth limits and then accepts those scores; it does not calculate them.
 - Live reconnect restores cumulative score and cleared-level count. The saved browser Live session contains identity, not enough scoring or gameplay state to resume a partially completed level.
 - A/B/C select different level packs. They do not currently define the numeric `difficulty` used by the Competition formula.
 
 ## Shared scoring contract
 
-A pure TypeScript scoring module, imported by the browser and Worker, owns the formula, star evaluation, best-per-level aggregation, and session comparison helpers. It imports no Vue APIs, browser globals, or Worker runtime APIs. The protocol exposes a scoring version so incompatible clients cannot silently submit legacy totals.
+A pure TypeScript scoring module, imported by the browser and Worker, owns the formula, star evaluation, best-per-level aggregation, and session comparison helpers. It imports no Vue APIs, browser globals, or Worker runtime APIs. The Live protocol exposes a protocol version so clients and the Worker agree on the message contract.
 
 For a correct completion, calculate:
 
@@ -42,7 +42,7 @@ Round each level score once before storing it. Wrong or incomplete answers retur
 
 Validate inputs at the boundary: stars must be an integer from zero to three, difficulty must be a finite positive integer, and elapsed seconds must be finite and nonnegative. Missing difficulty defaults to one; malformed values are rejected rather than silently coerced. Zero elapsed time is valid for the primitive and has a denominator of one. Production timing derives elapsed time from actual start and submission timestamps.
 
-Numeric difficulty comes from project configuration. A/B/C each default to difficulty one; their labels do not implicitly become multipliers 1/2/3. Legacy scored modes use the same default. Each session freezes difficulty, strategy, scoring version, level set, and time limit when it starts, so a configuration change does not alter an existing result.
+Numeric difficulty comes from project configuration. A/B/C each default to difficulty one; their labels do not implicitly become multipliers 1/2/3. The other scored modes use the same default. Each session freezes difficulty, strategy, level set, and time limit when it starts, so a configuration change does not alter an existing result.
 
 ## Level identity, timing, and stars
 
@@ -70,11 +70,11 @@ At a reload, offer the saved unfinished session as a resume choice instead of si
 
 Timed sessions use an absolute deadline, so reload, background throttling, and reconnect cannot extend the round. An expired saved session finalizes its last stored results and shows its summary. Untimed sessions retain their elapsed level time while the page is closed. Finished results are upserted by the stable session ID on every finish/save retry path.
 
-Keep the existing score repository interface usable for leaderboard and history components by projecting completed versioned sessions into score rows. The session repository is the source of truth for new results; do not maintain two independently writable copies of new scores. Subscribe consumers to the source used by their view.
+Keep the existing score repository interface usable for leaderboard and history components by projecting completed sessions into score rows. The session repository is the source of truth for results; do not maintain two independently writable copies of scores. Subscribe consumers to the source used by their view.
 
 ## Browser leaderboards and summaries
 
-Add `scoringStrategy: 'BEST' | 'LATEST'` to project mode configuration, defaulting to `BEST`. Keep leaderboards separate by player identity, challenge/set, mode, time limit, scoring version, and numeric difficulty. Continue the project's existing calendar-day boundary in Asia/Bangkok. Only finalized sessions enter the ordinary leaderboard.
+Add `scoringStrategy: 'BEST' | 'LATEST'` to project mode configuration, defaulting to `BEST`. Keep leaderboards separate by player identity, challenge/set, mode, time limit, and numeric difficulty. Continue the project's existing calendar-day boundary in Asia/Bangkok. Only finalized sessions enter the ordinary leaderboard.
 
 Select one session for each player before ordering the board:
 
@@ -87,7 +87,7 @@ Use a stable session ID as a final deterministic fallback when all specified val
 
 Preserve the project's rule that zero-score results have no displayed leaderboard position. Apply that rule after selecting the player's session: under LATEST, a latest zero-score session must not reveal an older positive run instead. The zero-score result remains available in history and in the player's latest result.
 
-Best score always uses the best version-compatible session regardless of the configured selection strategy. The latest-score profile field uses the latest compatible session. Your Score uses the current finalized session. Compute summary highlighting and rank from the selected session, so a LATEST result does not accidentally show an older BEST result as its own rank.
+Best score always uses the best session regardless of the configured selection strategy. The latest-score profile field uses the latest session. Your Score uses the current finalized session. Compute summary highlighting and rank from the selected session, so a LATEST result does not accidentally show an older BEST result as its own rank.
 
 ## Live scoring and protocol
 
@@ -115,7 +115,7 @@ The server rejects gaps with the next expected sequence rather than discarding m
 
 The private resume snapshot contains accepted sequence, active-level timing and mistakes, attempt cursor, per-level results needed for resume, and accepted total. Reconstruct the board deterministically from the canonical level and attempt cursor. Public room snapshots contain only the values needed for public displays. They must explicitly select public fields; adding private state to a stored player must not leak it through the current object-rest snapshot operation.
 
-Remove the `Math.max(clientScore, serverScore)` restore rule and the legacy `maxLevelPoints(bestCombo)` trust boundary. A protocol mismatch shows a reload-required state. Migration preserves old room identity but marks an active legacy-score round incompatible with new clients; the host ends that round and starts a fresh versioned round. Never reinterpret an existing legacy cumulative score as a new level ledger.
+Remove the `Math.max(clientScore, serverScore)` restore rule and the `maxLevelPoints(bestCombo)` trust boundary. A protocol mismatch shows a reload-required state. The user confirms there are no existing scores to preserve, so implementation includes no previous-formula data migration or history compatibility path.
 
 ### Live round ranking scope
 
@@ -123,9 +123,9 @@ The existing race screen shows the current room round. Each player has one sessi
 
 This change does not add cross-round Live player-history rankings or carry points into a new race. Starting a new round creates fresh scoring ledgers and sequences; reconnect to the same round restores its canonical session. The server sends the current-round ordered player list, and clients do not independently re-sort it.
 
-## Compatibility and presentation
+## Data scope and presentation
 
-Mark new results with a scoring version such as `competition-v1`. Legacy rows without that marker remain readable and manageable as history, but new boards, Best score, latest compatible score, and returning-player score comparisons exclude them. Do not delete old records or guess how to convert them to the new formula. Player identity reuse can still use existing profiles without importing their legacy scores into new results.
+The user confirms there are no previous-formula scores and explicitly excludes compatibility work. All sessions and boards use the Competition formula directly. Do not build previous-score filtering, conversion, separate history boards, score-version comparisons, or room-score migration. Preserve player identity and existing mode settings as normal project data.
 
 The score popup shows awarded stars and `+delta`, replacing the obsolete speed/combo multiplier breakdown. Time and combo displays keep their gameplay purposes. Configuration exposes difficulty and strategy through project data; this change does not require a new competition-admin interface.
 
@@ -150,7 +150,7 @@ Additional required coverage:
 4. A stored level score changing from 1,000 to 1,200 adds 200; a later 900 or failed answer preserves 1,200. Repeated completion/receipt and retries do not increase totals or completed-level counts twice.
 5. Browser checkpoint/reload restores total, ledger, board progress, mistakes, hearts, and deadline. Save failure and retry preserve the same operation/session ID and show usable recovery. Stale-tab writes cannot overwrite a newer revision.
 6. BEST/LATEST select the intended session, including score, level, timestamp ties, latest zero score, and deterministic final fallback. Best/latest/Your Score and summary highlighting use their intended sessions.
-7. Legacy records remain readable and removable but never enter new scoring comparisons. New result saving remains idempotent across all exit, timeout, completion, and Dead Mode finish paths.
+7. Result saving remains idempotent across all exit, timeout, completion, and Dead Mode finish paths. Player profiles and existing mode settings remain usable with the new session repository.
 8. Live replay validates actual direction sequences. Duplicate/out-of-order events, lost acknowledgements, reconnect, and page reload do not duplicate points or mistakes. Worker restart restores the acknowledged state.
 9. The Worker rejects forged cumulative totals, client-supplied stars, invalid levels, queued-player results, previous rounds, and incompatible protocols. Public snapshots do not contain private scoring state or device secrets.
 10. Events produced before the deadline can arrive within the existing grace. Events after the deadline or beyond the grace do not score. End Early and countdown cancellation remain correct.
