@@ -1,5 +1,6 @@
 import type { RawLevel } from "../data/levels";
 import type { CodeLanguage } from "../utils/codeLanguage";
+import type { ScoringStrategy } from "./competition";
 
 export type { CodeLanguage } from "../utils/codeLanguage";
 
@@ -81,6 +82,10 @@ export type Score = {
   inputs: number;
   elapsedMs: number;
   createdAt: string;
+  /** Optional during the session-store caller transition; finalized sessions always provide these. */
+  updatedAt?: string;
+  difficulty?: number;
+  scoringStrategy?: ScoringStrategy;
   /** Player age picked on the start screen (shown as an age band). */
   age?: number;
   /** Ranking / timer modes: the run's time limit, so boards don't mix. */
