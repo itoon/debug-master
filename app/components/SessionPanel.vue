@@ -27,7 +27,7 @@
         {{
           t('home.levels', { from: mode.levelRange[0], to: mode.levelRange[1] })
         }}
-        · {{ t('home.limit', { time: formatClock(mode.timeLimit * 1000) }) }}
+        · {{ t('home.limit', { time: formatClock((stage === 'tutorial' ? mode.timeLimit : result?.timeLimitSec ?? board.timeLimitSec ?? mode.timeLimit) * 1000) }) }}
       </p>
 
       <template v-if="stage === 'tutorial'">

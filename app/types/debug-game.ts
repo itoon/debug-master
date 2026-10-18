@@ -82,10 +82,10 @@ export type Score = {
   inputs: number;
   elapsedMs: number;
   createdAt: string;
-  /** Optional during the session-store caller transition; finalized sessions always provide these. */
-  updatedAt?: string;
-  difficulty?: number;
-  scoringStrategy?: ScoringStrategy;
+  /** Frozen metadata from the canonical finalized session. */
+  updatedAt: string;
+  difficulty: number;
+  scoringStrategy: ScoringStrategy;
   /** Player age picked on the start screen (shown as an age band). */
   age?: number;
   /** Ranking / timer modes: the run's time limit, so boards don't mix. */
@@ -102,8 +102,7 @@ export type PracticeSummary = {
 export type ScorePopup = {
   levelId: number;
   points: number;
-  speedMultiplier: number;
-  comboMultiplier: number;
+  stars: 0 | 1 | 2 | 3;
 };
 
 export type CodeSegment =
