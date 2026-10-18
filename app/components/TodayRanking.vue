@@ -2,7 +2,7 @@
   <section class="today-ranking" :aria-labelledby="headingId">
     <h2 :id="headingId">{{ title }}</h2>
     <p class="board-name">{{ subtitle }}</p>
-    <p class="board-rules">คะแนนมากก่อน · คะแนนเท่ากันใช้เวลา · วันนี้ตามเวลาไทย</p>
+    <p class="board-rules">คะแนนมากก่อน · เสมอกันดูด่านที่ผ่าน แล้วดูเวลาที่อัปเดต{{ board.scoringStrategy === 'BEST' ? 'ก่อน' : 'ล่าสุด' }} · วันนี้ตามเวลาไทย</p>
 
     <ol v-if="rows.length" class="rows">
       <li

@@ -160,7 +160,6 @@
           :board="board"
           :limit="Infinity"
           :highlight-id="saved ? rankedResult?.id : undefined"
-          :highlight-player-id="saved ? rankedResult?.playerId : undefined"
           variant="space"
           podium
           placeholder
@@ -197,7 +196,7 @@
 import type { ChallengeMode } from '../data/home-config'
 import type { ScoreRepository } from '../storage/contracts'
 import type { Score } from '../types/debug-game'
-import { formatClock, scorePlayerKey, hasRankingScore, type RankingBoard } from '../utils/ranking'
+import { formatClock, hasRankingScore, type RankingBoard } from '../utils/ranking'
 import { useGameI18n } from '../composables/useGameI18n'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { TILE_TYPES, tileDefinition } from '../data/tiles'
@@ -228,19 +227,14 @@ const panel = ref<HTMLElement | null>(null)
 const tipsOpen = ref(false)
 const guideTab = ref('controls')
 const guideName = useId()
-const { rows, error } = useScoreBoard(
+const { selectedSession, rankOf, error } = useScoreBoard(
   props.repository,
   computed(() => props.board),
   Infinity
 )
-const rankedResult = computed(() => props.result && hasRankingScore(props.result) ? props.result : undefined)
-const showResultRank = computed(() => props.showSummaryRank && !!rankedResult.value)
-const rank = computed(() => {
-  if (!props.saved || !rankedResult.value) return undefined
-  const result = rankedResult.value;
-  const index = rows.value.findIndex((score) => props.board.challengeId ? scorePlayerKey(score) === scorePlayerKey(result) : score.id === result.id)
-  return index < 0 ? undefined : index + 1
-})
+const rankedResult = computed(() => props.saved && props.result ? selectedSession(props.result.id) : undefined)
+const showResultRank = computed(() => props.showSummaryRank && !!props.result && hasRankingScore(props.result))
+const rank = computed(() => props.saved && props.result ? rankOf(props.result.id) : undefined)
 function focusPanel(): void {
   if (panel.value instanceof HTMLDialogElement && !panel.value.open)
     panel.value.showModal()

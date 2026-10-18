@@ -1,6 +1,10 @@
+import type { CompetitionConfig } from "../types/competition";
+
+export const DEFAULT_COMPETITION_CONFIG: Readonly<CompetitionConfig> = Object.freeze({ difficulty: 1, scoringStrategy: "BEST" });
+
 export type ChallengeId = "A" | "B" | "C";
 
-export type ChallengeMode = {
+export type ChallengeMode = CompetitionConfig & {
   id: ChallengeId;
   /** Default only: the team can switch modes on and off at /modes (saved on this device). */
   enabled: boolean;
@@ -25,9 +29,9 @@ export const homeConfig = {
   ages: Array.from({ length: 14 }, (_, index) => index + 5),
   leaderboardScroll: { pixelsPerSecond: 18, returnPixelsPerSecond: 12, startPauseMs: 1400, endPauseMs: 1800, interactionPauseMs: 3000 },
   modes: [
-    { id: "A", enabled: true, nameKey: "mode.A", levelRange: [1, 50], levelSetId: "challenge-beginner", timeLimit: 900, challengeId: "A", thumbnail: "thumbnail-game-1.png" },
-    { id: "B", enabled: true, nameKey: "mode.B", levelRange: [1, 50], levelSetId: "challenge-intermediate", timeLimit: 900, challengeId: "B", thumbnail: "thumbnail-game-2.png" },
-    { id: "C", enabled: true, nameKey: "mode.C", levelRange: [1, 50], levelSetId: "challenge-pro", timeLimit: 900, challengeId: "C", thumbnail: "thumbnail-game-3.png" },
+    { id: "A", enabled: true, ...DEFAULT_COMPETITION_CONFIG, nameKey: "mode.A", levelRange: [1, 50], levelSetId: "challenge-beginner", timeLimit: 900, challengeId: "A", thumbnail: "thumbnail-game-1.png" },
+    { id: "B", enabled: true, ...DEFAULT_COMPETITION_CONFIG, nameKey: "mode.B", levelRange: [1, 50], levelSetId: "challenge-intermediate", timeLimit: 900, challengeId: "B", thumbnail: "thumbnail-game-2.png" },
+    { id: "C", enabled: true, ...DEFAULT_COMPETITION_CONFIG, nameKey: "mode.C", levelRange: [1, 50], levelSetId: "challenge-pro", timeLimit: 900, challengeId: "C", thumbnail: "thumbnail-game-3.png" },
   ] satisfies ChallengeMode[],
 } as const;
 

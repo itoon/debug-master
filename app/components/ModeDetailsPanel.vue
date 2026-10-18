@@ -39,7 +39,7 @@ const heading = ref<HTMLHeadingElement | null>(null);
 const startButton = ref<HTMLButtonElement | null>(null);
 const baseURL = useRuntimeConfig().app.baseURL;
 const thumbnailUrl = computed(() => `${baseURL.endsWith('/') ? baseURL : `${baseURL}/`}${props.mode.thumbnail}`);
-const board = computed<RankingBoard>(() => ({ challengeId: props.mode.challengeId, setId: props.mode.levelSetId, mode: 'timer', timeLimitSec: props.mode.timeLimit }));
+const board = computed<RankingBoard>(() => ({ challengeId: props.mode.challengeId, setId: props.mode.levelSetId, mode: 'timer', timeLimitSec: props.mode.timeLimit, difficulty: props.mode.difficulty, scoringStrategy: props.mode.scoringStrategy }));
 let animations: Animation[] = [];
 let disposed = false;
 let closing = false;

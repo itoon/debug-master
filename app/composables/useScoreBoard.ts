@@ -33,5 +33,12 @@ export function useScoreBoard(repository: ScoreRepository, board: Ref<RankingBoa
     unsubscribe?.();
     clearInterval(refreshTimer);
   });
-  return { rows: computed(() => rows.value), error, loaded, refresh };
+  function selectedSession(sessionId: string): Score | undefined {
+    return rows.value.find(score => score.id === sessionId);
+  }
+  function rankOf(sessionId: string): number | undefined {
+    const index = rows.value.findIndex(score => score.id === sessionId);
+    return index < 0 ? undefined : index + 1;
+  }
+  return { rows: computed(() => rows.value), error, loaded, refresh, selectedSession, rankOf };
 }

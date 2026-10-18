@@ -50,7 +50,7 @@ import { homeConfig, type ChallengeMode, type ChallengeId } from "../data/home-c
 import { useModeSettings } from "../composables/useModeSettings";
 import { useGameI18n } from "../composables/useGameI18n";
 import type { ModeSettingsRepository, ScoreRepository, PlayerSetupInput } from "../storage/contracts";
-import { formatClock, isOnBoard, scorePlayerKey, type RankingBoard } from "../utils/ranking";
+import { formatClock, bestPlayerScore, latestPlayerScore, scorePlayerKey, type RankingBoard } from "../utils/ranking";
 import type { UiSoundEffect } from "../data/sound-effects";
 import type { Score } from "../types/debug-game";
 
@@ -203,7 +203,7 @@ function thumbnailUrl(mode: ChallengeMode): string {
   return `${baseURL.endsWith('/') ? baseURL : `${baseURL}/`}${mode.thumbnail}`;
 }
 function boardFor(mode: ChallengeMode): RankingBoard {
-  return { challengeId: mode.challengeId, setId: mode.levelSetId, mode: "timer", timeLimitSec: mode.timeLimit };
+  return { challengeId: mode.challengeId, setId: mode.levelSetId, mode: "timer", timeLimitSec: mode.timeLimit, difficulty: mode.difficulty, scoringStrategy: mode.scoringStrategy };
 }
 async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   if (props.busy || motionPhase.value !== "idle") return;
@@ -243,14 +243,12 @@ function selectPlayer(score: Score): void {
   emit('resetError');
   selectedLatestScore.value = null;
   try {
-    // Ranking rows hold the best run; the profile shows the newest stored run.
     const board = boardFor(detailMode.value);
+    const history = props.repository.list();
     const playerKey = scorePlayerKey(score);
-    selectedLatestScore.value = props.repository.list()
-      .filter(run => isOnBoard(run, board) && scorePlayerKey(run) === playerKey)
-      .reduce<Score | null>((latest, run) => !latest || Date.parse(run.createdAt) >= Date.parse(latest.createdAt) ? run : latest, null);
-  } catch { /* Keep the profile usable; never label the best run as the latest. */ }
-  selectedPlayer.value = score;
+    selectedLatestScore.value = latestPlayerScore(history, board, playerKey) ?? null;
+    selectedPlayer.value = bestPlayerScore(history, board, playerKey) ?? score;
+  } catch { selectedPlayer.value = score; /* Keep the profile usable on a storage error. */ }
   emit('sound', 'popup');
 }
 async function closePlayer(): Promise<void> {

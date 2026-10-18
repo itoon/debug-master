@@ -88,7 +88,7 @@ describe('competition session storage', () => {
     expect(scores.list()).toEqual([])
     await sessions.apply('session-1', operation('finish', 2, 20))
     expect(scores.list()).toMatchObject([{ id: 'session-1', score: 1537, createdAt: new Date(START).toISOString(), updatedAt: new Date(START + 20000).toISOString(), difficulty: 1, scoringStrategy: 'BEST' }])
-    const board = { challengeId: 'A' as const, setId: 'set-a', mode: 'ranking' as const, timeLimitSec: 300 }
+    const board = { challengeId: 'A' as const, setId: 'set-a', mode: 'ranking' as const, timeLimitSec: 300, difficulty: 1, scoringStrategy: 'BEST' as const }
     expect(scores.today(board, new Date(START))).toHaveLength(1)
     expect(scores.rank('session-1', board, new Date(START))).toBe(1)
     expect(scores.today(board, new Date(START + 86400000))).toEqual([])
