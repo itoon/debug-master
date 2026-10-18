@@ -8,6 +8,12 @@ import { applySessionOperation, createCompetitionSession } from '../../app/utils
 import { GRACE_MS, LIVE_PROTOCOL_VERSION, type GameplayEventMsg, type LiveScoringError, type ScoringMsg } from '../../app/utils/live/protocol'
 import type { StoredRoom } from './room-logic'
 
+/** Recent payload conflicts/receipts are retained; older accepted sequences only replay canonical ack.
+ * The sequence layer owns Live deduplication, so reducer operation history is cleared after each event.
+ * This keeps the complete 12-player/50-level room comfortably inside one durable storage value.
+ */
+export const LIVE_REPLAY_WINDOW = 64
+
 export type LiveScoringState = {
   session: CompetitionSession
   lastSequence: number
@@ -77,6 +83,9 @@ export function applyGameplayEvent(room: StoredRoom, pid: string, event: Gamepla
     (event.action === 'direction' ? !['up', 'down', 'left', 'right'].includes(event.direction!) : event.direction !== undefined)) return reject('invalid_event')
   const fingerprint = JSON.stringify([event.levelId, event.at, event.action, event.direction ?? null])
   if (event.sequence <= state.lastSequence) {
+    if (event.sequence <= state.lastSequence - LIVE_REPLAY_WINDOW) {
+      return { changed: false, message: scoringMessage(room, pid) }
+    }
     const accepted = state.events[event.sequence]
     if (!accepted || accepted.fingerprint !== fingerprint) return reject('conflicting_duplicate')
     const message = scoringMessage(room, pid)
@@ -117,11 +126,21 @@ export function applyGameplayEvent(room: StoredRoom, pid: string, event: Gamepla
       if (active!.attemptCursor + 1 === moves.length) completion = operation({ type: 'complete-level' }, 'complete')
     }
   }
+  // Only the Live boundary compacts this reducer history. Accepted sequences are never reduced
+  // again, while browser sessions retain the shared reducer's complete operation-ID contract.
+  next = { ...next, operations: {} }
+  if (completion) completion = { ...completion, session: next }
   const record = next.checkpoint.levelKey ? next.levels[next.checkpoint.levelKey] : undefined
   let storedReceipt: Omit<SessionReceipt, 'session'> | undefined
   if (completion) { const { session: _session, ...receipt } = completion; storedReceipt = receipt }
+  const events: LiveScoringState['events'] = {}
+  for (let sequence = Math.max(1, event.sequence - LIVE_REPLAY_WINDOW + 1); sequence < event.sequence; sequence++) {
+    const accepted = state.events[sequence]
+    if (accepted) events[sequence] = accepted
+  }
+  events[event.sequence] = { fingerprint, ...(storedReceipt ? { receipt: storedReceipt } : {}) }
   player.scoring = { session: next, lastSequence: event.sequence, lastAt: event.at, attemptCursor: record?.attemptCursor ?? 0,
-    events: { ...state.events, [event.sequence]: { fingerprint, ...(storedReceipt ? { receipt: storedReceipt } : {}) } } }
+    events }
   player.score = next.totalScore
   player.levelsCompleted = next.levelsCompleted
   player.combo = next.checkpoint.combo

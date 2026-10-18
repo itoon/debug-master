@@ -4,6 +4,7 @@ import { LiveRoom } from '../src/live-room'
 import { advanceClock, applyHostCommand, createRoom, joinPlayer, type StoredRoom } from '../src/room-logic'
 import { LIVE_PROTOCOL_VERSION, type GameplayEventMsg } from '../../app/utils/live/protocol'
 import { gameplayMoves } from '../src/scoring'
+import { completedProRound } from './scoring-fixtures'
 
 const pid = 'secret-player'
 function harness(saved?: StoredRoom) {
@@ -95,6 +96,50 @@ describe('durable private scoring acknowledgements', () => {
     const ack = restart.messages.find(m => m.type === 'scoring')
     expect(ack).toMatchObject({ acknowledgedSequence: final.sequence, session: { totalScore: h.saved().players[pid].score } })
     expect(restart.storage.put).not.toHaveBeenCalled()
+  })
+  it('restarts a compacted capacity round and persists the next sequence before acknowledging', async () => {
+    clock()
+    const { room, first, last, lastCompletion } = completedProRound(true)
+    vi.mocked(Date.now).mockReturnValue(last[pid].at + 120)
+    const h = harness(room); await h.ready
+    const old = { ...first[pid], action: 'reset' as const }
+    await h.send(old)
+    expect(h.messages.at(-1)).toMatchObject({ acknowledgedSequence: last[pid].sequence, nextExpectedSequence: last[pid].sequence + 1 })
+    expect(h.messages.at(-1).error).toBeUndefined()
+    expect(h.messages.at(-1).receipt).toBeUndefined()
+    expect(h.storage.put).not.toHaveBeenCalled()
+    await h.send(lastCompletion[pid])
+    expect(h.messages.at(-1).receipt).toMatchObject({ delta: 0, totalScore: room.players[pid].score })
+    const conflict = { ...last[pid], at: last[pid].at - 1 }
+    await h.send(conflict)
+    expect(h.messages.at(-1).error).toBe('conflicting_duplicate')
+    expect(h.storage.put).not.toHaveBeenCalled()
+    // The first player paused one input before finishing level 50; all other players finished.
+    const state = room.players[pid].scoring!
+    const active = state.session.levels[state.session.checkpoint.levelKey!]!
+    const before = structuredClone(state)
+    expect(active).toMatchObject({ completed: false, mistakes: 2 })
+    const resumed = harness(h.saved()); await resumed.ready
+    const next = resumed.event({ sequence: state.lastSequence + 1, levelId: 50, action: 'direction',
+      direction: gameplayMoves(room.round!.setId, 50)[active.attemptCursor], at: last[pid].at + 120 })
+    resumed.storage.put.mockRejectedValueOnce(new Error('storage offline'))
+    await expect(resumed.send(next)).rejects.toThrow('storage offline')
+    expect(resumed.saved().players[pid].scoring!.lastSequence).toBe(state.lastSequence)
+    expect(resumed.messages).toEqual([])
+    await resumed.send(next)
+    expect(resumed.history.indexOf(`persist:${next.sequence}`)).toBeLessThan(resumed.history.indexOf(`ack:${next.sequence}`))
+    const persisted = resumed.storage.put.mock.calls.at(-1)![1]
+    expect(new TextEncoder().encode(JSON.stringify(persisted)).byteLength + 4).toBeLessThan(512 * 1024)
+    const restarted = harness(resumed.saved()); await restarted.ready
+    await restarted.send(next)
+    expect(restarted.messages.at(-1)).toMatchObject({ acknowledgedSequence: next.sequence, session: { levelsCompleted: 50 } })
+    const saved = resumed.saved().players[pid].scoring!
+    expect(saved.session.totalScore).toBeGreaterThan(before.session.totalScore)
+    expect(saved.lastAt).toBe(next.at)
+    expect(saved.session.levels[active.key]).toMatchObject({ firstReadyAt: active.firstReadyAt, mistakes: 2, stars: 1, completed: true })
+    expect(Object.keys(saved.events)).toHaveLength(64)
+    expect(saved.session.operations).toEqual({})
+    expect(restarted.storage.put).not.toHaveBeenCalled()
   })
   it('validates timestamps against socket arrival even while another write delays processing', async () => {
     clock()

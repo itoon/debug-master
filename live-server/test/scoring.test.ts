@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { serialize } from 'node:v8'
+import { completedProRound } from './scoring-fixtures'
 import { LIVE_PROTOCOL_VERSION, GRACE_MS, type GameplayEventMsg } from '../../app/utils/live/protocol'
 import { homeConfig } from '../../app/data/home-config'
 import { calculateCompetitionScore } from '../../app/utils/competition/scoring'
@@ -167,5 +169,43 @@ describe('authoritative gameplay', () => {
     expect(room.players[pid].score).toBe(0)
     applyHostCommand(room, { type: 'start' }, new Set([pid]), 9000)
     expect(scoringMessage(room, pid)).toMatchObject({ acknowledgedSequence: 0, nextExpectedSequence: 1, session: { totalScore: 0, levels: {} } })
+  })
+})
+
+describe('bounded Live history capacity', () => {
+  it('keeps a complete twelve-player Pro round with retries comfortably below the persisted value limit', () => {
+    const { room, pids } = completedProRound()
+    const byteLimit = 512 * 1024 // A quarter of the 2 MiB key/value limit, including headroom.
+    expect(serialize(room).byteLength + 4).toBeLessThan(byteLimit)
+    expect(new TextEncoder().encode(JSON.stringify(room)).byteLength + 4).toBeLessThan(byteLimit)
+    for (const pid of pids) {
+      const scoring = room.players[pid].scoring!
+      expect(scoring.lastAt).toBeLessThan(room.endAt!)
+      expect(scoring.session.levelsCompleted).toBe(50)
+      expect(scoring.session.totalScore).toBeGreaterThan(0)
+      expect(Object.keys(scoring.session.levels)).toHaveLength(50)
+      expect(Object.values(scoring.session.levels).every(level => level.mistakes === 2 && level.stars === 1)).toBe(true)
+      expect(Object.keys(scoring.events)).toHaveLength(64)
+      expect(Object.keys(scoring.session.operations)).toHaveLength(0)
+    }
+  })
+  it('acknowledges old sequences without receipts and retains recent conflict detection after compaction', () => {
+    const room = runningRoom()
+    const first = event(room)
+    applyGameplayEvent(room, pid, first, 4000)
+    for (let i = 0; i < 80; i++) send(room, { action: 'reset', at: 4001 + i })
+    const before = structuredClone(room)
+    const old = applyGameplayEvent(room, pid, { ...first, at: 1, action: 'direction', direction: 'up' }, room.endAt! + 5000)
+    expect(old).toMatchObject({ changed: false, message: { acknowledgedSequence: 81, nextExpectedSequence: 82 } })
+    expect(old.message.error).toBeUndefined()
+    expect(old.message.receipt).toBeUndefined()
+    expect(room).toEqual(before)
+    expect(send(room, { sequence: 81, action: 'reset', at: 4081 }).message.error).toBe('conflicting_duplicate')
+    expect(send(room, { sequence: 17, action: 'reset', at: 4081 }).message.error).toBeUndefined()
+    expect(send(room, { sequence: 18, action: 'reset', at: 4081 }).message.error).toBe('conflicting_duplicate')
+    expect(room).toEqual(before)
+    const accepted = send(room, { action: 'direction', direction: 'right', at: 5000 })
+    expect(accepted).toMatchObject({ changed: true, message: { acknowledgedSequence: 82 } })
+    expect(Object.values(room.players[pid].scoring!.session.levels)[0]).toMatchObject({ firstReadyAt: 4000, attemptCursor: 1 })
   })
 })
