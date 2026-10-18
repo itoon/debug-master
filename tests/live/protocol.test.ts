@@ -3,23 +3,23 @@ import { challengeSets } from '../../app/data/challenge-groups'
 import { homeConfig } from '../../app/data/home-config'
 import { solveLevel } from '../../app/utils/programRunner'
 import { useProgramParser } from '../../app/composables/useProgramParser'
-import { MAX_LEVEL_ID, MAX_LEVEL_MOVES, maxLevelPoints, normalizeRoomCode, roomCodeFromSearch, DURATION_PRESETS_SEC, MAX_DURATION_SEC } from '../../app/utils/live/protocol'
+import { LIVE_PROTOCOL_VERSION, normalizeRoomCode, roomCodeFromSearch, DURATION_PRESETS_SEC, MAX_DURATION_SEC } from '../../app/utils/live/protocol'
 
 describe('protocol constants match the game data', () => {
-  it('every live mode set fits MAX_LEVEL_ID and MAX_LEVEL_MOVES', () => {
+  it('every configured Live level has a canonical executable solution', () => {
     for (const mode of homeConfig.modes) {
       const set = challengeSets.find((s) => s.id === mode.levelSetId)!
-      expect(mode.levelRange[1]).toBeLessThanOrEqual(MAX_LEVEL_ID)
+      expect(set.levels).toHaveLength(mode.levelRange[1])
       for (const level of set.levels) {
         const { parseProgram } = useProgramParser(() => level.id)
-        expect(level.id).toBeLessThanOrEqual(MAX_LEVEL_ID)
-        expect(solveLevel(level, parseProgram(level.code)).moves.length).toBeLessThanOrEqual(MAX_LEVEL_MOVES)
+        const result = solveLevel(level, parseProgram(level.code))
+        expect(result.error).toBeUndefined()
+        expect(result.moves.length).toBeGreaterThan(0)
       }
     }
   })
-  it('maxLevelPoints mirrors calculateLevelScore at its worst case', () => {
-    expect(maxLevelPoints(1)).toBe(Math.ceil((180 + 50 * 14 + MAX_LEVEL_MOVES * 36) * 4.5))
-    expect(maxLevelPoints(11)).toBe(Math.ceil((180 + 50 * 14 + MAX_LEVEL_MOVES * 36) * 4.5 * 2.6))
+  it('versions authoritative gameplay independently of cumulative scores', () => {
+    expect(LIVE_PROTOCOL_VERSION).toBe(1)
   })
   it('durations stay inside the game 15-minute cap', () => {
     expect(DURATION_PRESETS_SEC).toEqual([480, 600, 900])
