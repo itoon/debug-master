@@ -125,7 +125,6 @@ export const MAX_DURATION_SEC = 900
 
 export const MAX_MSG_BYTES = 2048
 export const BROADCAST_INTERVAL_MS = 100
-export const PROGRESS_INTERVAL_MS = 250
 export const NAME_MAX = 24
 
 export const ROOM_CODE_RE = /^[A-Z0-9-]{3,16}$/

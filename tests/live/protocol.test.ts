@@ -39,3 +39,18 @@ describe('protocol constants match the game data', () => {
     expect(roomCodeFromSearch('')).toBeNull()
   })
 })
+
+import { createLiveOutbox } from '../../app/utils/live/outbox'
+import type { GameplayEventMsg } from '../../app/utils/live/protocol'
+it('serializes immutable protocol-v1 evidence without client scoring fields', () => {
+  const event: GameplayEventMsg = { type: 'gameplay', protocolVersion: LIVE_PROTOCOL_VERSION, roundId: 2,
+    sessionId: 'canonical-session', sequence: 1, levelId: 1, at: 1_800_000_000_125, action: 'ready' }
+  const values = new Map<string, string>()
+  const outbox = createLiveOutbox({ room: 'TEST', roundId: 2, playerId: 'public-player', sessionId: event.sessionId }, {
+    getItem: key => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value) }, removeItem: key => { values.delete(key) },
+  })
+  outbox.enqueue(event)
+  expect(JSON.parse(JSON.stringify(outbox.pending()[0]))).toEqual(event)
+  expect(outbox.pending()[0]).not.toHaveProperty('score')
+  expect(outbox.pending()[0]).not.toHaveProperty('stars')
+})

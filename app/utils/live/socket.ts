@@ -148,6 +148,11 @@ export function openLiveSocket(url: string, hello: () => ClientMessage | null, h
   return {
     send(msg, coalesceKey) {
       if (closed) return
+      // Durable gameplay replay belongs to LiveReplay, never to the replaceable socket queue.
+      if (msg.type === 'gameplay') {
+        if (ws?.readyState === WS_OPEN) ws.send(JSON.stringify(msg))
+        return
+      }
       const data = JSON.stringify(msg)
       if (ws && ws.readyState === WS_OPEN) ws.send(data)
       else queue.set(coalesceKey ?? `m${seq++}`, data)

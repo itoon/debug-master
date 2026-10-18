@@ -2,6 +2,16 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-18 — Canonical competition scoring and Live recovery
+
+- Ordinary scored runs use one persisted CompetitionSession ledger in browser storage. First-ready time and cumulative mistakes survive retry, reset and explicit reload/resume; final input time is captured before animation. The final Score is a projection of the finalized session. Practice creates no scored session; Dead Mode keeps its generated progression and five hearts.
+- Completed level points are `round(1000 × (1 + 0.5 × (stars − 1)) × (1 + 0.25 × (difficulty − 1)) / log10(elapsedSeconds + 10))`, using fractional seconds and one rounding per level. Zero mistakes earn three stars, one earns two, and two or more earn one. Incomplete levels earn zero. Numeric difficulty defaults to 1 independently of A/B/C; strategy defaults to BEST. Session configuration, duration and level set are frozen. Browser boards select BEST or LATEST per player, then exclude zero scores, within the existing Asia/Bangkok calendar day and matching challenge/set/mode/duration/difficulty.
+- Live sends protocol-v1 ordered ready/direction/reset evidence; the Worker evaluates actual level programs and calculates every point, completion and rank. The client never sends a total. HUD and popup deltas use accepted private canonical data; boards and podium preserve public server ordering for the current round. Live never saves a browser leaderboard result.
+- `live/outbox.ts` persists immutable sequence/timestamp payloads by room, round, public player and session before transmission. Socket reconnection sends hello first; private session/nextExpectedSequence reconciles the accepted prefix before replay and before new input. Gameplay bypasses the socket's cumulative coalescing queue. Local save failures block input and offer reload. A missing acknowledgement triggers hello recovery after five seconds. Restored gameplay replays the canonical cursor, mistakes and timing; timestamps remain monotonic if clock estimates change.
+- Room phase and shortened `room.endAt` determine results. Inputs captured by the deadline may be accepted within the existing two-second delivery grace. Rejected late suffixes stop once; new rounds use fresh sessions and sequence 1. The Worker keeps its newest 64 event fingerprints and omits old duplicate receipts while still returning the canonical accepted sequence. Never infer an award from an absent receipt.
+- Client and Worker must roll out together. Old cumulative progress is rejected with reload-required; no previous-formula score conversion or historical-board migration exists. Deployment remains the owner's separate action. No `codeventure-mvp-api` or external scoring service is used.
+- Recovery copy follows the existing Thai-only locale architecture (controller ruling), with no new unused English dictionary.
+
 ## 2026-10-14 — One Logo entry in Elements
 
 - Merged the source sleep-logo SVG and display PNG entries into a single **Logo** item (`logo-sleep`). Its file/preview is the PNG actually displayed in-game; specs list both PNG rendering details and the source SVG path/SSIM information. Removed the duplicate item, unused SVG preview import and redundant localized labels. Elements' existing computed counts/filtering follow the merged manifest automatically.

@@ -112,3 +112,48 @@ profile or device, because the player id is stored in localStorage.
 8. Try a 13th player and check "room full" is shown.
 
 `pnpm --dir live-server smoke` covers the protocol end to end without browsers.
+
+
+## Authoritative scoring and coordinated protocol rollout
+
+Deploy the matching client and Worker together: `LIVE_PROTOCOL_VERSION = 1` replaces cumulative
+`progress` with immutable ordered `gameplay` events (`ready`, `direction`, `reset`). The Worker
+solves the configured level program and validates every direction, level, sequence and timestamp;
+client-supplied totals/stars are never accepted. An old cumulative client receives a reload request.
+No previous-formula score conversion or history migration is provided.
+
+The round freezes set, numeric difficulty and BEST/LATEST strategy at start. Difficulty defaults to
+1 independently of mode A/B/C; strategy defaults to BEST. Completed-level points are
+`round(1000 * (1 + .5 * (stars - 1)) * (1 + .25 * (difficulty - 1)) / log10(seconds + 10))`.
+Use fractional elapsed seconds and round once per level. Zero mistakes give three stars, one gives
+two, and two or more give one; incomplete levels score zero. Retry/reset retain the first-ready
+clock and mistakes. The public standings and podium include only the current round's values.
+
+Players receive a private canonical session and `acknowledgedSequence`/`nextExpectedSequence`
+after hello and host start. Host/screen sockets never receive private ledgers. Each gameplay
+candidate is persisted before publication and acknowledgement. The Worker retains the newest
+`LIVE_REPLAY_WINDOW = 64` accepted event fingerprints/optional receipts and clears redundant
+Live reducer operation history. An older already-accepted sequence returns the canonical session
+and sequence without a receipt or delta. This still prevents applying it twice.
+
+The browser persists each immutable input before sending, in an outbox scoped by room, round,
+public player and session. After reconnect/reload it reconciles the private accepted prefix, then
+replays the unacknowledged suffix before enabling input. Gameplay never uses socket coalescing.
+A missing acknowledgement requests another hello/private snapshot after five seconds. Storage
+failure blocks new input and offers reload; reload restores accepted cursor/mistakes/time. Scores,
+completion count and popup deltas come from accepted server data. Live results are never copied
+into the ordinary browser leaderboard store. Practice remains unscored; ordinary/Dead scoring
+continues entirely in the browser, with Dead's five hearts and generated levels preserved.
+
+`room.phase`/`room.endAt` define results, including End Early's shortened deadline. The frozen
+session deadline may be later. A final input at/before endAt may arrive during the two-second
+grace; later new evidence is rejected. The session may remain active during results to support
+this grace. Exact harmless duplicates still acknowledge after grace. A rejected immutable suffix
+is discarded and input stops in a terminal recovery/result state rather than resending forever.
+A new round has fresh sessions and sequences, and cannot inherit a prior-round best.
+
+Smoke uses real ready/right/right/right gameplay, checks perfect/one-mistake canonical scores,
+private/public agreement, duplicate and lost-ack reconnect, queue/privacy, shortened deadline,
+grace expiry, rollover zero scores and kick. Local browser rehearsal should also exercise a
+narrow screen's storage recovery and actual offline/reconnect. A real phone/LAN rehearsal remains
+necessary for deployment-specific origin and network behavior.
