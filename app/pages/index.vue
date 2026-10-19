@@ -751,7 +751,8 @@ async function startGame(): Promise<void> {
       setTitle: deadRun.value ? `Dead Mode (seed ${deadRun.value.seed})` : activeSet.value.title,
       mode: selectedMode.value, language: codeLanguage.value, debug: debugMode.value,
       startedAt: startedAt.value, timeLimitSec: timeLimitSec.value,
-      config: { difficulty: activeChallenge.value?.difficulty ?? 1, scoringStrategy: activeChallenge.value?.scoringStrategy ?? 'BEST' },
+      config: { difficulty: activeChallenge.value?.difficulty ?? DEFAULT_COMPETITION_CONFIG.difficulty,
+        scoringStrategy: activeChallenge.value?.scoringStrategy ?? DEFAULT_COMPETITION_CONFIG.scoringStrategy },
       checkpoint: { levelIndex: selectedLevelIndex.value, combo: 0, bestCombo: 0, inputs: 0,
         ...(deadRun.value ? { deadSeed: deadRun.value.seed, hearts: DEAD_LIVES } : {}) },
     });
