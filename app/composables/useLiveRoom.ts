@@ -1,7 +1,7 @@
 import { getCurrentInstance, onBeforeUnmount, ref } from "vue";
 import type { Ref } from "vue";
 import type { CompetitionSession } from '../types/competition';
-import { createLiveReplay, type GameplayInput, type LiveSyncStatus } from '../utils/live/session';
+import { createLiveReplay, createLiveRoundInbox, type GameplayInput, type LiveSyncStatus } from '../utils/live/session';
 import type { ScoringMsg } from '../utils/live/protocol';
 import { clockOffset } from "../utils/live/clock";
 import type { ClientMessage, PlayerStatus, Role, RoomState } from "../utils/live/protocol";
@@ -43,15 +43,20 @@ export function useLiveRoom(opts: { code: string; role: Role; key?: string; hell
   const session = ref<CompetitionSession | null>(null);
   const syncStatus = ref<LiveSyncStatus>('resync');
   let pendingSince = Date.now();
+  let recoveryAttempts = 0;
   const replay = createLiveReplay({
     room: opts.code, playerId: () => you.value?.id ?? '',
     send: event => socket?.send(event),
     changed(canonical, message, status) {
       session.value = canonical;
-      if (message) scoring.value = message;
+      if (message) { scoring.value = message; recoveryAttempts = 0; pendingSince = Date.now(); }
       if (syncStatus.value !== status) pendingSince = Date.now();
       syncStatus.value = status;
     },
+  });
+  const roundInbox = createLiveRoundInbox({
+    invalidate() { replay.invalidate(); scoring.value = null; },
+    accept: message => replay.accept(message),
   });
   const { liveUrl, enabled } = useLiveConfig();
   const socket =
@@ -59,19 +64,18 @@ export function useLiveRoom(opts: { code: string; role: Role; key?: string; hell
       ? openLiveSocket(liveWsUrl(liveUrl, opts.code, opts.role, opts.key), opts.hello, {
           onConnection(up) {
             connected.value = up;
-            replay.disconnected();
+            if (up) { recoveryAttempts = 0; replay.connecting(); }
+            else replay.disconnected();
           },
           onMessage(m, receivedAt) {
             switch (m.type) {
               case "state":
-                if (state.value && state.value.roundId !== m.state.roundId) {
-                  replay.invalidate(); scoring.value = null;
-                }
                 state.value = m.state;
                 offset.value = clockOffset(m.state.serverNow, receivedAt);
+                roundInbox.publicRound(m.state.roundId);
                 break;
               case "scoring":
-                if (!state.value || m.roundId === state.value.roundId) replay.accept(m);
+                roundInbox.privateState(m);
                 break;
               case "reload":
                 replay.reloadRequired();
@@ -98,8 +102,11 @@ export function useLiveRoom(opts: { code: string; role: Role; key?: string; hell
 
   // Lost acknowledgements are recovered by hello/private snapshot, before any replay.
   const recoveryTimer = enabled && !import.meta.server ? setInterval(() => {
-    if (connected.value && syncStatus.value === 'pending' && Date.now() - pendingSince > 5000) {
-      replay.disconnected();
+    if (connected.value && opts.role === 'player' && you.value?.status === 'playing' && state.value?.phase !== 'lobby' && ['pending', 'resync'].includes(syncStatus.value) && Date.now() - pendingSince > 5000) {
+      // Bounded handshake recovery also covers a missing private snapshot after rollover.
+      if (++recoveryAttempts > 3) { replay.reloadRequired(); return; }
+      replay.connecting();
+      pendingSince = Date.now();
       const hello = opts.hello(); if (hello) socket?.send(hello);
     }
   }, 1000) : null;
@@ -115,7 +122,7 @@ export function useLiveRoom(opts: { code: string; role: Role; key?: string; hell
   return {
     state,
     scoring, session, syncStatus,
-    sendGameplay: event => connected.value && replay.enqueue(event, Date.now() + offset.value),
+    sendGameplay: event => replay.enqueue(event, Date.now() + offset.value),
     offset,
     connected,
     isHost,

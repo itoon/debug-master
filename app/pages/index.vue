@@ -1117,15 +1117,12 @@ function clearPendingRunTimers(): void {
   boardShattering.value = false;
 }
 
-async function beginLevel(): Promise<void> {
+async function beginLevel(liveResumeCursor?: number): Promise<void> {
   const token = sessionToken;
   if (liveMode.value) {
     if (!liveCanInput.value) return;
-    const record = liveRecord();
-    if (!record || record.levelId !== currentLevel.value.id || record.completed) {
-      if (!liveRoom.value?.sendGameplay({ action: 'ready', levelId: currentLevel.value.id })) return;
-      if (!await waitLiveAcceptance() || token !== sessionToken) return;
-    }
+    // Normal entry advances on a durable local event. Recovery supplies an already accepted cursor.
+    if (liveResumeCursor === undefined && !liveRoom.value?.sendGameplay({ action: 'ready', levelId: currentLevel.value.id })) return;
   }
   if (!practiceActive.value && !liveMode.value) {
     await checkpointWrite;
@@ -1167,7 +1164,7 @@ async function beginLevel(): Promise<void> {
   status.value = "playing";
   feedbackMessage.value = t("game.startInstruction");
   if (!practiceActive.value && !liveMode.value) replayCheckpointCursor();
-  if (liveMode.value) replayCheckpointCursor(liveRecord()?.attemptCursor ?? 0);
+  if (liveMode.value) replayCheckpointCursor(liveResumeCursor ?? 0);
   advanceToMove();
 }
 
@@ -1179,8 +1176,7 @@ function restartLevel(): void {
     if (competition.busy.value) return;
     checkpointWrite = competition.apply({ type: 'reset-attempt', at: Date.now() });
   }
-  if (liveMode.value) void waitLiveAcceptance().then(accepted => { if (accepted) void beginLevel(); });
-  else void beginLevel();
+  void beginLevel();
 }
 
 function advanceToMove(): void {
@@ -1268,7 +1264,7 @@ function controlMove(direction: Direction): void {
   const savedInput = checkpointWrite;
   stepTimer = setTimeout(async () => {
     stepTimer = null;
-    if (liveMode.value && (!await waitLiveAcceptance() || !campaignStarted.value || token !== sessionToken)) return;
+    if (liveMode.value && (!liveCanInput.value || !campaignStarted.value || token !== sessionToken)) return;
     if (!practiceActive.value && !liveMode.value) {
       const receipt = await savedInput;
       if (token !== sessionToken || !campaignStarted.value) return;
@@ -1363,7 +1359,7 @@ function failLevel(reason: string): void {
   const token = sessionToken;
   retryTimer = setTimeout(async () => {
     retryTimer = null;
-    if (liveMode.value && (!await waitLiveAcceptance() || token !== sessionToken)) return;
+    if (liveMode.value && (!liveCanInput.value || token !== sessionToken)) return;
     if (!practiceActive.value && !liveMode.value) {
       const receipt = await failedInput;
       if (token !== sessionToken) return;
@@ -1683,7 +1679,7 @@ const liveQueueRemaining = computed(() => {
 });
 const liveLateScore = computed(() => liveRoom.value?.syncStatus.value === 'closed');
 const liveSyncStatus = computed(() => liveRoom.value?.syncStatus.value ?? 'resync');
-const liveCanInput = computed(() => liveRoom.value?.connected.value && liveSyncStatus.value === 'ready');
+const liveCanInput = computed(() => ['ready', 'pending', 'offline'].includes(liveSyncStatus.value));
 const liveSyncText = computed(() => t(`live.sync.${liveSyncStatus.value}`));
 function liveReload(): void { window.location.reload(); }
 
@@ -1700,16 +1696,11 @@ function liveRecord() {
   const saved = liveRoom.value?.session.value;
   return saved?.checkpoint.levelKey ? saved.levels[saved.checkpoint.levelKey] : undefined;
 }
-async function waitLiveAcceptance(): Promise<boolean> {
-  if (liveSyncStatus.value === 'pending') await new Promise<void>(resolve => {
-    const stop = watch(liveSyncStatus, value => { if (value !== 'pending') { stop(); resolve(); } });
-  });
-  return liveSyncStatus.value === 'ready';
-}
 async function restoreLiveBoard(): Promise<void> {
   if (!campaignStarted.value || !liveCanInput.value) return;
   const saved = liveRoom.value?.session.value;
   if (!saved) return;
+  liveNeedsRestore = false;
   clearPendingRunTimers(); clearLevelAdvanceTimer();
   syncLiveCounters();
   const record = liveRecord();
@@ -1718,7 +1709,7 @@ async function restoreLiveBoard(): Promise<void> {
     selectedLevelIndex.value = activeLevels.value.length - 1;
     status.value = 'completed'; expectedMove.value = null; return;
   }
-  await beginLevel();
+  await beginLevel(record && !record.completed ? record.attemptCursor : undefined);
 }
 watch(() => liveRoom.value?.scoring.value, message => {
   if (!message?.session) return;
@@ -1731,10 +1722,10 @@ watch(() => liveRoom.value?.scoring.value, message => {
 });
 let liveNeedsRestore = false;
 watch(liveSyncStatus, next => {
-  if (next === 'resync') {
+  if (next === 'resync' || next === 'closed' || next === 'storage-error' || next === 'reload-required') {
     liveNeedsRestore = true; sessionToken++; clearPendingRunTimers(); clearLevelAdvanceTimer(); expectedMove.value = null;
   }
-  if (next === 'ready' && liveNeedsRestore && campaignStarted.value) { liveNeedsRestore = false; void restoreLiveBoard(); }
+  if (next === 'ready' && liveNeedsRestore && campaignStarted.value && liveStartedRound.value === liveState.value?.roundId) { liveNeedsRestore = false; void restoreLiveBoard(); }
   if (next === 'ready' && liveStage.value === 'running' && !campaignStarted.value) void liveStartRound();
 });
 
@@ -1828,9 +1819,10 @@ watch(liveStage, (stage) => {
 
 // newRound: the room is back in the lobby with a new roundId. Stop any run; the profile stays.
 watch(() => liveState.value?.roundId, (roundId, previous) => {
-  if (roundId == null || previous == null || roundId === previous || liveState.value?.phase !== "lobby") return;
+  if (roundId == null || previous == null || roundId === previous) return;
   liveStopGame();
   liveStartedRound.value = null;
+  if (liveStage.value === "running" && liveCanInput.value) void liveStartRound();
 });
 
 async function liveStartRound(): Promise<void> {

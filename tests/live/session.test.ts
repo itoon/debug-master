@@ -63,25 +63,25 @@ import { newSession, START } from '../competition/fixtures'
 import type { GameplayEventMsg, ScoringMsg } from '../../app/utils/live/protocol'
 
 function replayHarness(store = new MemStorage()) {
-  const sent: GameplayEventMsg[] = []; const statuses: string[] = []
+  const sent: GameplayEventMsg[] = []; const statuses: string[] = []; const totals: number[] = []
   const replay = createLiveReplay({ room: 'TEST', playerId: () => 'player-1', storage: store,
-    send: e => sent.push(e), changed: (_session, _message, status) => statuses.push(status) })
+    send: e => sent.push(e), changed: (session, _message, status) => { statuses.push(status); if (session) totals.push(session.totalScore) } })
   const canonical = createCompetitionSession(newSession())
   const snapshot = (sequence = 0, extra: Partial<ScoringMsg> = {}): ScoringMsg => ({ type: 'scoring', protocolVersion: 1, roundId: 1,
     session: canonical, acknowledgedSequence: sequence, nextExpectedSequence: sequence + 1, ...extra })
-  return { replay, sent, statuses, snapshot, store }
+  return { replay, sent, statuses, totals, snapshot, store }
 }
 describe('Live private reconciliation', () => {
   const direction = { action: 'direction' as const, levelId: 1, direction: 'right' as const }
-  it('blocks new input before private reconciliation and while awaiting acceptance', () => {
+  it('blocks before private reconciliation, then pipelines without acknowledgement delay', () => {
     const h = replayHarness()
     expect(h.replay.enqueue(direction, START)).toBe(false)
     h.replay.accept(h.snapshot())
     expect(h.replay.enqueue(direction, START + 100)).toBe(true)
-    expect(h.replay.enqueue(direction, START + 200)).toBe(false)
-    h.replay.accept(h.snapshot(1))
     expect(h.replay.enqueue(direction, START + 200)).toBe(true)
-    expect(h.sent.map(e => e.sequence)).toEqual([1, 2])
+    h.replay.accept(h.snapshot(1))
+    expect(h.replay.enqueue(direction, START + 300)).toBe(true)
+    expect(h.sent.map(e => e.sequence)).toEqual([1, 2, 3])
   })
   it('replays the immutable lost-ack suffix after restart only after hello/private state', () => {
     const first = replayHarness(); first.replay.accept(first.snapshot()); first.replay.enqueue(direction, START + 500)
@@ -117,5 +117,67 @@ describe('Live private reconciliation', () => {
     store.setItem = () => { throw Error('quota') }
     expect(h.replay.enqueue(direction, START)).toBe(false)
     expect(h.statuses.at(-1)).toBe('storage-error'); expect(h.sent).toEqual([])
+  })
+})
+
+
+describe('Live latency-independent persisted pipeline', () => {
+  const right = { action: 'direction' as const, levelId: 1, direction: 'right' as const }
+  it('persists ready, full level, and next-ready at input times before any delayed ack', () => {
+    const h = replayHarness(); h.replay.accept(h.snapshot())
+    const inputs = [{ action: 'ready' as const, levelId: 1 }, right, right, right, { action: 'ready' as const, levelId: 2 }]
+    const times = [0, 100, 200, 300, 820].map(delta => START + delta)
+    inputs.forEach((input, index) => expect(h.replay.enqueue(input, times[index]!)).toBe(true))
+    expect(h.sent.map(e => e.at)).toEqual(times)
+    expect(h.sent.map(e => e.sequence)).toEqual([1, 2, 3, 4, 5])
+    expect(h.totals.every(total => total === 0)).toBe(true) // pending evidence never invents score
+    h.replay.accept(h.snapshot(2))
+    expect(h.replay.pending().map(e => e.sequence)).toEqual([3, 4, 5])
+    expect(h.sent).toHaveLength(5) // partial ack neither replays nor discards the pending suffix
+    expect(h.replay.enqueue({ ...right, levelId: 2 }, START + 900)).toBe(true)
+    expect(h.sent.at(-1)).toMatchObject({ sequence: 6, at: START + 900 });
+    for (let sequence = 3; sequence <= 6; sequence++) h.replay.accept(h.snapshot(sequence))
+    expect(h.sent).toHaveLength(6) // no quadratic retransmission as each delayed ACK arrives
+  })
+  it('queues established offline gameplay and gates fresh input only during reconnect replay', () => {
+    const h = replayHarness(); h.replay.accept(h.snapshot())
+    h.replay.enqueue({ action: 'ready', levelId: 1 }, START)
+    h.replay.disconnected()
+    expect(h.replay.enqueue(right, START + 100)).toBe(true)
+    expect(h.replay.enqueue(right, START + 200)).toBe(true)
+    expect(h.sent).toHaveLength(1)
+    const original = h.replay.pending()
+    h.replay.connecting()
+    expect(h.replay.enqueue(right, START + 300)).toBe(false)
+    h.replay.accept(h.snapshot(1))
+    expect(h.sent.slice(1)).toEqual(original.slice(1))
+    expect(h.replay.enqueue(right, START + 400)).toBe(false) // suffix must finish reconciliation
+    h.replay.accept(h.snapshot(2))
+    expect(h.replay.enqueue(right, START + 500)).toBe(false)
+    h.replay.accept(h.snapshot(3))
+    expect(h.replay.enqueue(right, START + 600)).toBe(true)
+  })
+})
+
+import { createLiveRoundInbox } from '../../app/utils/live/session'
+describe('Live private/public round ordering', () => {
+  it('buffers a newer private snapshot until matching public round, ignores stale private thereafter', () => {
+    const h = replayHarness(); const applied: number[] = []; const invalidated: number[] = []
+    const inbox = createLiveRoundInbox({ invalidate: () => { invalidated.push(1); h.replay.invalidate() },
+      accept: message => { applied.push(message.roundId); h.replay.accept(message) } })
+    inbox.publicRound(1)
+    inbox.privateState(h.snapshot())
+    h.replay.connecting()
+    const next = h.snapshot(0, { roundId: 2, session: { ...h.snapshot().session!, id: 'round-two' } })
+    inbox.privateState(next) // reconnect hello arrives before trailing public state
+    expect(applied).toEqual([1])
+    expect(h.replay.enqueue({ action: 'ready', levelId: 1 }, START)).toBe(false)
+    inbox.publicRound(2)
+    expect(invalidated).toHaveLength(1)
+    expect(applied).toEqual([1, 2])
+    expect(h.replay.enqueue({ action: 'ready', levelId: 1 }, START)).toBe(true)
+    inbox.privateState(h.snapshot())
+    expect(applied).toEqual([1, 2])
+    expect(h.sent.at(-1)!.sessionId).toBe('round-two')
   })
 })

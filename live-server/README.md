@@ -138,8 +138,8 @@ and sequence without a receipt or delta. This still prevents applying it twice.
 
 The browser persists each immutable input before sending, in an outbox scoped by room, round,
 public player and session. After reconnect/reload it reconciles the private accepted prefix, then
-replays the unacknowledged suffix before enabling input. Gameplay never uses socket coalescing.
-A missing acknowledgement requests another hello/private snapshot after five seconds. Storage
+replays the unacknowledged suffix before enabling fresh input after recovery. During established play, durable inputs pipeline without waiting for acknowledgements and may queue while offline. Partial acknowledgements only trim the accepted prefix; they do not rewind the board or retransmit the already-inflight suffix. Gameplay never uses socket coalescing.
+A missing acknowledgement requests another hello/private snapshot after five seconds. A new private round arriving before public state is buffered until the public round matches; missing handshakes use bounded retries. Storage
 failure blocks new input and offers reload; reload restores accepted cursor/mistakes/time. Scores,
 completion count and popup deltas come from accepted server data. Live results are never copied
 into the ordinary browser leaderboard store. Practice remains unscored; ordinary/Dead scoring
