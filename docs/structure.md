@@ -14,7 +14,7 @@
 | เรื่อง | ใช้อะไร |
 |---|---|
 | Framework | **Nuxt 4** (Vue 3) + TypeScript |
-| สไตล์ | CSS ธรรมดา (มี Tailwind ติดตั้งไว้แต่แทบไม่ได้ใช้) |
+| สไตล์ | Tailwind สำหรับ layout ทั่วไป และ scoped CSS สำหรับกระดาน/Codi/animation |
 | Backend | **ไม่มี** ทุกอย่างรันในเบราว์เซอร์ คะแนนเก็บใน `localStorage` |
 | Deploy | Static site บน GitHub Pages (`/debug-master/`) ผ่าน GitHub Actions |
 
@@ -38,16 +38,18 @@ pnpm dlx jiti scripts/check-level-gen.ts 300 30   # ทดสอบตัวส�
 ```
 game/
 ├─ app/
-│  ├─ app.vue                  กรอบนอกสุด แค่ <NuxtPage/> (ให้ Nuxt เลือกหน้าตาม URL)
+│  ├─ app.vue                  กรอบ .debug-master-theme และ <NuxtPage/>
 │  ├─ pages/                   หนึ่งไฟล์ = หนึ่ง URL
 │  │  ├─ index.vue             ตัวเกม (หน้าตั้งค่า, กระดาน, HUD, ตรรกะการเล่น)
 │  │  ├─ review.vue            คลังโจทย์ 60 ข้อ Set A/B + ตัวอย่าง Dead Mode
 │  │  └─ elements.vue          รายการ asset ที่ทีมออกแบบต้องเตรียม
 │  ├─ components/              ชิ้นส่วน UI ที่ใช้ซ้ำหลายหน้า
+│  │  ├─ LevelGameplay.vue     UI ของหนึ่งด่าน: กระดาน โค้ด ปุ่ม และ animation
 │  │  ├─ LevelBoard.vue        วาดกระดาน (ช่อง + ช่อง START) มี slot ให้วาง Codi
 │  │  ├─ LevelCode.vue         วาดหน้าต่างโค้ด (สีไวยากรณ์ + ป้ายช่อง เช่น [■ ice])
 │  │  └─ DocShell.vue          ส่วนหัว/เมนูของหน้า review และ elements
 │  ├─ composables/             ตรรกะที่หน้า/คอมโพเนนต์เรียกใช้
+│  │  ├─ useLevelState.ts       state กระดาน/Codi ของหนึ่งด่าน; reset เมื่อเริ่มด่าน
 │  │  ├─ useProgramParser.ts   แปลงโค้ด (ข้อความ) → ต้นไม้คำสั่ง (AST)   [ไม่พึ่ง Vue]
 │  │  ├─ useBoardPresentation.ts  คำนวณข้อมูลวาดกระดาน + ขนาดช่อง        [ใช้ Vue]
 │  │  └─ useCodePresentation.ts   แยกโค้ดเป็นชิ้นเพื่อใส่สี + ขนาดตัวอักษร  [ใช้ Vue]
@@ -62,7 +64,8 @@ game/
 │  │  └─ assets.ts             รายการ asset สำหรับหน้า /elements
 │  ├─ types/debug-game.ts      ชนิดข้อมูล (type) ที่ใช้ร่วมกันทั้งโปรเจกต์
 │  └─ assets/                  ไฟล์ที่ผ่าน Vite (ได้ hash + base URL ถูกต้องอัตโนมัติ)
-│     ├─ css/tailwind.css      ฟอนต์ + ตัวแปรสี/ขนาด (design tokens) ของทั้งเว็บ
+│     ├─ css/tailwind.css      Tailwind directives
+│     ├─ css/debug-theme.css   ฟอนต์ + ตัวแปรสี/ขนาดใต้ .debug-master-theme
 │     ├─ css/board.css         หน้าตากระดาน ช่องทุกชนิด Codi และหน้าต่างโค้ด
 │     ├─ sprites/ font/ bg.png รูป Codi, หิน, คริสตัล, ฟอนต์, ฉากหลัง
 ├─ scripts/check-level-gen.ts  สคริปต์ทดสอบตัวสร้างด่านแบบจำนวนมาก
@@ -173,7 +176,7 @@ game/
 - `LevelBoard` มี **slot** ให้หน้าที่เรียกใช้วางของบนกระดาน (เกมวาง Codi, review วางตัวเลขเส้นทาง/ธง)
 - ของที่วางบนกระดานใช้ class `.actor` กับตัวแปร CSS `--x` / `--y` บอกตำแหน่งช่อง
 
-**`assets/css/tailwind.css`**: ฟอนต์ LINE Seed Sans TH + ตัวแปร `--cv-*` (สี ขอบมน เงา) ตามแบรนด์ CodeVenture
+**`assets/css/debug-theme.css`**: ฟอนต์ LINE Seed Sans TH + ตัวแปร `--cv-*` (สี ขอบมน เงา) ตามแบรนด์ CodeVenture ใต้ `.debug-master-theme`; `tailwind.css` เก็บเฉพาะ Tailwind directives
 **`assets/css/board.css`**: หน้าตาช่องทุกชนิด (`.tile-cyan` = ice ฯลฯ), ช่อง START, Codi และ animation ทั้งหมด, หน้าต่างโค้ด
 
 ### ชั้นที่ 4: หน้า (pages)
@@ -232,7 +235,7 @@ startGame()          อ่านค่าจากหน้าตั้งค�
 | `utils/codeLanguage.ts` | |
 | `utils/levelGen/*` | |
 | `data/*` (ข้อมูลด่าน) | |
-| `assets/css/board.css` (CSS ธรรมดา ใช้กับ HTML อะไรก็ได้ ถ้าใส่ class ตรง) | |
+| `assets/css/board.css` (ต้องมี `.debug-master-theme` ครอบ) | |
 
 กล่าวคือ **กติกาเกม ข้อมูลด่าน และตัวสร้างด่านไม่ขึ้นกับ framework** platform ที่เขียนด้วย TypeScript (เช่น Vite + vanilla TS) import ไปใช้ได้เลย
 
@@ -244,9 +247,15 @@ startGame()          อ่านค่าจากหน้าตั้งค�
 | คะแนน | `saveScore()` เก็บ `localStorage` key `debug-runner-scores-v1` | ส่งไป API ของ platform แทน (หรือส่งทั้งสองที่) |
 | ด่าน | import ไฟล์ใน `data/` ตอน build | โหลดจาก API ได้ ถ้ารูปแบบตรงกับ `RawLevel` |
 | เปิดด่านเฉพาะ | `/?set=set-02&level=12` | platform ลิงก์/ฝังด้วย URL นี้ได้เลย |
-| เหตุการณ์ในเกม | ไม่มีส่งออก | ควรเพิ่ม event: เริ่มด่าน, ผ่านด่าน, กดผิด, จบเกม (เพื่อ analytics/ความก้าวหน้า) |
+| เหตุการณ์ในเกม | `LevelGameplay` ส่ง `completed`/`failed` และ event จากปุ่ม | frontend เชื่อมกับ state ของ `pageId` และความก้าวหน้า |
 
-### 8.3 ทางเลือกในการต่อ (เรียงจากง่ายไปลึก)
+### 8.3 ส่วนหน้าเล่นด่านที่เตรียมไว้
+
+`LevelGameplay.vue` รับ `level: RawLevel`, `language: CodeLanguage` และ `view: LevelGameplayView` จากตัวควบคุมด่าน แล้วแสดงกระดาน โค้ด ปุ่ม และ feedback รวมทั้งรับ WASD/ลูกศร. Component ส่ง `move`, `exit`, `start`, `sound-toggle`, `completed`, `failed` ให้ตัวควบคุมจัดการ; `pages/index.vue` ยังรับผิดชอบ parser, runner, เสียง, คะแนน, เวลา และลำดับด่านของโหมดเดิม. `useLevelState.ts` เก็บตำแหน่ง Codi และ state animation ของหนึ่งด่าน; เรียก `reset()` เมื่อเริ่มหรือเล่นด่านใหม่.
+
+เมื่อย้ายไปหน้า `pageId` ของ frontend ให้ map ข้อมูล Page เป็น `RawLevel` แล้วสร้าง `LevelGameplayView` จาก state ของเกม พร้อมครอบ component ด้วย `.debug-master-theme`. หากต้องการวางปุ่มเสียง/ออกไว้ใน HUD ของจอเล็ก ให้ส่ง `view.hudTarget` เป็น CSS selector ของปลายทาง. ไฟล์ `board.css` จำกัด selector อยู่ใต้ class นี้; `debug-theme.css` ไม่ปรับ `html`, `body` หรือ `#__nuxt` ของแอปปลายทาง. การเชื่อม parser/runner กับ Page และ API ยังเป็นงานรอบถัดไป.
+
+### 8.4 ทางเลือกในการต่อ (เรียงจากง่ายไปลึก)
 
 1. **ฝังทั้งเกม (iframe / ลิงก์)**: เร็วที่สุด เพิ่ม `window.parent.postMessage(...)` ตอนผ่านด่าน/จบเกม
    ให้ platform ฟังแล้วบันทึกเอง ข้อเสียคือหน้าตาและ login แยกกัน
@@ -255,7 +264,7 @@ startGame()          อ่านค่าจากหน้าตั้งค�
 3. **แยก "แกนเกม" เป็นแพ็กเกจ** (parser + runner + levelGen + types + data + board.css) แล้วให้ platform เขียน UI เอง
    ได้ประสบการณ์กลมกลืนที่สุด แต่ต้องดูแลสองที่ให้ใช้แกนเวอร์ชันเดียวกัน
 
-### 8.4 เตรียมโค้ดก่อน integration (แนะนำ)
+### 8.5 เตรียมโค้ดก่อน integration (แนะนำ)
 
 - **แยกตรรกะการเล่นออกจาก `pages/index.vue`** (ตอนนี้ ~1,700 บรรทัด ปนทั้ง UI และกติกา) เป็นเช่น `useGameSession()`
   แล้วกำหนดจุดเสียบที่ชัดเจน เช่น

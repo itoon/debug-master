@@ -40,7 +40,7 @@ This file records existing design context; it does not generate runtime tokens. 
 
 ## Colors
 
-The canonical global palette lives in `app/assets/css/tailwind.css`: primary → `--cv-blue`, background → `--cv-navy-900`, accent → `--cv-yellow`, onDark → `--cv-on-dark`, danger → `--cv-red`. Component-specific art and surfaces stay in the shared component styles. Keep yellow for important scores/actions and blue for progress. Do not rebrand for an isolated feature or use colour as the only state cue.
+The canonical palette lives in `app/assets/css/debug-theme.css` under `.debug-master-theme`: primary → `--cv-blue`, background → `--cv-navy-900`, accent → `--cv-yellow`, onDark → `--cv-on-dark`, danger → `--cv-red`. Component-specific art and surfaces stay in the shared component styles. Keep yellow for important scores/actions and blue for progress. Do not rebrand for an isolated feature or use colour as the only state cue.
 
 Tile surfaces are owned by `app/assets/css/board.css`. Plain floor uses a deeper blue than pale, glossy ice; retain ice's diagonal reflection streaks and the floor's plain/checkered appearance as additional distinguishing cues. Shared tile variables keep board cells and code swatches consistent.
 
@@ -92,7 +92,7 @@ Keep the space background and restrained blue surfaces, thin outlines and soft s
 
 The summary dialog hides its scrollbar as requested, while retaining overflow scrolling so result details, retry and navigation remain reachable on small screens. Other scroll areas keep their existing presentation.
 
-Leaderboard, player setup and the gameplay board/readable code viewports use the shared `.game-scrollbar` presentation in `app/assets/css/scrollbar.css`, registered through Nuxt's global CSS list. It keeps the existing leaderboard's 6px rounded translucent grey thumb (45%, 65% hover), transparent track/corner and hidden arrow buttons; Firefox uses thin native scrollbars. Scrollbar appearance shares one owner; each component owns its overflow sizing and native scroll interaction.
+Leaderboard, player setup and readable code viewports use the shared `.game-scrollbar` presentation in `app/assets/css/scrollbar.css`, registered through Nuxt's global CSS list. It keeps the existing leaderboard's 6px rounded translucent grey thumb (45%, 65% hover), transparent track/corner and hidden arrow buttons; Firefox uses thin native scrollbars. The gameplay board viewport remains pannable but hides its scrollbar because clear and wrap animations can briefly extend beyond the board. Each component owns its overflow sizing and native scroll interaction.
 
 ## Shapes
 

@@ -5,7 +5,7 @@
 /* ---------- Board ---------- */
 
 /* Board skin from codeventure-signal-lost (src/style.css .board / .tile). */
-.board {
+:where(.debug-master-theme) .board {
   --gap: max(5px, calc(var(--cell-size) * 0.14));
   --pad: max(10px, calc(var(--cell-size) * 0.24));
   --pitch: calc(var(--cell-size) + var(--gap));
@@ -26,20 +26,20 @@
   margin: 0 auto;
 }
 
-.board.shattering .tile {
-  animation: shatter-tile 700ms cubic-bezier(0.16, 1, 0.3, 1);
+:where(.debug-master-theme) .board.shattering .tile {
+  animation: debug-shatter-tile 700ms cubic-bezier(0.16, 1, 0.3, 1);
   animation-delay: calc((var(--tile-index, 0)) * 8ms);
 }
 
 /* Wrong input: the whole board jolts while its tiles burst. */
-.board.shattering {
-  animation: board-jolt 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+:where(.debug-master-theme) .board.shattering {
+  animation: debug-board-jolt 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
 /* Each round's board assembles diagonally, capped so big maps stay quick.
    Backwards fill only: tiles keep their normal look once settled. */
-.board.cascade:not(.shattering) .tile {
-  animation: tile-settle 260ms cubic-bezier(0.2, 0.9, 0.1, 1) backwards;
+:where(.debug-master-theme) .board.cascade:not(.shattering) .tile {
+  animation: debug-tile-settle 260ms cubic-bezier(0.2, 0.9, 0.1, 1) backwards;
   animation-delay: min(calc(var(--tile-order, 0) * 18ms), 220ms);
 }
 
@@ -47,18 +47,18 @@
    glossy ice, dotted sand, rock + gem sprites. No letters on the board: the
    texture is the cue. Each kind sets --tile-bg and --bevel; board tiles and
    the code-view swatches share them so a condition looks like its tile. */
-.tile,
-.code-tile {
+:where(.debug-master-theme) .tile,
+:where(.debug-master-theme) .code-tile {
   --tile-bg: linear-gradient(160deg, #b9e3fb, #8ccdf3);
   --bevel: #5fa9dc;
 }
 
-.tile,
-.code-tile-swatch {
+:where(.debug-master-theme) .tile,
+:where(.debug-master-theme) .code-tile-swatch {
   background: var(--tile-bg);
 }
 
-.tile {
+:where(.debug-master-theme) .tile {
   position: relative;
   width: var(--cell-size);
   height: var(--cell-size);
@@ -71,16 +71,16 @@
 
 /* n: plain floor, checkered and darker than glossy ice. Shared by board
    tiles and condition swatches so item identification stays consistent. */
-.tile-floor {
+:where(.debug-master-theme) .tile-floor {
   --tile-bg: linear-gradient(160deg, #57a4e4, #2d78bf);
   --bevel: #1b5598;
 }
-.tile-floor.alt {
+:where(.debug-master-theme) .tile-floor.alt {
   --tile-bg: linear-gradient(160deg, #4b98d9, #246bad);
 }
 
 /* b: ice, glossy with two glare streaks */
-.tile-ice {
+:where(.debug-master-theme) .tile-ice {
   --bevel: #5cc0e8;
   --tile-bg: linear-gradient(
       135deg,
@@ -94,7 +94,7 @@
 }
 
 /* y: sand, faint grain */
-.tile-sand {
+:where(.debug-master-theme) .tile-sand {
   --bevel: #d49a2c;
   --tile-bg: radial-gradient(
         circle,
@@ -107,7 +107,7 @@
 
 /* g: grass, small staggered tufts across the tile (a texture like sand's
    grain, not a centred picture). */
-.tile-grass {
+:where(.debug-master-theme) .tile-grass {
   --bevel: #2f8a43;
   --tile-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%231f7a35' stroke-opacity='0.5' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M7 17l-2-6M10 17V8M13 17l2-6'/%3E%3Cpath d='M27 35l-2-6M30 35v-9M33 35l2-6'/%3E%3C/g%3E%3C/svg%3E")
       0 0 / 50% 50%,
@@ -119,7 +119,7 @@
    names. Surface tiles (floor, ice, sand, grass) are texture only. Icons share
    one flat style: thick dark outline, light fill, one highlight. */
 /* p: flower, one five-petal blossom over faint dots on pink. */
-.tile-flower {
+:where(.debug-master-theme) .tile-flower {
   --bevel: #c94c82;
   --tile-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23b8336a' stroke='%23b8336a' stroke-width='10'%3E%3Ccircle cx='50.0' cy='28.0' r='17'/%3E%3Ccircle cx='70.9' cy='43.2' r='17'/%3E%3Ccircle cx='62.9' cy='67.8' r='17'/%3E%3Ccircle cx='37.1' cy='67.8' r='17'/%3E%3Ccircle cx='29.1' cy='43.2' r='17'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Ccircle cx='50.0' cy='28.0' r='17'/%3E%3Ccircle cx='70.9' cy='43.2' r='17'/%3E%3Ccircle cx='62.9' cy='67.8' r='17'/%3E%3Ccircle cx='37.1' cy='67.8' r='17'/%3E%3Ccircle cx='29.1' cy='43.2' r='17'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='12' fill='%23ffcf3f' stroke='%23b8336a' stroke-width='5'/%3E%3Ccircle cx='46' cy='46' r='3.5' fill='%23fff6c8'/%3E%3C/svg%3E")
       center / 58% 58% no-repeat,
@@ -130,7 +130,7 @@
 
 /* o: honey, one drop over a faint honeycomb. Deeper amber than sand, with an
    object icon, so the two never get mixed up. */
-.tile-honey {
+:where(.debug-master-theme) .tile-honey {
   --bevel: #a35a06;
   --tile-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 8C50 8 22 44 22 62A28 28 0 0 0 78 62C78 44 50 8 50 8Z' fill='%23f59e0b' stroke='%236b3400' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M50 30C50 30 36 50 36 62' fill='none' stroke='%23ffd66b' stroke-width='5' stroke-linecap='round' stroke-opacity='0.7'/%3E%3Cpath d='M38 64Q38 74 47 79' fill='none' stroke='%23fff7d6' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E")
       center / 58% 58% no-repeat,
@@ -140,7 +140,7 @@
 }
 
 /* v: gem, one cut diamond over faint sparkles on violet. */
-.tile-gem {
+:where(.debug-master-theme) .tile-gem {
   --bevel: #6a49c8;
   --tile-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M20 38L35 17H65L80 38L50 86Z' fill='%23f3edff'/%3E%3Cpath d='M56 38H80L50 86Z' fill='%23c4adff'/%3E%3Cpath d='M65 17L80 38H56Z' fill='%23d9caff'/%3E%3Cpath d='M20 38H80M35 17L44 38L50 86M65 17L56 38L50 86M44 38L50 17L56 38' fill='none' stroke='%234c2fa8' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M20 38L35 17H65L80 38L50 86Z' fill='none' stroke='%233a2188' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M30 34L38 23' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E")
       center / 58% 58% no-repeat,
@@ -151,7 +151,7 @@
 
 /* k: rock, one angular warm-grey boulder (facets, not a rounded blob that
    reads as a cloud) over faint pebbles on slate grey. */
-.tile-rock {
+:where(.debug-master-theme) .tile-rock {
   --bevel: #33416f;
   --tile-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M14 80L20 52L38 30L62 24L80 40L88 66L80 80Z' fill='%23a59f96'/%3E%3Cpath d='M20 52L38 30L62 24L52 46Z' fill='%23d8d2c8'/%3E%3Cpath d='M52 46L62 24L80 40L88 66Z' fill='%23b8b2a8'/%3E%3Cpath d='M14 80L20 52L52 46L44 80Z' fill='%238d877e'/%3E%3Cpath d='M44 80L52 46L88 66L80 80Z' fill='%236f6a62'/%3E%3Cpath d='M20 52L52 46L62 24M52 46L44 80M52 46L88 66' fill='none' stroke='%232b2a33' stroke-width='3' stroke-linejoin='round' stroke-opacity='0.6'/%3E%3Cpath d='M14 80L20 52L38 30L62 24L80 40L88 66L80 80Z' fill='none' stroke='%232b2a33' stroke-width='5' stroke-linejoin='round'/%3E%3C/svg%3E")
       center / 58% 58% no-repeat,
@@ -162,14 +162,14 @@
 
 /* Start pad: signal-lost's dashed lime ring, drawn just outside the tile on
    the navy board so it reads the same on every tile kind. */
-.tile.start {
+:where(.debug-master-theme) .tile.start {
   outline: 3px dashed #4ade80;
   outline-offset: 2px;
 }
 
 /* ---------- Codi (board actor) ---------- */
 
-.actor {
+:where(.debug-master-theme) .actor {
   position: absolute;
   left: var(--pad);
   top: var(--pad);
@@ -187,7 +187,7 @@
   transition: transform 0.26s var(--ease-spring);
 }
 
-.actor.warp {
+:where(.debug-master-theme) .actor.warp {
   transition: none;
 }
 
@@ -195,32 +195,32 @@
    far side) slides in from one pitch beyond its edge while a copy slides out
    past the edge it left. Uses `translate` so it composes with the hop's
    transform, and fades so the cell beyond the board never reads as solid. */
-.hop.wrap-in {
+:where(.debug-master-theme) .hop.wrap-in {
   animation:
-    hop 0.3s var(--ease-spring),
-    wrap-in 0.26s var(--ease-out);
+    debug-hop 0.3s var(--ease-spring),
+    debug-wrap-in 0.26s var(--ease-out);
 }
 
-.wrap-exit {
+:where(.debug-master-theme) .wrap-exit {
   z-index: 2;
   transition: none;
-  animation: wrap-out 0.26s var(--ease-out) forwards;
+  animation: debug-wrap-out 0.26s var(--ease-out) forwards;
 }
 
-.hop {
+:where(.debug-master-theme) .hop {
   width: 100%;
   height: 100%;
   display: grid;
   /* Keep the 105%-wide sprite centered on the tile-sized track. */
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
-  animation: hop 0.3s var(--ease-spring);
+  animation: debug-hop 0.3s var(--ease-spring);
 }
 
 /* The player: one picture per facing (utils/playerSprites.ts). The art is
    square with the feet near the bottom, so it sits a little high to stand
    on the tile. */
-.player-sprite {
+:where(.debug-master-theme) .player-sprite {
   width: calc(var(--cell-size) * 1.05);
   height: calc(var(--cell-size) * 1.05);
   max-width: none;
@@ -228,10 +228,10 @@
   margin-top: calc(var(--cell-size) * -0.18);
   user-select: none;
   filter: drop-shadow(0 5px 3px rgba(0, 0, 0, 0.3));
-  animation: codi-idle 1.6s ease-in-out infinite;
+  animation: debug-codi-idle 1.6s ease-in-out infinite;
 }
 
-.codi {
+:where(.debug-master-theme) .codi {
   width: auto;
   height: calc(var(--cell-size) * 0.95);
   max-width: none;
@@ -239,44 +239,44 @@
   user-select: none;
   transform: scaleX(var(--flip, 1));
   filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.3));
-  animation: codi-idle 1.6s ease-in-out infinite;
+  animation: debug-codi-idle 1.6s ease-in-out infinite;
 }
 
-.actor-failed .hop,
-.actor-timeup .hop {
-  animation: dizzy 0.6s ease-in-out;
+:where(.debug-master-theme) .actor-failed .hop,
+:where(.debug-master-theme) .actor-timeup .hop {
+  animation: debug-dizzy 0.6s ease-in-out;
 }
 
 /* Clear pose: crouch, one sharp jump, a firm landing, then hold. The sprite
    flashes bright cyan on the hit instead of bouncing on a loop. */
-.actor-success .hop,
-.actor-completed .hop {
-  animation: clear-pose 440ms cubic-bezier(0.2, 0.9, 0.1, 1);
+:where(.debug-master-theme) .actor-success .hop,
+:where(.debug-master-theme) .actor-completed .hop {
+  animation: debug-clear-pose 440ms cubic-bezier(0.2, 0.9, 0.1, 1);
 }
 
-.actor-success .player-sprite,
-.actor-completed .player-sprite {
+:where(.debug-master-theme) .actor-success .player-sprite,
+:where(.debug-master-theme) .actor-completed .player-sprite {
   animation:
-    codi-idle 1.6s ease-in-out infinite,
-    clear-flash 360ms ease-out;
+    debug-codi-idle 1.6s ease-in-out infinite,
+    debug-clear-flash 360ms ease-out;
 }
 
 /* A wrap onto the goal keeps sliding in while the pose plays. */
-.actor-success .hop.wrap-in,
-.actor-completed .hop.wrap-in {
+:where(.debug-master-theme) .actor-success .hop.wrap-in,
+:where(.debug-master-theme) .actor-completed .hop.wrap-in {
   animation:
-    clear-pose 440ms cubic-bezier(0.2, 0.9, 0.1, 1),
-    wrap-in 0.26s var(--ease-out);
+    debug-clear-pose 440ms cubic-bezier(0.2, 0.9, 0.1, 1),
+    debug-wrap-in 0.26s var(--ease-out);
 }
 
-@keyframes wrap-in {
+@keyframes debug-wrap-in {
   from {
     opacity: 0;
     translate: calc(var(--wrap-dx) * -1 * var(--pitch)) calc(var(--wrap-dy) * -1 * var(--pitch));
   }
 }
 
-@keyframes wrap-out {
+@keyframes debug-wrap-out {
   to {
     opacity: 0;
     translate: calc(var(--wrap-dx) * var(--pitch)) calc(var(--wrap-dy) * var(--pitch));
@@ -285,7 +285,7 @@
 
 /* Landing: two dust puffs and a ring under Codi's feet once the hop lands.
    Painted inside the actor, behind the sprite, above the tiles. */
-.landing-dust {
+:where(.debug-master-theme) .landing-dust {
   position: absolute;
   left: 50%;
   bottom: 4%;
@@ -294,37 +294,37 @@
   height: 0;
 }
 
-.landing-dust::before,
-.landing-dust i {
+:where(.debug-master-theme) .landing-dust::before,
+:where(.debug-master-theme) .landing-dust i {
   position: absolute;
   border-radius: 50%;
   opacity: 0;
 }
 
-.landing-dust::before {
+:where(.debug-master-theme) .landing-dust::before {
   content: "";
   left: calc(var(--cell-size) * -0.36);
   top: calc(var(--cell-size) * -0.12);
   width: calc(var(--cell-size) * 0.72);
   height: calc(var(--cell-size) * 0.24);
   border: 2px solid rgba(255, 255, 255, 0.75);
-  animation: land-ring 360ms 170ms ease-out both;
+  animation: debug-land-ring 360ms 170ms ease-out both;
 }
 
-.landing-dust i {
+:where(.debug-master-theme) .landing-dust i {
   top: calc(var(--cell-size) * -0.08);
   width: calc(var(--cell-size) * 0.16);
   height: calc(var(--cell-size) * 0.11);
   background: rgba(240, 248, 255, 0.85);
-  animation: land-puff 380ms 170ms ease-out both;
+  animation: debug-land-puff 380ms 170ms ease-out both;
 }
 
-.landing-dust i:first-child {
+:where(.debug-master-theme) .landing-dust i:first-child {
   --puff-x: -1;
   left: calc(var(--cell-size) * -0.2);
 }
 
-.landing-dust i:last-child {
+:where(.debug-master-theme) .landing-dust i:last-child {
   --puff-x: 1;
   left: calc(var(--cell-size) * 0.04);
 }
@@ -333,7 +333,7 @@
    tile-shaped frame snapping outward and eight light streaks (long on the
    axes, short on the diagonals). All sharp ease-outs, no bounce, and done
    before the next round's board assembles. */
-.clear-burst {
+:where(.debug-master-theme) .clear-burst {
   --clear-ease: cubic-bezier(0.2, 0.9, 0.1, 1);
   position: absolute;
   inset: 0;
@@ -343,8 +343,8 @@
   pointer-events: none;
 }
 
-.clear-burst::before,
-.clear-burst::after {
+:where(.debug-master-theme) .clear-burst::before,
+:where(.debug-master-theme) .clear-burst::after {
   content: "";
   grid-area: 1 / 1;
   width: 100%;
@@ -352,18 +352,18 @@
   border-radius: clamp(8px, calc(var(--cell-size) * 0.2), 16px);
 }
 
-.clear-burst::before {
+:where(.debug-master-theme) .clear-burst::before {
   border: 2px solid #87dfff;
   box-shadow: 0 0 12px #87dfffaa, inset 0 0 10px #87dfff66;
-  animation: clear-frame 380ms var(--clear-ease) both;
+  animation: debug-clear-frame 380ms var(--clear-ease) both;
 }
 
-.clear-burst::after {
+:where(.debug-master-theme) .clear-burst::after {
   background: #fff;
-  animation: clear-impact 200ms ease-out both;
+  animation: debug-clear-impact 200ms ease-out both;
 }
 
-.clear-burst i {
+:where(.debug-master-theme) .clear-burst i {
   --angle: calc(var(--ray) * 45deg);
   --streak: 0.55;
   grid-area: 1 / 1;
@@ -372,14 +372,14 @@
   border-radius: 2px;
   background: linear-gradient(to top, transparent, #fff 55%, #87dfff);
   box-shadow: 0 0 6px #87dfff;
-  animation: clear-streak 340ms 40ms var(--clear-ease) both;
+  animation: debug-clear-streak 340ms 40ms var(--clear-ease) both;
 }
 
-.clear-burst i:nth-child(even) {
+:where(.debug-master-theme) .clear-burst i:nth-child(even) {
   --streak: 0.3;
 }
 
-@keyframes land-ring {
+@keyframes debug-land-ring {
   0% {
     opacity: 0.9;
     transform: scale(0.4);
@@ -390,7 +390,7 @@
   }
 }
 
-@keyframes land-puff {
+@keyframes debug-land-puff {
   0% {
     opacity: 0.9;
     transform: translate(0, 0) scale(0.6);
@@ -401,7 +401,7 @@
   }
 }
 
-@keyframes clear-frame {
+@keyframes debug-clear-frame {
   0% {
     opacity: 1;
     transform: scale(0.55);
@@ -412,7 +412,7 @@
   }
 }
 
-@keyframes clear-impact {
+@keyframes debug-clear-impact {
   0% {
     opacity: 0.85;
     transform: scale(0.9);
@@ -423,7 +423,7 @@
   }
 }
 
-@keyframes clear-streak {
+@keyframes debug-clear-streak {
   0% {
     opacity: 1;
     transform: rotate(var(--angle)) translateY(calc(var(--cell-size) * -0.35)) scaleY(0.2);
@@ -434,7 +434,7 @@
   }
 }
 
-@keyframes hop {
+@keyframes debug-hop {
   0% {
     transform: scale(1.12, 0.84);
   }
@@ -446,13 +446,13 @@
   }
 }
 
-@keyframes codi-idle {
+@keyframes debug-codi-idle {
   50% {
     translate: 0 -5%;
   }
 }
 
-@keyframes dizzy {
+@keyframes debug-dizzy {
   20% {
     transform: rotate(-22deg) translateX(-10%);
   }
@@ -467,7 +467,7 @@
   }
 }
 
-@keyframes clear-pose {
+@keyframes debug-clear-pose {
   0% {
     transform: scale(1.14, 0.82);
   }
@@ -479,7 +479,7 @@
   }
 }
 
-@keyframes clear-flash {
+@keyframes debug-clear-flash {
   from {
     filter: drop-shadow(0 0 10px #87dfff) brightness(2);
   }
@@ -487,7 +487,7 @@
 
 /* ---------- Code window (like "gameplay example" card) ---------- */
 
-.code-card {
+:where(.debug-master-theme) .code-card {
   min-height: 0;
   border: 1px solid var(--cv-glass-border);
   border-radius: var(--cv-radius-xl);
@@ -500,7 +500,7 @@
   overflow: hidden;
 }
 
-.window-bar {
+:where(.debug-master-theme) .window-bar {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -508,33 +508,33 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.window-bar h2 {
+:where(.debug-master-theme) .window-bar h2 {
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--cv-on-dark);
 }
 
-.window-dots {
+:where(.debug-master-theme) .window-dots {
   display: inline-flex;
   gap: 6px;
 }
 
-.window-dots i {
+:where(.debug-master-theme) .window-dots i {
   width: 10px;
   height: 10px;
   border-radius: 9999px;
   background: var(--cv-red);
 }
 
-.window-dots i:nth-child(2) {
+:where(.debug-master-theme) .window-dots i:nth-child(2) {
   background: var(--cv-yellow);
 }
 
-.window-dots i:nth-child(3) {
+:where(.debug-master-theme) .window-dots i:nth-child(3) {
   background: var(--cv-green);
 }
 
-.code-box {
+:where(.debug-master-theme) .code-box {
   min-height: 0;
   overflow-y: auto;
   margin: 0;
@@ -546,7 +546,7 @@
   line-height: var(--code-line-height);
 }
 
-.code-line {
+:where(.debug-master-theme) .code-line {
   display: flex;
   align-items: center;
   min-height: 1.12em;
@@ -555,7 +555,7 @@
   white-space: pre-wrap;
 }
 
-.code-line-number {
+:where(.debug-master-theme) .code-line-number {
   display: inline-block;
   min-width: 2ch;
   margin-right: 1.2ch;
@@ -564,34 +564,34 @@
   user-select: none;
 }
 
-.code-token {
+:where(.debug-master-theme) .code-token {
   white-space: pre-wrap;
 }
 
-.code-token-plain {
+:where(.debug-master-theme) .code-token-plain {
   color: #e5e7eb;
 }
 
-.code-token-keyword {
+:where(.debug-master-theme) .code-token-keyword {
   color: var(--cv-coral);
   font-weight: 800;
 }
 
-.code-token-name {
+:where(.debug-master-theme) .code-token-name {
   color: var(--cv-blue-light);
 }
 
-.code-token-number {
+:where(.debug-master-theme) .code-token-number {
   color: var(--cv-green);
   font-weight: 800;
 }
 
-.code-token-punct {
+:where(.debug-master-theme) .code-token-punct {
   color: #94a3b8;
 }
 
 /* Condition chip, like signal-lost's sensor call: swatch + name pill. */
-.code-tile {
+:where(.debug-master-theme) .code-tile {
   display: inline-flex;
   align-items: center;
   gap: 0.3em;
@@ -603,7 +603,7 @@
   line-height: 1.2;
 }
 
-.code-tile-swatch {
+:where(.debug-master-theme) .code-tile-swatch {
   width: 1.05em;
   height: 1.05em;
   border-radius: 0.25em;
@@ -612,12 +612,12 @@
     inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
-.code-tile-label {
+:where(.debug-master-theme) .code-tile-label {
   color: #e5f0ff;
   font-weight: 700;
 }
 
-.code-negation {
+:where(.debug-master-theme) .code-negation {
   display: inline-block;
   margin-right: 0.22em;
   font-weight: 800;
@@ -625,12 +625,12 @@
   line-height: 1;
 }
 
-.code-line.active {
+:where(.debug-master-theme) .code-line.active {
   background: rgba(253, 202, 63, 0.16);
   border-left-color: var(--cv-yellow);
 }
 
-@keyframes board-jolt {
+@keyframes debug-board-jolt {
   15%,
   85% {
     transform: translateX(-2px);
@@ -647,14 +647,14 @@
   }
 }
 
-@keyframes tile-settle {
+@keyframes debug-tile-settle {
   from {
     opacity: 0;
     transform: scale(0.82);
   }
 }
 
-@keyframes shatter-tile {
+@keyframes debug-shatter-tile {
   0% {
     opacity: 1;
     transform: translate(0, 0) rotate(0) scale(1);
@@ -677,38 +677,38 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .board.shattering,
-  .board.cascade .tile,
-  .landing-dust,
-  .clear-burst i {
+  :where(.debug-master-theme) .board.shattering,
+  :where(.debug-master-theme) .board.cascade .tile,
+  :where(.debug-master-theme) .landing-dust,
+  :where(.debug-master-theme) .clear-burst i {
     animation: none;
   }
 
-  .landing-dust,
-  .wrap-exit {
+  :where(.debug-master-theme) .landing-dust,
+  :where(.debug-master-theme) .wrap-exit {
     display: none;
   }
 
-  .hop.wrap-in {
+  :where(.debug-master-theme) .hop.wrap-in {
     animation: none;
   }
 
   /* Keep the clear acknowledgement as a frame that fades, without travel. */
-  .clear-burst::before {
-    animation: clear-glow 480ms ease-out both;
+  :where(.debug-master-theme) .clear-burst::before {
+    animation: debug-clear-glow 480ms ease-out both;
   }
 
-  .clear-burst i,
-  .clear-burst::after {
+  :where(.debug-master-theme) .clear-burst i,
+  :where(.debug-master-theme) .clear-burst::after {
     display: none;
   }
 
-  .actor-success .player-sprite,
-  .actor-completed .player-sprite {
+  :where(.debug-master-theme) .actor-success .player-sprite,
+  :where(.debug-master-theme) .actor-completed .player-sprite {
     animation: none;
   }
 
-  @keyframes clear-glow {
+  @keyframes debug-clear-glow {
     from {
       opacity: 1;
     }

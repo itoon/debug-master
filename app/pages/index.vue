@@ -40,111 +40,18 @@
           <button type="button" class="soft-button small" :disabled="exitSaving" @click="exitGame">{{ t('game.retryExit') }}</button>
         </div>
 
-        <div class="play-cluster">
-          <div class="board-wrap">
-            <div
-              v-if="notificationMessage && status !== 'success'"
-              class="notification"
-              :class="`notification-${status}`"
-              role="alert"
-            >
-              <strong>{{ notificationTitle }}</strong>
-              <p>{{ notificationMessage }}</p>
-            </div>
-            <div v-if="practiceActive && (status === 'success' || status === 'completed')" :key="`practice-pass-${boardRound}`"
-              class="notification notification-success practice-success-notice" role="status">
-              <strong>✓ {{ t('practice.passed') }}</strong>
-            </div>
-            <p v-if="practiceSuperHint && practiceActive && practiceHintSolution?.error && !notificationMessage" class="notification" role="alert">{{ t('practice.pathError') }}</p>
-            <div class="board-and-controls">
-              <p class="board-combo" :role="practiceActive ? 'status' : undefined"><span v-if="practiceActive && (status === 'success' || status === 'completed')" class="practice-passed">✓ {{ t('practice.passed') }}</span><span v-else-if="!practiceActive && comboStreak > 1" :key="comboStreak" class="combo-pop" :class="{ 'combo-hot': comboStreak >= 5 }">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
-              <div ref="boardViewportEl" class="board-viewport game-scrollbar" role="region" :aria-label="t('game.boardViewport', { level: currentLevel.id })" tabindex="0"
-                @pointerdown.passive="cancelBoardFollow" @touchstart.passive="cancelBoardFollow" @wheel.passive="cancelBoardFollow">
-              <LevelBoard
-                :key="boardRound"
-                :level="currentLevel"
-                :space="boardSpace"
-                :max-cell-size="160"
-                :shattering="boardShattering"
-                cascade
-              >
-                <BoardSuperHint v-if="practiceSuperHint && practiceActive && !practiceStarting && ['playing', 'success', 'completed'].includes(status) && !practiceHintSolution?.error" :key="currentLevel.id" :path="practiceHintSolution?.path ?? []" :completed-moves="levelCorrectInputs" />
-                <div
-                  v-if="wrapExit"
-                  :key="`exit-${wrapExit.id}`"
-                  class="actor wrap-exit"
-                  :style="{ '--x': wrapExit.col, '--y': wrapExit.row, '--wrap-dx': wrapExit.dx, '--wrap-dy': wrapExit.dy }"
-                  aria-hidden="true"
-                  @animationend.self="wrapExit = null"
-                >
-                  <img class="player-sprite" :src="codiSprite" alt="" draggable="false" />
-                </div>
-                <div
-                  class="actor"
-                  :class="[`actor-${status}`, { warp: playerWarped }]"
-                  :style="actorStyle"
-                  aria-hidden="true"
-                >
-                  <span v-if="playerHop" :key="`dust-${playerHop}`" class="landing-dust"><i /><i /></span>
-                  <span v-if="status === 'success' || status === 'completed'" class="clear-burst"><i v-for="ray in 8" :key="ray" :style="{ '--ray': ray }" /></span>
-                  <div :key="playerHop" class="hop" :class="{ 'wrap-in': wrapExit }"
-                    :style="wrapExit ? { '--wrap-dx': wrapExit.dx, '--wrap-dy': wrapExit.dy } : undefined">
-                    <img
-                      class="player-sprite"
-                      :src="codiSprite"
-                      alt=""
-                      draggable="false"
-                    />
-                  </div>
-                  <NextMoveHint v-if="((practiceActive && practiceSuperHint) || mobileGuidance) && canControl && !showExitConfirm && expectedMove" :direction="expectedMove.direction" />
-                </div>
-              </LevelBoard>
-              </div>
-              <div ref="controlsEl" class="board-footer">
-                <!-- On phones and tablets these system buttons move up into the HUD so
-                     they never sit beside the D-pad under the player's thumb. -->
-                <Teleport to="#game-hud-system" defer :disabled="!compactLayout">
-                <nav class="game-actions" :aria-label="t('game.actions')">
-                  <button type="button" class="hud-action sound-toggle" :aria-pressed="soundEnabled" :aria-label="t('game.soundEffects')"
-                    :title="t(soundEnabled ? 'game.mute' : 'game.unmute')" @click="toggleSound">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path v-if="soundEnabled" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path v-else d="m17 9 5 6m0-6-5 6" /></svg>
-                  </button>
-                  <button v-if="!campaignStarted && !practiceActive && !liveMode" type="button" class="hud-action primary-button small"
-                    :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
-                    @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
-                  <button v-if="!liveMode || compactLayout" type="button" class="hud-action soft-button small exit-action" :class="{ 'live-only-exit': liveMode }"
-                    :disabled="exitSaving || practiceStarting"
-                    :aria-label="liveMode ? t('live.leave') : pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu')"
-                    :title="liveMode ? t('live.leave') : campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
-                    @click="requestExit"><svg class="exit-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 4H4v16h5m6-12 4 4-4 4M8 12h11" /></svg><span class="exit-text">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</span></button>
-                </nav>
-                </Teleport>
-                <div class="touch-controls" :aria-label="t('game.controls')">
-                <button type="button" class="arrow up" :class="{ 'guided-arrow': mobileGuidedMove === 'up' }" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲<TouchTapHint v-if="mobileGuidedMove === 'up'" /></button>
-                <button type="button" class="arrow left" :class="{ 'guided-arrow': mobileGuidedMove === 'left' }" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀<TouchTapHint v-if="mobileGuidedMove === 'left'" /></button>
-                <button type="button" class="arrow down" :class="{ 'guided-arrow': mobileGuidedMove === 'down' }" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼<TouchTapHint v-if="mobileGuidedMove === 'down'" /></button>
-                <button type="button" class="arrow right" :class="{ 'guided-arrow': mobileGuidedMove === 'right' }" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶<TouchTapHint v-if="mobileGuidedMove === 'right'" /></button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <LevelCode
-            :class="{ 'python-code': displayLanguage === 'python' }"
-            :level="currentLevel"
-            :language="displayLanguage"
-            :title="t('game.readCode', { language: languageLabel })"
-            :readable="true"
-            scroll-hint
-            :is-active-line="isGameCodeLineActive"
-            :follow-active-line="(practiceActive && practiceSuperHint) || mobileGuidance"
-            :teaching-guidance="practiceActive || mobileGuidance"
-            :executed-step="executedCodeStep ?? undefined"
-            :follow-executed="compactLayout && displayLanguage === 'python' && !mobileGuidance"
-            :follow-upcoming="followMobileViewports && displayLanguage === 'python'"
-            :upcoming-line="expectedMove?.sourceLine"
-          />
-        </div>
+        <LevelGameplay
+          ref="gameplayRef"
+          :level="currentLevel"
+          :language="displayLanguage"
+          :view="gameplayView"
+          @move="controlMove"
+          @exit="requestExit"
+          @start="startGame"
+          @sound-toggle="toggleSound"
+          @wrap-ended="wrapExit = null"
+          @cancel-follow="cancelBoardFollow"
+        />
 
         <transition name="score-pop">
           <div v-if="scorePopup && !practiceActive" class="score-popup" role="status" aria-live="polite">
@@ -391,14 +298,11 @@
 <script setup lang="ts">
 import { levelSets } from "../data/level-sets";
 import { challengeSets } from "../data/challenge-groups";
-import { tileKindLabel, type BoardSpace } from "../composables/useBoardPresentation";
+import { tileKindLabel } from '../composables/useBoardPresentation'
 import { useProgramParser } from "../composables/useProgramParser";
 import type {
   Direction,
-  GameStatus,
   Mode,
-  MoveNode,
-  Node,
   PracticeSummary,
   Score,
   ScorePopup,
@@ -423,13 +327,15 @@ import { PLAYER_AGES, scorePlayerKey, hasRankingScore, type RankingBoard } from 
 import { nicknameKey } from "../utils/playerNickname";
 import { newPlayerId } from "../utils/playerIdentity";
 import { createViewportScroller } from "../utils/viewportScroll";
-import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
+import { PLAYER_SPRITES, PLAYER_POSES } from '../utils/playerSprites'
 import { enabledModesFor, homeConfig, type ChallengeMode } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
 import type { PlayerSetupInput } from "../storage/contracts";
 import { isPlayerAvatarId, PLAYER_AVATARS } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
+import { useLevelState } from '../composables/useLevelState'
+import type { LevelGameplayView } from '../components/LevelGameplay.vue'
 import { useLiveConfig, useLiveRoom, type LiveRoom } from "../composables/useLiveRoom";
 import { livePlayerId, resetLivePlayerId } from "../utils/live/identity";
 import { clearLiveSession, loadLiveSession, saveLiveSession } from "../utils/live/session";
@@ -530,15 +436,21 @@ const currentLevel = computed(
 );
 const { parseProgram } = useProgramParser(() => currentLevel.value.id);
 // The board area is measured so tiles scale to fill it (see fitCellSize).
-const boardViewportEl = ref<HTMLElement | null>(null);
+const gameplayRef = ref<{ boardViewportEl: HTMLElement | null; pulseArrow: (direction: Direction, wrong: boolean) => void } | null>(null)
+const boardViewportEl = computed(() => gameplayRef.value?.boardViewportEl ?? null)
 const boardScroller = createViewportScroller();
 let boardFollowGeneration = 0;
 function cancelBoardFollow(): void {
   boardFollowGeneration += 1;
   boardScroller.cancel();
 }
-const controlsEl = ref<HTMLElement | null>(null);
-const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
+const levelState = useLevelState(currentLevel)
+const {
+  player, playerHop, boardRound, boardSpace, playerWarped, wrapExit,
+  playerFacing, status, notificationMessage, boardShattering, feedbackMessage,
+  activeNode, expectedMove, executionSteps, playerInputs, levelCorrectInputs,
+  executedCodeStep, actorStyle, currentTile
+} = levelState
 // Matches the desktop layout query in the styles below; anything smaller is
 // the compact (phone/tablet) layout with sound and exit in the HUD.
 const compactLayout = ref(false);
@@ -546,17 +458,6 @@ let desktopQuery: MediaQueryList | null = null;
 const syncCompactLayout = () => { compactLayout.value = !desktopQuery?.matches; };
 let boardResizeObserver: ResizeObserver | null = null;
 
-// Junior note:
-// `player` is the only mutable board position. Everything else should derive
-// from current level + player position so we have one clear source of truth.
-const player = reactive({
-  row: currentLevel.value.start[0],
-  col: currentLevel.value.start[1],
-});
-// Codi (the board actor) only reads `player`; these refs drive its animation.
-const playerHop = ref(0);
-// Remounts the board each round so its tiles cascade in after a start, retry or clear.
-const boardRound = ref(0);
 // Panning a large map never carries into a new level or a fresh attempt.
 watch(boardRound, () => {
   cancelBoardFollow();
@@ -564,22 +465,9 @@ watch(boardRound, () => {
   boardViewportEl.value.scrollTop = 0;
   boardViewportEl.value.scrollLeft = 0;
 }, { flush: 'post' });
-const playerWarped = ref(false);
-// Edge wrap: a copy of Codi slides out past the edge it left while the real
-// actor slides in from the opposite edge, so a wrap reads as one ordinary step.
-const wrapExit = ref<{ id: number; row: number; col: number; dx: number; dy: number } | null>(null);
-const playerFacing = ref<Direction>(START_FACING);
-const status = ref<GameStatus>("ready");
 const campaignStarted = ref(false);
-const notificationMessage = ref("");
-const boardShattering = ref(false);
-const feedbackMessage = ref("กด Start เพื่อเริ่มเกม");
 // Interpreter state for the current level (see utils/programRunner.ts).
 let runState: RunState = createRunState({ main: [], functions: {} });
-const activeNode = ref<Node | null>(null);
-const expectedMove = ref<MoveNode | null>(null);
-const executionSteps = ref(0);
-const playerInputs = ref(0);
 const totalInputs = ref(0);
 const completedLevels = ref(0);
 const totalScore = ref(0);
@@ -591,17 +479,6 @@ const scorePopup = ref<ScorePopup | null>(null);
 const timerRemaining = ref(0);
 const startedAt = ref(0);
 const levelStartedAt = ref(0);
-const levelCorrectInputs = ref(0);
-const executedCodeStep = shallowRef<{ line: number; sequence: number } | null>(null);
-let executedCodeSequence = 0;
-// Observe accepted inputs before the existing runner clears expectedMove.
-// Never advance the interpreter or change input/scoring/timer behavior here.
-watch(levelCorrectInputs, (count, previous) => {
-  if (count <= previous) return;
-  const line = expectedMove.value?.sourceLine;
-  if (line) executedCodeStep.value = { line, sequence: ++executedCodeSequence };
-}, { flush: 'sync' });
-watch(boardRound, () => { executedCodeStep.value = null; }, { flush: 'sync' });
 let timerId: ReturnType<typeof setInterval> | null = null;
 let levelAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
 let scorePopupTimer: ReturnType<typeof setTimeout> | null = null;
@@ -688,17 +565,11 @@ const notificationTitle = computed(() => {
 const canControl = computed(
   () => !showPracticePicker.value && !practiceSummary.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
 );
+const keyboardEnabled = computed(() => canControl.value && !showSetup.value && !showTutorial.value && !showSummary.value && !showRanking.value && !showExitConfirm.value)
 const codiSprite = computed(() =>
   status.value === "failed" || status.value === "timeup"
     ? PLAYER_POSES.failed
     : PLAYER_SPRITES[playerFacing.value],
-);
-const actorStyle = computed(() => ({
-  "--x": player.col,
-  "--y": player.row,
-}));
-const currentTile = computed(
-  () => currentLevel.value.map[player.row]?.[player.col] ?? "n",
 );
 const practiceHintSolution = computed(() => {
   if (!practiceActive.value || !practiceSuperHint.value) return null;
@@ -1205,23 +1076,10 @@ function beginLevel(): void {
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
   runState = createRunState(parseProgram(currentLevel.value.code));
-  boardRound.value += 1;
-  player.row = currentLevel.value.start[0];
-  player.col = currentLevel.value.start[1];
-  playerWarped.value = true;
-  wrapExit.value = null;
-  playerFacing.value = START_FACING;
-  expectedMove.value = null;
-  activeNode.value = null;
-  executionSteps.value = 0;
-  playerInputs.value = 0;
-  levelCorrectInputs.value = 0;
+  levelState.reset();
   levelStartedAt.value = Date.now();
   revealedHintCount.value = 0;
-  notificationMessage.value = "";
-  boardShattering.value = false;
   scorePopup.value = null;
-  status.value = "playing";
   feedbackMessage.value = t("game.startInstruction");
   advanceToMove();
 }
@@ -1306,29 +1164,7 @@ function controlMove(direction: Direction): void {
 
 // Keyboard and touch input both press the matching D-pad key; a wrong key flashes red.
 function pulseArrow(direction: Direction, wrong: boolean): void {
-  const button = controlsEl.value?.querySelector<HTMLElement>(`.arrow.${direction}`);
-  if (!button || typeof button.animate !== "function") return;
-  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (wrong) {
-    const red = { backgroundColor: "#ffd6d6", borderColor: "#ff6b6b", color: "#c62f3c" };
-    button.animate(still
-      ? [red, { ...red, offset: .7 }, {}]
-      : [
-          { ...red, transform: "translateX(0)" },
-          { transform: "translateX(-5px) rotate(-3deg)", offset: .2 },
-          { transform: "translateX(5px) rotate(3deg)", offset: .45 },
-          { ...red, transform: "translateX(-3px)", offset: .7 },
-          {},
-        ], { duration: 420, easing: "ease-out" });
-    return;
-  }
-  button.animate(still
-    ? [{ backgroundColor: "#dcebff" }, {}]
-    : [
-        { transform: "translateY(3px) scale(.92)", boxShadow: "inset 0 -1px 0 rgba(6, 26, 56, .12)", backgroundColor: "#dcebff" },
-        { transform: "translateY(-1px) scale(1.04)", offset: .6 },
-        {},
-      ], { duration: 220, easing: "cubic-bezier(.16, 1, .3, 1)" });
+  gameplayRef.value?.pulseArrow(direction, wrong)
 }
 
 function completeLevel(): void {
@@ -1554,32 +1390,6 @@ function isActiveRawLine(line: string): boolean {
   return false;
 }
 
-function handleKeydown(event: KeyboardEvent): void {
-  if (showSetup.value || showTutorial.value || showSummary.value || practiceSummary.value || showRanking.value || showExitConfirm.value || showPracticePicker.value || practiceStarting.value || status.value !== "playing") return;
-  if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
-  const target = event.target;
-  if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return;
-  const keys: Partial<Record<string, Direction>> = {
-    ArrowUp: "up",
-    ArrowDown: "down",
-    ArrowLeft: "left",
-    ArrowRight: "right",
-    KeyW: "up",
-    KeyA: "left",
-    KeyS: "down",
-    KeyD: "right",
-    w: "up",
-    a: "left",
-    s: "down",
-    d: "right",
-  };
-  // Physical WASD positions also work with a Thai keyboard layout selected.
-  const direction = keys[event.code] ?? keys[event.key] ?? keys[event.key.toLowerCase()];
-  if (!direction) return;
-  event.preventDefault();
-  controlMove(direction);
-}
-
 // /?set=set-02&level=12 (the review page's "เล่นด่านนี้" link) preselects
 // that set and starting level in the setup dialog.
 async function applyLevelFromQuery(): Promise<void> {
@@ -1664,6 +1474,19 @@ const followMobileViewports = computed(() => compactLayout.value && campaignStar
   !showSetup.value && !showTutorial.value && !showSummary.value && !practiceSummary.value && !showRanking.value &&
   !showPracticePicker.value && !showExitConfirm.value && ['playing', 'success', 'completed'].includes(status.value) &&
   (!liveMode.value || liveStage.value === 'running'));
+
+// A reactive view keeps one-level presentation separate from session rules.
+// Vue unwraps the refs when passing it to LevelGameplay.
+const gameplayView = reactive({
+  notificationMessage, status, notificationTitle, practiceActive, boardRound,
+  practiceSuperHint, practiceHintSolution, practiceStarting, comboStreak, boardSpace,
+  boardShattering, wrapExit, codiSprite, playerWarped, actorStyle, playerHop,
+  mobileGuidance, canControl, keyboardEnabled, showExitConfirm, expectedMove, compactLayout,
+  hudTarget: '#game-hud-system',
+  soundEnabled, campaignStarted, liveMode, pendingExitScore: computed(() => Boolean(pendingExitScore.value)),
+  exitSaving, mobileGuidedMove, languageLabel, isGameCodeLineActive,
+  followMobileViewports, executedCodeStep, levelCorrectInputs,
+}) satisfies LevelGameplayView
 
 // Follow the final cell geometry, not the actor's in-flight hop/slide. Moving
 // either scroller never calls the runner or scrolls the surrounding game page.
@@ -2004,7 +1827,6 @@ onMounted(async () => {
   } else if (!liveMode.value) {
     await applyLevelFromQuery();
   }
-  window.addEventListener("keydown", handleKeydown);
   desktopQuery = window.matchMedia("(min-width: 921px) and (min-height: 561px)");
   syncCompactLayout();
   desktopQuery.addEventListener("change", syncCompactLayout);
@@ -2039,7 +1861,6 @@ onBeforeUnmount(() => {
   for (const event of ["pointerdown", "keydown", "input", "focusin"]) window.removeEventListener(event, recordInteraction);
   window.removeEventListener("popstate", resetAfterBrowserNavigation);
   window.removeEventListener("pageshow", resetAfterBrowserNavigation);
-  window.removeEventListener("keydown", handleKeydown);
   boardResizeObserver?.disconnect();
   liveDispose();
   stopTimer();
@@ -2240,119 +2061,6 @@ h2 {
   line-height: 1.4;
 }
 
-/* ---------- Board ---------- */
-
-.practice-passed { display: inline-block; color: var(--cv-green); animation: passed-pop 420ms cubic-bezier(.34, 1.56, .64, 1) both; }
-
-/* Combo: each step punches in; from ×5 it runs hot. */
-.combo-pop { display: inline-block; transform-origin: left center; animation: combo-punch 360ms cubic-bezier(.34, 1.56, .64, 1); }
-.combo-hot { color: #ffb347; text-shadow: 0 0 12px #ff8a3d88, 0 2px 0 #7a2e0a; }
-@keyframes combo-punch { 0% { transform: scale(.6); opacity: 0; } 45% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); } }
-@keyframes passed-pop { from { transform: scale(.5); opacity: 0; } }
-
-/* fitCellSize retains its original 24px tile minimum. If a map cannot fit at
-   that size, only its viewport pans; controls are never part of that scroll. */
-.board-wrap {
-  min-height: 0;
-  min-width: 0;
-  display: grid;
-  place-items: center;
-  position: relative;
-  justify-self: center;
-  width: 100%;
-  height: 100%;
-}
-
-.board-and-controls { display: grid; grid-template-rows: auto minmax(80px, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
-.board-viewport { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 6px; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; border-radius: var(--cv-radius-lg); }
-/* Auto margins center fitting maps and become zero on an overflowing axis,
-   so the first row/column stays reachable from the scroll origin. */
-.board-viewport > .board { flex: none; max-width: none; max-height: none; margin: auto; }
-.board-viewport:focus-visible { outline: 2px solid var(--cv-yellow); outline-offset: -2px; }
-/* Thumb zone: the D-pad alone, centred. Sound/exit live in the HUD here
-   (teleported); desktop brings them back beside the D-pad. */
-.board-footer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: end; width: 100%; }
-.game-actions { display: flex; flex-direction: row; align-items: center; gap: 6px; min-width: 0; }
-.board-footer .touch-controls { grid-column: 1; justify-self: center; }
-#game-hud-system .hud-action.exit-action { min-width: 0; padding: 0 12px; }
-
-.score-popup {
-  position: absolute;
-  top: 130px;
-  left: 50%;
-  z-index: 7;
-  transform: translateX(-50%);
-  display: grid;
-  gap: 2px;
-  border-radius: var(--cv-radius-lg);
-  background: var(--cv-cta);
-  color: var(--cv-gray-800);
-  padding: 10px 16px;
-  text-align: center;
-  box-shadow: var(--cv-shadow-xl);
-  pointer-events: none;
-  min-width: min(320px, calc(100% - 28px));
-}
-
-.score-popup strong {
-  font-size: 1.5rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.score-popup span {
-  color: rgba(34, 40, 42, 0.8);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-/* ---------- Touch arrows ---------- */
-
-.touch-controls {
-  display: grid;
-  grid-template-columns: repeat(3, 68px);
-  grid-template-areas:
-    ". up ."
-    "left down right";
-  justify-content: center;
-  gap: 8px;
-  flex: none;
-}
-
-.arrow {
-  position: relative;
-  width: 68px;
-  height: 52px;
-  border: 1px solid #a8ceff;
-  border-radius: 12px;
-  background: #fff;
-  color: var(--cv-blue);
-  font-weight: 800;
-  font-size: 1.1rem;
-  box-shadow:
-    inset 0 -4px 0 rgba(6, 26, 56, 0.12),
-    var(--cv-shadow-md);
-}
-
-.arrow.guided-arrow:not(:disabled) { background: #ffe36b; outline: 3px solid #87dfff88; outline-offset: 2px; }
-
-.arrow:not(:disabled):hover {
-  background: var(--cv-blue-soft);
-}
-
-.arrow.up {
-  grid-area: up;
-}
-.arrow.left {
-  grid-area: left;
-}
-.arrow.down {
-  grid-area: down;
-}
-.arrow.right {
-  grid-area: right;
-}
-
 /* ---------- Debug panel ---------- */
 
 .debug-card {
@@ -2526,7 +2234,34 @@ h2 {
 }
 
 .score-popup {
+  position: absolute;
+  top: 130px;
+  left: 50%;
+  z-index: 7;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 2px;
+  border-radius: var(--cv-radius-lg);
+  background: var(--cv-cta);
+  color: var(--cv-gray-800);
+  padding: 10px 16px;
+  text-align: center;
+  box-shadow: var(--cv-shadow-xl);
+  pointer-events: none;
+  min-width: min(320px, calc(100% - 28px));
   overflow: hidden;
+}
+
+.score-popup strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.score-popup span {
+  color: rgba(34, 40, 42, 0.8);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .score-popup::after {
