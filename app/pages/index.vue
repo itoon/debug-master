@@ -110,7 +110,7 @@
                   <button v-if="!campaignStarted && !practiceActive && !liveMode" type="button" class="hud-action primary-button small"
                     :disabled="status === 'playing' || campaignStarted"
                     @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
-                  <button v-if="liveMode" type="button" class="hud-action soft-button small live-reset" :disabled="!liveCanInput || status !== 'playing'" @click="restartLevel">{{ t('practice.restart') }}</button>
+                  <button v-if="liveMode" type="button" class="hud-action soft-button small live-reset" :disabled="!canControl" @click="restartLevel">{{ t('practice.restart') }}</button>
                   <button v-if="!liveMode" type="button" class="hud-action soft-button small exit-action"
                     :disabled="scoreSaving || practiceStarting"
                     :title="campaignStarted ? t('game.exitHint') : undefined"
@@ -1170,7 +1170,7 @@ async function beginLevel(liveResumeCursor?: number): Promise<void> {
 
 function restartLevel(): void {
   if (!campaignStarted.value) return;
-  if (liveMode.value && (!liveCanInput.value || !liveRoom.value?.sendGameplay({ action: 'reset', levelId: currentLevel.value.id }))) return;
+  if (liveMode.value && (!canControl.value || !liveRoom.value?.sendGameplay({ action: 'reset', levelId: currentLevel.value.id }))) return;
   playSound("wrong");
   if (!practiceActive.value && !liveMode.value) {
     if (competition.busy.value) return;
