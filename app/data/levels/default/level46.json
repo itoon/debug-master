@@ -1,0 +1,88 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 46",
+      "th": "ด่าน 46"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "repeat(6):\n  while not o:\n    left()\n  while not p:\n    right()\n  up()",
+      "tileMapSize": {
+        "row": 6,
+        "col": 6
+      },
+      "defaultPlayerPosition": {
+        "row": 5,
+        "col": 5
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "g",
+          "p"
+        ],
+        [
+          "o",
+          "g",
+          "g",
+          "g",
+          "g",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "o",
+          "p"
+        ],
+        [
+          "n",
+          "o",
+          "g",
+          "g",
+          "g",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "g",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "g",
+          "g",
+          "p"
+        ]
+      ],
+      "meta": {
+        "sourceId": 46,
+        "setId": "default",
+        "order": 46,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/46.png"
+      }
+    }
+  }
+}

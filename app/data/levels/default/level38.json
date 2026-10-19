@@ -1,0 +1,56 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 38",
+      "th": "ด่าน 38"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "repeat(33):\n  if not p:\n    left()\ndown()",
+      "tileMapSize": {
+        "row": 2,
+        "col": 6
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 5
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "p",
+          "p",
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "p",
+          "p",
+          "p"
+        ]
+      ],
+      "meta": {
+        "sourceId": 38,
+        "setId": "default",
+        "order": 38,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/38.png"
+      }
+    }
+  }
+}

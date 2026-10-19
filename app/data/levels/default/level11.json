@@ -1,0 +1,48 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 11",
+      "th": "ด่าน 11"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "down()\nif o:\n  left()\nup()",
+      "tileMapSize": {
+        "row": 2,
+        "col": 2
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 1
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o"
+        ]
+      ],
+      "meta": {
+        "sourceId": 11,
+        "setId": "default",
+        "order": 11,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/11.png"
+      }
+    }
+  }
+}

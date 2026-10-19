@@ -1,0 +1,48 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 35",
+      "th": "ด่าน 35"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "left()\nif not p:\n  up()\nright()",
+      "tileMapSize": {
+        "row": 2,
+        "col": 2
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 1
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n"
+        ],
+        [
+          "p",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 35,
+        "setId": "default",
+        "order": 35,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/35.png"
+      }
+    }
+  }
+}

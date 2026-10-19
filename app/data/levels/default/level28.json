@@ -1,0 +1,75 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 28",
+      "th": "ด่าน 28"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "repeat(5):\n  if o:\n    left()\n  else:\n    right()\nup()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 4,
+        "col": 1
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "p",
+          "p",
+          "n"
+        ],
+        [
+          "g",
+          "o",
+          "o",
+          "o",
+          "b"
+        ],
+        [
+          "g",
+          "g",
+          "o",
+          "b",
+          "b"
+        ],
+        [
+          "g",
+          "n",
+          "n",
+          "n",
+          "b"
+        ]
+      ],
+      "meta": {
+        "sourceId": 28,
+        "setId": "default",
+        "order": 28,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/28.png"
+      }
+    }
+  }
+}

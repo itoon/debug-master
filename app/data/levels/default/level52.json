@@ -1,0 +1,94 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 52",
+      "th": "ด่าน 52"
+    },
+    "description": {
+      "en": "",
+      "th": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "def ping():\n  repeat(4):\n    left()\n\ndef pong():\n  repeat(4):\n    right()\n\nrepeat(3):\n  ping()\n  pong()",
+      "tileMapSize": {
+        "row": 6,
+        "col": 7
+      },
+      "defaultPlayerPosition": {
+        "row": 2,
+        "col": 5
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "p",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "p",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "p",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 52,
+        "setId": "default",
+        "order": 52,
+        "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior",
+        "legacyConcept": "Functions and decomposition",
+        "sourceImage": "resources/52.png"
+      }
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 55",
+      "th": "ด่าน 55"
+    },
+    "description": {
+      "en": "",
+      "th": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "def road():\n  down()\n  down()\n  if g:\n    bypass()\n  else:\n    road()\n\ndef bypass():\n  left()\n  left()\n  down()\n  down()\n\nroad()",
+      "tileMapSize": {
+        "row": 7,
+        "col": 3
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 2
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "k"
+        ],
+        [
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "n",
+          "n",
+          "k"
+        ],
+        [
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "k",
+          "p",
+          "g"
+        ],
+        [
+          "p",
+          "n",
+          "p"
+        ],
+        [
+          "k",
+          "n",
+          "k"
+        ]
+      ],
+      "meta": {
+        "sourceId": 55,
+        "setId": "default",
+        "order": 55,
+        "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination",
+        "legacyConcept": "Recursion and advanced control flow",
+        "sourceImage": "resources/55.png"
+      }
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 57",
+      "th": "ด่าน 57"
+    },
+    "description": {
+      "en": "",
+      "th": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "def shake():\n  left()\n  right()\n  left()\n  right()\n\ndef dance():\n  shake()\n  right()\n\ndef choreography():\n  if v:\n    right()\n    dance()\n  else:\n    left()\n  left()\n  left()\n\nrepeat(3):\n  choreography()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 7
+      },
+      "defaultPlayerPosition": {
+        "row": 2,
+        "col": 2
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "v",
+          "y",
+          "v",
+          "y",
+          "v",
+          "n"
+        ],
+        [
+          "n",
+          "y",
+          "v",
+          "y",
+          "v",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "v",
+          "y",
+          "v",
+          "y",
+          "v",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 57,
+        "setId": "default",
+        "order": 57,
+        "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination",
+        "legacyConcept": "Recursion and advanced control flow",
+        "sourceImage": "resources/57.png"
+      }
+    }
+  }
+}

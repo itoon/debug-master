@@ -1,0 +1,46 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 49",
+      "th": "ด่าน 49"
+    },
+    "description": {
+      "en": "",
+      "th": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "def toTheRight():\n  right()\n  right()\n  right()\n\nleft()\ntoTheRight()",
+      "tileMapSize": {
+        "row": 1,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 1
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "g",
+          "g",
+          "g",
+          "g"
+        ]
+      ],
+      "meta": {
+        "sourceId": 49,
+        "setId": "default",
+        "order": 49,
+        "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior",
+        "legacyConcept": "Functions and decomposition",
+        "sourceImage": "resources/49.png"
+      }
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 07",
+      "th": "ด่าน 07"
+    },
+    "description": {
+      "en": "",
+      "th": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
+    },
+    "gameConfig": {
+      "concepts": [
+        "sequence"
+      ],
+      "defaultCode": "repeat(3):\n  down()\n  left()\nrepeat(2):\n  right()\n  down()\nrepeat(2):\n  up()\n  right()",
+      "tileMapSize": {
+        "row": 6,
+        "col": 7
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 4
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "p",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "p",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p"
+        ],
+        [
+          "p",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 7,
+        "setId": "default",
+        "order": 7,
+        "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ",
+        "legacyConcept": "Sequence and repeat loops",
+        "sourceImage": "resources/07.png"
+      }
+    }
+  }
+}

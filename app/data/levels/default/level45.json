@@ -1,0 +1,75 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 45",
+      "th": "ด่าน 45"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "repeat(4):\n  repeat(4):\n    if not p:\n      up()\n    else:\n      down()\n  right()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "p",
+          "g",
+          "p",
+          "o",
+          "p"
+        ],
+        [
+          "p",
+          "o",
+          "p",
+          "b",
+          "p"
+        ],
+        [
+          "p",
+          "b",
+          "p",
+          "y",
+          "p"
+        ],
+        [
+          "p",
+          "y",
+          "p",
+          "v",
+          "p"
+        ],
+        [
+          "p",
+          "v",
+          "p",
+          "g",
+          "p"
+        ]
+      ],
+      "meta": {
+        "sourceId": 45,
+        "setId": "default",
+        "order": 45,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/45.png"
+      }
+    }
+  }
+}

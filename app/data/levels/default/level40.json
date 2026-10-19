@@ -1,0 +1,75 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 40",
+      "th": "ด่าน 40"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "while not v:\n  up()\n  left()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 4,
+        "col": 4
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "v",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "o"
+        ]
+      ],
+      "meta": {
+        "sourceId": 40,
+        "setId": "default",
+        "order": 40,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/40.png"
+      }
+    }
+  }
+}

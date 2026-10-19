@@ -1,0 +1,75 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 42",
+      "th": "ด่าน 42"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "repeat(8):\n  if not o:\n    down()\n  else:\n    left()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 4
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "g",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "g",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "g",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "o",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 42,
+        "setId": "default",
+        "order": 42,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/42.png"
+      }
+    }
+  }
+}

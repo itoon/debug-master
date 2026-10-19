@@ -1,0 +1,55 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 23",
+      "th": "ด่าน 23"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "if g:\n  left()\n  down()\nelse:\n  up()\nif o:\n  down()\n  down()\nelse:\n  right()\nup()",
+      "tileMapSize": {
+        "row": 3,
+        "col": 3
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 1
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "g",
+          "o",
+          "g"
+        ],
+        [
+          "o",
+          "g",
+          "o"
+        ],
+        [
+          "g",
+          "o",
+          "g"
+        ]
+      ],
+      "meta": {
+        "sourceId": 23,
+        "setId": "default",
+        "order": 23,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/23.png"
+      }
+    }
+  }
+}

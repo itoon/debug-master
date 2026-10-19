@@ -1,0 +1,95 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 30",
+      "th": "ด่าน 30"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "while v:\n  left()\n  down()\n  left()\nup()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 9
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 6
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "y",
+          "p",
+          "v",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "y",
+          "v",
+          "y",
+          "p",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "v",
+          "p",
+          "y",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 30,
+        "setId": "default",
+        "order": 30,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/30.png"
+      }
+    }
+  }
+}

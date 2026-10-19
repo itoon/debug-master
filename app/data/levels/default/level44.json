@@ -1,0 +1,68 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 44",
+      "th": "ด่าน 44"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "while not p:\n  right()\n  while o:\n    up()\n  while v:\n    down()",
+      "tileMapSize": {
+        "row": 4,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "v",
+          "n",
+          "v",
+          "p"
+        ],
+        [
+          "o",
+          "v",
+          "o",
+          "v",
+          "o"
+        ],
+        [
+          "o",
+          "v",
+          "o",
+          "v",
+          "o"
+        ],
+        [
+          "o",
+          "n",
+          "o",
+          "n",
+          "o"
+        ]
+      ],
+      "meta": {
+        "sourceId": 44,
+        "setId": "default",
+        "order": 44,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/44.png"
+      }
+    }
+  }
+}

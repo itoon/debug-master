@@ -1,0 +1,75 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 26",
+      "th": "ด่าน 26"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "repeat(8):\n  if o:\n    down()\n  else:\n    left()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 4
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "g"
+        ],
+        [
+          "n",
+          "o",
+          "p",
+          "g",
+          "n"
+        ],
+        [
+          "o",
+          "g",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 26,
+        "setId": "default",
+        "order": 26,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/26.png"
+      }
+    }
+  }
+}

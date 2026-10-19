@@ -1,0 +1,70 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 32",
+      "th": "ด่าน 32"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "while g:\n  left()\n  while v:\n    down()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 3
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "v",
+          "g",
+          "v",
+          "g"
+        ],
+        [
+          "v",
+          "g",
+          "v",
+          "g"
+        ],
+        [
+          "g",
+          "v",
+          "g",
+          "v"
+        ],
+        [
+          "g",
+          "v",
+          "g",
+          "v"
+        ],
+        [
+          "v",
+          "g",
+          "p",
+          "g"
+        ]
+      ],
+      "meta": {
+        "sourceId": 32,
+        "setId": "default",
+        "order": 32,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/32.png"
+      }
+    }
+  }
+}

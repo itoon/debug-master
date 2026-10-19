@@ -1,0 +1,56 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 18",
+      "th": "ด่าน 18"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "repeat(33):\n  if o:\n    right()\nup()\nleft()",
+      "tileMapSize": {
+        "row": 2,
+        "col": 6
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "o",
+          "o"
+        ],
+        [
+          "o",
+          "o",
+          "o",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 18,
+        "setId": "default",
+        "order": 18,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/18.png"
+      }
+    }
+  }
+}

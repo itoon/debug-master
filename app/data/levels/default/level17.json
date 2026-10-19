@@ -1,0 +1,54 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 17",
+      "th": "ด่าน 17"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "repeat(22):\n  if o:\n    right()\nup()\nleft()",
+      "tileMapSize": {
+        "row": 2,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 2
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "o",
+          "n",
+          "o",
+          "n",
+          "o"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "o",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 17,
+        "setId": "default",
+        "order": 17,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/17.png"
+      }
+    }
+  }
+}

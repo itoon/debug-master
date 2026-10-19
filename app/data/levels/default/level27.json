@@ -1,0 +1,70 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 27",
+      "th": "ด่าน 27"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "repeat(19):\n  if o:\n    right()\n  elif b:\n    left()\n  else:\n    up()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 4,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "o",
+          "o",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "o",
+          "o",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "o",
+          "o",
+          "o",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 27,
+        "setId": "default",
+        "order": 27,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/27.png"
+      }
+    }
+  }
+}

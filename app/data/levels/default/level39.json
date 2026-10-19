@@ -1,0 +1,56 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 39",
+      "th": "ด่าน 39"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "while not v:\n  left()\nup()",
+      "tileMapSize": {
+        "row": 2,
+        "col": 6
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 5
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "v",
+          "v",
+          "v"
+        ],
+        [
+          "v",
+          "v",
+          "v",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 39,
+        "setId": "default",
+        "order": 39,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/39.png"
+      }
+    }
+  }
+}

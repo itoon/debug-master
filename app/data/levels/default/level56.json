@@ -1,0 +1,95 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 56",
+      "th": "ด่าน 56"
+    },
+    "description": {
+      "en": "",
+      "th": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "def road():\n  left()\n  left()\n  if p:\n    bypass()\n  if k:\n    road()\n\ndef bypass():\n  down()\n  down()\n\nroad()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 9
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 8
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "g",
+          "b",
+          "k",
+          "b",
+          "p",
+          "b",
+          "k",
+          "b",
+          "k"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "b",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "b",
+          "p",
+          "b",
+          "k",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "b",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "g",
+          "b",
+          "k",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 56,
+        "setId": "default",
+        "order": 56,
+        "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination",
+        "legacyConcept": "Recursion and advanced control flow",
+        "sourceImage": "resources/56.png"
+      }
+    }
+  }
+}

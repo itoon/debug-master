@@ -1,0 +1,58 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 36",
+      "th": "ด่าน 36"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "left()\nif not o:\n  up()\nleft()\nif not o:\n  up()\nleft()",
+      "tileMapSize": {
+        "row": 3,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 2,
+        "col": 3
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "o",
+          "n",
+          "o",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "n",
+          "p"
+        ],
+        [
+          "o",
+          "n",
+          "o",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 36,
+        "setId": "default",
+        "order": 36,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/36.png"
+      }
+    }
+  }
+}

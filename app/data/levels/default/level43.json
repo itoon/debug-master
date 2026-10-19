@@ -1,0 +1,112 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 43",
+      "th": "ด่าน 43"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "while not v:\n  if p:\n    left()\n  elif g:\n    up()\n  elif o:\n    right()\n  elif y:\n    down()\n    right()\n  else:\n    down()",
+      "tileMapSize": {
+        "row": 9,
+        "col": 6
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 2
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "p",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "p",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "o",
+          "n",
+          "n"
+        ],
+        [
+          "y",
+          "y",
+          "o",
+          "o",
+          "o",
+          "v"
+        ],
+        [
+          "y",
+          "y",
+          "g",
+          "v",
+          "v",
+          "v"
+        ],
+        [
+          "p",
+          "p",
+          "g",
+          "g",
+          "y",
+          "y"
+        ],
+        [
+          "n",
+          "p",
+          "p",
+          "g",
+          "y",
+          "y"
+        ]
+      ],
+      "meta": {
+        "sourceId": 43,
+        "setId": "default",
+        "order": 43,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/43.png"
+      }
+    }
+  }
+}

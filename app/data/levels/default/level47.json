@@ -1,0 +1,46 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 47",
+      "th": "ด่าน 47"
+    },
+    "description": {
+      "en": "",
+      "th": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "toTheRight()\n\ndef toTheRight():\n  right()\n  right()\n  right()",
+      "tileMapSize": {
+        "row": 1,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "v",
+          "v",
+          "v",
+          "v"
+        ]
+      ],
+      "meta": {
+        "sourceId": 47,
+        "setId": "default",
+        "order": 47,
+        "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior",
+        "legacyConcept": "Functions and decomposition",
+        "sourceImage": "resources/47.png"
+      }
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 33",
+      "th": "ด่าน 33"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "repeat(5):\n  while o:\n    up()\n  while v:\n    down()\n  left()",
+      "tileMapSize": {
+        "row": 4,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 3,
+        "col": 4
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "v",
+          "n",
+          "v",
+          "n"
+        ],
+        [
+          "o",
+          "v",
+          "o",
+          "v",
+          "o"
+        ],
+        [
+          "o",
+          "v",
+          "o",
+          "v",
+          "o"
+        ],
+        [
+          "o",
+          "n",
+          "o",
+          "n",
+          "o"
+        ]
+      ],
+      "meta": {
+        "sourceId": 33,
+        "setId": "default",
+        "order": 33,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/33.png"
+      }
+    }
+  }
+}

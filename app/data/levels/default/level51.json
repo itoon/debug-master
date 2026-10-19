@@ -1,0 +1,94 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 51",
+      "th": "ด่าน 51"
+    },
+    "description": {
+      "en": "",
+      "th": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "def jump():\n  up()\n  right()\n  right()\n  down()\n\ndef run():\n  right()\n  right()\n\nrun()\njump()\nrun()",
+      "tileMapSize": {
+        "row": 6,
+        "col": 7
+      },
+      "defaultPlayerPosition": {
+        "row": 3,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "b",
+          "b",
+          "b",
+          "b",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "b",
+          "y",
+          "b",
+          "b",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "b",
+          "b",
+          "b",
+          "b",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "b",
+          "b",
+          "b",
+          "b",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "b",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "b",
+          "g",
+          "g",
+          "g"
+        ]
+      ],
+      "meta": {
+        "sourceId": 51,
+        "setId": "default",
+        "order": 51,
+        "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior",
+        "legacyConcept": "Functions and decomposition",
+        "sourceImage": "resources/51.png"
+      }
+    }
+  }
+}

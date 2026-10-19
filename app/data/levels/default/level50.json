@@ -1,0 +1,64 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 50",
+      "th": "ด่าน 50"
+    },
+    "description": {
+      "en": "",
+      "th": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "left()\nsquare()\nright()\nsquare()\n\ndef square():\n  up()\n  left()\n  down()\n  right()",
+      "tileMapSize": {
+        "row": 4,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 2,
+        "col": 2
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "b",
+          "b",
+          "b"
+        ],
+        [
+          "p",
+          "v",
+          "v",
+          "b"
+        ],
+        [
+          "p",
+          "v",
+          "v",
+          "b"
+        ],
+        [
+          "p",
+          "p",
+          "p",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 50,
+        "setId": "default",
+        "order": 50,
+        "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior",
+        "legacyConcept": "Functions and decomposition",
+        "sourceImage": "resources/50.png"
+      }
+    }
+  }
+}

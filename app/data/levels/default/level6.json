@@ -1,0 +1,61 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 06",
+      "th": "ด่าน 06"
+    },
+    "description": {
+      "en": "",
+      "th": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
+    },
+    "gameConfig": {
+      "concepts": [
+        "sequence"
+      ],
+      "defaultCode": "repeat(4):\n  up()\n  left()\ndown()",
+      "tileMapSize": {
+        "row": 3,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 2,
+        "col": 4
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "g",
+          "g",
+          "g",
+          "g",
+          "p"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "p",
+          "g",
+          "g",
+          "g",
+          "p"
+        ]
+      ],
+      "meta": {
+        "sourceId": 6,
+        "setId": "default",
+        "order": 6,
+        "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ",
+        "legacyConcept": "Sequence and repeat loops",
+        "sourceImage": "resources/06.png"
+      }
+    }
+  }
+}

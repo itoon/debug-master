@@ -1,0 +1,67 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 29",
+      "th": "ด่าน 29"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "while v:\n  right()\ndown()",
+      "tileMapSize": {
+        "row": 3,
+        "col": 7
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "v",
+          "v",
+          "v",
+          "v",
+          "y",
+          "v",
+          "v"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "y",
+          "p",
+          "y",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "y",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 29,
+        "setId": "default",
+        "order": 29,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/29.png"
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 22",
+      "th": "ด่าน 22"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "up()\nif o:\n  left()\n  left()\nelse:\n  down()\n  down()\nright()",
+      "tileMapSize": {
+        "row": 3,
+        "col": 3
+      },
+      "defaultPlayerPosition": {
+        "row": 2,
+        "col": 2
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "b",
+          "o",
+          "b"
+        ],
+        [
+          "o",
+          "b",
+          "o"
+        ],
+        [
+          "b",
+          "o",
+          "b"
+        ]
+      ],
+      "meta": {
+        "sourceId": 22,
+        "setId": "default",
+        "order": 22,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/22.png"
+      }
+    }
+  }
+}

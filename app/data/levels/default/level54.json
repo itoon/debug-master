@@ -1,0 +1,61 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 54",
+      "th": "ด่าน 54"
+    },
+    "description": {
+      "en": "",
+      "th": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "def shake():\n  if p:\n    left()\n  right()\n  left()\n  right()\n  if y:\n    left()\n\ndef choreography():\n  shake()\n  left()\n  shake()\n  right()\n\nchoreography()\nchoreography()\nchoreography()",
+      "tileMapSize": {
+        "row": 3,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 3
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "v",
+          "y",
+          "v",
+          "y",
+          "v"
+        ],
+        [
+          "y",
+          "v",
+          "p",
+          "v",
+          "y"
+        ],
+        [
+          "v",
+          "y",
+          "v",
+          "y",
+          "v"
+        ]
+      ],
+      "meta": {
+        "sourceId": 54,
+        "setId": "default",
+        "order": 54,
+        "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior",
+        "legacyConcept": "Functions and decomposition",
+        "sourceImage": "resources/54.png"
+      }
+    }
+  }
+}

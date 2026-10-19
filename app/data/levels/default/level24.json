@@ -1,0 +1,55 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 24",
+      "th": "ด่าน 24"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "right()\nif g:\n  left()\nelif b:\n  up()\nelse:\n  right()\ndown()",
+      "tileMapSize": {
+        "row": 3,
+        "col": 3
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "g",
+          "p",
+          "g"
+        ],
+        [
+          "p",
+          "b",
+          "p"
+        ],
+        [
+          "g",
+          "p",
+          "g"
+        ]
+      ],
+      "meta": {
+        "sourceId": 24,
+        "setId": "default",
+        "order": 24,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/24.png"
+      }
+    }
+  }
+}

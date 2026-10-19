@@ -1,0 +1,58 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 12",
+      "th": "ด่าน 12"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "right()\nif o:\n  up()\nright()\nif o:\n  up()\nright()",
+      "tileMapSize": {
+        "row": 3,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 2,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "o",
+          "n",
+          "o"
+        ],
+        [
+          "p",
+          "n",
+          "p",
+          "n"
+        ],
+        [
+          "n",
+          "o",
+          "n",
+          "o"
+        ]
+      ],
+      "meta": {
+        "sourceId": 12,
+        "setId": "default",
+        "order": 12,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/12.png"
+      }
+    }
+  }
+}

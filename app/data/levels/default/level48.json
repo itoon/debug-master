@@ -1,0 +1,46 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 48",
+      "th": "ด่าน 48"
+    },
+    "description": {
+      "en": "",
+      "th": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "left()\ntoTheRight()\n\ndef toTheRight():\n  right()\n  right()\n  right()",
+      "tileMapSize": {
+        "row": 1,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 1
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "p",
+          "p",
+          "p",
+          "p"
+        ]
+      ],
+      "meta": {
+        "sourceId": 48,
+        "setId": "default",
+        "order": 48,
+        "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior",
+        "legacyConcept": "Functions and decomposition",
+        "sourceImage": "resources/48.png"
+      }
+    }
+  }
+}

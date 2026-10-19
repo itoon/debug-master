@@ -1,0 +1,64 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 09",
+      "th": "ด่าน 09"
+    },
+    "description": {
+      "en": "",
+      "th": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
+    },
+    "gameConfig": {
+      "concepts": [
+        "sequence"
+      ],
+      "defaultCode": "repeat(4):\n  repeat(4):\n    right()\n  up()",
+      "tileMapSize": {
+        "row": 4,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 3,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "p",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "p",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "p",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "p",
+          "g",
+          "g",
+          "g"
+        ]
+      ],
+      "meta": {
+        "sourceId": 9,
+        "setId": "default",
+        "order": 9,
+        "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ",
+        "legacyConcept": "Sequence and repeat loops",
+        "sourceImage": "resources/09.png"
+      }
+    }
+  }
+}

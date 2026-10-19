@@ -1,0 +1,70 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 20",
+      "th": "ด่าน 20"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "repeat(5):\n  right()\n  if o:\n    down()\n    down()",
+      "tileMapSize": {
+        "row": 5,
+        "col": 4
+      },
+      "defaultPlayerPosition": {
+        "row": 0,
+        "col": 3
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "g",
+          "g",
+          "g",
+          "n"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "o"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "n"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "o"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 20,
+        "setId": "default",
+        "order": 20,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/20.png"
+      }
+    }
+  }
+}

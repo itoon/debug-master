@@ -1,0 +1,68 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 31",
+      "th": "ด่าน 31"
+    },
+    "description": {
+      "en": "",
+      "th": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "while"
+      ],
+      "defaultCode": "while g:\n  up()\n  if v:\n    right()",
+      "tileMapSize": {
+        "row": 4,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 3,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "g",
+          "g",
+          "v",
+          "g",
+          "p"
+        ],
+        [
+          "v",
+          "g",
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "g",
+          "g",
+          "g",
+          "v",
+          "g"
+        ],
+        [
+          "g",
+          "v",
+          "g",
+          "g",
+          "g"
+        ]
+      ],
+      "meta": {
+        "sourceId": 31,
+        "setId": "default",
+        "order": 31,
+        "learningObjective": "เข้าใจ loop แบบหยุดเมื่อเงื่อนไขเปลี่ยน, ใช้ ! เพื่อคิดกลับด้าน, trace loop ซ้อน",
+        "legacyConcept": "While loops and negation",
+        "sourceImage": "resources/31.png"
+      }
+    }
+  }
+}

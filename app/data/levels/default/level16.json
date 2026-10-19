@@ -1,0 +1,54 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 16",
+      "th": "ด่าน 16"
+    },
+    "description": {
+      "en": "",
+      "th": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน"
+    },
+    "gameConfig": {
+      "concepts": [
+        "if"
+      ],
+      "defaultCode": "repeat(5):\n  up()\n  if o:\n    left()\ndown()",
+      "tileMapSize": {
+        "row": 2,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 4
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "o",
+          "p",
+          "o",
+          "o",
+          "o"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 16,
+        "setId": "default",
+        "order": 16,
+        "learningObjective": "ใช้ชนิดของช่องปัจจุบันเป็นเงื่อนไข if, else, else-if เพื่อเลือกทางเดิน",
+        "legacyConcept": "Conditionals",
+        "sourceImage": "resources/16.png"
+      }
+    }
+  }
+}

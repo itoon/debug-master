@@ -1,0 +1,208 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 60",
+      "th": "ด่าน 60"
+    },
+    "description": {
+      "en": "",
+      "th": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "def fall():\n  while not p:\n    down()\n\ndef eye():\n  repeat(2):\n    right()\n    if k:\n      fall()\n\nwhile not v:\n  up()\n\nrepeat(3):\n  left()\n  if v:\n    down()\n    right()\n    eye()",
+      "tileMapSize": {
+        "row": 12,
+        "col": 12
+      },
+      "defaultPlayerPosition": {
+        "row": 7,
+        "col": 5
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "k",
+          "k",
+          "k",
+          "k",
+          "k",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "k",
+          "k",
+          "k",
+          "k",
+          "k",
+          "k",
+          "k",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "k",
+          "k",
+          "v",
+          "v",
+          "v",
+          "v",
+          "v",
+          "k",
+          "k",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "k",
+          "v",
+          "y",
+          "y",
+          "k",
+          "y",
+          "y",
+          "v",
+          "k",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "k",
+          "y",
+          "y",
+          "y",
+          "k",
+          "y",
+          "y",
+          "y",
+          "k",
+          "n",
+          "n"
+        ],
+        [
+          "k",
+          "n",
+          "k",
+          "y",
+          "y",
+          "k",
+          "k",
+          "k",
+          "y",
+          "y",
+          "k",
+          "n"
+        ],
+        [
+          "n",
+          "k",
+          "k",
+          "k",
+          "k",
+          "p",
+          "k",
+          "k",
+          "k",
+          "k",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "k",
+          "k",
+          "k",
+          "k",
+          "k",
+          "k",
+          "k",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "k",
+          "k",
+          "k",
+          "k",
+          "k",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "k",
+          "n",
+          "k",
+          "n",
+          "k",
+          "n",
+          "n",
+          "n",
+          "n"
+        ],
+        [
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n",
+          "n"
+        ]
+      ],
+      "meta": {
+        "sourceId": 60,
+        "setId": "default",
+        "order": 60,
+        "learningObjective": "ตามการเรียกฟังก์ชันตัวเอง, decision tree, call stack และ termination",
+        "legacyConcept": "Recursion and advanced control flow",
+        "sourceImage": "resources/60.png"
+      }
+    }
+  }
+}

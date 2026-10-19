@@ -1,0 +1,70 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 05",
+      "th": "ด่าน 05"
+    },
+    "description": {
+      "en": "",
+      "th": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ"
+    },
+    "gameConfig": {
+      "concepts": [
+        "sequence"
+      ],
+      "defaultCode": "right()\nrepeat(9):\n  down()\nright()",
+      "tileMapSize": {
+        "row": 6,
+        "col": 3
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 0
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "g",
+          "g",
+          "g"
+        ],
+        [
+          "b",
+          "b",
+          "g"
+        ],
+        [
+          "g",
+          "b",
+          "g"
+        ],
+        [
+          "g",
+          "b",
+          "g"
+        ],
+        [
+          "g",
+          "b",
+          "b"
+        ],
+        [
+          "g",
+          "g",
+          "g"
+        ]
+      ],
+      "meta": {
+        "sourceId": 5,
+        "setId": "default",
+        "order": 5,
+        "learningObjective": "อ่านคำสั่งทีละบรรทัด, นับตำแหน่งบนกริด, เห็น pattern ที่ทำซ้ำ",
+        "legacyConcept": "Sequence and repeat loops",
+        "sourceImage": "resources/05.png"
+      }
+    }
+  }
+}

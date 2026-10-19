@@ -1,0 +1,61 @@
+{
+  "layout": "DEBUG_CODING",
+  "type": "PRACTICE",
+  "status": "ACTIVE",
+  "content": {
+    "title": {
+      "en": "Level 53",
+      "th": "ด่าน 53"
+    },
+    "description": {
+      "en": "",
+      "th": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior"
+    },
+    "gameConfig": {
+      "concepts": [
+        "function"
+      ],
+      "defaultCode": "def shake():\n  left()\n  right()\n  left()\n  right()\n\ndef dance():\n  shake()\n  right()\n\ndance()\ndance()\ndance()",
+      "tileMapSize": {
+        "row": 3,
+        "col": 5
+      },
+      "defaultPlayerPosition": {
+        "row": 1,
+        "col": 1
+      },
+      "defaultDirection": "south",
+      "debugMap": [
+        [
+          "v",
+          "y",
+          "v",
+          "y",
+          "v"
+        ],
+        [
+          "y",
+          "v",
+          "y",
+          "v",
+          "y"
+        ],
+        [
+          "v",
+          "y",
+          "v",
+          "y",
+          "v"
+        ]
+      ],
+      "meta": {
+        "sourceId": 53,
+        "setId": "default",
+        "order": 53,
+        "learningObjective": "มองชุดคำสั่งซ้ำเป็นฟังก์ชัน, อ่านลำดับ call และ reuse behavior",
+        "legacyConcept": "Functions and decomposition",
+        "sourceImage": "resources/53.png"
+      }
+    }
+  }
+}
