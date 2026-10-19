@@ -1,7 +1,7 @@
 # Debug Master Competition scoring
 
 Date: 2026-10-18
-Status: Design approved by the user on 2026-10-18. Product code is unchanged.
+Status: Design approved by the user on 2026-10-18. Implementation and reviews are complete on 2026-10-19; see [the delivery report](../reports/2026-10-19-competition-scoring.md).
 
 ## Outcome and agreed requirements
 
@@ -13,7 +13,7 @@ The user approves this star rubric. A completed level earns three stars with no 
 
 Existing unscored Practice remains unscored and outside leaderboards. The project has no separate Main or Learning integrations to add. Combo can remain visible as gameplay feedback, but it does not multiply points. Dead Mode retains its five hearts and its generated-level progression.
 
-## Current implementation
+## Implementation baseline before this change
 
 - `app/pages/index.vue` calculates `base × speed × combo` and adds points in `completeLevel()`.
 - `beginLevel()` clears the level timer and per-attempt input counters. Both failed retries and manual restarts call it, which currently grants a fresh scoring timer.
