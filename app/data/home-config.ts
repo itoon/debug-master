@@ -1,8 +1,9 @@
-import type { CompetitionConfig } from "../types/competition";
+import type { CompetitionConfig, ScoringStrategy } from "../types/competition";
 
 export const DEFAULT_COMPETITION_CONFIG: Readonly<CompetitionConfig> = Object.freeze({ difficulty: 1, scoringStrategy: "BEST" });
 
 export type ChallengeId = "A" | "B" | "C";
+export type ModeScoringStrategies = Partial<Record<ChallengeId, ScoringStrategy>>;
 
 export type ChallengeMode = CompetitionConfig & {
   id: ChallengeId;
@@ -39,8 +40,9 @@ export const CHALLENGE_IDS: readonly ChallengeId[] = homeConfig.modes.map((mode)
 export const defaultEnabledIds: readonly ChallengeId[] = homeConfig.modes.filter((mode) => mode.enabled).map((mode) => mode.id);
 
 /** Configured modes that are switched on, in config order. Never empty: falls back to the defaults. */
-export function enabledModesFor(ids: readonly ChallengeId[] | undefined): ChallengeMode[] {
+export function enabledModesFor(ids: readonly ChallengeId[] | undefined, strategies: ModeScoringStrategies = {}): ChallengeMode[] {
   const valid = ids?.filter((id) => CHALLENGE_IDS.includes(id)) ?? [];
   const chosen = valid.length ? valid : defaultEnabledIds;
-  return homeConfig.modes.filter((mode) => chosen.includes(mode.id));
+  return homeConfig.modes.filter((mode) => chosen.includes(mode.id))
+    .map((mode) => ({ ...mode, scoringStrategy: strategies[mode.id] ?? mode.scoringStrategy }));
 }

@@ -1,4 +1,5 @@
-import { defaultEnabledIds, enabledModesFor, type ChallengeId } from "../data/home-config";
+import { defaultEnabledIds, enabledModesFor, type ChallengeId, type ModeScoringStrategies } from "../data/home-config";
+import type { ScoringStrategy } from "../types/competition";
 import type { ModeSettingsRepository } from "../storage/contracts";
 
 /**
@@ -8,19 +9,24 @@ import type { ModeSettingsRepository } from "../storage/contracts";
  */
 export function useModeSettings(repository: ModeSettingsRepository) {
   const savedIds = ref<ChallengeId[] | undefined>(undefined);
+  const strategies = ref<ModeScoringStrategies>({});
   const loaded = ref(false);
   const loadError = ref(false);
-  const enabledModes = computed(() => enabledModesFor(savedIds.value));
+  const enabledModes = computed(() => enabledModesFor(savedIds.value, strategies.value));
   const enabledIds = computed(() => enabledModes.value.map((mode) => mode.id));
-  const customized = computed(() => savedIds.value !== undefined);
+  const customized = computed(() => savedIds.value !== undefined || Object.keys(strategies.value).length > 0);
   let unsubscribe: (() => void) | undefined;
 
   function refresh(): void {
     try {
-      savedIds.value = repository.enabledIds();
+      const ids = repository.enabledIds();
+      const scoring = repository.scoringStrategies();
+      savedIds.value = ids;
+      strategies.value = scoring;
       loadError.value = false;
     } catch {
       savedIds.value = undefined;
+      strategies.value = {};
       loadError.value = true;
     }
     loaded.value = true;
@@ -34,6 +40,10 @@ export function useModeSettings(repository: ModeSettingsRepository) {
     await repository.reset();
     refresh();
   }
+  async function setScoringStrategy(id: ChallengeId, strategy: ScoringStrategy): Promise<void> {
+    await repository.setScoringStrategy(id, strategy);
+    refresh();
+  }
 
   onMounted(() => {
     refresh();
@@ -41,5 +51,5 @@ export function useModeSettings(repository: ModeSettingsRepository) {
   });
   onBeforeUnmount(() => unsubscribe?.());
 
-  return { enabledModes, enabledIds, customized, loaded, loadError, setEnabled, reset, defaultEnabledIds };
+  return { enabledModes, enabledIds, strategies, customized, loaded, loadError, setEnabled, setScoringStrategy, reset, defaultEnabledIds };
 }

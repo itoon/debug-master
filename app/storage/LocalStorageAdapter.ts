@@ -2,7 +2,8 @@ import type { Score } from "../types/debug-game";
 import { CompetitionSessionRepository } from "./CompetitionSessionRepository";
 import { toScore } from "../utils/competition/session";
 import { todayRanking, type RankingBoard } from "../utils/ranking";
-import { CHALLENGE_IDS, type ChallengeId } from "../data/home-config";
+import { CHALLENGE_IDS, type ChallengeId, type ModeScoringStrategies } from "../data/home-config";
+import type { ScoringStrategy } from "../types/competition";
 import type { ModeSettingsRepository, PlayerProfile, PlayerRepository, ScoreRepository } from "./contracts";
 
 const SCHEMA_VERSION = 1;
@@ -37,9 +38,10 @@ export class LocalStorageAdapter {
     window.dispatchEvent(new Event(CHANGE_EVENT));
   }
 
-  subscribe(listener: () => void, key = "scores"): () => void {
+  subscribe(listener: () => void, key: string | readonly string[] = "scores"): () => void {
+    const keys = (typeof key === "string" ? [key] : key).map(item => NAMESPACE + item);
     const onStorage = (event: StorageEvent) => {
-      if (event.key === null || event.key === NAMESPACE + key) listener();
+      if (event.key === null || keys.includes(event.key)) listener();
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener(CHANGE_EVENT, listener);
@@ -95,15 +97,32 @@ function validModeIds(value: unknown): value is ChallengeId[] | undefined {
   return value === undefined || (Array.isArray(value) && value.every((id) => CHALLENGE_IDS.includes(id)));
 }
 
+function validModeStrategies(value: unknown): value is ModeScoringStrategies {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value) &&
+    Object.entries(value).every(([id, strategy]) => CHALLENGE_IDS.includes(id as ChallengeId) && (strategy === "BEST" || strategy === "LATEST")));
+}
+
 export class LocalModeSettingsRepository implements ModeSettingsRepository {
   constructor(private readonly adapter: LocalStorageAdapter) {}
   enabledIds(): ChallengeId[] | undefined { return this.adapter.read("modes", undefined, validModeIds); }
+  scoringStrategies(): ModeScoringStrategies { return this.adapter.read("mode-scoring", {}, validModeStrategies); }
   save(ids: ChallengeId[]): Promise<void> {
     if (!ids.length || !validModeIds(ids)) return Promise.reject(new Error("At least one valid mode must stay enabled"));
     return this.adapter.mutate("modes", () => this.adapter.write("modes", [...new Set(ids)]));
   }
-  reset(): Promise<void> { return this.adapter.mutate("modes", () => this.adapter.remove("modes")); }
-  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, "modes"); }
+  setScoringStrategy(id: ChallengeId, strategy: ScoringStrategy): Promise<void> {
+    if (!CHALLENGE_IDS.includes(id) || (strategy !== "BEST" && strategy !== "LATEST")) return Promise.reject(new Error("Invalid mode scoring strategy"));
+    return this.adapter.mutate("modes", () => {
+      this.adapter.write("mode-scoring", { ...this.scoringStrategies(), [id]: strategy });
+    });
+  }
+  reset(): Promise<void> {
+    return this.adapter.mutate("modes", () => {
+      this.adapter.remove("mode-scoring");
+      this.adapter.remove("modes");
+    });
+  }
+  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, ["modes", "mode-scoring"]); }
 }
 
 export function createLocalRepositories() {

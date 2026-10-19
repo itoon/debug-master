@@ -1,7 +1,7 @@
-import type { CompetitionSession, SessionOperation, SessionReceipt } from "../types/competition";
+import type { CompetitionSession, ScoringStrategy, SessionOperation, SessionReceipt } from "../types/competition";
 import type { Score } from "../types/debug-game";
 import type { RankingBoard } from "../utils/ranking";
-import type { ChallengeId } from "../data/home-config";
+import type { ChallengeId, ModeScoringStrategies } from "../data/home-config";
 
 export type PlayerProfile = { id: string; nickname: string; age: number; avatarId?: string };
 export type PlayerSetupInput = Omit<PlayerProfile, "id"> & { avatarId: string };
@@ -26,6 +26,8 @@ export interface ModeSettingsRepository {
   /** Modes switched on at /modes, or undefined when the team kept the home-config defaults. */
   enabledIds(): ChallengeId[] | undefined;
   save(ids: ChallengeId[]): Promise<void>;
+  scoringStrategies(): ModeScoringStrategies;
+  setScoringStrategy(id: ChallengeId, strategy: ScoringStrategy): Promise<void>;
   reset(): Promise<void>;
   subscribe(listener: () => void): () => void;
 }

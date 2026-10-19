@@ -2,6 +2,13 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-20 — Per-mode BEST/LATEST settings
+
+- `/modes` now provides a browser-local scoring strategy dropdown for each of A/B/C. BEST selects each player's highest-scoring session; LATEST selects their latest session, including a lower or zero score. Changes save immediately, survive reload, and refresh other open tabs. Mode visibility remains independent; Reset restores both visibility and strategy defaults and can recover malformed settings.
+- Ranking cards and detail/result boards show their selection policy. An open mode detail board refreshes when settings change; starting a new game reads the persisted choice. Existing sessions keep their frozen configuration, including after a change in another tab. These settings affect ordinary browser leaderboards, not the Live room protocol or its current-round scope.
+- Strategy writes merge under the existing mode-settings lock, preserve other modes, validate values, and report storage failures without displaying an unsaved choice as persisted. No score conversion, new API, dependency, or deployment is included.
+- Verification: 178 app tests, 82 Worker tests, Worker typecheck, strict storage TypeScript, and static generation pass. Generated-client browser checks cover independent modes/reload, cross-tab updates, visibility/reset, failed-save retry, malformed-data reset, 390px layout, actual BEST-to-LATEST board selection, and frozen running-session configuration; no browser errors were recorded. The existing hint-ring CSS warning and unavailable full Vue checker remain baseline limits.
+
 ## 2026-10-18 — Canonical competition scoring and Live recovery
 
 - Ordinary scored runs use one persisted CompetitionSession ledger in browser storage. First-ready time and cumulative mistakes survive retry, reset and explicit reload/resume; final input time is captured before animation. The final Score is a projection of the finalized session. Practice creates no scored session; Dead Mode keeps its generated progression and five hearts.

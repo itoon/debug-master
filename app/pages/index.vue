@@ -410,7 +410,7 @@ import {
 import { PLAYER_AGES, scorePlayerKey, hasRankingScore, type RankingBoard } from "../utils/ranking";
 import { nicknameKey } from "../utils/playerNickname";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
-import { DEFAULT_COMPETITION_CONFIG, enabledModesFor, homeConfig, type ChallengeMode } from "../data/home-config";
+import { DEFAULT_COMPETITION_CONFIG, enabledModesFor, homeConfig, type ChallengeMode, type ModeScoringStrategies } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
 import { useCompetitionSession } from "../composables/useCompetitionSession";
@@ -873,7 +873,12 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
   }
   let savedModeIds;
   try { savedModeIds = repositories.modes.enabledIds(); } catch { savedModeIds = undefined; }
-  const configuredMode = enabledModesFor(savedModeIds).find((item) => item.id === mode.id);
+  let scoringStrategies: ModeScoringStrategies;
+  try { scoringStrategies = repositories.modes.scoringStrategies(); } catch {
+    homeStorageError.value = t("modes.loadError");
+    return;
+  }
+  const configuredMode = enabledModesFor(savedModeIds, scoringStrategies).find((item) => item.id === mode.id);
   if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900 || !challengeSets.some((set) => set.id === configuredMode.levelSetId)) return;
   const playerId = existingPlayerId ?? crypto.randomUUID();
   const token = ++sessionToken;

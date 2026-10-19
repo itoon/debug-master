@@ -32,7 +32,7 @@
       </section>
     </div>
 
-    <ModeDetailsPanel v-if="detailMode" ref="detailPanel" :mode="detailMode" :repository="repository" :busy="busy || motionPhase !== 'open'" :from-rect="detailFromRect"
+    <ModeDetailsPanel v-if="currentDetailMode" ref="detailPanel" :mode="currentDetailMode" :repository="repository" :busy="busy || motionPhase !== 'open'" :from-rect="detailFromRect"
       @ready="detailReady" @back="closeDetails" @start="createPlayer" @select-player="selectPlayer" />
     <footer class="home-footer" :inert="motionPhase !== 'idle'">
       <button type="button" class="practice-button rest-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('sleep')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></svg>{{ t('sleep.back') }}</button>
@@ -64,6 +64,7 @@ const setupMode = ref<ChallengeMode | null>(null);
 const selectedMode = ref<ChallengeMode | null>(null);
 const selectionMade = ref(false);
 const detailMode = ref<ChallengeMode | null>(null);
+const currentDetailMode = computed(() => enabledModes.value.find(mode => mode.id === detailMode.value?.id) ?? detailMode.value);
 const detailFromRect = ref<{ left: number; top: number; width: number; height: number }>();
 const detailPanel = ref<{ closeWithMotion: (rect?: { left: number; top: number; width: number; height: number }) => Promise<void>; getElement: () => HTMLElement | null; focusStart: () => void; focusHeading: () => void } | null>(null);
 const selectionHasHistory = ref(false);

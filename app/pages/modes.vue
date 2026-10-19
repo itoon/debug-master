@@ -5,11 +5,12 @@
       <div class="modes-toolbar">
         <span class="summary">{{ t('modes.summary', { count: enabledIds.length }) }} · {{ enabledIds.length === 1 ? t('modes.layout1') : t('modes.layoutMany', { count: enabledIds.length }) }}</span>
         <span class="source">{{ customized ? t('modes.usingSaved') : t('modes.usingDefaults') }}</span>
-        <button type="button" class="reset-button" :disabled="!customized || saving" @click="resetModes">{{ t('modes.reset') }}</button>
+        <button type="button" class="reset-button" :disabled="(!customized && !loadError) || saving" @click="resetModes">{{ t('modes.reset') }}</button>
         <NuxtLink to="/" class="home-link">{{ t('modes.openHome') }}</NuxtLink>
       </div>
     </template>
     <p v-if="loadError" class="page-error" role="alert">{{ t('modes.loadError') }}</p>
+    <p class="scoring-scope">{{ t('modes.scoringScope') }}</p>
     <p class="status" role="status" :class="{ error: saveError }">{{ status }}</p>
     <ul class="mode-list" :class="{ loading: !loaded }">
       <li v-for="mode in homeConfig.modes" :key="mode.id" class="mode-row" :class="{ on: isOn(mode.id) }">
@@ -18,6 +19,15 @@
           <h2><ModeBadge :mode="mode.id" />{{ t(mode.nameKey) }}</h2>
           <p>{{ mode.id }} · {{ t(`difficulty.${mode.id}`) }} · {{ t('home.levels', { from: mode.levelRange[0], to: mode.levelRange[1] }) }} · {{ formatClock(mode.timeLimit * 1000) }}</p>
           <p v-if="isLastOn(mode.id)" class="hint">{{ t('modes.lastOne') }}</p>
+          <div class="scoring-setting">
+            <label :for="`mode-scoring-${mode.id}`">{{ t('modes.scoringLabel') }}</label>
+            <select :id="`mode-scoring-${mode.id}`" :value="strategyFor(mode)" :disabled="!loaded || saving"
+              :aria-label="t('modes.scoringModeLabel', { mode: t(mode.nameKey) })" :aria-describedby="`mode-scoring-hint-${mode.id}`" @change="changeScoring(mode, $event)">
+              <option value="BEST">{{ t('scoring.BEST') }}</option>
+              <option value="LATEST">{{ t('scoring.LATEST') }}</option>
+            </select>
+            <p :id="`mode-scoring-hint-${mode.id}`">{{ t(`scoring.hint.${strategyFor(mode)}`) }}</p>
+          </div>
         </div>
         <button type="button" role="switch" class="switch" :aria-checked="isOn(mode.id)" :aria-label="t('modes.toggleLabel', { mode: t(mode.nameKey) })"
           :disabled="!loaded || saving || isLastOn(mode.id)" @click="toggle(mode)">
@@ -35,10 +45,11 @@ import { createLocalRepositories } from '../storage/LocalStorageAdapter';
 import { useGameI18n } from '../composables/useGameI18n';
 import { useModeSettings } from '../composables/useModeSettings';
 import { formatClock } from '../utils/ranking';
+import type { ScoringStrategy } from '../types/competition';
 
 const { t } = useGameI18n();
 const repositories = createLocalRepositories();
-const { enabledIds, customized, loaded, loadError, setEnabled, reset } = useModeSettings(repositories.modes);
+const { enabledIds, strategies, customized, loaded, loadError, setEnabled, setScoringStrategy, reset } = useModeSettings(repositories.modes);
 const baseURL = useRuntimeConfig().app.baseURL;
 const saving = ref(false);
 const saveError = ref(false);
@@ -66,6 +77,14 @@ async function run(action: () => Promise<void>, done: () => string): Promise<voi
 function toggle(mode: ChallengeMode): Promise<void> {
   return run(() => setEnabled(mode.id, !isOn(mode.id)), () => t('modes.saved', { count: enabledIds.value.length }));
 }
+function strategyFor(mode: ChallengeMode): ScoringStrategy { return strategies.value[mode.id] ?? mode.scoringStrategy; }
+async function changeScoring(mode: ChallengeMode, event: Event): Promise<void> {
+  const select = event.target as HTMLSelectElement;
+  const strategy = select.value;
+  if (strategy !== 'BEST' && strategy !== 'LATEST') return;
+  await run(() => setScoringStrategy(mode.id, strategy), () => t('modes.scoringSaved', { mode: mode.id, strategy: t(`scoring.${strategy}`) }));
+  select.value = strategyFor(mode);
+}
 function resetModes(): Promise<void> {
   return run(reset, () => t('modes.resetDone'));
 }
@@ -79,6 +98,12 @@ function resetModes(): Promise<void> {
 .reset-button:disabled { opacity: .5; cursor: default; }
 .status { min-height: 1.4em; margin: 0 0 12px; color: #1d6b3a; font-weight: 700; }
 .status.error, .page-error { color: #a1283a; }
+.scoring-scope { margin: 0 0 12px; color: #4b5d7a; line-height: 1.6; }
+.scoring-setting { display: grid; gap: 6px; margin-top: 12px; max-width: 420px; }
+.scoring-setting label { font-size: .85rem; color: #142c54; font-weight: 800; }
+.scoring-setting select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid #829fc7; border-radius: 8px; background: #fff; color: #142c54; font: inherit; font-size: .9rem; }
+.scoring-setting select:disabled { opacity: .6; }
+.scoring-setting p { line-height: 1.5; }
 .mode-list { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
 .mode-list.loading { visibility: hidden; }
 .mode-row { display: grid; grid-template-columns: 180px minmax(0, 1fr) auto; align-items: center; gap: 18px; padding: 12px 18px 12px 12px; border: 2px solid #d2e0f4; border-radius: 16px; background: #fff; transition: border-color 160ms ease, background 160ms ease; }
@@ -97,7 +122,7 @@ function resetModes(): Promise<void> {
 .switch[aria-checked="true"] .track { background: #2f6fed; }
 .switch[aria-checked="true"] .knob { transform: translateX(24px); }
 .state { min-width: 2.2em; text-align: left; }
-button:focus-visible, .home-link:focus-visible { outline: 3px solid #ffd440; outline-offset: 3px; }
+button:focus-visible, select:focus-visible, .home-link:focus-visible { outline: 3px solid #ffd440; outline-offset: 3px; }
 @media (max-width: 640px) {
   .mode-row { grid-template-columns: 96px minmax(0, 1fr); }
   .switch { grid-column: 1 / -1; justify-self: end; }

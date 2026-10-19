@@ -2,6 +2,7 @@
   <section class="today-ranking" :aria-labelledby="headingId">
     <h2 :id="headingId">{{ title }}</h2>
     <p class="board-name">{{ subtitle }}</p>
+    <p class="scoring-policy">{{ t('ranking.scoringPolicy', { strategy: t(`scoring.${board.scoringStrategy}`) }) }}</p>
     <p class="board-rules">คะแนนมากก่อน · เสมอกันดูด่านที่ผ่าน แล้วดูเวลาที่อัปเดต{{ board.scoringStrategy === 'BEST' ? 'ก่อน' : 'ล่าสุด' }} · วันนี้ตามเวลาไทย</p>
 
     <ol v-if="rows.length" class="rows">
@@ -29,6 +30,7 @@
 // "Today's ranking" card: the start screen shows it for the mode being picked,
 // the end-of-game dialog for the mode just played. Rules: utils/ranking.ts.
 import type { Score } from "../types/debug-game";
+import { useGameI18n } from "../composables/useGameI18n";
 import {
   ageBand,
   formatClock,
@@ -49,6 +51,7 @@ const props = withDefaults(
 );
 
 const headingId = useId();
+const { t } = useGameI18n();
 const rows = computed(() => todayRanking(props.scores, props.board));
 </script>
 
@@ -78,6 +81,7 @@ h2 {
   color: var(--cv-muted);
   font-size: 0.85rem;
 }
+.scoring-policy { margin: 0; color: var(--cv-heading); font-size: .85rem; font-weight: 700; }
 
 .rows {
   display: grid;
