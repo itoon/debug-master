@@ -10,6 +10,7 @@
       </div>
     </template>
     <p v-if="loadError" class="page-error" role="alert">{{ t('modes.loadError') }}</p>
+    <p class="scoring-scope">{{ t('modes.scoringScope') }}</p>
     <p class="status" role="status" :class="{ error: saveError }">{{ status }}</p>
     <form class="duration-settings" @submit.prevent="saveTime">
       <div class="duration-copy"><label for="competition-minutes">{{ t('modes.duration') }}</label><p id="duration-help">{{ t('modes.durationHelp', { min: competitionTime.minMinutes, max: competitionTime.maxMinutes }) }}</p></div>
@@ -26,6 +27,15 @@
           <h2><ModeBadge :mode="mode.id" />{{ t(mode.nameKey) }}</h2>
           <p>{{ mode.id }} · {{ t(`difficulty.${mode.id}`) }} · {{ t('home.levels', { from: mode.levelRange[0], to: mode.levelRange[1] }) }} · {{ formatClock(durationSec * 1000) }}</p>
           <p v-if="isLastOn(mode.id)" class="hint">{{ t('modes.lastOne') }}</p>
+          <div class="scoring-setting">
+            <label :for="`mode-scoring-${mode.id}`">{{ t('modes.scoringLabel') }}</label>
+            <select :id="`mode-scoring-${mode.id}`" :value="strategyFor(mode)" :disabled="!loaded || saving"
+              :aria-label="t('modes.scoringModeLabel', { mode: t(mode.nameKey) })" :aria-describedby="`mode-scoring-hint-${mode.id}`" @change="changeScoring(mode, $event)">
+              <option value="BEST">{{ t('scoring.BEST') }}</option>
+              <option value="LATEST">{{ t('scoring.LATEST') }}</option>
+            </select>
+            <p :id="`mode-scoring-hint-${mode.id}`">{{ t(`scoring.hint.${strategyFor(mode)}`) }}</p>
+          </div>
         </div>
         <button type="button" role="switch" class="switch" :aria-checked="isOn(mode.id)" :aria-label="t('modes.toggleLabel', { mode: t(mode.nameKey) })"
           :disabled="!loaded || saving || isLastOn(mode.id)" @click="toggle(mode)">
@@ -43,10 +53,11 @@ import { createLocalRepositories } from '../storage/LocalStorageAdapter';
 import { useGameI18n } from '../composables/useGameI18n';
 import { useModeSettings } from '../composables/useModeSettings';
 import { formatClock } from '../utils/ranking';
+import type { ScoringStrategy } from '../types/competition';
 
 const { t } = useGameI18n();
 const repositories = createLocalRepositories();
-const { enabledIds, durationSec, customized, loaded, loadError, setEnabled, setDuration, reset } = useModeSettings(repositories.modes);
+const { enabledIds, durationSec, strategies, customized, loaded, loadError, setEnabled, setDuration, setScoringStrategy, reset } = useModeSettings(repositories.modes);
 const baseURL = useRuntimeConfig().app.baseURL;
 const saving = ref(false);
 const saveError = ref(false);
@@ -84,6 +95,14 @@ async function run(action: () => Promise<void>, done: () => string): Promise<voi
 function toggle(mode: ChallengeMode): Promise<void> {
   return run(() => setEnabled(mode.id, !isOn(mode.id)), () => t('modes.saved', { count: enabledIds.value.length }));
 }
+function strategyFor(mode: ChallengeMode): ScoringStrategy { return strategies.value[mode.id] ?? mode.scoringStrategy; }
+async function changeScoring(mode: ChallengeMode, event: Event): Promise<void> {
+  const select = event.target as HTMLSelectElement;
+  const strategy = select.value;
+  if (strategy !== 'BEST' && strategy !== 'LATEST') return;
+  await run(() => setScoringStrategy(mode.id, strategy), () => t('modes.scoringSaved', { mode: mode.id, strategy: t(`scoring.${strategy}`) }));
+  select.value = strategyFor(mode);
+}
 function resetModes(): Promise<void> {
   return run(async () => { await reset(); minutesDraft.value = durationSec.value / 60; }, () => t('modes.resetDone'));
 }
@@ -102,6 +121,12 @@ function saveTime(): Promise<void> | undefined {
 .reset-button:disabled { opacity: .5; cursor: default; }
 .status { min-height: 1.4em; margin: 0 0 12px; color: #1d6b3a; font-weight: 700; }
 .status.error, .page-error { color: #a1283a; }
+.scoring-scope { margin: 0 0 12px; color: #4b5d7a; line-height: 1.6; }
+.scoring-setting { display: grid; gap: 6px; margin-top: 12px; max-width: 420px; }
+.scoring-setting label { font-size: .85rem; color: #142c54; font-weight: 800; }
+.scoring-setting select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid #829fc7; border-radius: 8px; background: #fff; color: #142c54; font: inherit; font-size: .9rem; }
+.scoring-setting select:disabled { opacity: .6; }
+.scoring-setting p { line-height: 1.5; }
 .duration-settings { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 18px; padding: 16px; border: 1px solid #b7cef0; border-radius: 14px; background: #f2f7ff; color: #142c54; }
 .duration-copy { flex: 1 1 260px; }
 .duration-copy label { font-size: 1rem; font-weight: 800; }
@@ -129,7 +154,7 @@ function saveTime(): Promise<void> | undefined {
 .switch[aria-checked="true"] .track { background: #2f6fed; }
 .switch[aria-checked="true"] .knob { transform: translateX(24px); }
 .state { min-width: 2.2em; text-align: left; }
-button:focus-visible, .home-link:focus-visible { outline: 3px solid #ffd440; outline-offset: 3px; }
+button:focus-visible, select:focus-visible, .home-link:focus-visible { outline: 3px solid #ffd440; outline-offset: 3px; }
 @media (max-width: 640px) {
   .mode-row { grid-template-columns: 96px minmax(0, 1fr); }
   .switch { grid-column: 1 / -1; justify-self: end; }

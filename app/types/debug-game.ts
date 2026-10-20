@@ -1,5 +1,6 @@
 import type { RawLevel } from "../data/levels";
 import type { CodeLanguage } from "../utils/codeLanguage";
+import type { ScoringStrategy } from "./competition";
 
 export type { CodeLanguage } from "../utils/codeLanguage";
 
@@ -62,10 +63,10 @@ export type Frame = {
 };
 
 export type Score = {
-  /** Home v2 boards use their own identity; legacy results never enter A/B/C. */
+  /** The challenge board frozen for this competition session. */
   challengeId?: "A" | "B" | "C";
   playerId?: string;
-  /** Optional so existing stored scores remain valid without migration. */
+  /** Avatar selected when the player starts the session. */
   avatarId?: string;
   id: string;
   name: string;
@@ -81,6 +82,10 @@ export type Score = {
   inputs: number;
   elapsedMs: number;
   createdAt: string;
+  /** Frozen metadata from the canonical finalized session. */
+  updatedAt: string;
+  difficulty: number;
+  scoringStrategy: ScoringStrategy;
   /** Player age picked on the start screen (shown as an age band). */
   age?: number;
   /** Ranking / timer modes: the run's time limit, so boards don't mix. */
@@ -97,8 +102,7 @@ export type PracticeSummary = {
 export type ScorePopup = {
   levelId: number;
   points: number;
-  speedMultiplier: number;
-  comboMultiplier: number;
+  stars: 0 | 1 | 2 | 3;
 };
 
 export type CodeSegment =

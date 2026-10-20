@@ -1,5 +1,7 @@
 // Shared by the Nuxt app and the Cloudflare Worker (live-server/) via a relative import.
-// Keep this file free of imports so it stays portable.
+// Runtime-free type imports keep the protocol portable.
+import type { Direction } from '../../types/debug-game'
+import type { CompetitionConfig, CompetitionSession, SessionReceipt } from '../../types/competition'
 
 export type Phase = 'lobby' | 'countdown' | 'running' | 'finished'
 export type ModeId = 'A' | 'B' | 'C'
@@ -30,10 +32,12 @@ export interface RoomState {
   mode: ModeId
   durationSec: number // MIN_DURATION_SEC..MAX_DURATION_SEC, default DEFAULT_DURATION_SEC
   roundId: number
+  /** Frozen for the round at start; absent in the lobby. */
+  round?: LiveRoundConfig
   startAt: number | null
   endAt: number | null
   serverNow: number // epoch ms at send time, used to adjust the client clock
-  players: LivePlayer[] // playing first (score DESC, levelsCompleted DESC, joinedAt ASC), then queued (queuedAt ASC)
+  players: LivePlayer[] // current round: score, completed levels, frozen strategy timestamp; then queue order
   screens: number
   hosts: number
 }
@@ -46,13 +50,40 @@ export type PlayerHello = {
   age: number
 }
 
-export type ProgressMsg = {
-  type: 'progress'
+export const LIVE_PROTOCOL_VERSION = 1
+
+export type GameplayEventMsg = {
+  type: 'gameplay'
+  protocolVersion: number
   roundId: number
-  score: number
-  levelsCompleted: number
-  bestCombo: number
-  combo: number
+  sessionId: string
+  sequence: number
+  levelId: number
+  /** Epoch milliseconds in the synchronized server clock, captured at the input. */
+  at: number
+  action: 'ready' | 'direction' | 'reset'
+  direction?: Direction
+}
+
+export type LiveScoringError = 'unsupported_version' | 'not_playing' | 'wrong_round' |
+  'wrong_session' | 'sequence_gap' | 'conflicting_duplicate' | 'invalid_event' |
+  'invalid_time' | 'round_closed' | 'wrong_level' | 'not_ready' | 'level_complete'
+
+/** Private to the socket bound to this player; never broadcast. */
+export type ScoringMsg = {
+  type: 'scoring'
+  protocolVersion: number
+  roundId: number
+  session: CompetitionSession | null
+  acknowledgedSequence: number
+  nextExpectedSequence: number
+  receipt?: SessionReceipt
+  error?: LiveScoringError
+}
+
+export type LiveRoundConfig = {
+  setId: string
+  config: CompetitionConfig
 }
 
 export type HostCommand =
@@ -66,13 +97,15 @@ export type HostCommand =
 // `{ type: 'hello' }` without a pid is sent by host and screen clients.
 export type ClientMessage =
   | PlayerHello
-  | ProgressMsg
+  | GameplayEventMsg
   | { type: 'leave' }
   | { type: 'hello' }
   | HostCommand
 
 export type ServerMessage =
   | { type: 'state'; state: RoomState }
+  | ScoringMsg
+  | { type: 'reload'; reason: 'unsupported_protocol' }
   | { type: 'you'; id: string; status: PlayerStatus } // id: this device's public LivePlayer.id
   | { type: 'host'; host: boolean }
   | { type: 'full' }
@@ -92,7 +125,6 @@ export const MAX_DURATION_SEC = 900
 
 export const MAX_MSG_BYTES = 2048
 export const BROADCAST_INTERVAL_MS = 100
-export const PROGRESS_INTERVAL_MS = 250
 export const NAME_MAX = 24
 
 export const ROOM_CODE_RE = /^[A-Z0-9-]{3,16}$/
@@ -106,23 +138,6 @@ export const CLOSE_KICKED = 4001
 export const CLOSE_FULL = 4002
 /** Server closed a socket it has not heard from in a while; clients reconnect. */
 export const CLOSE_STALE = 4003
-
-/** Highest level id used by any live mode set. */
-export const MAX_LEVEL_ID = 50
-/** Upper bound of solved moves in one level (measured, rounded up to a multiple of 5). */
-export const MAX_LEVEL_MOVES = 40
-
-/**
- * Worst-case points for one level; mirrors calculateLevelScore in pages/index.vue
- * (max speed multiplier 4.5, highest level id, most moves).
- */
-export function maxLevelPoints(bestCombo: number): number {
-  return Math.ceil(
-    (180 + MAX_LEVEL_ID * 14 + MAX_LEVEL_MOVES * 36) *
-      4.5 *
-      (1 + Math.max(0, bestCombo - 1) * 0.16),
-  )
-}
 
 export function normalizeRoomCode(raw: unknown): string | null {
   if (typeof raw !== 'string') return null

@@ -1,6 +1,9 @@
 import type { Score } from "../types/debug-game";
-import { todayRanking, scorePlayerKey, hasRankingScore, isOnBoard, bangkokDay, type RankingBoard } from "../utils/ranking";
-import { CHALLENGE_IDS, isCompetitionTime, type ChallengeId } from "../data/home-config";
+import { CompetitionSessionRepository } from "./CompetitionSessionRepository";
+import { toScore } from "../utils/competition/session";
+import { todayRanking, type RankingBoard } from "../utils/ranking";
+import { CHALLENGE_IDS, isCompetitionTime, type ChallengeId, type ModeScoringStrategies } from "../data/home-config";
+import type { ScoringStrategy } from "../types/competition";
 import type { ModeSettingsRepository, PlayerProfile, PlayerRepository, ScoreRepository } from "./contracts";
 
 const SCHEMA_VERSION = 1;
@@ -10,7 +13,7 @@ const CHANGE_EVENT = `${NAMESPACE}changed`;
 /** HTTP LAN pages lack Web Locks. A shared readwrite transaction serializes
  * synchronous localStorage mutations across tabs without changing score storage.
  * Only the coordination store lives in IndexedDB; no profile/score data moves. */
-function mutateOnLocalHttp(key: string, operation: () => void): Promise<void> {
+function mutateOnLocalHttp<T>(key: string, operation: () => T): Promise<T> {
   return new Promise((resolve, reject) => {
     const request = window.indexedDB.open(`${NAMESPACE}mutation-lock`, 1);
     let blocked = false;
@@ -28,7 +31,8 @@ function mutateOnLocalHttp(key: string, operation: () => void): Promise<void> {
       try {
         const transaction = database.transaction("mutations", "readwrite");
         let operationError: unknown;
-        transaction.oncomplete = () => { database.close(); resolve(); };
+        let result: T;
+        transaction.oncomplete = () => { database.close(); resolve(result); };
         transaction.onabort = () => {
           database.close();
           reject(operationError ?? transaction.error ?? new Error("Local storage coordination failed"));
@@ -36,7 +40,7 @@ function mutateOnLocalHttp(key: string, operation: () => void): Promise<void> {
         // This callback runs only after this transaction owns the shared store.
         // Do not await inside it: keep the read/modify/write under the same lock.
         transaction.objectStore("mutations").get(key).onsuccess = () => {
-          try { operation(); }
+          try { result = operation(); }
           catch (error) { operationError = error; transaction.abort(); }
         };
       } catch (error) { database.close(); reject(error); }
@@ -46,16 +50,12 @@ function mutateOnLocalHttp(key: string, operation: () => void): Promise<void> {
 
 /** The only layer that touches browser storage. Old Dev keys are untouched. */
 export class LocalStorageAdapter {
-  async mutate(key: string, operation: () => void): Promise<void> {
-    // All tabs on a non-secure origin use the same transaction coordinator.
-    // Secure origins keep their existing Web Locks path, with no mixed locks.
-    if (!window.isSecureContext) {
-      await mutateOnLocalHttp(key, operation);
-      return;
-    }
+  async mutate<T>(key: string, operation: () => T): Promise<T> {
+    // Preserve the generic receipt result on both secure and LAN origins.
+    if (!window.isSecureContext) return await mutateOnLocalHttp(key, operation);
     // Fail closed if coordination is unavailable; never write without a lock.
     if (!navigator.locks) throw new Error("Web Locks are required for safe local storage updates");
-    await navigator.locks.request(NAMESPACE + key, operation);
+    return await navigator.locks.request(NAMESPACE + key, operation);
   }
   read<T>(key: string, fallback: T, valid: (value: unknown) => value is T): T {
     const raw = window.localStorage.getItem(NAMESPACE + key);
@@ -78,9 +78,9 @@ export class LocalStorageAdapter {
   }
 
   subscribe(listener: () => void, key: string | readonly string[] = "scores"): () => void {
-    const keys = typeof key === 'string' ? [key] : key;
+    const keys = (typeof key === "string" ? [key] : key).map(item => NAMESPACE + item);
     const onStorage = (event: StorageEvent) => {
-      if (event.key === null || keys.some(item => event.key === NAMESPACE + item)) listener();
+      if (event.key === null || keys.includes(event.key)) listener();
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener(CHANGE_EVENT, listener);
@@ -89,18 +89,6 @@ export class LocalStorageAdapter {
       window.removeEventListener(CHANGE_EVENT, listener);
     };
   }
-}
-
-function validScores(value: unknown): value is Score[] {
-  return Array.isArray(value) && value.every((score) =>
-    score && typeof score.id === "string" && typeof score.name === "string" &&
-    typeof score.setId === "string" &&
-    ["campaign", "timer", "ranking", "dead"].includes(score.mode) &&
-    Number.isFinite(score.score) && Number.isFinite(score.elapsedMs) && score.elapsedMs >= 0 &&
-    typeof score.createdAt === "string" && Number.isFinite(Date.parse(score.createdAt)) &&
-    (score.challengeId === undefined || ["A", "B", "C"].includes(score.challengeId)) &&
-    (score.avatarId === undefined || typeof score.avatarId === "string"),
-  );
 }
 
 export class LocalPlayerRepository implements PlayerRepository {
@@ -120,51 +108,43 @@ export class LocalPlayerRepository implements PlayerRepository {
 }
 
 export class LocalScoreRepository implements ScoreRepository {
-  constructor(private readonly adapter: LocalStorageAdapter) {}
-  list(): Score[] { return this.adapter.read("scores", [], validScores); }
-  save(score: Score): Promise<void> {
-    return this.adapter.mutate("scores", () => {
-      // Upsert makes a retry idempotent and never duplicates a finished run.
-      const rows = this.list().filter((item) => item.id !== score.id);
-      this.adapter.write("scores", [...rows, score]);
+  constructor(private readonly sessions: CompetitionSessionRepository) {}
+  list(): Score[] { return this.sessions.list().filter(session => session.status === "finished").map(toScore); }
+  /** Transitional caller adapter: finish the existing session, never accept a copied total. */
+  async save(score: Score): Promise<void> {
+    const session = this.sessions.get(score.id);
+    if (!session) throw new Error("Competition session not found");
+    if (session.status === "finished") return;
+    await this.sessions.apply(session.id, {
+      id: `score-save:${session.id}`, type: "finish", expectedRevision: session.revision,
+      at: Math.max(session.updatedAt, session.startedAt + score.elapsedMs),
     });
   }
-  remove(scoreId: string): Promise<void> {
-    return this.removeMany([scoreId]);
-  }
-  removeMany(scoreIds: readonly string[]): Promise<void> {
-    if (!scoreIds.length) return Promise.resolve();
-    const selected = new Set(scoreIds);
-    return this.adapter.mutate("scores", () => {
-      const rows = this.list();
-      const remaining = rows.filter((score) => !selected.has(score.id));
-      if (remaining.length === rows.length) return;
-      // Read the current list inside the mutation and write once: no partial batch.
-      this.adapter.write("scores", remaining);
-    });
-  }
+  remove(scoreId: string): Promise<void> { return this.removeMany([scoreId]); }
+  removeMany(scoreIds: readonly string[]): Promise<void> { return this.sessions.removeMany(scoreIds); }
   today(board: RankingBoard, now = new Date(), limit = 10): Score[] {
     return todayRanking(this.list(), board, now, limit);
   }
   rank(scoreId: string, board: RankingBoard, now = new Date()): number | undefined {
-    const scores = this.list();
-    const run = scores.find((item) => item.id === scoreId && isOnBoard(item, board) && bangkokDay(item.createdAt) === bangkokDay(now));
-    if (!run || !hasRankingScore(run)) return undefined;
-    const index = todayRanking(scores, board, now, Infinity).findIndex((item) =>
-      board.challengeId ? scorePlayerKey(item) === scorePlayerKey(run) : item.id === scoreId,
-    );
+    const index = todayRanking(this.list(), board, now, Infinity).findIndex(item => item.id === scoreId);
     return index < 0 ? undefined : index + 1;
   }
-  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener); }
+  subscribe(listener: () => void): () => void { return this.sessions.subscribe(listener); }
 }
 
 function validModeIds(value: unknown): value is ChallengeId[] | undefined {
   return value === undefined || (Array.isArray(value) && value.every((id) => CHALLENGE_IDS.includes(id)));
 }
 
+function validModeStrategies(value: unknown): value is ModeScoringStrategies {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value) &&
+    Object.entries(value).every(([id, strategy]) => CHALLENGE_IDS.includes(id as ChallengeId) && (strategy === "BEST" || strategy === "LATEST")));
+}
+
 export class LocalModeSettingsRepository implements ModeSettingsRepository {
   constructor(private readonly adapter: LocalStorageAdapter) {}
   enabledIds(): ChallengeId[] | undefined { return this.adapter.read("modes", undefined, validModeIds); }
+  scoringStrategies(): ModeScoringStrategies { return this.adapter.read("mode-scoring", {}, validModeStrategies); }
   durationSec(): number | undefined {
     return this.adapter.read<number | undefined>('mode-duration', undefined, (value): value is number | undefined => value === undefined || isCompetitionTime(value));
   }
@@ -172,24 +152,33 @@ export class LocalModeSettingsRepository implements ModeSettingsRepository {
     if (!ids.length || !validModeIds(ids)) return Promise.reject(new Error("At least one valid mode must stay enabled"));
     return this.adapter.mutate("modes", () => this.adapter.write("modes", [...new Set(ids)]));
   }
+  setScoringStrategy(id: ChallengeId, strategy: ScoringStrategy): Promise<void> {
+    if (!CHALLENGE_IDS.includes(id) || (strategy !== "BEST" && strategy !== "LATEST")) return Promise.reject(new Error("Invalid mode scoring strategy"));
+    return this.adapter.mutate("modes", () => {
+      this.adapter.write("mode-scoring", { ...this.scoringStrategies(), [id]: strategy });
+    });
+  }
   saveDuration(seconds: number): Promise<void> {
     if (!isCompetitionTime(seconds)) return Promise.reject(new Error('Competition time must be whole minutes within the configured range'));
     return this.adapter.mutate('modes', () => this.adapter.write('mode-duration', seconds));
   }
   reset(): Promise<void> {
     return this.adapter.mutate('modes', () => {
+      this.adapter.remove('mode-scoring');
       this.adapter.remove('mode-duration');
       this.adapter.remove('modes');
     });
   }
-  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, ['modes', 'mode-duration']); }
+  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, ['modes', 'mode-duration', 'mode-scoring']); }
 }
 
 export function createLocalRepositories() {
   const adapter = new LocalStorageAdapter();
+  const sessions = new CompetitionSessionRepository(adapter);
   return {
     players: new LocalPlayerRepository(adapter),
-    scores: new LocalScoreRepository(adapter),
+    scores: new LocalScoreRepository(sessions),
+    sessions,
     modes: new LocalModeSettingsRepository(adapter),
   };
 }

@@ -10,22 +10,21 @@ import type {
   ModeId,
   Phase,
   PlayerHello,
-  ProgressMsg,
+  LiveRoundConfig,
   RoomState,
 } from '../../app/utils/live/protocol'
 import {
   COUNTDOWN_MS,
   DEFAULT_DURATION_SEC,
-  GRACE_MS,
   IDLE_MS,
-  MAX_LEVEL_ID,
   MAX_PLAYERS,
-  maxLevelPoints,
 } from '../../app/utils/live/protocol'
+import { initializeRoundScoring, type LiveScoringState } from './scoring'
 
 export type StoredPlayer = Omit<LivePlayer, 'connected'> & {
   /** Secret device id (also the key in StoredRoom.players). Never leaves the server. */
   pid: string
+  scoring?: LiveScoringState
 }
 
 export interface StoredRoom {
@@ -34,6 +33,7 @@ export interface StoredRoom {
   mode: ModeId
   durationSec: number
   roundId: number
+  round?: LiveRoundConfig
   startAt: number | null
   endAt: number | null
   /** Keyed by the secret pid. */
@@ -171,8 +171,9 @@ function startNewRound(room: StoredRoom, connected: Set<string>): void {
 
   const next: Record<string, StoredPlayer> = {}
   const seat = (p: StoredPlayer, lane: number): void => {
+    const { scoring: _previousScoring, ...profile } = p
     next[p.pid] = {
-      ...p,
+      ...profile,
       status: 'playing',
       lane,
       queuedAt: null,
@@ -191,6 +192,7 @@ function startNewRound(room: StoredRoom, connected: Set<string>): void {
   room.players = next
   room.roundId += 1
   room.phase = 'lobby'
+  delete room.round
   room.startAt = null
   room.endAt = null
 }
@@ -222,6 +224,7 @@ export function applyHostCommand(
       room.phase = 'countdown'
       room.startAt = now + COUNTDOWN_MS
       room.endAt = room.startAt + room.durationSec * 1000
+      initializeRoundScoring(room)
       changed = true
       break
     }
@@ -260,32 +263,6 @@ export function claimHost(room: StoredRoom, keyHash: string | null): boolean {
     return true
   }
   return room.hostKeyHash === keyHash
-}
-
-/**
- * Accepts a cumulative progress report, or drops the whole message (returns false).
- * Scores only grow when a level is cleared, so the score gain is capped per newly cleared level.
- */
-export function applyProgress(room: StoredRoom, pid: string, msg: ProgressMsg, now: number): boolean {
-  const open =
-    room.phase === 'running' ||
-    (room.phase === 'finished' && room.endAt !== null && now <= room.endAt + GRACE_MS)
-  if (!open) return false
-  if (msg.roundId !== room.roundId) return false
-  const prev = room.players[pid]
-  if (!prev || prev.status !== 'playing') return false
-  if (msg.score < prev.score || msg.levelsCompleted < prev.levelsCompleted || msg.bestCombo < prev.bestCombo) {
-    return false
-  }
-  if (msg.levelsCompleted > MAX_LEVEL_ID) return false
-  const cleared = msg.levelsCompleted - prev.levelsCompleted
-  if (msg.score - prev.score > cleared * maxLevelPoints(msg.bestCombo)) return false
-
-  prev.score = msg.score
-  prev.levelsCompleted = msg.levelsCompleted
-  prev.bestCombo = msg.bestCombo
-  prev.combo = msg.combo
-  return true
 }
 
 /** countdown -> running -> finished only; lobby and finished rooms are never moved. */
@@ -341,10 +318,19 @@ export function isIdleExpired(room: StoredRoom, openSockets: number, now: number
   return openSockets === 0 && now >= room.lastActivity + IDLE_MS
 }
 
-export function comparePlayers(a: LivePlayer, b: LivePlayer): number {
+type RankedPlayer = Omit<LivePlayer, 'connected'> & { scoring?: LiveScoringState }
+
+export function comparePlayers(a: RankedPlayer, b: RankedPlayer, strategy: 'BEST' | 'LATEST' = 'BEST'): number {
   if (a.status !== b.status) return a.status === 'playing' ? -1 : 1
   if (a.status === 'queued') return (a.queuedAt ?? 0) - (b.queuedAt ?? 0)
-  return b.score - a.score || b.levelsCompleted - a.levelsCompleted || a.joinedAt - b.joinedAt
+  const sa = a.scoring?.session
+  const sb = b.scoring?.session
+  // Lobby players have no session yet. Running-round players always use canonical update time.
+  const time = (sa?.updatedAt ?? a.joinedAt) - (sb?.updatedAt ?? b.joinedAt)
+  const idA = sa?.id ?? a.id
+  const idB = sb?.id ?? b.id
+  return b.score - a.score || b.levelsCompleted - a.levelsCompleted ||
+    (strategy === 'BEST' ? time : -time) || (idA < idB ? -1 : idA > idB ? 1 : 0)
 }
 
 export function snapshot(
@@ -353,16 +339,19 @@ export function snapshot(
   counts: { screens: number; hosts: number },
   now: number,
 ): RoomState {
+  // Explicit public whitelist: adding private fields to StoredPlayer cannot leak them.
   const players: LivePlayer[] = Object.values(room.players)
-    // Strip the secret pid: every socket (including keyless screens) receives this.
-    .map(({ pid, ...p }) => ({ ...p, connected: connected.has(pid) }))
-    .sort(comparePlayers)
+    .sort((a, b) => comparePlayers(a, b, room.round?.config.scoringStrategy ?? 'BEST'))
+    .map(p => ({ id: p.id, name: p.name, avatarId: p.avatarId, age: p.age, status: p.status,
+      lane: p.lane, score: p.score, levelsCompleted: p.levelsCompleted, bestCombo: p.bestCombo,
+      combo: p.combo, joinedAt: p.joinedAt, queuedAt: p.queuedAt, connected: connected.has(p.pid) }))
   return {
     code: room.code,
     phase: room.phase,
     mode: room.mode,
     durationSec: room.durationSec,
     roundId: room.roundId,
+    ...(room.round ? { round: { setId: room.round.setId, config: { ...room.round.config } } } : {}),
     startAt: room.startAt,
     endAt: room.endAt,
     serverNow: now,

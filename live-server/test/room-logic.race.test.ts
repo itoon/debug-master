@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { LivePlayer, PlayerHello, ProgressMsg } from '../../app/utils/live/protocol'
-import { GRACE_MS, IDLE_MS, MAX_LEVEL_ID, maxLevelPoints } from '../../app/utils/live/protocol'
+import type { LivePlayer, PlayerHello } from '../../app/utils/live/protocol'
+import { IDLE_MS } from '../../app/utils/live/protocol'
 import {
   advanceClock,
   applyHostCommand,
-  applyProgress,
   comparePlayers,
   createRoom,
   isIdleExpired,
@@ -25,17 +24,7 @@ const hello = (pid: string, name = 'P'): PlayerHello => ({
   age: 9,
 })
 const conn = (...pids: string[]) => new Set(pids)
-const prog = (o: Partial<ProgressMsg> = {}): ProgressMsg => ({
-  type: 'progress',
-  roundId: 1,
-  score: 900,
-  levelsCompleted: 1,
-  bestCombo: 4,
-  combo: 4,
-  ...o,
-})
-
-/** Countdown room: p-aaaaaa seated in lane 0, started at t=0 (startAt 3000, endAt 483000). */
+/** Countdown room: p-aaaaaa seated in lane 0, started at t=0 (startAt 3000, endAt 303000). */
 function running0(): StoredRoom {
   const r = createRoom('CODI-1', 0)
   joinPlayer(r, hello('p-aaaaaa'), conn('p-aaaaaa'), 0)
@@ -48,73 +37,6 @@ function running(): StoredRoom {
   return r
 }
 
-describe('applyProgress', () => {
-  it('accepts monotonic cumulative progress', () => {
-    const r = running()
-    expect(applyProgress(r, 'p-aaaaaa', prog(), 10_000)).toBe(true)
-    expect(applyProgress(r, 'p-aaaaaa', prog({ score: 800 }), 11_000)).toBe(false)
-    expect(r.players['p-aaaaaa']).toMatchObject({ score: 900, levelsCompleted: 1, bestCombo: 4, combo: 4 })
-  })
-
-  it('writes all four values on success', () => {
-    const r = running()
-    expect(applyProgress(r, 'p-aaaaaa', prog({ score: 1500, levelsCompleted: 2, bestCombo: 5, combo: 2 }), 10_000)).toBe(true)
-    expect(r.players['p-aaaaaa']).toMatchObject({ score: 1500, levelsCompleted: 2, bestCombo: 5, combo: 2 })
-  })
-
-  it('rejects score without a cleared level and jumps above the cap', () => {
-    const r = running()
-    expect(applyProgress(r, 'p-aaaaaa', prog({ levelsCompleted: 0 }), 10_000)).toBe(false)
-    expect(applyProgress(r, 'p-aaaaaa', prog({ score: maxLevelPoints(4) + 1 }), 10_000)).toBe(false)
-    expect(applyProgress(r, 'p-aaaaaa', prog({ score: maxLevelPoints(4) }), 10_000)).toBe(true)
-  })
-
-  it('rejects decreasing levelsCompleted or bestCombo and levelsCompleted above MAX_LEVEL_ID', () => {
-    const r = running()
-    expect(applyProgress(r, 'p-aaaaaa', prog({ score: 2000, levelsCompleted: 2 }), 10_000)).toBe(true)
-    expect(applyProgress(r, 'p-aaaaaa', prog({ score: 2000, levelsCompleted: 1 }), 10_001)).toBe(false)
-    expect(applyProgress(r, 'p-aaaaaa', prog({ score: 2000, levelsCompleted: 2, bestCombo: 3, combo: 3 }), 10_002)).toBe(false)
-    const r2 = running()
-    expect(applyProgress(r2, 'p-aaaaaa', prog({ score: 0, levelsCompleted: MAX_LEVEL_ID + 1, bestCombo: 0, combo: 0 }), 10_000)).toBe(false)
-  })
-
-  it('ignores unknown players and rooms that are not running', () => {
-    const r = running()
-    expect(applyProgress(r, 'p-zzzzzz', prog(), 10_000)).toBe(false)
-    const c = running0()
-    expect(applyProgress(c, 'p-aaaaaa', prog(), 1000)).toBe(false)
-    const l = createRoom('CODI-1', 0)
-    joinPlayer(l, hello('p-aaaaaa'), conn('p-aaaaaa'), 0)
-    expect(applyProgress(l, 'p-aaaaaa', prog(), 1000)).toBe(false)
-  })
-
-  it('ignores a previous round progress after newRound', () => {
-    const r = running()
-    applyHostCommand(r, { type: 'endEarly' }, conn('p-aaaaaa'), 20_000)
-    applyHostCommand(r, { type: 'newRound' }, conn('p-aaaaaa'), 30_000)
-    applyHostCommand(r, { type: 'start' }, conn('p-aaaaaa'), 31_000)
-    advanceClock(r, 34_000)
-    expect(applyProgress(r, 'p-aaaaaa', prog({ roundId: 1 }), 35_000)).toBe(false)
-    expect(applyProgress(r, 'p-aaaaaa', prog({ roundId: 2 }), 35_000)).toBe(true)
-  })
-
-  it('honours the 2s grace after endAt', () => {
-    const r = running()
-    advanceClock(r, 483_000)
-    expect(r.phase).toBe('finished')
-    expect(applyProgress(r, 'p-aaaaaa', prog(), 483_000 + GRACE_MS)).toBe(true)
-    expect(applyProgress(r, 'p-aaaaaa', prog({ score: 1800, levelsCompleted: 2 }), 483_000 + GRACE_MS + 1)).toBe(false)
-    expect(r.players['p-aaaaaa'].score).toBe(900)
-  })
-
-  it('rejects progress from queued players', () => {
-    const r = running()
-    expect(joinPlayer(r, hello('p-bbbbbb'), conn('p-aaaaaa', 'p-bbbbbb'), 5000)).toBe('queued')
-    expect(applyProgress(r, 'p-bbbbbb', prog(), 10_000)).toBe(false)
-    expect(r.players['p-bbbbbb'].score).toBe(0)
-  })
-})
-
 describe('advanceClock', () => {
   it('moves countdown to running at startAt and running to finished at endAt', () => {
     const r = running0()
@@ -122,8 +44,8 @@ describe('advanceClock', () => {
     expect(r.phase).toBe('countdown')
     expect(advanceClock(r, 3000)).toBe(true)
     expect(r.phase).toBe('running')
-    expect(advanceClock(r, 482_999)).toBe(false)
-    expect(advanceClock(r, 483_000)).toBe(true)
+    expect(advanceClock(r, 302_999)).toBe(false)
+    expect(advanceClock(r, 303_000)).toBe(true)
     expect(r.phase).toBe('finished')
     expect(advanceClock(r, 999_999)).toBe(false)
   })
@@ -155,7 +77,7 @@ describe('alarms', () => {
     const lobbyRoom = createRoom('CODI-1', 100)
     const only = (open: number) => ({ open, players: 0 }) // host/screen sockets only
     expect(nextAlarmAt(countdownRoom, only(3), 1000)).toBe(3000)
-    expect(nextAlarmAt(runningRoom, only(3), 4000)).toBe(483_000)
+    expect(nextAlarmAt(runningRoom, only(3), 4000)).toBe(303_000)
     expect(nextAlarmAt(lobbyRoom, only(0), 200)).toBe(lobbyRoom.lastActivity + IDLE_MS)
     expect(nextAlarmAt(lobbyRoom, only(2), 200)).toBeNull()
     expect(nextAlarmAt(countdownRoom, only(0), 1000)).toBe(3000)
@@ -169,7 +91,7 @@ describe('alarms', () => {
     // running: the earlier of endAt and the sweep
     const runningRoom = running()
     expect(nextAlarmAt(runningRoom, players, 4000)).toBe(4000 + SWEEP_MS)
-    expect(nextAlarmAt(runningRoom, players, 470_000)).toBe(483_000)
+    expect(nextAlarmAt(runningRoom, players, 290_000)).toBe(303_000)
     // countdown ends before the sweep
     expect(nextAlarmAt(running0(), players, 1000)).toBe(3000)
   })
@@ -184,7 +106,7 @@ describe('alarms', () => {
     expect(nextAlarmAt(r, players, 1000, 1000 + IDLE_MS)).toBe(1000 + SWEEP_MS) // a far idle alarm is pulled in
     // a phase alarm earlier than the armed sweep still wins
     const run = running()
-    expect(nextAlarmAt(run, players, 470_000, 470_000 + SWEEP_MS)).toBe(483_000)
+    expect(nextAlarmAt(run, players, 290_000, 290_000 + SWEEP_MS)).toBe(303_000)
   })
 
   it('detects idle expiry only with no open sockets', () => {
@@ -228,7 +150,7 @@ describe('snapshot', () => {
     ...o,
   })
 
-  it('comparePlayers orders playing by score, levels, joinedAt then queued by queuedAt', () => {
+  it('comparePlayers orders standalone playing rows by score, levels, joinedAt then queue time', () => {
     const list = [
       mk('q2', { status: 'queued', lane: null, queuedAt: 20 }),
       mk('a', { score: 100, levelsCompleted: 1, joinedAt: 5 }),
@@ -256,10 +178,10 @@ describe('snapshot', () => {
       code: 'CODI-1',
       phase: 'running',
       mode: 'A',
-      durationSec: 480,
+      durationSec: 300,
       roundId: 1,
       startAt: 3000,
-      endAt: 483_000,
+      endAt: 303_000,
     })
   })
 })

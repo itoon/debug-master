@@ -1,4 +1,5 @@
-import { competitionTime, defaultEnabledIds, enabledModesFor, type ChallengeId } from "../data/home-config";
+import { competitionTime, defaultEnabledIds, enabledModesFor, type ChallengeId, type ModeScoringStrategies } from "../data/home-config";
+import type { ScoringStrategy } from "../types/competition";
 import type { ModeSettingsRepository } from "../storage/contracts";
 
 /**
@@ -8,22 +9,28 @@ import type { ModeSettingsRepository } from "../storage/contracts";
  */
 export function useModeSettings(repository: ModeSettingsRepository) {
   const savedIds = ref<ChallengeId[] | undefined>(undefined);
+  const strategies = ref<ModeScoringStrategies>({});
   const savedDuration = ref<number | undefined>(undefined);
+  const durationSec = computed(() => savedDuration.value ?? competitionTime.defaultSeconds);
   const loaded = ref(false);
   const loadError = ref(false);
-  const durationSec = computed(() => savedDuration.value ?? competitionTime.defaultSeconds);
-  const enabledModes = computed(() => enabledModesFor(savedIds.value, savedDuration.value));
+  const enabledModes = computed(() => enabledModesFor(savedIds.value, strategies.value, savedDuration.value));
   const enabledIds = computed(() => enabledModes.value.map((mode) => mode.id));
-  const customized = computed(() => savedIds.value !== undefined || savedDuration.value !== undefined);
+  const customized = computed(() => savedIds.value !== undefined || savedDuration.value !== undefined || Object.keys(strategies.value).length > 0);
   let unsubscribe: (() => void) | undefined;
 
   function refresh(): void {
     try {
-      savedIds.value = repository.enabledIds();
-      savedDuration.value = repository.durationSec();
+      const ids = repository.enabledIds();
+      const scoring = repository.scoringStrategies();
+      const duration = repository.durationSec();
+      savedIds.value = ids;
+      savedDuration.value = duration;
+      strategies.value = scoring;
       loadError.value = false;
     } catch {
       savedIds.value = undefined;
+      strategies.value = {};
       savedDuration.value = undefined;
       loadError.value = true;
     }
@@ -38,6 +45,10 @@ export function useModeSettings(repository: ModeSettingsRepository) {
     await repository.reset();
     refresh();
   }
+  async function setScoringStrategy(id: ChallengeId, strategy: ScoringStrategy): Promise<void> {
+    await repository.setScoringStrategy(id, strategy);
+    refresh();
+  }
   async function setDuration(seconds: number): Promise<void> {
     await repository.saveDuration(seconds);
     refresh();
@@ -49,5 +60,5 @@ export function useModeSettings(repository: ModeSettingsRepository) {
   });
   onBeforeUnmount(() => unsubscribe?.());
 
-  return { enabledModes, enabledIds, durationSec, customized, loaded, loadError, setEnabled, setDuration, reset, defaultEnabledIds };
+  return { enabledModes, enabledIds, durationSec, strategies, customized, loaded, loadError, setEnabled, setDuration, setScoringStrategy, reset, defaultEnabledIds };
 }

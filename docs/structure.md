@@ -197,14 +197,14 @@ startGame()          อ่านค่าจากหน้าตั้งค�
             │
 ผู้เล่นกดลูกศร → handleKeydown() → controlMove(dir)
             ├─ ถูก  → ขยับ Codi (stepPosition), combo +1 → advanceToMove() ต่อ
-            │         └─ ถ้าโปรแกรมจบ → completeLevel() → คิดคะแนน → ด่านถัดไป
+            │         └─ ถ้าโปรแกรมจบ → completeLevel() → แสดง receipt ที่ยืนยันแล้ว → ด่านถัดไป
             └─ ผิด  → failLevel()  → กระดานแตก
                       ├─ โหมดปกติ: เริ่มด่านเดิมใหม่
                       └─ Dead Mode: เสียหัวใจ 1 ดวง (หมด 5 ดวง → endDeadRun() → บันทึกคะแนน)
 ```
 
 ฟังก์ชันอื่นที่ควรรู้: `beginTimer/stopTimer/timeUp` (โหมดจับเวลา), `saveScore` (บันทึกลง localStorage),
-`calculateLevelScore` (คะแนน = ฐาน × ความเร็ว × combo), `applyLevelFromQuery` (เปิด `/?set=set-02&level=12` แล้วเลือกด่านให้)
+`utils/competition/scoring.ts` (คะแนนจากดาว ความยาก และเวลาจริง), `applyLevelFromQuery` (เปิด `/?set=set-02&level=12` แล้วเลือกด่านให้)
 
 ---
 
@@ -241,7 +241,7 @@ startGame()          อ่านค่าจากหน้าตั้งค�
 | เรื่อง | ตอนนี้เป็นอย่างไร | ถ้าจะต่อกับ platform |
 |---|---|---|
 | ผู้เล่น | พิมพ์ชื่อเองในหน้าตั้งค่า ไม่มีระบบ login | รับ id/ชื่อจาก platform |
-| คะแนน | `saveScore()` เก็บ `localStorage` key `debug-runner-scores-v1` | ส่งไป API ของ platform แทน (หรือส่งทั้งสองที่) |
+| คะแนน | `CompetitionSessionRepository` เก็บ canonical sessions; Live ยืนยันที่ Worker | ส่งไป API ของ platform แทน (หรือส่งทั้งสองที่) |
 | ด่าน | import ไฟล์ใน `data/` ตอน build | โหลดจาก API ได้ ถ้ารูปแบบตรงกับ `RawLevel` |
 | เปิดด่านเฉพาะ | `/?set=set-02&level=12` | platform ลิงก์/ฝังด้วย URL นี้ได้เลย |
 | เหตุการณ์ในเกม | ไม่มีส่งออก | ควรเพิ่ม event: เริ่มด่าน, ผ่านด่าน, กดผิด, จบเกม (เพื่อ analytics/ความก้าวหน้า) |
@@ -278,3 +278,16 @@ startGame()          อ่านค่าจากหน้าตั้งค�
 - [ ] เปิด `/review` ต้องไม่มีการ์ดขอบแดง (ถ้าแก้ข้อมูลด่าน)
 - [ ] แก้ `utils/levelGen` → รัน `pnpm dlx jiti scripts/check-level-gen.ts 300 30` ต้องขึ้น `OK`
 - [ ] `NUXT_APP_BASE_URL=/debug-master/ pnpm generate` ต้อง build ผ่าน (แบบเดียวกับตอน deploy)
+
+
+## Competition scoring / Live (2026-10-18)
+
+- `types/competition.ts`: frozen config, canonical session/checkpoint/level ledger and receipts.
+- `utils/competition/scoring.ts`, `session.ts`: pure formula, mistakes-to-stars, BEST/LATEST aggregation and finalized Score projection. Fractional seconds; one rounding per completed level. Defaults: difficulty 1, BEST; A/B/C names do not imply numeric difficulty. Stars: 0 mistakes → 3, 1 → 2, 2+ → 1; incomplete → zero points.
+- `storage/CompetitionSessionRepository.ts`: browser's sole persisted scoring store. `useCompetitionSession` serializes checkpoints; ordinary resume reconstructs interpreter cursor without clearing first-ready time/mistakes. Browser day/board selection remains Asia/Bangkok. Practice is unscored; Dead retains five hearts and seeded generation.
+- `utils/live/protocol.ts`: versioned gameplay evidence and private canonical scoring snapshots; client totals are unsupported.
+- `utils/live/outbox.ts`: immutable write-before-send queue, scoped by room/round/player/session, accepted-prefix trimming. `utils/live/session.ts#createLiveReplay`: private reconciliation, pipelined durable inputs/offline queue and recovery-only input gating. `socket.ts` reconnects/hello/heartbeat; gameplay never enters its replaceable queue.
+- `composables/useLiveRoom.ts`: private scoring/session/syncStatus plus sendGameplay. On lost acknowledgement, hello requests a new private checkpoint before replay. Private snapshots leading public rollover state are buffered until the matching round; stale snapshots cannot reopen an old queue. Blocked storage/reload states stop new scored inputs.
+- `pages/index.vue`: ordinary controller and Live authority stay separate. Live rebuilds accepted cursor and displays only server totals/completions/receipt deltas. Public Live views preserve the server's current-round ranking. Room endAt (including End Early) governs deadline/results; canonical session stays active during delivery grace.
+- `live-server/src/scoring.ts`: actual parser/interpreter validation, durable sequence/fingerprints (newest 64), compacted Live operation history. Old accepted duplicates return canonical sequence without receipt. `live-room.ts` persists candidates before acknowledgement/publication.
+- Run app tests, Worker tests/typecheck, static generation and local smoke before a coordinated protocol rollout. No external API integration or previous-formula score migration is part of this implementation.

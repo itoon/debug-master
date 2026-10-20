@@ -9,6 +9,7 @@ import {
   CLOSE_KICKED,
   CLOSE_STALE,
   HOST_KEY_RE,
+  MAX_MSG_BYTES,
   normalizeRoomCode,
   type Role,
   type ServerMessage,
@@ -16,7 +17,6 @@ import {
 import {
   advanceClock,
   applyHostCommand,
-  applyProgress,
   claimHost,
   createRoom,
   hashHostKey,
@@ -31,10 +31,11 @@ import {
   type StoredRoom,
 } from './room-logic'
 import { SaveScheduler } from './save-scheduler'
+import { applyGameplayEvent, scoringMessage } from './scoring'
 import { parseClientMessage } from './validate'
 
-/** How a handled event affects storage: no write, a throttled progress write, or a write now. */
-type Persist = 'none' | 'progress' | 'now'
+/** Structural changes write immediately; gameplay uses an isolated durable candidate. */
+type Persist = 'none' | 'now'
 
 interface Attachment {
   role: Role
@@ -51,6 +52,14 @@ const isRole = (v: unknown): v is Role => typeof v === 'string' && (ROLES as rea
 
 export class LiveRoom extends DurableObject<Env> {
   private room: StoredRoom = createRoom('', Date.now())
+  /** Serialize across storage awaits, including hosts, reconnects and alarms. */
+  private pending: Promise<unknown> = Promise.resolve()
+
+  private serialize<T>(run: () => Promise<T>): Promise<T> {
+    const next = this.pending.then(run)
+    this.pending = next.catch(() => undefined)
+    return next
+  }
   /** Alarm time last written to storage (null = none), so unchanged alarms are not rewritten. */
   private alarmAt: number | null = null
   private lastBroadcast = 0
@@ -70,7 +79,11 @@ export class LiveRoom extends DurableObject<Env> {
 
   // ---- connection -----------------------------------------------------------
 
-  async fetch(request: Request): Promise<Response> {
+  fetch(request: Request): Promise<Response> {
+    return this.serialize(() => this.handleFetch(request))
+  }
+
+  private async handleFetch(request: Request): Promise<Response> {
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
       return new Response('expected websocket', { status: 426 })
     }
@@ -109,15 +122,47 @@ export class LiveRoom extends DurableObject<Env> {
     return new Response(null, { status: 101, webSocket: client })
   }
 
-  async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+  webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+    const receivedAt = Date.now()
+    return this.serialize(() => this.handleMessage(ws, message, receivedAt))
+  }
+
+  private async handleMessage(ws: WebSocket, message: string | ArrayBuffer, now: number): Promise<void> {
     const att = this.attachment(ws)
     if (!att) return
-    const now = Date.now()
     att.seen = now // any message proves the socket is alive (isSocketFresh)
     ws.serializeAttachment(att)
     const msg = parseClientMessage(message, att.role)
     if (!msg) {
+      // Older clients submit cumulative progress. They must reload to use authoritative input events.
+      if (typeof message === 'string' && message.length <= MAX_MSG_BYTES) {
+        try {
+          if (JSON.parse(message)?.type === 'progress') {
+            this.send(ws, { type: 'reload', reason: 'unsupported_protocol' })
+            return
+          }
+        } catch { /* malformed */ }
+      }
       this.send(ws, { type: 'error', error: 'bad_message' })
+      return
+    }
+
+    if (msg.type === 'gameplay') {
+      if (!att.pid) { this.send(ws, scoringMessage(this.room, '', 'not_playing')); return }
+      // Keep the currently published room untouched until storage succeeds. If put fails, a
+      // retry applies to the old sequence and must persist again before it can acknowledge.
+      const candidate = structuredClone(this.room)
+      const advanced = advanceClock(candidate, now)
+      const result = applyGameplayEvent(candidate, att.pid, msg, now)
+      if (result.changed || advanced) {
+        candidate.lastActivity = now
+        await this.ctx.storage.put('room', candidate)
+        this.room = candidate
+      }
+      this.send(ws, result.message)
+      if (result.message.error === 'unsupported_version') this.send(ws, { type: 'reload', reason: 'unsupported_protocol' })
+      await this.scheduleAlarm()
+      if (result.changed || advanced) this.broadcast()
       return
     }
 
@@ -149,12 +194,6 @@ export class LiveRoom extends DurableObject<Env> {
         persist = 'now' // a join, or a profile edit
         break
       }
-      case 'progress':
-        if (att.pid && applyProgress(this.room, att.pid, msg, now)) {
-          changed = true
-          if (persist === 'none') persist = 'progress'
-        }
-        break
       case 'leave':
         if (att.pid && leavePlayer(this.room, att.pid)) persist = 'now'
         this.unbind(ws, att)
@@ -181,14 +220,23 @@ export class LiveRoom extends DurableObject<Env> {
 
     this.room.lastActivity = now
     await this.commit(changed, persist)
+    if (msg.type === 'hello' && att.pid && this.room.players[att.pid]?.scoring) {
+      this.send(ws, scoringMessage(this.room, att.pid))
+    } else if (msg.type === 'start' && changed) {
+      // Sessions are initialized at start (countdown), before anyone can become ready.
+      for (const socket of this.openSockets(undefined, 'player')) {
+        const player = this.attachment(socket)?.pid
+        if (player && this.room.players[player]?.scoring) this.send(socket, scoringMessage(this.room, player))
+      }
+    }
   }
 
   async webSocketClose(ws: WebSocket): Promise<void> {
-    await this.onSocketGone(ws)
+    await this.serialize(() => this.onSocketGone(ws))
   }
 
   async webSocketError(ws: WebSocket): Promise<void> {
-    await this.onSocketGone(ws)
+    await this.serialize(() => this.onSocketGone(ws))
   }
 
   private async onSocketGone(ws: WebSocket): Promise<void> {
@@ -201,7 +249,11 @@ export class LiveRoom extends DurableObject<Env> {
 
   // ---- alarm: countdown -> running -> finished, then idle cleanup -----------
 
-  async alarm(): Promise<void> {
+  alarm(): Promise<void> {
+    return this.serialize(() => this.handleAlarm())
+  }
+
+  private async handleAlarm(): Promise<void> {
     this.alarmAt = null // the runtime clears an alarm once it fires
     const now = Date.now()
     // Advance first: an abandoned running room still finishes, then falls through to the idle alarm.
@@ -229,7 +281,6 @@ export class LiveRoom extends DurableObject<Env> {
    */
   private async commit(changed: boolean, persist: Persist, closing?: WebSocket): Promise<void> {
     if (persist === 'now') await this.saver.saveNow()
-    else if (persist === 'progress') await this.saver.saveSoon()
     await this.scheduleAlarm(closing)
     if (changed) this.broadcast(closing)
   }

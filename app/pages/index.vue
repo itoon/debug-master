@@ -6,6 +6,8 @@
         :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
         @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" @sleep="showHomeSleep" />
     </Transition>
+    <ResumeSessionDialog v-if="resumeSessionId" :session-id="resumeSessionId" @resume="resumeStoredSession" @start-new="dismissStoredSession" />
+    <ScoringSaveDialog v-if="competition.saveError.value && !practiceActive && !liveMode" :busy="retryingCheckpoint" @retry="retryScoreSave" @leave="leaveFailedSession" />
     <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="requestPracticeLevel" />
     <PracticeSummaryDialog v-if="practiceSummary" :result="practiceSummary" @home="backToStart" />
     <SessionPanel v-if="pendingPracticeIntro !== null || (activeChallenge && (showTutorial || showSummary || showRanking))"
@@ -18,6 +20,10 @@
     <LivePlayerPanel v-if="liveMode && liveStage !== 'setup' && liveStage !== 'running'" :stage="liveStage" :state="liveState" :self-id="liveSelfId"
       :countdown="liveCountdown" :queue-remaining-sec="liveQueueRemaining" :late-score-note="liveLateScore"
       @change-player="liveChangePlayer" @leave="liveLeave" @home="liveGoHome" />
+    <div v-if="liveMode && ['running', 'countdown', 'results'].includes(liveStage) && liveSyncStatus !== 'ready'" class="live-sync-note" role="status" aria-live="polite">
+      {{ liveSyncText }}
+      <button v-if="liveSyncStatus === 'storage-error' || liveSyncStatus === 'reload-required'" type="button" @click="liveReload">{{ t('live.reload') }}</button>
+    </div>
     <main v-show="!showSetup && !showTutorial && !(activeChallenge && showRanking && !showSummary) && (!liveMode || liveStage === 'running')" class="game">
       <section class="board-panel">
         <GameHud :level="currentLevel" :language="languageLabel"
@@ -35,10 +41,6 @@
         </GameHud>
         <p v-if="practiceActive" class="sr-only" role="status">{{ t(practiceSuperHint ? practiceHintSolution?.error ? 'practice.pathError' : 'practice.pathGuide' : status === 'completed' ? 'practice.completed' : 'practice.noRanking') }}<template v-if="practiceSuperHint && canControl && expectedMove"> · {{ t('practice.nextMove', { direction: t(`game.${expectedMove.direction}`) }) }}</template></p>
 
-        <div v-if="exitSaveError" class="exit-save-error" role="alert">
-          <p>{{ t('game.exitSaveError') }}</p>
-          <button type="button" class="soft-button small" :disabled="exitSaving" @click="exitGame">{{ t('game.retryExit') }}</button>
-        </div>
 
         <div class="play-cluster">
           <div class="board-wrap">
@@ -110,13 +112,14 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path v-if="soundEnabled" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /><path v-else d="m17 9 5 6m0-6-5 6" /></svg>
                   </button>
                   <button v-if="!campaignStarted && !practiceActive && !liveMode" type="button" class="hud-action primary-button small"
-                    :disabled="status === 'playing' || campaignStarted || Boolean(pendingExitScore)"
+                    :disabled="status === 'playing' || campaignStarted"
                     @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
+                  <button v-if="liveMode" type="button" class="hud-action soft-button small live-reset" :disabled="!canControl" @click="restartLevel">{{ t('practice.restart') }}</button>
                   <button v-if="!liveMode || compactLayout" type="button" class="hud-action soft-button small exit-action" :class="{ 'live-only-exit': liveMode }"
-                    :disabled="exitSaving || practiceStarting"
-                    :aria-label="liveMode ? t('live.leave') : pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu')"
-                    :title="liveMode ? t('live.leave') : campaignStarted || pendingExitScore ? t('game.exitHint') : undefined"
-                    @click="requestExit"><svg class="exit-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 4H4v16h5m6-12 4 4-4 4M8 12h11" /></svg><span class="exit-text">{{ pendingExitScore ? t('game.retryExit') : campaignStarted ? t('game.exit') : t('game.menu') }}</span></button>
+                    :disabled="scoreSaving || practiceStarting"
+                    :aria-label="liveMode ? t('live.leave') : campaignStarted ? t('game.exit') : t('game.menu')"
+                    :title="liveMode ? t('live.leave') : campaignStarted ? t('game.exitHint') : undefined"
+                    @click="requestExit"><svg class="exit-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 4H4v16h5m6-12 4 4-4 4M8 12h11" /></svg><span class="exit-text">{{ campaignStarted ? t('game.exit') : t('game.menu') }}</span></button>
                 </nav>
                 </Teleport>
                 <div class="touch-controls" :aria-label="t('game.controls')">
@@ -149,10 +152,7 @@
         <transition name="score-pop">
           <div v-if="scorePopup && !practiceActive" class="score-popup" role="status" aria-live="polite">
             <strong>+{{ scorePopup.points }}</strong>
-            <span
-              >Speed {{ scorePopup.speedMultiplier.toFixed(2) }} x Combo
-              {{ scorePopup.comboMultiplier.toFixed(2) }}</span
-            >
+            <span>{{ '★'.repeat(scorePopup.stars) }} · {{ t('scoring.stars', { count: scorePopup.stars }) }}</span>
           </div>
         </transition>
 
@@ -424,9 +424,12 @@ import { nicknameKey } from "../utils/playerNickname";
 import { newPlayerId } from "../utils/playerIdentity";
 import { createViewportScroller } from "../utils/viewportScroll";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
-import { enabledModesFor, homeConfig, type ChallengeMode } from "../data/home-config";
+import { DEFAULT_COMPETITION_CONFIG, enabledModesFor, homeConfig, type ChallengeMode, type ModeScoringStrategies } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
+import { useCompetitionSession } from "../composables/useCompetitionSession";
+import { competitionLevelKey, toScore } from "../utils/competition/session";
+import type { SessionReceipt } from "../types/competition";
 import type { PlayerSetupInput } from "../storage/contracts";
 import { isPlayerAvatarId, PLAYER_AVATARS } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
@@ -436,12 +439,18 @@ import { clearLiveSession, loadLiveSession, saveLiveSession } from "../utils/liv
 import { derivePlayerStage } from "../utils/live/playerStage";
 import { countdownSec, remainingSec, serverTime } from "../utils/live/clock";
 import { takeInitialSearch } from "../utils/live/initialSearch";
-import { GRACE_MS, PROGRESS_INTERVAL_MS, roomCodeFromSearch, type PlayerHello, type ProgressMsg, type RoomState } from "../utils/live/protocol";
+import { roomCodeFromSearch, type PlayerHello, type RoomState } from "../utils/live/protocol";
 import LivePlayerPanel from "../components/live/LivePlayerPanel.vue";
 
 const { t } = useGameI18n();
 const { enabled: soundEnabled, unlockAudio, playSound, stopSounds, toggleSound } = useGameAudio();
 const repositories = createLocalRepositories();
+const competition = useCompetitionSession(repositories.sessions);
+const resumeSessionId = ref<string>();
+const retryingCheckpoint = ref(false);
+let checkpointWrite: Promise<SessionReceipt | undefined> = Promise.resolve(undefined);
+let completionFeedback: ScorePopup | null = null;
+let finishingSession: Promise<void> | undefined;
 const allSets = [...levelSets, ...challengeSets];
 const activeChallenge = ref<ChallengeMode | null>(null);
 const currentPlayerId = ref("");
@@ -474,7 +483,6 @@ const practicePassedLevels = ref(new Set<number>());
 const practiceMistakes = ref(0);
 const homeStarting = ref(false);
 const scoreSaving = ref(false);
-const exitSaving = ref(false);
 let sessionToken = 0;
 let homeAfterSave = false;
 const practiceSet = levelSets.find((set) => set.id === homeConfig.practice.levelSetId)!;
@@ -482,13 +490,10 @@ const practiceLevels = practiceSet.levels;
 let practiceLaunchToken = 0;
 let practiceLaunchButton: HTMLElement | null = null;
 const summaryScore = ref<Score | undefined>();
-const returningBestScore = ref<number | null>(null);
-const showSummaryRank = computed(() => !!summaryScore.value && hasRankingScore(summaryScore.value) && (returningBestScore.value === null || summaryScore.value.score > returningBestScore.value));
+const showSummaryRank = computed(() => !!summaryScore.value && hasRankingScore(summaryScore.value));
 const scoreSaved = ref(false);
 const homeStorageError = ref("");
 const scoreStorageError = ref(false);
-const pendingExitScore = ref<Score | undefined>();
-const exitSaveError = ref(false);
 let lastInteractionAt = Date.now();
 let idleTimer: ReturnType<typeof setInterval> | undefined;
 let unsubscribeScores: (() => void) | undefined;
@@ -629,11 +634,17 @@ const timeLimitSec = computed(() => {
 });
 // Which leaderboard applies to the current choices (start screen and the
 // end-of-game dialog both show this one).
-const rankingBoard = computed<RankingBoard>(() => ({
+const rankingBoard = computed<RankingBoard>(() => summaryScore.value ? {
+  challengeId: summaryScore.value.challengeId, setId: summaryScore.value.setId,
+  mode: summaryScore.value.mode, timeLimitSec: summaryScore.value.timeLimitSec,
+  difficulty: summaryScore.value.difficulty, scoringStrategy: summaryScore.value.scoringStrategy,
+} : ({
   challengeId: activeChallenge.value?.challengeId,
   setId: selectedMode.value === "dead" ? "dead" : selectedSetId.value,
   mode: selectedMode.value,
   timeLimitSec: timeLimitSec.value,
+  difficulty: activeChallenge.value?.difficulty ?? DEFAULT_COMPETITION_CONFIG.difficulty,
+  scoringStrategy: activeChallenge.value?.scoringStrategy ?? DEFAULT_COMPETITION_CONFIG.scoringStrategy,
 }));
 const rankingSubtitle = computed(() => {
   const setTitle = activeSet.value.title;
@@ -686,7 +697,7 @@ const notificationTitle = computed(() => {
   return t("game.notificationTitle");
 });
 const canControl = computed(
-  () => !showPracticePicker.value && !practiceSummary.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
+  () => (practiceActive.value || (liveMode.value ? liveCanInput.value : !competition.busy.value)) && !showExitConfirm.value && !showPracticePicker.value && !practiceSummary.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
 );
 const codiSprite = computed(() =>
   status.value === "failed" || status.value === "timeup"
@@ -729,7 +740,13 @@ const revealedHints = computed(() =>
       : t('debug.branchHint'),
   ].slice(0, revealedHintCount.value),
 );
-function startGame(): void {
+async function startGame(): Promise<void> {
+  if (competition.busy.value && !practiceActive.value && !liveMode.value) return;
+  const token = sessionToken;
+  finishingSession = undefined;
+  checkpointWrite = Promise.resolve(undefined);
+  completionFeedback = null;
+  summaryScore.value = undefined;
   unlockAudio(); // Called from a player gesture; no autoplay on page load.
   // Copy setup modal values into live game state once, right before a run.
   playerName.value = playerNameDraft.value || "Player";
@@ -762,8 +779,25 @@ function startGame(): void {
   scorePopup.value = null;
   campaignStarted.value = true;
   startedAt.value = Date.now();
+  if (!practiceActive.value && !liveMode.value) {
+    currentPlayerId.value ||= newPlayerId();
+    const saved = await competition.start({
+      id: newPlayerId(), playerId: currentPlayerId.value, name: playerName.value,
+      avatarId: currentAvatarId.value, age: playerAge.value, challengeId: activeChallenge.value?.challengeId,
+      setId: deadRun.value ? 'dead' : activeSet.value.id,
+      setTitle: deadRun.value ? `Dead Mode (seed ${deadRun.value.seed})` : activeSet.value.title,
+      mode: selectedMode.value, language: codeLanguage.value, debug: debugMode.value,
+      startedAt: startedAt.value, timeLimitSec: timeLimitSec.value,
+      config: { difficulty: activeChallenge.value?.difficulty ?? DEFAULT_COMPETITION_CONFIG.difficulty,
+        scoringStrategy: activeChallenge.value?.scoringStrategy ?? DEFAULT_COMPETITION_CONFIG.scoringStrategy },
+      checkpoint: { levelIndex: selectedLevelIndex.value, combo: 0, bestCombo: 0, inputs: 0,
+        ...(deadRun.value ? { deadSeed: deadRun.value.seed, hearts: DEAD_LIVES } : {}) },
+    });
+    if (!saved || token !== sessionToken) return;
+  }
   beginTimer();
-  beginLevel();
+  if (liveMode.value) void restoreLiveBoard();
+  else void beginLevel();
 }
 
 function backToStart(): void {
@@ -771,19 +805,19 @@ function backToStart(): void {
 }
 
 function openSetup(): void {
-  if (scoreSaving.value || exitSaving.value) {
+  if (scoreSaving.value) {
     homeAfterSave = true;
     return;
   }
   homeAfterSave = false;
+  competition.abandon();
+  finishingSession = undefined;
+  checkpointWrite = Promise.resolve(undefined);
   showRanking.value = false;
   sessionToken += 1;
   homeStarting.value = false;
   scoreSaving.value = false;
-  exitSaving.value = false;
   showExitConfirm.value = false;
-  pendingExitScore.value = undefined;
-  exitSaveError.value = false;
   stopSounds();
   stopTimer();
   clearPendingRunTimers();
@@ -800,8 +834,8 @@ function openSetup(): void {
 }
 
 function requestExit(): void {
-  if (exitSaving.value || practiceSummary.value) return;
-  if (campaignStarted.value && !pendingExitScore.value) showExitConfirm.value = true;
+  if (practiceSummary.value) return;
+  if (campaignStarted.value) showExitConfirm.value = true;
   else exitGame();
 }
 
@@ -812,50 +846,18 @@ function confirmExit(): void {
 }
 
 async function exitGame(): Promise<void> {
-  if (exitSaving.value) return;
-  if (liveMode.value) return liveLeave(); // Live has no score to save; leaving gives up the seat.
-  if (practiceActive.value) {
-    presentPracticeSummary();
-    return;
-  }
-  if (!pendingExitScore.value && (!campaignStarted.value || showSummary.value || showRanking.value)) {
-    openSetup();
-    return;
-  }
-  if (!pendingExitScore.value) {
-    // Freeze exactly what the HUD currently shows. Retry reuses this snapshot
-    // and ID, so elapsed time and scores cannot change or be recorded twice.
-    pendingExitScore.value = createScoreSnapshot();
-    stopTimer();
-    stopSounds();
-    clearPendingRunTimers();
-    clearLevelAdvanceTimer();
-    clearScorePopupTimer();
-    scorePopup.value = null;
-    campaignStarted.value = false;
-    expectedMove.value = null;
-    status.value = "ready";
-  }
-  if (activeChallenge.value) {
-    lastScoreId.value = pendingExitScore.value.id;
-    presentSummary(pendingExitScore.value);
-    pendingExitScore.value = undefined;
-    return;
-  }
-  const score = pendingExitScore.value;
-  const token = sessionToken;
-  exitSaving.value = true;
-  try {
-    await repositories.scores.save(score);
-  } catch {
-    if (token === sessionToken) exitSaveError.value = true;
-    return; // Stay with the frozen score until it can be saved.
-  } finally {
-    if (token === sessionToken) exitSaving.value = false;
-  }
-  if (token !== sessionToken) return;
-  lastScoreId.value = score.id;
-  refreshStoredScores();
+  if (liveMode.value) return liveLeave();
+  if (practiceActive.value) return presentPracticeSummary();
+  if (!competition.session.value || competition.session.value.status === 'finished') return openSetup();
+  await finishCompetition(Date.now());
+}
+
+function leaveFailedSession(): void {
+  // Explicit departure cancels pending continuations. The durable checkpoint remains resumable.
+  sessionToken++;
+  competition.abandon();
+  finishingSession = undefined;
+  scoreSaving.value = false;
   openSetup();
 }
 
@@ -889,7 +891,7 @@ function presentPracticeSummary(): void {
 }
 
 /** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
-async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, existingPlayerId?: string, previousBestScore?: number): Promise<void> {
+async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, existingPlayerId?: string): Promise<void> {
   if (homeStarting.value || !showSetup.value) return;
   const nickname = profile.nickname.trim();
   if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return;
@@ -908,9 +910,16 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
   }
   let savedModeIds;
   let savedDuration;
-  try { savedModeIds = repositories.modes.enabledIds(); savedDuration = repositories.modes.durationSec(); }
-  catch { savedModeIds = undefined; savedDuration = undefined; }
-  const configuredMode = enabledModesFor(savedModeIds, savedDuration).find((item) => item.id === mode.id);
+  let scoringStrategies: ModeScoringStrategies;
+  try {
+    savedModeIds = repositories.modes.enabledIds();
+    savedDuration = repositories.modes.durationSec();
+    scoringStrategies = repositories.modes.scoringStrategies();
+  } catch {
+    homeStorageError.value = t("modes.loadError");
+    return;
+  }
+  const configuredMode = enabledModesFor(savedModeIds, scoringStrategies, savedDuration).find((item) => item.id === mode.id);
   if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900 || !challengeSets.some((set) => set.id === configuredMode.levelSetId)) return;
   if (configuredMode.timeLimit !== mode.timeLimit) { homeStorageError.value = t('modes.durationChanged'); return; }
   let playerId: string;
@@ -933,7 +942,6 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
     window.history.pushState({ ...window.history.state, debugMasterHomeV2Session: true }, "", window.location.href);
   }
   currentPlayerId.value = playerId;
-  returningBestScore.value = existingPlayerId === undefined ? null : previousBestScore ?? null;
   currentAvatarId.value = profile.avatarId;
   playerNameDraft.value = nickname;
   playerAgeDraft.value = profile.age;
@@ -959,7 +967,7 @@ async function resumeChallenge(scoreId: string, mode: ChallengeMode): Promise<vo
   let score: Score | undefined;
   try {
     const chosen = repositories.scores.list().find(item => item.id === scoreId);
-    if (chosen) score = repositories.scores.today({ challengeId: mode.challengeId, setId: mode.levelSetId, mode: 'timer', timeLimitSec: mode.timeLimit }, new Date(), Infinity).find(item => scorePlayerKey(item) === scorePlayerKey(chosen));
+    if (chosen) score = repositories.scores.today({ challengeId: mode.challengeId, setId: mode.levelSetId, mode: 'timer', timeLimitSec: mode.timeLimit, difficulty: mode.difficulty, scoringStrategy: mode.scoringStrategy }, new Date(), Infinity).find(item => scorePlayerKey(item) === scorePlayerKey(chosen));
   } catch {
     homeStorageError.value = t('storage.loadError');
     return;
@@ -968,7 +976,7 @@ async function resumeChallenge(scoreId: string, mode: ChallengeMode): Promise<vo
     homeStorageError.value = t('player.unavailable');
     return;
   }
-  await prepareChallenge({ nickname: score.name, age: score.age!, avatarId: isPlayerAvatarId(score.avatarId) ? score.avatarId : PLAYER_AVATARS[0] }, mode, scorePlayerKey(score), score.score);
+  await prepareChallenge({ nickname: score.name, age: score.age!, avatarId: isPlayerAvatarId(score.avatarId) ? score.avatarId : PLAYER_AVATARS[0] }, mode, scorePlayerKey(score));
 }
 
 function openPracticePicker(): void {
@@ -1014,8 +1022,6 @@ async function startPracticeLevel(levelId: number): Promise<void> {
   practiceStarting.value = true;
   practiceActive.value = true;
   activeChallenge.value = null;
-  pendingExitScore.value = undefined;
-  exitSaveError.value = false;
   currentPlayerId.value = '';
   currentAvatarId.value = undefined;
   playerNameDraft.value = t('practice.badge');
@@ -1062,7 +1068,6 @@ function resetHomeSession(): void {
   sessionToken += 1;
   homeStarting.value = false;
   scoreSaving.value = false;
-  exitSaving.value = false;
   practiceLaunchToken += 1;
   practiceActive.value = false;
   practiceSummary.value = undefined;
@@ -1085,7 +1090,6 @@ function resetHomeSession(): void {
   currentAvatarId.value = undefined;
   activeChallenge.value = null;
   summaryScore.value = undefined;
-  returningBestScore.value = null;
   scoreSaved.value = false;
   scoreStorageError.value = false;
   homeStorageError.value = "";
@@ -1103,7 +1107,7 @@ function wakeHome(input: 'keyboard' | 'pointer'): void {
   recordInteraction();
 }
 function showHomeSleep(): void {
-  if (!showSetup.value || homeStarting.value || scoreSaving.value || exitSaving.value) return;
+  if (!showSetup.value || homeStarting.value || scoreSaving.value) return;
   focusAfterWake = false;
   homeSleeping.value = true;
   recordInteraction();
@@ -1135,22 +1139,10 @@ function refreshStoredScores(): void {
 }
 
 async function retryScoreSave(): Promise<void> {
-  if (practiceActive.value) return;
-  if (!summaryScore.value || scoreSaving.value) return;
-  const score = summaryScore.value;
-  const token = sessionToken;
-  scoreSaving.value = true;
-  try {
-    await repositories.scores.save(score);
-    if (token !== sessionToken || summaryScore.value?.id !== score.id) return;
-    scoreSaved.value = true;
-    scoreStorageError.value = false;
-  } catch {
-    if (token === sessionToken && summaryScore.value?.id === score.id) scoreStorageError.value = true;
-  } finally {
-    if (token === sessionToken && summaryScore.value?.id === score.id) scoreSaving.value = false;
-  }
-  if (token === sessionToken && homeAfterSave && scoreSaved.value) openSetup();
+  if (practiceActive.value || liveMode.value || retryingCheckpoint.value) return;
+  retryingCheckpoint.value = true;
+  try { await competition.retry(); }
+  finally { retryingCheckpoint.value = false; }
 }
 
 function beginTimer(): void {
@@ -1160,13 +1152,13 @@ function beginTimer(): void {
     return;
   }
   if (liveMode.value) return liveBeginTimer();
-  timerRemaining.value = timeLimitSec.value ?? 0;
-  timerId = setInterval(() => {
-    timerRemaining.value -= 1;
-    if (timerRemaining.value <= 0) {
-      timeUp();
-    }
-  }, 1000);
+  const tick = () => {
+    const deadline = competition.session.value?.deadline;
+    timerRemaining.value = deadline === undefined ? 0 : Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    if (deadline !== undefined && Date.now() >= deadline) timeUp();
+  };
+  tick();
+  if (campaignStarted.value) timerId = setInterval(tick, 100);
 }
 
 function stopTimer(): void {
@@ -1200,7 +1192,29 @@ function clearPendingRunTimers(): void {
   boardShattering.value = false;
 }
 
-function beginLevel(): void {
+async function beginLevel(liveResumeCursor?: number): Promise<void> {
+  const token = sessionToken;
+  if (liveMode.value) {
+    if (!liveCanInput.value) return;
+    // Normal entry advances on a durable local event. Recovery supplies an already accepted cursor.
+    if (liveResumeCursor === undefined && !liveRoom.value?.sendGameplay({ action: 'ready', levelId: currentLevel.value.id })) return;
+  }
+  if (!practiceActive.value && !liveMode.value) {
+    await checkpointWrite;
+    if (token !== sessionToken || !campaignStarted.value) return;
+    const saved = competition.session.value;
+    if (!saved || saved.status === 'finished') return;
+    const level = { setId: saved.setId, levelId: currentLevel.value.id,
+      ...(deadRun.value ? { seed: deadRun.value.seed } : {}) };
+    if (saved.checkpoint.levelKey !== competitionLevelKey(level)) {
+      checkpointWrite = competition.apply({ type: 'enter-level', level, levelIndex: selectedLevelIndex.value, at: Date.now() });
+      const receipt = await checkpointWrite;
+      if (token !== sessionToken || !campaignStarted.value) return;
+      if (!receipt) { void restoreCompetitionBoard(); return; }
+      if (receipt.session.status === 'finished') { campaignStarted.value = false; showCanonicalResult(); return; }
+    }
+    syncCompetitionCounters();
+  }
   clearPendingRunTimers();
   clearLevelAdvanceTimer();
   clearScorePopupTimer();
@@ -1216,20 +1230,28 @@ function beginLevel(): void {
   executionSteps.value = 0;
   playerInputs.value = 0;
   levelCorrectInputs.value = 0;
-  levelStartedAt.value = Date.now();
+  levelStartedAt.value = !practiceActive.value && !liveMode.value
+    ? activeLevelRecord()?.firstReadyAt ?? Date.now() : Date.now();
   revealedHintCount.value = 0;
   notificationMessage.value = "";
   boardShattering.value = false;
   scorePopup.value = null;
   status.value = "playing";
   feedbackMessage.value = t("game.startInstruction");
+  if (!practiceActive.value && !liveMode.value) replayCheckpointCursor();
+  if (liveMode.value) replayCheckpointCursor(liveResumeCursor ?? 0);
   advanceToMove();
 }
 
 function restartLevel(): void {
   if (!campaignStarted.value) return;
+  if (liveMode.value && (!canControl.value || !liveRoom.value?.sendGameplay({ action: 'reset', levelId: currentLevel.value.id }))) return;
   playSound("wrong");
-  beginLevel();
+  if (!practiceActive.value && !liveMode.value) {
+    if (competition.busy.value) return;
+    checkpointWrite = competition.apply({ type: 'reset-attempt', at: Date.now() });
+  }
+  void beginLevel();
 }
 
 function advanceToMove(): void {
@@ -1258,6 +1280,25 @@ function advanceToMove(): void {
 function controlMove(direction: Direction): void {
   // The game only succeeds when the player's input matches the next move node.
   if (!canControl.value || !expectedMove.value) return;
+  const acceptedAt = Date.now();
+  if (liveMode.value) {
+    const endAt = liveState.value?.endAt;
+    if (endAt == null || serverTime(liveOffset.value, acceptedAt) > endAt) { timeUp(); return; }
+    if (!liveRoom.value?.sendGameplay({ action: 'direction', levelId: currentLevel.value.id, direction })) return;
+  }
+  if (!practiceActive.value && !liveMode.value) {
+    const saved = competition.session.value;
+    if (!saved || (saved.deadline !== undefined && acceptedAt > saved.deadline)) { timeUp(); return; }
+    const previousRevision = saved.revision;
+    const correct = direction === expectedMove.value.direction;
+    const solution = correct ? solveLevel(currentLevel.value, parseProgram(currentLevel.value.code)) : undefined;
+    const finalInput = !!solution && !solution.error && levelCorrectInputs.value + 1 === solution.moves.length;
+    const before = saved.totalScore;
+    checkpointWrite = competition.apply({ type: correct ? 'correct-input' : 'wrong-input', at: acceptedAt, ...(finalInput ? { complete: true } : {}) });
+    if (!competition.pendingOperation.value || competition.session.value?.revision === previousRevision) { void restoreCompetitionBoard(); return; }
+    syncCompetitionCounters();
+    if (finalInput) completionFeedback = { levelId: currentLevel.value.id, points: competition.session.value!.totalScore - before, stars: activeLevelRecord()?.stars ?? 0 };
+  }
   const expected = expectedMove.value.direction;
   if (direction !== expected) {
     pulseArrow(direction, true);
@@ -1288,18 +1329,22 @@ function controlMove(direction: Direction): void {
   pulseArrow(direction, false);
   playerHop.value += 1;
   playerInputs.value += 1;
-  totalInputs.value += 1;
+  if (practiceActive.value) totalInputs.value += 1;
   levelCorrectInputs.value += 1;
-  if (!practiceActive.value) {
-    comboStreak.value += 1;
-    bestCombo.value = Math.max(bestCombo.value, comboStreak.value);
-  }
   expectedMove.value = null;
   feedbackMessage.value = result.wrapped
     ? `ถูกต้อง และ wrap ไปอีกฝั่ง`
     : "ถูกต้อง";
-  stepTimer = setTimeout(() => {
+  const token = sessionToken;
+  const savedInput = checkpointWrite;
+  stepTimer = setTimeout(async () => {
     stepTimer = null;
+    if (liveMode.value && (!liveCanInput.value || !campaignStarted.value || token !== sessionToken)) return;
+    if (!practiceActive.value && !liveMode.value) {
+      const receipt = await savedInput;
+      if (token !== sessionToken || !campaignStarted.value) return;
+      if (!receipt) { void restoreCompetitionBoard(); return; }
+    }
     advanceToMove();
   }, 80);
 }
@@ -1333,25 +1378,18 @@ function pulseArrow(direction: Direction, wrong: boolean): void {
 
 function completeLevel(): void {
   playSound("clear");
-  if (!practiceActive.value) {
-    const levelScore = calculateLevelScore();
-    totalScore.value += levelScore.points;
-    scorePopup.value = {
-      levelId: currentLevel.value.id,
-      points: levelScore.points,
-      speedMultiplier: levelScore.speedMultiplier,
-      comboMultiplier: levelScore.comboMultiplier,
-    };
+  if (!practiceActive.value && !liveMode.value) {
+    syncCompetitionCounters();
+    scorePopup.value = completionFeedback;
+    completionFeedback = null;
     clearScorePopupTimer();
-    scorePopupTimer = setTimeout(() => {
-      scorePopup.value = null;
-    }, 1400);
-  } else {
+    scorePopupTimer = setTimeout(() => { scorePopup.value = null; }, 1400);
+  } else if (practiceActive.value) {
     clearScorePopupTimer();
     scorePopup.value = null;
     practicePassedLevels.value.add(currentLevel.value.id);
-  }
-  completedLevels.value += 1;
+    completedLevels.value += 1;
+  } else syncLiveCounters();
   status.value = "success";
   notificationMessage.value = "";
   if (deadRun.value) {
@@ -1364,7 +1402,6 @@ function completeLevel(): void {
     if (liveMode.value) return; // Live: nothing is saved; the clock runs on until the round result.
     saveScore();
     stopTimer();
-    showRanking.value = !activeChallenge.value && !practiceActive.value;
     return;
   }
   levelAdvanceTimer = setTimeout(() => {
@@ -1383,7 +1420,7 @@ function failLevel(reason: string): void {
     reason = t("game.wrongMove");
   }
   if (deadRun.value) {
-    livesLeft.value = Math.max(0, livesLeft.value - 1);
+    if (liveMode.value || practiceActive.value) livesLeft.value = Math.max(0, livesLeft.value - 1);
     reason = `${reason} · เหลือ ${livesLeft.value} หัวใจ`;
   }
   notificationMessage.value = reason;
@@ -1393,8 +1430,16 @@ function failLevel(reason: string): void {
     failAnimationTimer = null;
     boardShattering.value = true;
   }, 0);
-  retryTimer = setTimeout(() => {
+  const failedInput = checkpointWrite;
+  const token = sessionToken;
+  retryTimer = setTimeout(async () => {
     retryTimer = null;
+    if (liveMode.value && (!liveCanInput.value || token !== sessionToken)) return;
+    if (!practiceActive.value && !liveMode.value) {
+      const receipt = await failedInput;
+      if (token !== sessionToken) return;
+      if (!receipt) { void restoreCompetitionBoard(); return; }
+    }
     boardShattering.value = false;
     if (!campaignStarted.value || status.value !== "failed") return;
     if (deadRun.value && livesLeft.value === 0) {
@@ -1411,7 +1456,6 @@ function endDeadRun(): void {
   stopTimer();
   notificationMessage.value = `ผ่านไป ${completedLevels.value} ด่าน · ${totalScore.value} คะแนน`;
   saveScore();
-  showRanking.value = true;
 }
 
 function timeUp(): void {
@@ -1421,98 +1465,148 @@ function timeUp(): void {
   expectedMove.value = null;
   notificationMessage.value = "หมดเวลา 5 นาที/เวลาที่ตั้งไว้ แสดง Ranking แล้ว";
   saveScore();
-  showRanking.value = !activeChallenge.value && !practiceActive.value;
 }
 
-function createScoreSnapshot(): Score {
-  const elapsedMs = Math.max(0, Date.now() - startedAt.value);
-  return {
-    challengeId: activeChallenge.value?.challengeId,
-    playerId: currentPlayerId.value || undefined,
-    avatarId: currentAvatarId.value,
-    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    name: playerName.value || "Player",
-    setId: deadRun.value ? "dead" : activeSet.value.id,
-    setTitle: deadRun.value
-      ? `Dead Mode (seed ${deadRun.value.seed})`
-      : activeSet.value.title,
-    mode: selectedMode.value,
-    language: codeLanguage.value,
-    debug: debugMode.value,
-    score: totalScore.value,
-    bestCombo: bestCombo.value,
-    levelsCompleted: completedLevels.value,
-    levelReached: currentLevel.value.id,
-    inputs: totalInputs.value,
-    elapsedMs,
-    createdAt: new Date().toISOString(),
-    age: playerAge.value,
-    timeLimitSec: timeLimitSec.value,
-  };
+function activeLevelRecord() {
+  const saved = competition.session.value;
+  return saved?.checkpoint.levelKey ? saved.levels[saved.checkpoint.levelKey] : undefined;
 }
 
-/** Session presentation only: all finish paths use one frozen score snapshot. */
-function presentSummary(score: Score): void {
+function syncCompetitionCounters(): void {
+  const saved = competition.session.value;
+  if (!saved || practiceActive.value || liveMode.value) return;
+  totalScore.value = saved.totalScore;
+  completedLevels.value = saved.levelsCompleted;
+  totalInputs.value = saved.checkpoint.inputs;
+  comboStreak.value = saved.checkpoint.combo;
+  bestCombo.value = saved.checkpoint.bestCombo;
+  livesLeft.value = saved.checkpoint.hearts ?? DEAD_LIVES;
+}
+
+function replayCheckpointCursor(cursor = activeLevelRecord()?.attemptCursor ?? 0): void {
+  for (let i = 0; i < cursor; i++) {
+    const result = runUntilMove(runState, () => currentTile.value);
+    if (result.kind !== 'move') break;
+    const position = stepPosition(player, result.node.direction, currentLevel.value.rows, currentLevel.value.cols);
+    player.row = position.row; player.col = position.col;
+    playerFacing.value = result.node.direction;
+    levelCorrectInputs.value++;
+    playerInputs.value++;
+  }
+}
+
+async function restoreCompetitionBoard(): Promise<void> {
+  const saved = competition.session.value;
+  if (!saved) return;
+  if (saved.status === 'finished') { campaignStarted.value = false; showCanonicalResult(); return; }
+  selectedLevelIndex.value = saved.checkpoint.levelIndex;
+  if (deadRun.value) while (deadRun.value.levels.length <= selectedLevelIndex.value) deadRun.value.levels.push(generateLevel(deadRun.value.seed, deadRun.value.levels.length));
+  syncCompetitionCounters();
+  if (saved.checkpoint.hearts === 0) { await finishCompetition(Date.now()); return; }
+  if (activeLevelRecord()?.completed) {
+    if (deadRun.value && selectedLevelIndex.value === deadRun.value.levels.length - 1) deadRun.value.levels.push(generateLevel(deadRun.value.seed, deadRun.value.levels.length));
+    if (selectedLevelIndex.value >= activeLevels.value.length - 1) { await finishCompetition(Date.now()); return; }
+    selectedLevelIndex.value++;
+  }
+  await beginLevel();
+}
+
+function showCanonicalResult(): void {
+  const saved = competition.session.value;
+  if (!saved || saved.status !== 'finished') return;
+  const score = toScore(saved);
+  syncCompetitionCounters();
+  summaryScore.value = score;
+  lastScoreId.value = score.id;
+  scoreSaved.value = true;
+  scoreStorageError.value = false;
+  refreshStoredScores();
+  showSummary.value = !!activeChallenge.value;
+  showRanking.value = !activeChallenge.value;
+  lastInteractionAt = Date.now();
+  playSound('complete');
+}
+
+function finishCompetition(at: number): Promise<void> {
+  if (finishingSession) return finishingSession;
+  if (!competition.session.value) return Promise.resolve();
+  const token = sessionToken;
   showExitConfirm.value = false;
-  stopTimer();
-  stopSounds();
-  clearPendingRunTimers();
-  clearLevelAdvanceTimer();
-  clearScorePopupTimer();
+  stopTimer(); stopSounds();
+  clearPendingRunTimers(); clearLevelAdvanceTimer(); clearScorePopupTimer();
   scorePopup.value = null;
   campaignStarted.value = false;
   expectedMove.value = null;
-  summaryScore.value = score;
-  scoreSaved.value = false;
-  retryScoreSave();
-  showSummary.value = true;
-  showRanking.value = false;
-  lastInteractionAt = Date.now();
-  playSound("complete");
+  scoreSaving.value = true;
+  // Queued behind the final input and its frozen completion, including on retry.
+  const finished = competition.finish(at);
+  finishingSession = (async () => {
+    const receipt = await finished;
+    if (token !== sessionToken) return;
+    if (!receipt && competition.session.value?.status === 'active') {
+      finishingSession = undefined;
+      await finishCompetition(Date.now());
+      return;
+    }
+    scoreSaving.value = false;
+    showCanonicalResult();
+    if (homeAfterSave) openSetup();
+  })();
+  return finishingSession;
 }
 
 async function saveScore(): Promise<void> {
   if (practiceActive.value || liveMode.value) return;
-  showExitConfirm.value = false;
-  const score = createScoreSnapshot();
-  lastScoreId.value = score.id;
-  if (activeChallenge.value) {
-    presentSummary(score);
-    return;
-  }
-  const token = sessionToken;
-  exitSaving.value = true;
-  try {
-    await repositories.scores.save(score);
-  } catch {
-    if (token === sessionToken) {
-      pendingExitScore.value = score;
-      exitSaveError.value = true;
-    }
-    return;
-  } finally {
-    if (token === sessionToken) exitSaving.value = false;
-  }
-  if (token === sessionToken) {
-    refreshStoredScores();
-    if (homeAfterSave) openSetup();
-  }
+  await finishCompetition(Date.now());
 }
 
-function calculateLevelScore(): {
-  points: number;
-  speedMultiplier: number;
-  comboMultiplier: number;
-} {
-  const elapsedSec = Math.max(
-    1,
-    Math.round((Date.now() - levelStartedAt.value) / 1000),
-  );
-  const base = 180 + currentLevel.value.id * 14 + levelCorrectInputs.value * 36;
-  const speedMultiplier = Math.max(1, Math.min(4.5, 18 / elapsedSec));
-  const comboMultiplier = 1 + Math.max(0, comboStreak.value - 1) * 0.16;
-  const points = Math.round(base * speedMultiplier * comboMultiplier);
-  return { points, speedMultiplier, comboMultiplier };
+function dismissStoredSession(): void {
+  resumeSessionId.value = undefined;
+  // Starting another player must not attach the previous booth identity.
+  competition.abandon();
+}
+
+async function resumeStoredSession(id: string): Promise<void> {
+  resumeSessionId.value = undefined;
+  const token = ++sessionToken;
+  try {
+    const saved = await competition.resume(id);
+    if (!saved || token !== sessionToken) return;
+    practiceActive.value = false;
+    activeChallenge.value = homeConfig.modes.find(mode => mode.challengeId === saved.challengeId) ?? null;
+    if (activeChallenge.value) activeChallenge.value = { ...activeChallenge.value, difficulty: saved.config.difficulty, scoringStrategy: saved.config.scoringStrategy, timeLimit: saved.timeLimitSec ?? activeChallenge.value.timeLimit };
+    selectedMode.value = saved.mode;
+    if (saved.mode !== 'dead') selectedSetId.value = saved.setId;
+    currentPlayerId.value = saved.playerId;
+    currentAvatarId.value = saved.avatarId;
+    playerName.value = saved.name; playerNameDraft.value = saved.name;
+    playerAge.value = saved.age; playerAgeDraft.value = saved.age ?? null;
+    codeLanguage.value = saved.language;
+    debugMode.value = saved.debug;
+    customMinutes.value = (saved.timeLimitSec ?? 300) / 60;
+    startedAt.value = saved.startedAt;
+    if (saved.mode === 'dead') {
+      const seed = Number(saved.checkpoint.deadSeed);
+      deadRun.value = { seed, levels: Array.from({ length: saved.checkpoint.levelIndex + 1 }, (_, i) => generateLevel(seed, i)) };
+    } else deadRun.value = null;
+    await nextTick(); // The set watcher resets the cursor before restoration.
+    selectedLevelIndex.value = saved.checkpoint.levelIndex;
+    showSetup.value = false; showTutorial.value = false;
+    showSummary.value = false; showRanking.value = false;
+    syncCompetitionCounters();
+    if (saved.status === 'finished') { showCanonicalResult(); return; }
+    campaignStarted.value = true;
+    finishingSession = undefined;
+    checkpointWrite = Promise.resolve(undefined);
+    if (saved.mode === 'dead' && saved.checkpoint.hearts === 0) { await finishCompetition(Date.now()); return; }
+    if (activeLevelRecord()?.completed) {
+      if (deadRun.value) deadRun.value.levels.push(generateLevel(deadRun.value.seed, deadRun.value.levels.length));
+      if (selectedLevelIndex.value >= activeLevels.value.length - 1) { await finishCompetition(Date.now()); return; }
+      selectedLevelIndex.value++;
+    }
+    beginTimer();
+    await beginLevel();
+  } catch { homeStorageError.value = t('storage.loadError'); }
 }
 
 function showNextHint(): void {
@@ -1625,13 +1719,11 @@ const liveSelfId = computed(() => liveRoom.value?.you.value?.id ?? "");
 const liveOffset = computed(() => liveRoom.value?.offset.value ?? 0);
 // Last room state seen, kept after "change player" closes the socket so the setup dialog still shows the room's mode.
 const liveLastState = ref<RoomState | null>(null);
-// The roundId this device started playing; progress always carries it.
+// The roundId this device started playing; all evidence carries its frozen session identity.
 const liveStartedRound = ref<number | null>(null);
 const liveNow = ref(Date.now());
 let liveTicker: ReturnType<typeof setInterval> | undefined;
 let liveRoundToken = 0;
-let liveProgressTimer: ReturnType<typeof setTimeout> | null = null;
-let liveLastProgressAt = 0;
 let liveHomeTimer: ReturnType<typeof setTimeout> | undefined;
 
 const liveStage = computed(() => derivePlayerStage({
@@ -1714,13 +1806,56 @@ const liveQueueRemaining = computed(() => {
   const room = liveState.value;
   return room && (room.phase === "countdown" || room.phase === "running") ? remainingSec(room.endAt, liveOffset.value, liveNow.value) : 0;
 });
-// This device scored more than the server kept (progress arrived after endAt + grace).
-const liveLateScore = computed(() => {
-  const room = liveState.value;
-  if (liveStage.value !== "results" || !room || room.endAt === null || liveStartedRound.value !== room.roundId) return false;
-  if (serverTime(liveOffset.value, liveNow.value) <= room.endAt + GRACE_MS) return false;
-  const self = room.players.find((p) => p.id === liveSelfId.value);
-  return Boolean(self) && totalScore.value > self!.score;
+const liveLateScore = computed(() => liveRoom.value?.syncStatus.value === 'closed');
+const liveSyncStatus = computed(() => liveRoom.value?.syncStatus.value ?? 'resync');
+const liveCanInput = computed(() => ['ready', 'pending', 'offline'].includes(liveSyncStatus.value));
+const liveSyncText = computed(() => t(`live.sync.${liveSyncStatus.value}`));
+function liveReload(): void { window.location.reload(); }
+
+function syncLiveCounters(): void {
+  const saved = liveRoom.value?.session.value;
+  if (!saved) return;
+  totalScore.value = saved.totalScore;
+  completedLevels.value = saved.levelsCompleted;
+  totalInputs.value = saved.checkpoint.inputs;
+  comboStreak.value = saved.checkpoint.combo;
+  bestCombo.value = saved.checkpoint.bestCombo;
+}
+function liveRecord() {
+  const saved = liveRoom.value?.session.value;
+  return saved?.checkpoint.levelKey ? saved.levels[saved.checkpoint.levelKey] : undefined;
+}
+async function restoreLiveBoard(): Promise<void> {
+  if (!campaignStarted.value || !liveCanInput.value) return;
+  const saved = liveRoom.value?.session.value;
+  if (!saved) return;
+  liveNeedsRestore = false;
+  clearPendingRunTimers(); clearLevelAdvanceTimer();
+  syncLiveCounters();
+  const record = liveRecord();
+  selectedLevelIndex.value = saved.checkpoint.levelIndex + (record?.completed ? 1 : 0);
+  if (selectedLevelIndex.value >= activeLevels.value.length) {
+    selectedLevelIndex.value = activeLevels.value.length - 1;
+    status.value = 'completed'; expectedMove.value = null; return;
+  }
+  await beginLevel(record && !record.completed ? record.attemptCursor : undefined);
+}
+watch(() => liveRoom.value?.scoring.value, message => {
+  if (!message?.session) return;
+  syncLiveCounters();
+  const receipt = message.receipt;
+  if (receipt && receipt.delta > 0) {
+    scorePopup.value = { levelId: receipt.session.levels[receipt.session.checkpoint.levelKey ?? '']?.levelId ?? currentLevel.value.id, points: receipt.delta, stars: receipt.stars };
+    clearScorePopupTimer(); scorePopupTimer = setTimeout(() => { scorePopup.value = null; }, 1400);
+  }
+});
+let liveNeedsRestore = false;
+watch(liveSyncStatus, next => {
+  if (next === 'resync' || next === 'closed' || next === 'storage-error' || next === 'reload-required') {
+    liveNeedsRestore = true; sessionToken++; clearPendingRunTimers(); clearLevelAdvanceTimer(); expectedMove.value = null;
+  }
+  if (next === 'ready' && liveNeedsRestore && campaignStarted.value && liveStartedRound.value === liveState.value?.roundId) { liveNeedsRestore = false; void restoreLiveBoard(); }
+  if (next === 'ready' && liveStage.value === 'running' && !campaignStarted.value) void liveStartRound();
 });
 
 function validLiveProfile(profile: PlayerSetupInput): PlayerSetupInput | null {
@@ -1789,7 +1924,7 @@ watch(liveState, (room) => {
   if (!liveResuming.value) return;
   liveResuming.value = false;
   const player = liveProfile.value;
-  if (player && (room.phase === "countdown" || room.phase === "running")) {
+  if (player && (room.phase === "countdown" || room.phase === "running" || room.phase === "finished")) {
     // Mid-round reload: say hello now (and on every reconnect); the server hands back the seat and score.
     liveRoom.value?.send(liveHello(player));
   } else {
@@ -1801,7 +1936,7 @@ watch(liveState, (room) => {
 
 watch(liveStage, (stage) => {
   if (stage === "running") void liveStartRound();
-  else if (stage === "results") { if (campaignStarted.value) timeUp(); } // Lock now with a final progress.
+  else if (stage === "results") { if (campaignStarted.value) timeUp(); } // Results follow room timing; grace acknowledgements may still update the totals.
   else if (campaignStarted.value) liveStopGame();
   if (stage === "kicked") {
     clearLiveSession();
@@ -1813,23 +1948,23 @@ watch(liveStage, (stage) => {
 
 // newRound: the room is back in the lobby with a new roundId. Stop any run; the profile stays.
 watch(() => liveState.value?.roundId, (roundId, previous) => {
-  if (roundId == null || previous == null || roundId === previous || liveState.value?.phase !== "lobby") return;
+  if (roundId == null || previous == null || roundId === previous) return;
   liveStopGame();
+  liveStartedRound.value = null;
+  if (liveStage.value === "running" && liveCanInput.value) void liveStartRound();
 });
 
 async function liveStartRound(): Promise<void> {
   const room = liveState.value;
   const profile = liveProfile.value;
   const mode = homeConfig.modes.find((item) => item.id === room?.mode);
-  if (!room || !profile || !mode || liveStartedRound.value === room.roundId) return;
+  if (!room || !profile || !mode || !liveCanInput.value || liveStartedRound.value === room.roundId) return;
   liveStartedRound.value = room.roundId;
   liveRemember(profile); // Fresh savedAt: a reload any time in this round still rejoins.
   const token = ++liveRoundToken;
-  clearLiveProgressTimer();
-  liveLastProgressAt = 0;
   // Same inputs prepareChallenge gives a Home v2 session; the room decides mode and time.
-  activeChallenge.value = mode;
-  selectedSetId.value = mode.levelSetId;
+  activeChallenge.value = { ...mode, ...room.round?.config, timeLimit: room.durationSec, levelSetId: room.round?.setId ?? mode.levelSetId };
+  selectedSetId.value = room.round?.setId ?? mode.levelSetId;
   selectedMode.value = "timer";
   customMinutes.value = room.durationSec / 60;
   playerNameDraft.value = profile.nickname;
@@ -1842,27 +1977,7 @@ async function liveStartRound(): Promise<void> {
   showExitConfirm.value = false;
   await nextTick(); // The selectedSetId watcher resets the level index first.
   if (token !== liveRoundToken || liveStage.value !== "running") return;
-  startGame();
-  // Back on the same device mid-round (e.g. after a reload): carry on from what the server already counted.
-  // Always take the larger values (the server drops progress that goes down, bestCombo included, and it can
-  // hold a combo before any clear). Restored score/levels are the server's own, so the next clear adds one level.
-  const self = liveState.value?.players.find((p) => p.id === liveSelfId.value);
-  if (self) {
-    totalScore.value = Math.max(totalScore.value, self.score);
-    completedLevels.value = Math.max(completedLevels.value, self.levelsCompleted);
-    bestCombo.value = Math.max(bestCombo.value, self.bestCombo);
-    if (self.levelsCompleted >= activeLevels.value.length) {
-      // Every level of the set is already cleared: wait for the round result, like a finished run.
-      clearPendingRunTimers();
-      clearLevelAdvanceTimer();
-      selectedLevelIndex.value = activeLevels.value.length - 1;
-      expectedMove.value = null;
-      status.value = "completed";
-    } else if (self.levelsCompleted > 0) {
-      selectedLevelIndex.value = self.levelsCompleted;
-      beginLevel();
-    }
-  }
+  await startGame();
 }
 
 /** Live clock: always derived from the room's endAt (server-adjusted), checked four times a second. */
@@ -1887,12 +2002,10 @@ function liveTimeUp(): void {
   timerRemaining.value = 0;
   status.value = "timeup";
   notificationMessage.value = `${t("summary.score")} ${totalScore.value.toLocaleString("th-TH")}`;
-  sendLiveProgress(); // Final values at once, without waiting for the throttle.
 }
 
 function liveStopGame(): void {
   liveRoundToken += 1;
-  clearLiveProgressTimer();
   stopTimer();
   clearPendingRunTimers();
   clearLevelAdvanceTimer();
@@ -1903,45 +2016,9 @@ function liveStopGame(): void {
   status.value = "ready";
 }
 
-// Progress: at most one message per PROGRESS_INTERVAL_MS, always ending with the latest values.
-function liveRunning(): boolean {
-  return liveStage.value === "running" && campaignStarted.value && liveStartedRound.value !== null && liveStartedRound.value === liveState.value?.roundId;
-}
-function clearLiveProgressTimer(): void {
-  if (liveProgressTimer) clearTimeout(liveProgressTimer);
-  liveProgressTimer = null;
-}
-function sendLiveProgress(): void {
-  clearLiveProgressTimer();
-  if (liveStartedRound.value === null || !liveRoom.value) return;
-  const msg: ProgressMsg = {
-    type: "progress",
-    roundId: liveStartedRound.value,
-    score: totalScore.value,
-    levelsCompleted: completedLevels.value,
-    bestCombo: bestCombo.value,
-    combo: comboStreak.value,
-  };
-  liveLastProgressAt = Date.now();
-  liveRoom.value.send(msg, "progress");
-}
-function queueLiveProgress(): void {
-  if (!liveRunning() || liveProgressTimer) return;
-  const wait = liveLastProgressAt + PROGRESS_INTERVAL_MS - Date.now();
-  if (wait <= 0) sendLiveProgress();
-  else liveProgressTimer = setTimeout(() => {
-    liveProgressTimer = null;
-    if (liveRunning()) sendLiveProgress();
-  }, wait);
-}
-watch([totalScore, completedLevels, comboStreak, bestCombo], queueLiveProgress);
-// After a reconnect mid-round, report the latest values right away (the server keeps the larger ones).
-watch(() => liveRoom.value?.connected.value, (up) => { if (up && liveRunning()) sendLiveProgress(); });
-
 function liveClose(): void {
   liveResuming.value = false;
   clearTimeout(liveHomeTimer);
-  clearLiveProgressTimer();
   liveRoom.value?.close();
   liveRoom.value = null;
 }
@@ -1999,10 +2076,14 @@ onMounted(async () => {
     window.addEventListener("pageshow", resetAfterBrowserNavigation);
     idleTimer = setInterval(() => {
       // No idle policy during gameplay (including level retries and transitions).
-      if (!liveMode.value && !homeStarting.value && !scoreSaving.value && !exitSaving.value && (showSetup.value || showTutorial.value || showSummary.value || practiceSummary.value || showRanking.value) && Date.now() - lastInteractionAt >= homeConfig.idleTimeoutMs) backToStart();
+      if (!liveMode.value && !homeStarting.value && !scoreSaving.value && (showSetup.value || showTutorial.value || showSummary.value || practiceSummary.value || showRanking.value) && Date.now() - lastInteractionAt >= homeConfig.idleTimeoutMs) backToStart();
     }, 1000);
   } else if (!liveMode.value) {
     await applyLevelFromQuery();
+  }
+  if (!liveMode.value) {
+    try { resumeSessionId.value = repositories.sessions.list().filter(session => session.status === 'active').sort((a, b) => b.updatedAt - a.updatedAt)[0]?.id; }
+    catch { homeStorageError.value = t('storage.loadError'); }
   }
   window.addEventListener("keydown", handleKeydown);
   desktopQuery = window.matchMedia("(min-width: 921px) and (min-height: 561px)");
@@ -2031,6 +2112,7 @@ watch(selectedSetId, () => {
 onBeforeUnmount(() => {
   cancelBoardFollow();
   desktopQuery?.removeEventListener("change", syncCompactLayout);
+  competition.abandon();
   sessionToken += 1;
   practiceLaunchToken += 1;
   clearPendingRunTimers();
@@ -2049,6 +2131,9 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.live-sync-note { position: fixed; z-index: 80; left: 50%; top: 12px; transform: translateX(-50%); width: min(90vw, 520px); box-sizing: border-box; padding: 12px 16px; border-radius: 12px; background: #102754; color: #fff; text-align: center; box-shadow: 0 4px 18px #0005; }
+.live-sync-note button { margin-left: 8px; min-height: 44px; padding: 8px 12px; color: #102754; background: #ffdc58; border-radius: 8px; }
+
 button,
 input {
   font: inherit;
