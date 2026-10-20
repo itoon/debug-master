@@ -1,7 +1,6 @@
 <template>
-  <dialog ref="dialog" class="practice-dialog" :aria-labelledby="titleId" :aria-describedby="descriptionId" @cancel.prevent="!busy && emit('close')">
+  <dialog ref="dialog" class="practice-dialog" :aria-labelledby="titleId" @cancel.prevent="!busy && emit('close')">
     <header><div><p class="eyebrow">{{ t('practice.badge') }}</p><h2 :id="titleId">{{ t('practice.chooseTitle', { count: levels.length }) }}</h2></div><button class="close-button" type="button" :disabled="busy" :aria-label="t('home.closeSetup')" @click="emit('close')">×</button></header>
-    <p :id="descriptionId" class="description">{{ t('practice.description') }}</p>
     <div class="concept-groups" :aria-label="t('practice.levels')">
       <section v-for="(group, index) in groups" :key="group.concept" class="concept-group" :class="{ 'current-group': group.levels.some(level => level.id === selectedLevel) }" :aria-labelledby="`${groupId}-${index}`">
         <div class="concept-heading"><span class="concept-emoji" aria-hidden="true">{{ group.emoji }}</span><h3 :id="`${groupId}-${index}`">{{ group.label }}</h3><span class="concept-count">{{ t('practice.groupCount', { count: group.levels.length }) }}</span></div>
@@ -11,7 +10,6 @@
         </div>
       </section>
     </div>
-    <p class="practice-tip">{{ t('practice.features') }}</p>
   </dialog>
 </template>
 
@@ -23,7 +21,6 @@ const props = defineProps<{ levels: Pick<RawLevel, 'id' | 'concept'>[]; selected
 const emit = defineEmits<{ close: []; select: [level: number] }>();
 const { t } = useGameI18n();
 const titleId = useId();
-const descriptionId = useId();
 const groupId = useId();
 const groups = computed(() => {
   const byConcept = new Map<string, { concept: string; label: string; emoji: string; levels: typeof props.levels }>();
@@ -57,9 +54,7 @@ onBeforeUnmount(() => dialog.value?.close());
 header { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex: none; }
 h2 { font-size: clamp(1.2rem, 2vw, 1.6rem); margin: 0; }
 .eyebrow { margin: 0 0 4px; color: #ffe36b; font-size: .8rem; font-weight: 800; }
-.description, .practice-tip { color: #bed9ff; margin: 14px 0; font-size: .85rem; flex: none; }
-.practice-tip { margin-bottom: 0; }
-.concept-groups { display: grid; gap: 12px; min-height: 0; overflow-y: auto; padding: 2px 8px 5px 2px; scrollbar-width: thin; scrollbar-color: #9ca3af73 transparent; }
+.concept-groups { display: grid; gap: 12px; min-height: 0; margin-top: 14px; overflow-y: auto; padding: 2px 8px 5px 2px; scrollbar-width: thin; scrollbar-color: #9ca3af73 transparent; }
 .concept-group { padding: 14px; border: 1px solid #82b0ff44; border-radius: 16px; background: #071b3a55; }
 .concept-group.current-group { border-color: #ffe36b88; }
 .concept-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }

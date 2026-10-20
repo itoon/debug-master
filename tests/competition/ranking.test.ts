@@ -101,7 +101,7 @@ describe('competition board selection', () => {
 describe('selected result rank and highlight', () => {
   async function repository(strategy: 'BEST' | 'LATEST', zero = false) {
     const values = new Map<string, string>()
-    vi.stubGlobal('window', Object.assign(new EventTarget(), { localStorage: { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value) } }))
+    vi.stubGlobal('window', Object.assign(new EventTarget(), { isSecureContext: true, localStorage: { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value) } }))
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => Promise.resolve(run()) } })
     const repositories = createLocalRepositories()
     const start = Date.parse('2026-10-18T00:00:00Z')

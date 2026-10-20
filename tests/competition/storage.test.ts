@@ -21,7 +21,7 @@ let storage: MemoryStorage
 beforeEach(() => {
   storage = new MemoryStorage()
   const events = new EventTarget()
-  vi.stubGlobal('window', Object.assign(events, { localStorage: storage }))
+  vi.stubGlobal('window', Object.assign(events, { isSecureContext: true, localStorage: storage }))
   const queues = new Map<string, Promise<unknown>>()
   vi.stubGlobal('navigator', { locks: { request: <T>(key: string, run: () => T) => {
     const next = (queues.get(key) ?? Promise.resolve()).then(run)

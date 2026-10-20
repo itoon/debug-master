@@ -22,7 +22,7 @@ describe('protocol constants match the game data', () => {
     expect(LIVE_PROTOCOL_VERSION).toBe(1)
   })
   it('durations stay inside the game 15-minute cap', () => {
-    expect(DURATION_PRESETS_SEC).toEqual([480, 600, 900])
+    expect(DURATION_PRESETS_SEC).toEqual([300, 600, 900])
     expect(MAX_DURATION_SEC).toBe(900)
   })
   it('normalizes room codes', () => {

@@ -14,9 +14,6 @@
       <template v-else-if="state">
         <template v-if="phase === 'lobby' || phase === 'countdown'">
           <LobbyStage :code="code" :join-url="joinUrl" :mode="state.mode" :duration-sec="state.durationSec" :players="playing" />
-          <div v-if="phase === 'countdown' && countdown > 0" class="countdown" aria-live="assertive">
-            <span :key="countdown">{{ countdown }}</span>
-          </div>
         </template>
 
         <template v-else-if="phase === 'running'">
@@ -42,6 +39,10 @@
       <p v-else class="screen-note brand"><i aria-hidden="true" />{{ t('live.brand') }} · <em>{{ code }}</em></p>
 
       <p v-if="code && showLinkStatus" class="link-status" role="status">{{ t('live.reconnecting') }}</p>
+    </div>
+    <!-- Keep the dim outside the clipped 16:9 stage so letterboxed edges dim too. -->
+    <div v-if="phase === 'countdown' && countdown > 0" class="countdown" aria-live="assertive">
+      <div class="countdown-stage"><span :key="countdown">{{ countdown }}</span></div>
     </div>
   </main>
 </template>
@@ -126,7 +127,8 @@ function openRoom(): void {
 <style scoped>
 .live-screen { position: fixed; inset: 0; display: grid; place-items: center; overflow: hidden; background: var(--cv-navy-900) url("~/assets/bg.png") center bottom / cover no-repeat; color: #fff; }
 /* A 16:9 stage that fills the viewport; everything inside scales with its width (cqw), like the mockup. */
-.stage { position: relative; width: min(100vw, calc(100dvh * 16 / 9)); aspect-ratio: 16 / 9; overflow: hidden; container-type: inline-size; }
+.stage, .countdown-stage { width: min(100vw, calc(100dvh * 16 / 9)); aspect-ratio: 16 / 9; container-type: inline-size; }
+.stage { position: relative; overflow: hidden; }
 
 .hud { position: absolute; top: 2.2cqw; left: 2.4cqw; right: 2.4cqw; display: flex; align-items: center; justify-content: space-between; gap: 1.5cqw; }
 .brand { display: flex; align-items: center; gap: .8cqw; margin: 0; padding: .6cqw 1.4cqw .6cqw .7cqw; border-radius: 999px; background: #071e4980; font-weight: 800; font-size: 1.5cqw; }
@@ -149,6 +151,7 @@ function openRoom(): void {
 .queue-slot { position: absolute; left: 2.4cqw; right: 27cqw; bottom: 1.4cqw; display: flex; }
 
 .countdown { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: #04122ab3; }
+.countdown-stage { display: grid; place-items: center; }
 .countdown span { color: #ffdb58; font-size: 24cqw; font-weight: 900; line-height: 1; text-shadow: 0 1.4cqw 0 #8a5a00; animation: count-pop 900ms cubic-bezier(.34, 1.5, .64, 1) both; }
 @keyframes count-pop { 0% { opacity: 0; transform: scale(.4); } 30% { opacity: 1; transform: scale(1.08); } 60% { transform: scale(1); } }
 

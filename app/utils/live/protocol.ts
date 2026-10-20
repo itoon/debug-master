@@ -118,8 +118,8 @@ export const COUNTDOWN_MS = 3000
 export const GRACE_MS = 2000
 export const IDLE_MS = 6 * 60 * 60 * 1000
 
-export const DURATION_PRESETS_SEC = [480, 600, 900]
-export const DEFAULT_DURATION_SEC = 480
+export const DURATION_PRESETS_SEC = [300, 600, 900]
+export const DEFAULT_DURATION_SEC = 300
 export const MIN_DURATION_SEC = 60
 export const MAX_DURATION_SEC = 900
 

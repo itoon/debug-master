@@ -2,7 +2,7 @@ import type { Score } from "../types/debug-game";
 import { CompetitionSessionRepository } from "./CompetitionSessionRepository";
 import { toScore } from "../utils/competition/session";
 import { todayRanking, type RankingBoard } from "../utils/ranking";
-import { CHALLENGE_IDS, type ChallengeId, type ModeScoringStrategies } from "../data/home-config";
+import { CHALLENGE_IDS, isCompetitionTime, type ChallengeId, type ModeScoringStrategies } from "../data/home-config";
 import type { ScoringStrategy } from "../types/competition";
 import type { ModeSettingsRepository, PlayerProfile, PlayerRepository, ScoreRepository } from "./contracts";
 
@@ -10,11 +10,50 @@ const SCHEMA_VERSION = 1;
 const NAMESPACE = "codeventure:debug-master:home-v2:v1:";
 const CHANGE_EVENT = `${NAMESPACE}changed`;
 
+/** HTTP LAN pages lack Web Locks. A shared readwrite transaction serializes
+ * synchronous localStorage mutations across tabs without changing score storage.
+ * Only the coordination store lives in IndexedDB; no profile/score data moves. */
+function mutateOnLocalHttp<T>(key: string, operation: () => T): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const request = window.indexedDB.open(`${NAMESPACE}mutation-lock`, 1);
+    let blocked = false;
+    request.onupgradeneeded = () => request.result.createObjectStore("mutations");
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => {
+      blocked = true;
+      reject(new Error("Local storage coordination is blocked"));
+    };
+    request.onsuccess = () => {
+      const database = request.result;
+      // A delayed open must not write after reporting a blocked operation.
+      if (blocked) { database.close(); return; }
+      database.onversionchange = () => database.close();
+      try {
+        const transaction = database.transaction("mutations", "readwrite");
+        let operationError: unknown;
+        let result: T;
+        transaction.oncomplete = () => { database.close(); resolve(result); };
+        transaction.onabort = () => {
+          database.close();
+          reject(operationError ?? transaction.error ?? new Error("Local storage coordination failed"));
+        };
+        // This callback runs only after this transaction owns the shared store.
+        // Do not await inside it: keep the read/modify/write under the same lock.
+        transaction.objectStore("mutations").get(key).onsuccess = () => {
+          try { result = operation(); }
+          catch (error) { operationError = error; transaction.abort(); }
+        };
+      } catch (error) { database.close(); reject(error); }
+    };
+  });
+}
+
 /** The only layer that touches browser storage. Old Dev keys are untouched. */
 export class LocalStorageAdapter {
   async mutate<T>(key: string, operation: () => T): Promise<T> {
-    // All read/modify/write operations share one origin-wide lock per key.
-    // Fail closed when unavailable rather than overwrite another tab's data.
+    // Preserve the generic receipt result on both secure and LAN origins.
+    if (!window.isSecureContext) return await mutateOnLocalHttp(key, operation);
+    // Fail closed if coordination is unavailable; never write without a lock.
     if (!navigator.locks) throw new Error("Web Locks are required for safe local storage updates");
     return await navigator.locks.request(NAMESPACE + key, operation);
   }
@@ -106,6 +145,9 @@ export class LocalModeSettingsRepository implements ModeSettingsRepository {
   constructor(private readonly adapter: LocalStorageAdapter) {}
   enabledIds(): ChallengeId[] | undefined { return this.adapter.read("modes", undefined, validModeIds); }
   scoringStrategies(): ModeScoringStrategies { return this.adapter.read("mode-scoring", {}, validModeStrategies); }
+  durationSec(): number | undefined {
+    return this.adapter.read<number | undefined>('mode-duration', undefined, (value): value is number | undefined => value === undefined || isCompetitionTime(value));
+  }
   save(ids: ChallengeId[]): Promise<void> {
     if (!ids.length || !validModeIds(ids)) return Promise.reject(new Error("At least one valid mode must stay enabled"));
     return this.adapter.mutate("modes", () => this.adapter.write("modes", [...new Set(ids)]));
@@ -116,13 +158,18 @@ export class LocalModeSettingsRepository implements ModeSettingsRepository {
       this.adapter.write("mode-scoring", { ...this.scoringStrategies(), [id]: strategy });
     });
   }
+  saveDuration(seconds: number): Promise<void> {
+    if (!isCompetitionTime(seconds)) return Promise.reject(new Error('Competition time must be whole minutes within the configured range'));
+    return this.adapter.mutate('modes', () => this.adapter.write('mode-duration', seconds));
+  }
   reset(): Promise<void> {
-    return this.adapter.mutate("modes", () => {
-      this.adapter.remove("mode-scoring");
-      this.adapter.remove("modes");
+    return this.adapter.mutate('modes', () => {
+      this.adapter.remove('mode-scoring');
+      this.adapter.remove('mode-duration');
+      this.adapter.remove('modes');
     });
   }
-  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, ["modes", "mode-scoring"]); }
+  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, ['modes', 'mode-duration', 'mode-scoring']); }
 }
 
 export function createLocalRepositories() {

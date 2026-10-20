@@ -138,7 +138,7 @@ describe('authoritative gameplay', () => {
       expect(room.round!.config).toEqual({ difficulty: 1, scoringStrategy: 'BEST' })
       expect(room.players[pid].scoring!.session.config).toEqual(room.round!.config)
       const boardBefore = JSON.parse(room.players[pid].scoring!.session.boardId!)
-      expect(boardBefore).toEqual(['TEST-1', 1, 'A', 'challenge-beginner', 480, 1])
+      expect(boardBefore).toEqual(['TEST-1', 1, 'A', 'challenge-beginner', 300, 1])
       applyHostCommand(room, { type: 'endEarly' }, new Set([pid]), 4000)
       applyHostCommand(room, { type: 'newRound' }, new Set([pid]), 5000)
       applyHostCommand(room, { type: 'start' }, new Set([pid]), 6000)

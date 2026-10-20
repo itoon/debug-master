@@ -193,7 +193,7 @@ describe('host commands', () => {
     r2.phase = 'running'
     // already past endAt: never extend it
     expect(applyHostCommand(r2, { type: 'endEarly' }, conn('p-aaaaaa'), 9_999_999)).toBe(true)
-    expect(r2.endAt).toBe(4000 + 480_000)
+    expect(r2.endAt).toBe(4000 + 300_000)
   })
 
   it('newRound and endEarly only from their phases', () => {

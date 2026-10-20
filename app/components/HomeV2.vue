@@ -12,7 +12,7 @@
         @focusin="focusedMode = mode.id" @focusout="leaveCardFocus($event)">
         <!-- Keyboard target for the whole card; there is no visible Start button. -->
         <button type="button" class="card-launch-target" :disabled="busy || motionPhase !== 'idle'" aria-haspopup="dialog" :data-mode-launch="mode.id"
-          :aria-label="t('home.modeDetail', { mode: t(mode.nameKey) })" />
+          :aria-label="t(mobilePicker ? 'home.cardAction' : 'home.modeDetail', { mode: t(mode.nameKey) })" />
         <figure class="mode-cover">
           <img class="cover-image" :src="thumbnailUrl(mode)" :alt="t('home.thumbnail', { mode: t(mode.nameKey) })" draggable="false" />
           <span class="cover-sheen" aria-hidden="true" />
@@ -27,8 +27,9 @@
         </figure>
         <!-- Visual cue only; the card's launch button carries the accessible name. -->
         <span class="start-cta" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7 4.5v11l9-5.5z" /></svg>{{ t('home.startGame') }}</span>
+        <span class="mobile-card-play" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7 4.5v11l9-5.5z" /></svg></span>
         <ChallengeRanking class="card-ranking" :repository="repository" :board="boardFor(mode)" variant="space" podium credits hide-empty :placeholder="singleMode"
-          :paused="motionPhase !== 'idle' || focusedMode === mode.id" @viewport-removed="clearDetachedFocus(mode.id)" @empty-change="emptyBoards[mode.id] = $event" />
+          :paused="mobilePicker || motionPhase !== 'idle' || focusedMode === mode.id" @viewport-removed="clearDetachedFocus(mode.id)" @empty-change="emptyBoards[mode.id] = $event" />
       </section>
     </div>
 
@@ -60,6 +61,11 @@ const { t } = useGameI18n();
 // Saved on this device at /modes; hidden until read so SSR defaults never flash.
 const { enabledModes, loaded: modesLoaded } = useModeSettings(props.modesRepository);
 const singleMode = computed(() => enabledModes.value.length === 1);
+// Same breakpoint as the compact picker CSS below. Keep ranking subscriptions
+// intact, but pause hidden credits and use direct setup for backup phone play.
+const mobilePicker = ref(false);
+let mobilePickerQuery: MediaQueryList | undefined;
+function syncMobilePicker(): void { mobilePicker.value = mobilePickerQuery?.matches ?? false; }
 const setupMode = ref<ChallengeMode | null>(null);
 const selectedMode = ref<ChallengeMode | null>(null);
 const selectionMade = ref(false);
@@ -212,7 +218,8 @@ async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   emit("sound", "select");
   let hasPlayers = true;
   try { hasPlayers = props.repository.today(boardFor(mode), new Date(), 1).length > 0; } catch { /* Preserve the detail storage-error state. */ }
-  selectionHasHistory.value = hasPlayers;
+  const showDetails = hasPlayers && !mobilePicker.value;
+  selectionHasHistory.value = showDetails;
   const snapshots = snapshotCards();
   selectionMade.value = true; // Do not replay the initial deal when detail restores the grid.
   const token = ++motionToken;
@@ -228,7 +235,7 @@ async function openModeSetup(mode: ChallengeMode, event: MouseEvent) {
   if (disposed || token !== motionToken || motionPhase.value !== "entering") return;
   motionPhase.value = "open";
   if (viewportSize !== `${window.innerWidth}:${window.innerHeight}`) recenterCards();
-  if (hasPlayers) {
+  if (showDetails) {
     const rect = modeBoards.value?.querySelector<HTMLElement>(`[data-mode-card="${mode.id}"]`)?.getBoundingClientRect();
     if (rect) detailFromRect.value = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
     motionPhase.value = "entering";
@@ -359,9 +366,16 @@ async function focusFirstMode(): Promise<void> {
   if (!disposed && motionPhase.value === 'idle') modeBoards.value?.querySelector<HTMLButtonElement>('[data-mode-launch]:not(:disabled)')?.focus({ preventScroll: true });
 }
 defineExpose({ focusFirstMode });
-onMounted(() => window.addEventListener("resize", recenterCards));
+onMounted(() => {
+  mobilePickerQuery = window.matchMedia('(max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px)');
+  syncMobilePicker();
+  mobilePickerQuery.addEventListener('change', syncMobilePicker);
+  window.addEventListener("resize", recenterCards);
+});
 watch([enabledModes, () => props.busy], ([modes, busy]) => {
-  if (!selectedMode.value || modes.some(mode => mode.id === selectedMode.value?.id) || busy) return;
+  const selected = selectedMode.value;
+  if (!selected || busy) return;
+  if (modes.some(mode => mode.id === selected.id && mode.timeLimit === selected.timeLimit)) return;
   motionToken += 1;
   cancelCardMotion();
   setupMode.value = null;
@@ -379,6 +393,7 @@ onBeforeUnmount(() => {
   motionToken += 1;
   cancelCardMotion();
   window.removeEventListener("resize", recenterCards);
+  mobilePickerQuery?.removeEventListener('change', syncMobilePicker);
 });
 </script>
 
@@ -426,6 +441,7 @@ onBeforeUnmount(() => {
 .time-tag { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-variant-numeric: tabular-nums; }
 .time-tag svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
 .card-ranking { min-height: 0; }
+.mobile-card-play { display: none; }
 .modes-loading { visibility: hidden; }
 .count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 1240px; justify-self: center; }
 /* One enabled mode: the art at its own 4:3 shape beside a full leaderboard, sized to the viewport. */
@@ -483,6 +499,39 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .count-1 .mode-board { height: 690px; }
   .start-cta, .count-1 .start-cta { gap: 10px; padding: 8px 22px 8px 8px; font-size: 1.05rem; }
   .start-cta svg, .count-1 .start-cta svg { width: 40px; height: 40px; padding: 10px; }
+}
+/* Phones are a secondary event entry point: every enabled mode and practice
+   stay on the first screen. Keep desktop podiums/cards untouched. */
+@media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .home-v2 { height: 100%; min-height: 380px; grid-template-rows: minmax(0, 1fr) auto; padding: 0; gap: 8px; }
+  .mode-boards { --picker-count: 3; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(var(--picker-count), minmax(104px, 1fr)); gap: 8px; width: 100%; max-width: none; align-content: stretch; }
+  .mode-boards.count-1 { --picker-count: 1; }
+  .mode-boards.count-2 { --picker-count: 2; }
+  .mode-boards .mode-board { height: 100%; max-width: none; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); padding: 0; gap: 0; border-radius: 16px; overflow: hidden; }
+  .mode-boards .mode-board:hover, .mode-boards .mode-board:focus-within { transform: none; }
+  .mode-boards .card-launch-target:focus-visible { outline-offset: -5px; }
+  .mode-boards .mode-cover { height: 100%; min-height: 0; margin: 0; border-radius: 13px; }
+  .mode-boards .cover-image { object-position: center 45%; }
+  .mode-boards .mode-heading { inset: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; padding: 12px; background: linear-gradient(180deg, #020d31d9, #04123944 55%, #020d31ed); }
+  .mode-boards .mode-heading h2 { gap: 6px; padding-right: 40px; font-size: clamp(1rem, 4.5vw, 1.25rem); line-height: 1.2; }
+  .mode-boards .mode-heading :deep(.mode-badge) { width: 30px; }
+  .mode-boards .mode-details { gap: 4px 8px; font-size: .65rem; }
+  .mode-boards .difficulty-tag { padding: 2px 6px; }
+  .mode-boards .time-tag svg { width: 14px; height: 14px; }
+  .mode-boards .card-ranking, .mode-boards .start-cta, .home-footer-info { display: none; }
+  .mobile-card-play { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #fff9; border-radius: 50%; color: #102754; background: var(--mode-accent); pointer-events: none; }
+  .mobile-card-play svg { width: 20px; height: 20px; fill: currentColor; }
+  .home-footer { grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+  .practice-button { width: 100%; min-height: 44px; justify-content: center; justify-self: stretch; padding: 8px 12px; font-size: .8rem; background: #173d7de8; }
+  .practice-button.rest-button { width: auto; min-width: 44px; padding: 8px; font-size: .7rem; background: #0b275c99; }
+}
+@media (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .home-v2 { min-height: 220px; }
+  .mode-boards { grid-template-columns: repeat(var(--picker-count), minmax(0, 1fr)); grid-template-rows: minmax(132px, 1fr); }
+  .mode-boards .mode-heading { padding: 10px; }
+  .mode-boards .mode-heading h2 { flex-wrap: wrap; padding-right: 0; padding-top: 30px; font-size: 1rem; overflow-wrap: anywhere; }
+  .mode-boards .mode-heading :deep(.mode-badge) { width: 26px; }
+  .mode-boards .mode-details { gap: 4px 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .home-v2.sleep-switch-enter-active, .home-v2.sleep-switch-leave-active { transition: none; }

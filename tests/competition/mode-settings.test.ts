@@ -11,7 +11,7 @@ let failWrites: boolean
 beforeEach(() => {
   values = new Map()
   failWrites = false
-  vi.stubGlobal('window', Object.assign(new EventTarget(), { localStorage: {
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { isSecureContext: true, localStorage: {
     getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => {
       if (failWrites) throw new Error('Storage quota exceeded')
@@ -29,6 +29,20 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('per-mode scoring settings', () => {
+  it('combines saved duration and strategy without either write clearing the other', async () => {
+    const { modes } = createLocalRepositories()
+    await modes.setScoringStrategy('A', 'LATEST')
+    await modes.saveDuration(600)
+    const restored = createLocalRepositories().modes
+    expect(enabledModesFor(restored.enabledIds(), restored.scoringStrategies(), restored.durationSec()).map(mode => [mode.id, mode.timeLimit, mode.scoringStrategy]))
+      .toEqual([['A', 600, 'LATEST'], ['B', 600, 'BEST'], ['C', 600, 'BEST']])
+    await restored.setScoringStrategy('B', 'LATEST')
+    expect(restored.durationSec()).toBe(600)
+    await restored.reset()
+    expect(restored.durationSec()).toBeUndefined()
+    expect(restored.scoringStrategies()).toEqual({})
+    expect(enabledModesFor(restored.enabledIds()).map(mode => mode.timeLimit)).toEqual([300, 300, 300])
+  })
   it('restores independent strategies without changing enabled modes or global defaults', async () => {
     const { modes } = createLocalRepositories()
     await modes.save(['A', 'C'])

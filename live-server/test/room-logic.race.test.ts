@@ -24,7 +24,7 @@ const hello = (pid: string, name = 'P'): PlayerHello => ({
   age: 9,
 })
 const conn = (...pids: string[]) => new Set(pids)
-/** Countdown room: p-aaaaaa seated in lane 0, started at t=0 (startAt 3000, endAt 483000). */
+/** Countdown room: p-aaaaaa seated in lane 0, started at t=0 (startAt 3000, endAt 303000). */
 function running0(): StoredRoom {
   const r = createRoom('CODI-1', 0)
   joinPlayer(r, hello('p-aaaaaa'), conn('p-aaaaaa'), 0)
@@ -44,8 +44,8 @@ describe('advanceClock', () => {
     expect(r.phase).toBe('countdown')
     expect(advanceClock(r, 3000)).toBe(true)
     expect(r.phase).toBe('running')
-    expect(advanceClock(r, 482_999)).toBe(false)
-    expect(advanceClock(r, 483_000)).toBe(true)
+    expect(advanceClock(r, 302_999)).toBe(false)
+    expect(advanceClock(r, 303_000)).toBe(true)
     expect(r.phase).toBe('finished')
     expect(advanceClock(r, 999_999)).toBe(false)
   })
@@ -77,7 +77,7 @@ describe('alarms', () => {
     const lobbyRoom = createRoom('CODI-1', 100)
     const only = (open: number) => ({ open, players: 0 }) // host/screen sockets only
     expect(nextAlarmAt(countdownRoom, only(3), 1000)).toBe(3000)
-    expect(nextAlarmAt(runningRoom, only(3), 4000)).toBe(483_000)
+    expect(nextAlarmAt(runningRoom, only(3), 4000)).toBe(303_000)
     expect(nextAlarmAt(lobbyRoom, only(0), 200)).toBe(lobbyRoom.lastActivity + IDLE_MS)
     expect(nextAlarmAt(lobbyRoom, only(2), 200)).toBeNull()
     expect(nextAlarmAt(countdownRoom, only(0), 1000)).toBe(3000)
@@ -91,7 +91,7 @@ describe('alarms', () => {
     // running: the earlier of endAt and the sweep
     const runningRoom = running()
     expect(nextAlarmAt(runningRoom, players, 4000)).toBe(4000 + SWEEP_MS)
-    expect(nextAlarmAt(runningRoom, players, 470_000)).toBe(483_000)
+    expect(nextAlarmAt(runningRoom, players, 290_000)).toBe(303_000)
     // countdown ends before the sweep
     expect(nextAlarmAt(running0(), players, 1000)).toBe(3000)
   })
@@ -106,7 +106,7 @@ describe('alarms', () => {
     expect(nextAlarmAt(r, players, 1000, 1000 + IDLE_MS)).toBe(1000 + SWEEP_MS) // a far idle alarm is pulled in
     // a phase alarm earlier than the armed sweep still wins
     const run = running()
-    expect(nextAlarmAt(run, players, 470_000, 470_000 + SWEEP_MS)).toBe(483_000)
+    expect(nextAlarmAt(run, players, 290_000, 290_000 + SWEEP_MS)).toBe(303_000)
   })
 
   it('detects idle expiry only with no open sockets', () => {
@@ -178,10 +178,10 @@ describe('snapshot', () => {
       code: 'CODI-1',
       phase: 'running',
       mode: 'A',
-      durationSec: 480,
+      durationSec: 300,
       roundId: 1,
       startAt: 3000,
-      endAt: 483_000,
+      endAt: 303_000,
     })
   })
 })

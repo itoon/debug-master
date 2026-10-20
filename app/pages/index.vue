@@ -1,6 +1,6 @@
 <template>
   <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
-    <Transition v-if="homeConfig.enabled && showSetup" name="sleep-switch" mode="out-in" :duration="homeTransitionDuration" @after-enter="focusHomeAfterWake">
+    <Transition v-if="homeConfig.enabled && showSetup && pendingPracticeIntro === null" name="sleep-switch" mode="out-in" :duration="homeTransitionDuration" @after-enter="focusHomeAfterWake">
       <HomeSleepScreen v-if="homeSleeping" key="home-sleep" @wake="wakeHome" @unlock-audio="unlockAudio" />
       <HomeV2 v-else ref="homeView" :key="homeResetKey" :entering="homeEntering"
         :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
@@ -8,14 +8,14 @@
     </Transition>
     <ResumeSessionDialog v-if="resumeSessionId" :session-id="resumeSessionId" @resume="resumeStoredSession" @start-new="dismissStoredSession" />
     <ScoringSaveDialog v-if="competition.saveError.value && !practiceActive && !liveMode" :busy="retryingCheckpoint" @retry="retryScoreSave" @leave="leaveFailedSession" />
-    <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="startPracticeLevel" />
+    <PracticeLevelDialog v-if="showPracticePicker" :levels="practiceLevels" :selected-level="practiceActive ? currentLevel.id : selectedLevelDraft" :busy="practiceStarting" @close="closePracticePicker" @select="requestPracticeLevel" />
     <PracticeSummaryDialog v-if="practiceSummary" :result="practiceSummary" @home="backToStart" />
-    <SessionPanel v-if="activeChallenge && (showTutorial || showSummary || showRanking)"
-      :stage="showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
-      :mode="activeChallenge" :repository="repositories.scores" :board="rankingBoard"
+    <SessionPanel v-if="pendingPracticeIntro !== null || (activeChallenge && (showTutorial || showSummary || showRanking))"
+      :stage="pendingPracticeIntro !== null || showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
+      :mode="activeChallenge ?? undefined" :practice-intro-count="pendingPracticeIntro !== null ? practiceLevels.length : undefined" :repository="repositories.scores" :board="rankingBoard"
       :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
-      @play="playChallenge" @home="backToStart" @ranking="showChallengeRanking" @retry="retryScoreSave" />
-    <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" @cancel="showExitConfirm = false" @confirm="confirmExit" />
+      @play="startFromTutorial" @home="backFromTutorial" @ranking="showChallengeRanking" @retry="retryScoreSave" />
+    <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" :live="liveMode" @cancel="showExitConfirm = false" @confirm="confirmExit" />
     <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial" @start="liveJoin" @close="liveGoHome" />
     <LivePlayerPanel v-if="liveMode && liveStage !== 'setup' && liveStage !== 'running'" :stage="liveStage" :state="liveState" :self-id="liveSelfId"
       :countdown="liveCountdown" :queue-remaining-sec="liveQueueRemaining" :late-score-note="liveLateScore"
@@ -35,18 +35,15 @@
           :lives="deadRun ? livesLeft : undefined" :max-lives="DEAD_LIVES"
           :time-low="isTimedMode && campaignStarted && timerRemaining > 0 && timerRemaining <= 30" :live-rank="liveRank">
           <template #actions>
-            <button type="button" class="practice-map-button soft-button small" :disabled="practiceStarting" aria-haspopup="dialog" @click="openPracticePicker"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15" /></svg>{{ t('practice.chooseButton', { count: practiceLevels.length }) }}</button>
+            <button type="button" class="practice-map-button soft-button small" :disabled="practiceStarting" aria-haspopup="dialog" :aria-label="t('practice.chooseButton', { count: practiceLevels.length })" @click="openPracticePicker"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15" /></svg><span class="practice-label-full">{{ t('practice.chooseButton', { count: practiceLevels.length }) }}</span><span class="practice-label-short" aria-hidden="true">{{ t('practice.chooseShort') }}</span></button>
             <button type="button" class="soft-button small superhint-button" :class="{ 'hint-enabled': practiceSuperHint }" :disabled="practiceStarting" :aria-pressed="practiceSuperHint" :aria-label="t(practiceSuperHint ? 'practice.hidePath' : 'practice.showPath')" @click="practiceSuperHint = !practiceSuperHint"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5M13 5l-2 14" /></svg>{{ t('practice.superHint') }}<span class="hint-check" aria-hidden="true">{{ practiceSuperHint ? '✓' : '' }}</span></button>
           </template>
         </GameHud>
         <p v-if="practiceActive" class="sr-only" role="status">{{ t(practiceSuperHint ? practiceHintSolution?.error ? 'practice.pathError' : 'practice.pathGuide' : status === 'completed' ? 'practice.completed' : 'practice.noRanking') }}<template v-if="practiceSuperHint && canControl && expectedMove"> · {{ t('practice.nextMove', { direction: t(`game.${expectedMove.direction}`) }) }}</template></p>
 
 
-        <div class="play-cluster" :style="{
-          '--minimum-board-height': `${currentLevel.rows * 24 + Math.max(0, currentLevel.rows - 1) * 5 + 24}px`,
-          '--board-reserved-height': `${boardReservedHeight}px`,
-        }">
-          <div ref="boardWrapEl" class="board-wrap">
+        <div class="play-cluster">
+          <div class="board-wrap">
             <div
               v-if="notificationMessage && status !== 'success'"
               class="notification"
@@ -56,9 +53,15 @@
               <strong>{{ notificationTitle }}</strong>
               <p>{{ notificationMessage }}</p>
             </div>
+            <div v-if="practiceActive && (status === 'success' || status === 'completed')" :key="`practice-pass-${boardRound}`"
+              class="notification notification-success practice-success-notice" role="status">
+              <strong>✓ {{ t('practice.passed') }}</strong>
+            </div>
             <p v-if="practiceSuperHint && practiceActive && practiceHintSolution?.error && !notificationMessage" class="notification" role="alert">{{ t('practice.pathError') }}</p>
             <div class="board-and-controls">
-              <p ref="instructionEl" class="board-combo" :role="practiceActive ? 'status' : undefined"><span v-if="practiceActive && (status === 'success' || status === 'completed')" class="practice-passed">✓ {{ t('practice.passed') }}</span><span v-else-if="!practiceActive && comboStreak > 1" :key="comboStreak" class="combo-pop" :class="{ 'combo-hot': comboStreak >= 5 }">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
+              <p class="board-combo" :role="practiceActive ? 'status' : undefined"><span v-if="practiceActive && (status === 'success' || status === 'completed')" class="practice-passed">✓ {{ t('practice.passed') }}</span><span v-else-if="!practiceActive && comboStreak > 1" :key="comboStreak" class="combo-pop" :class="{ 'combo-hot': comboStreak >= 5 }">{{ t('game.comboDisplay', { count: comboStreak }) }}</span></p>
+              <div ref="boardViewportEl" class="board-viewport game-scrollbar" role="region" :aria-label="t('game.boardViewport', { level: currentLevel.id })" tabindex="0"
+                @pointerdown.passive="cancelBoardFollow" @touchstart.passive="cancelBoardFollow" @wheel.passive="cancelBoardFollow">
               <LevelBoard
                 :key="boardRound"
                 :level="currentLevel"
@@ -95,9 +98,10 @@
                       draggable="false"
                     />
                   </div>
-                  <NextMoveHint v-if="practiceActive && practiceSuperHint && canControl && !showExitConfirm && expectedMove" :direction="expectedMove.direction" />
+                  <NextMoveHint v-if="((practiceActive && practiceSuperHint) || mobileGuidance) && canControl && !showExitConfirm && expectedMove" :direction="expectedMove.direction" />
                 </div>
               </LevelBoard>
+              </div>
               <div ref="controlsEl" class="board-footer">
                 <!-- On phones and tablets these system buttons move up into the HUD so
                      they never sit beside the D-pad under the player's thumb. -->
@@ -111,29 +115,37 @@
                     :disabled="status === 'playing' || campaignStarted"
                     @click="startGame">{{ t('game.start') }} <span aria-hidden="true">▶</span></button>
                   <button v-if="liveMode" type="button" class="hud-action soft-button small live-reset" :disabled="!canControl" @click="restartLevel">{{ t('practice.restart') }}</button>
-                  <button v-if="!liveMode" type="button" class="hud-action soft-button small exit-action"
+                  <button v-if="!liveMode || compactLayout" type="button" class="hud-action soft-button small exit-action" :class="{ 'live-only-exit': liveMode }"
                     :disabled="scoreSaving || practiceStarting"
-                    :title="campaignStarted ? t('game.exitHint') : undefined"
-                    @click="requestExit">{{ campaignStarted ? t('game.exit') : t('game.menu') }}</button>
+                    :aria-label="liveMode ? t('live.leave') : campaignStarted ? t('game.exit') : t('game.menu')"
+                    :title="liveMode ? t('live.leave') : campaignStarted ? t('game.exitHint') : undefined"
+                    @click="requestExit"><svg class="exit-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 4H4v16h5m6-12 4 4-4 4M8 12h11" /></svg><span class="exit-text">{{ campaignStarted ? t('game.exit') : t('game.menu') }}</span></button>
                 </nav>
                 </Teleport>
                 <div class="touch-controls" :aria-label="t('game.controls')">
-                <button type="button" class="arrow up" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲</button>
-                <button type="button" class="arrow left" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀</button>
-                <button type="button" class="arrow down" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼</button>
-                <button type="button" class="arrow right" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶</button>
+                <button type="button" class="arrow up" :class="{ 'guided-arrow': mobileGuidedMove === 'up' }" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲<TouchTapHint v-if="mobileGuidedMove === 'up'" /></button>
+                <button type="button" class="arrow left" :class="{ 'guided-arrow': mobileGuidedMove === 'left' }" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀<TouchTapHint v-if="mobileGuidedMove === 'left'" /></button>
+                <button type="button" class="arrow down" :class="{ 'guided-arrow': mobileGuidedMove === 'down' }" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼<TouchTapHint v-if="mobileGuidedMove === 'down'" /></button>
+                <button type="button" class="arrow right" :class="{ 'guided-arrow': mobileGuidedMove === 'right' }" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶<TouchTapHint v-if="mobileGuidedMove === 'right'" /></button>
                 </div>
               </div>
             </div>
           </div>
 
           <LevelCode
+            :class="{ 'python-code': displayLanguage === 'python' }"
             :level="currentLevel"
             :language="displayLanguage"
             :title="t('game.readCode', { language: languageLabel })"
             :readable="true"
+            scroll-hint
             :is-active-line="isGameCodeLineActive"
-            :follow-active-line="practiceActive && practiceSuperHint"
+            :follow-active-line="(practiceActive && practiceSuperHint) || mobileGuidance"
+            :teaching-guidance="practiceActive || mobileGuidance"
+            :executed-step="executedCodeStep ?? undefined"
+            :follow-executed="compactLayout && displayLanguage === 'python' && !mobileGuidance"
+            :follow-upcoming="followMobileViewports && displayLanguage === 'python'"
+            :upcoming-line="expectedMove?.sourceLine"
           />
         </div>
 
@@ -409,6 +421,8 @@ import {
 } from "../utils/levelGen";
 import { PLAYER_AGES, scorePlayerKey, hasRankingScore, type RankingBoard } from "../utils/ranking";
 import { nicknameKey } from "../utils/playerNickname";
+import { newPlayerId } from "../utils/playerIdentity";
+import { createViewportScroller } from "../utils/viewportScroll";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
 import { DEFAULT_COMPETITION_CONFIG, enabledModesFor, homeConfig, type ChallengeMode, type ModeScoringStrategies } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
@@ -455,6 +469,8 @@ const homeTransitionDuration = computed(() => {
 const homeView = ref<{ focusFirstMode: () => Promise<void> } | null>(null);
 let focusAfterWake = false;
 const showTutorial = ref(false);
+const pendingPracticeIntro = ref<number | null>(null);
+const practiceTeachingLevels = shallowRef<number[]>([]);
 const showSummary = ref(false);
 const showExitConfirm = ref(false);
 const practiceActive = ref(false);
@@ -519,11 +535,15 @@ const currentLevel = computed(
 );
 const { parseProgram } = useProgramParser(() => currentLevel.value.id);
 // The board area is measured so tiles scale to fill it (see fitCellSize).
-const boardWrapEl = ref<HTMLElement | null>(null);
+const boardViewportEl = ref<HTMLElement | null>(null);
+const boardScroller = createViewportScroller();
+let boardFollowGeneration = 0;
+function cancelBoardFollow(): void {
+  boardFollowGeneration += 1;
+  boardScroller.cancel();
+}
 const controlsEl = ref<HTMLElement | null>(null);
-const instructionEl = ref<HTMLElement | null>(null);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
-const boardReservedHeight = ref(0);
 // Matches the desktop layout query in the styles below; anything smaller is
 // the compact (phone/tablet) layout with sound and exit in the HUD.
 const compactLayout = ref(false);
@@ -542,6 +562,13 @@ const player = reactive({
 const playerHop = ref(0);
 // Remounts the board each round so its tiles cascade in after a start, retry or clear.
 const boardRound = ref(0);
+// Panning a large map never carries into a new level or a fresh attempt.
+watch(boardRound, () => {
+  cancelBoardFollow();
+  if (!boardViewportEl.value) return;
+  boardViewportEl.value.scrollTop = 0;
+  boardViewportEl.value.scrollLeft = 0;
+}, { flush: 'post' });
 const playerWarped = ref(false);
 // Edge wrap: a copy of Codi slides out past the edge it left while the real
 // actor slides in from the opposite edge, so a wrap reads as one ordinary step.
@@ -570,6 +597,16 @@ const timerRemaining = ref(0);
 const startedAt = ref(0);
 const levelStartedAt = ref(0);
 const levelCorrectInputs = ref(0);
+const executedCodeStep = shallowRef<{ line: number; sequence: number } | null>(null);
+let executedCodeSequence = 0;
+// Observe accepted inputs before the existing runner clears expectedMove.
+// Never advance the interpreter or change input/scoring/timer behavior here.
+watch(levelCorrectInputs, (count, previous) => {
+  if (count <= previous) return;
+  const line = expectedMove.value?.sourceLine;
+  if (line) executedCodeStep.value = { line, sequence: ++executedCodeSequence };
+}, { flush: 'sync' });
+watch(boardRound, () => { executedCodeStep.value = null; }, { flush: 'sync' });
 let timerId: ReturnType<typeof setInterval> | null = null;
 let levelAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
 let scorePopupTimer: ReturnType<typeof setTimeout> | null = null;
@@ -743,9 +780,9 @@ async function startGame(): Promise<void> {
   campaignStarted.value = true;
   startedAt.value = Date.now();
   if (!practiceActive.value && !liveMode.value) {
-    currentPlayerId.value ||= crypto.randomUUID();
+    currentPlayerId.value ||= newPlayerId();
     const saved = await competition.start({
-      id: crypto.randomUUID(), playerId: currentPlayerId.value, name: playerName.value,
+      id: newPlayerId(), playerId: currentPlayerId.value, name: playerName.value,
       avatarId: currentAvatarId.value, age: playerAge.value, challengeId: activeChallenge.value?.challengeId,
       setId: deadRun.value ? 'dead' : activeSet.value.id,
       setTitle: deadRun.value ? `Dead Mode (seed ${deadRun.value.seed})` : activeSet.value.title,
@@ -872,18 +909,24 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
     }
   }
   let savedModeIds;
-  try { savedModeIds = repositories.modes.enabledIds(); } catch { savedModeIds = undefined; }
+  let savedDuration;
   let scoringStrategies: ModeScoringStrategies;
-  try { scoringStrategies = repositories.modes.scoringStrategies(); } catch {
+  try {
+    savedModeIds = repositories.modes.enabledIds();
+    savedDuration = repositories.modes.durationSec();
+    scoringStrategies = repositories.modes.scoringStrategies();
+  } catch {
     homeStorageError.value = t("modes.loadError");
     return;
   }
-  const configuredMode = enabledModesFor(savedModeIds, scoringStrategies).find((item) => item.id === mode.id);
+  const configuredMode = enabledModesFor(savedModeIds, scoringStrategies, savedDuration).find((item) => item.id === mode.id);
   if (!configuredMode || configuredMode.timeLimit <= 0 || configuredMode.timeLimit > 900 || !challengeSets.some((set) => set.id === configuredMode.levelSetId)) return;
-  const playerId = existingPlayerId ?? crypto.randomUUID();
+  if (configuredMode.timeLimit !== mode.timeLimit) { homeStorageError.value = t('modes.durationChanged'); return; }
+  let playerId: string;
   const token = ++sessionToken;
   homeStarting.value = true;
   try {
+    playerId = existingPlayerId ?? newPlayerId();
     await repositories.players.save({ id: playerId, nickname, age: profile.age, avatarId: profile.avatarId });
   } catch {
     if (token === sessionToken) homeStorageError.value = t("storage.error");
@@ -942,6 +985,29 @@ function openPracticePicker(): void {
   showPracticePicker.value = true;
   lastInteractionAt = Date.now();
 }
+function requestPracticeLevel(levelId: number): void {
+  if (!practiceActive.value && compactLayout.value && showPracticePicker.value && practiceLevels.some(level => level.id === levelId)) {
+    showPracticePicker.value = false;
+    pendingPracticeIntro.value = levelId;
+    lastInteractionAt = Date.now();
+    return;
+  }
+  void startPracticeLevel(levelId);
+}
+function startFromTutorial(): void {
+  const levelId = pendingPracticeIntro.value;
+  pendingPracticeIntro.value = null;
+  if (levelId === null) { playChallenge(); return; }
+  // Restore the existing picker's precondition, then use its original start.
+  showPracticePicker.value = true;
+  void startPracticeLevel(levelId);
+}
+function backFromTutorial(): void {
+  const levelId = pendingPracticeIntro.value;
+  pendingPracticeIntro.value = null;
+  if (levelId === null) { backToStart(); return; }
+  showPracticePicker.value = true;
+}
 async function closePracticePicker(): Promise<void> {
   if (practiceStarting.value) return;
   showPracticePicker.value = false;
@@ -979,6 +1045,7 @@ async function startPracticeLevel(levelId: number): Promise<void> {
     practiceSessionStartedAt.value = Date.now();
     practicePassedLevels.value = new Set<number>();
     practiceMistakes.value = 0;
+    practiceTeachingLevels.value = [];
   }
   startGame();
 }
@@ -995,6 +1062,8 @@ function showChallengeRanking(): void {
 }
 
 function resetHomeSession(): void {
+  pendingPracticeIntro.value = null;
+  practiceTeachingLevels.value = [];
   homeAfterSave = false;
   sessionToken += 1;
   homeStarting.value = false;
@@ -1546,6 +1615,7 @@ function showNextHint(): void {
 }
 
 function isGameCodeLineActive(line: string, index: number): boolean {
+  if (mobileGuidance.value) return canControl.value && expectedMove.value?.sourceLine === index + 1;
   if (practiceActive.value) {
     return practiceSuperHint.value && !practiceStarting.value && displayLanguage.value === "python" && activeNode.value?.sourceLine === index + 1;
   }
@@ -1667,6 +1737,59 @@ const liveStage = computed(() => derivePlayerStage({
   offset: liveOffset.value,
   now: liveNow.value,
 }));
+// Teach the real run without changing accepted keys, score or clocks.
+// Practice can start anywhere: reserve guidance for the first two distinct
+// levels visited this session, including automatic advances and map choices.
+watch(() => practiceActive.value && campaignStarted.value && !practiceStarting.value ? currentLevel.value.id : null, (levelId) => {
+  if (levelId !== null && practiceTeachingLevels.value.length < 2 && !practiceTeachingLevels.value.includes(levelId)) {
+    practiceTeachingLevels.value = [...practiceTeachingLevels.value, levelId];
+  }
+}, { flush: 'post' });
+const mobileGuidance = computed(() => {
+  if (!compactLayout.value || displayLanguage.value !== 'python' || !campaignStarted.value || showSetup.value || showTutorial.value || showSummary.value || practiceSummary.value || showRanking.value) return false;
+  if (liveMode.value) return liveStage.value === 'running' && selectedLevelIndex.value < 2;
+  if (practiceActive.value) return !practiceStarting.value && practiceTeachingLevels.value.includes(currentLevel.value.id);
+  return !!activeChallenge.value && selectedLevelIndex.value < 2;
+});
+const mobileGuidedMove = computed(() => mobileGuidance.value && canControl.value ? expectedMove.value?.direction ?? null : null);
+const followMobileViewports = computed(() => compactLayout.value && campaignStarted.value && !practiceStarting.value &&
+  !showSetup.value && !showTutorial.value && !showSummary.value && !practiceSummary.value && !showRanking.value &&
+  !showPracticePicker.value && !showExitConfirm.value && ['playing', 'success', 'completed'].includes(status.value) &&
+  (!liveMode.value || liveStage.value === 'running'));
+
+// Follow the final cell geometry, not the actor's in-flight hop/slide. Moving
+// either scroller never calls the runner or scrolls the surrounding game page.
+watch([
+  () => player.row, () => player.col, boardRound, followMobileViewports,
+  () => boardSpace.value.width, () => boardSpace.value.height,
+], async () => {
+  cancelBoardFollow();
+  const token = boardFollowGeneration;
+  if (!followMobileViewports.value) return;
+  await nextTick();
+  if (token !== boardFollowGeneration) return;
+  const area = boardViewportEl.value;
+  const board = area?.querySelector<HTMLElement>('.board');
+  if (!area?.isConnected || !area.clientWidth || !area.clientHeight || !board) return;
+  const style = getComputedStyle(board);
+  const cell = parseFloat(style.getPropertyValue('--cell-size'));
+  if (!Number.isFinite(cell)) return;
+  const map = board.getBoundingClientRect();
+  const viewport = area.getBoundingClientRect();
+  const left = map.left + board.clientLeft + parseFloat(style.paddingLeft) + player.col * (cell + parseFloat(style.columnGap));
+  const top = map.top + board.clientTop + parseFloat(style.paddingTop) + player.row * (cell + parseFloat(style.rowGap));
+  const viewportLeft = viewport.left + area.clientLeft;
+  const viewportTop = viewport.top + area.clientTop;
+  const marginX = Math.min(Math.max(12, cell * .5), area.clientWidth * .2);
+  const marginY = Math.min(Math.max(12, cell * .5), area.clientHeight * .2);
+  let nextLeft = area.scrollLeft;
+  let nextTop = area.scrollTop;
+  if (left < viewportLeft + marginX) nextLeft += left - viewportLeft - marginX;
+  else if (left + cell > viewportLeft + area.clientWidth - marginX) nextLeft += left + cell - viewportLeft - area.clientWidth + marginX;
+  if (top < viewportTop + marginY) nextTop += top - viewportTop - marginY;
+  else if (top + cell > viewportTop + area.clientHeight - marginY) nextTop += top + cell - viewportTop - area.clientHeight + marginY;
+  boardScroller.to(area, { left: nextLeft, top: nextTop });
+}, { flush: 'post' });
 const liveSetupMode = computed<ChallengeMode>(() => {
   const room = liveLastState.value;
   const mode = homeConfig.modes.find((item) => item.id === room?.mode) ?? homeConfig.modes[0];
@@ -1920,6 +2043,7 @@ function liveLeave(): void {
 /** Kicked, home, setup dialog closed, or Back: close the socket and return to the normal Home. */
 function liveGoHome(): void {
   if (!liveMode.value) return;
+  pendingPracticeIntro.value = null;
   liveClose();
   liveStopGame();
   clearInterval(liveTicker);
@@ -1965,26 +2089,18 @@ onMounted(async () => {
   desktopQuery = window.matchMedia("(min-width: 921px) and (min-height: 561px)");
   syncCompactLayout();
   desktopQuery.addEventListener("change", syncCompactLayout);
-  if (boardWrapEl.value) {
+  if (boardViewportEl.value) {
     boardResizeObserver = new ResizeObserver(() => {
-      const area = boardWrapEl.value;
+      const area = boardViewportEl.value;
       if (!area) return;
-      // Measure the available stage, then reserve the real footer/combo
-      // heights and two 12px gaps. The board remains adjacent to the D-pad.
-      // Landscape phones put the footer beside the board (CSS sets
-      // --footer-beside), so its width is reserved instead of its height.
-      const beside = getComputedStyle(area).getPropertyValue("--footer-beside").trim() === "1";
-      const footerHeight = beside ? 0 : (controlsEl.value?.offsetHeight ?? 0) + 12;
-      const footerWidth = beside ? (controlsEl.value?.offsetWidth ?? 0) + 12 : 0;
-      boardReservedHeight.value = footerHeight + (instructionEl.value?.offsetHeight ?? 0) + 24;
+      // Measure only the board's actual viewport, excluding its 6px padding.
+      // CSS reserves HUD/code/controls; oversized 24px-cell maps scroll here.
       boardSpace.value = {
-        width: Math.max(0, area.clientWidth - 12 - footerWidth),
-        height: Math.max(0, area.clientHeight - boardReservedHeight.value),
+        width: Math.max(0, area.clientWidth - 12),
+        height: Math.max(0, area.clientHeight - 12),
       };
     });
-    boardResizeObserver.observe(boardWrapEl.value);
-    if (controlsEl.value) boardResizeObserver.observe(controlsEl.value);
-    if (instructionEl.value) boardResizeObserver.observe(instructionEl.value);
+    boardResizeObserver.observe(boardViewportEl.value);
   }
 });
 
@@ -1994,6 +2110,7 @@ watch(selectedSetId, () => {
 });
 
 onBeforeUnmount(() => {
+  cancelBoardFollow();
   desktopQuery?.removeEventListener("change", syncCompactLayout);
   competition.abandon();
   sessionToken += 1;
@@ -2054,12 +2171,11 @@ summary:focus-visible {
 
 /* ---------- Shell: navy hero background like codeventure.app ---------- */
 
-/* Layout is mobile first: base rules fit a portrait phone on one screen
-   (code above the board, D-pad at the bottom). Landscape phones put code
-   beside the board; desktop restores the two-column game. */
+/* Portrait phones reserve bounded code/board viewports and a separate D-pad.
+   Exceptionally short screens can scroll the game instead of clipping it. */
 .app-shell {
   height: 100dvh;
-  padding: 8px;
+  padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   overflow-y: auto;
   background: var(--cv-navy-900) url("~/assets/bg.png") center bottom / cover
     no-repeat;
@@ -2089,12 +2205,14 @@ summary:focus-visible {
   grid-template-columns: 1fr;
   height: 100%;
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
 }
 
 .board-panel {
   min-width: 0;
-  min-height: 100%;
+  height: 100%;
+  min-height: 620px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2109,15 +2227,16 @@ summary:focus-visible {
   box-shadow: var(--cv-shadow-window);
 }
 
-/* Read, look, press: code first, then the board with the D-pad under it. */
+/* Wider stacked layout: code, then board/D-pad. Phone overrides below put
+   map first, then code, then the full-width D-pad using the same DOM. */
 .play-cluster {
   flex: 1;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  /* The board keeps its minimum readable size; the code window gives up
-     height first (down to about three lines) and scrolls inside. */
-  grid-template-rows: minmax(120px, auto) minmax(calc(var(--minimum-board-height) + var(--board-reserved-height)), 1fr);
+  /* The program scrolls at readable size; map dimensions cannot grow either
+     row or push the D-pad out of the available game area. */
+  grid-template-rows: clamp(136px, 25dvh, 220px) minmax(0, 1fr);
   gap: 8px;
   align-items: stretch;
   justify-content: center;
@@ -2134,7 +2253,7 @@ summary:focus-visible {
 }
 .play-cluster .code-card :deep(.window-bar) { padding: 8px 14px; }
 .play-cluster .code-card :deep(.window-bar h2) { font-size: .8rem; }
-.play-cluster .code-card :deep(.code-box) { max-height: min(30dvh, 240px); padding: 10px 0; }
+.play-cluster .code-card :deep(.code-box) { padding: 10px 0 var(--code-bottom-space, 10px); }
 .play-cluster .code-card { overflow: hidden; }
 
 .sound-toggle { display: inline-grid; place-items: center; flex: none; width: 44px; min-height: 44px; padding: 0; border: 1px solid #759bd966; border-radius: 10px; background: #14357499; color: #e4edff; }
@@ -2144,11 +2263,13 @@ summary:focus-visible {
 .board-panel .hud-action { min-height: 44px; min-width: 72px; padding: 0 12px; border-radius: 10px; font-size: .8rem; }
 .board-panel .hud-action.sound-toggle { min-width: 44px; width: 44px; padding: 0; }
 .board-panel .hud-action.exit-action { color: #c4d9ff; background: #122b5744; border-color: #759bd94d; }
+.exit-icon, .live-only-exit { display: none; }
 .exit-save-error { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border: 1px solid #f3bc76; border-radius: 12px; background: #412d36; color: #ffe2c1; font-size: .9rem; }
 .board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { display: inline-flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: .85rem; white-space: nowrap; }
 .practice-map-button svg, .superhint-button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .board-panel .superhint-button.hint-enabled { background: var(--cv-blue); color: #fff; border-color: #a8c9ff; }
 .hint-check { width: 1em; }
+.practice-label-short { display: none; }
 .practice-map-button:focus-visible, .superhint-button:focus-visible { outline: 3px solid #ffe36b; outline-offset: 3px; }
 
 /* ---------- Typography ---------- */
@@ -2214,21 +2335,25 @@ h2 {
 @keyframes combo-punch { 0% { transform: scale(.6); opacity: 0; } 45% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); } }
 @keyframes passed-pop { from { transform: scale(.5); opacity: 0; } }
 
-/* fitCellSize keeps 24px cells, 5px gaps, 10px padding and 2px borders:
-   never squeeze the board below that plus the measured footer; the game
-   scrolls instead on very short screens. */
+/* fitCellSize retains its original 24px tile minimum. If a map cannot fit at
+   that size, only its viewport pans; controls are never part of that scroll. */
 .board-wrap {
-  min-height: calc(var(--minimum-board-height) + var(--board-reserved-height));
+  min-height: 0;
+  min-width: 0;
   display: grid;
   place-items: center;
   position: relative;
   justify-self: center;
   width: 100%;
   height: 100%;
-  padding: 6px;
 }
 
-.board-and-controls { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.board-and-controls { display: grid; grid-template-rows: auto minmax(80px, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.board-viewport { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 6px; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; border-radius: var(--cv-radius-lg); }
+/* Auto margins center fitting maps and become zero on an overflowing axis,
+   so the first row/column stays reachable from the scroll origin. */
+.board-viewport > .board { flex: none; max-width: none; max-height: none; margin: auto; }
+.board-viewport:focus-visible { outline: 2px solid var(--cv-yellow); outline-offset: -2px; }
 /* Thumb zone: the D-pad alone, centred. Sound/exit live in the HUD here
    (teleported); desktop brings them back beside the D-pad. */
 .board-footer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: end; width: 100%; }
@@ -2280,6 +2405,7 @@ h2 {
 }
 
 .arrow {
+  position: relative;
   width: 68px;
   height: 52px;
   border: 1px solid #a8ceff;
@@ -2292,6 +2418,8 @@ h2 {
     inset 0 -4px 0 rgba(6, 26, 56, 0.12),
     var(--cv-shadow-md);
 }
+
+.arrow.guided-arrow:not(:disabled) { background: #ffe36b; outline: 3px solid #87dfff88; outline-offset: 2px; }
 
 .arrow:not(:disabled):hover {
   background: var(--cv-blue-soft);
@@ -2455,6 +2583,8 @@ h2 {
 @keyframes notice-pop { from { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.86); } }
 .notification strong { display: block; font-size: 1.1rem; font-weight: 800; }
 .notification p { margin: 3px 0 0; font-size: .95rem; }
+.notification.practice-success-notice { display: none; }
+@keyframes practice-notice-pop { from { opacity: 0; transform: translate(-50%, calc(-50% - 10px)) scale(.86); } }
 
 /* Score card slices in skewed from the left, a light blade sweeps across it
    and the points slam down. Sharp ease-outs only, no overshoot. */
@@ -2931,29 +3061,56 @@ h2 {
   }
 }
 
-/* Landscape phones: the screen is short, so code moves beside the board and
-   the D-pad beside the board (the resize observer reserves width instead). */
-@media (orientation: landscape) and (max-height: 560px) {
+/* The phone composition gives the program and map the space removed from
+   the verbose level header; values and existing system actions stay visible. */
+@media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .play-cluster .code-card.python-code :deep(.code-box) { font-size: .875rem; }
+  .board-panel .practice-map-button.soft-button, .board-panel .superhint-button.soft-button { width: 100%; min-width: 0; height: 44px; min-height: 44px; padding: 2px; gap: 3px; font-size: clamp(10px, 2.7vw, 11px); line-height: 1.2; white-space: nowrap; }
+  .practice-map-button svg, .superhint-button svg { display: block; flex: none; width: 14px; height: 14px; }
+  .practice-label-full { display: none; }
+  .practice-label-short { display: inline; }
+  .board-panel:has(.practice-hud) #game-hud-system .hud-action.exit-action { padding: 0; }
+  .board-panel:has(.practice-hud) .board-combo { display: none; }
+  .notification.practice-success-notice { display: block; position: fixed; top: 50%; width: min(340px, calc(100vw - 40px)); transform: translate(-50%, -50%); background: #123e32; color: #bbf7d0; animation-name: practice-notice-pop; }
+}
+@media (max-width: 359px) {
+  .board-panel .superhint-button svg { display: none; }
+}
+@media (max-width: 639px) {
+  .board-panel { padding: 8px; gap: 6px; }
+  .play-cluster { grid-template-rows: clamp(156px, 30dvh, 260px) minmax(0, 1fr); gap: 6px; }
+  .play-cluster .code-card :deep(.window-bar) { padding: 4px 10px; gap: 7px; }
+  .play-cluster .code-card :deep(.window-bar h2) { font-size: .7rem; line-height: 1.3; }
+  .play-cluster .code-card :deep(.window-dots) { gap: 4px; }
+  .play-cluster .code-card :deep(.window-dots i) { width: 7px; height: 7px; }
+  .play-cluster .code-card :deep(.code-scroll-hint) { font-size: .55rem; }
+  .board-and-controls { grid-template-rows: minmax(80px, 1fr) auto; gap: 8px; position: relative; }
+  .board-combo { display: none; }
+}
+
+/* Wide landscape phones put code and the D-pad beside the board. Narrow
+   landscape windows keep the stacked, scrollable layout so tiles have width. */
+@media (min-width: 640px) and (orientation: landscape) and (max-height: 560px) {
+  .board-panel { min-height: 300px; }
   .play-cluster { grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.7fr); grid-template-rows: minmax(0, 1fr); }
   .play-cluster .code-card { order: 0; height: 100%; }
   .play-cluster .code-card :deep(.code-box) { max-height: none; }
-  .board-wrap { --footer-beside: 1; min-height: calc(var(--minimum-board-height) + var(--board-reserved-height)); }
   .board-and-controls { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); }
   .board-combo { grid-column: 1 / -1; }
-  .board-and-controls > .board { grid-column: 1; grid-row: 2; }
+  .board-viewport { grid-column: 1; grid-row: 2; }
   .board-footer { grid-column: 2; grid-row: 2; grid-template-columns: auto; justify-items: center; align-self: end; }
   .board-footer .touch-controls { grid-column: 1; grid-row: 1; }
 }
 
 /* Desktop: board and D-pad on the left, code on the right. */
 @media (min-width: 921px) and (min-height: 561px) {
-  .app-shell { padding: 14px; overflow: hidden; }
+  .app-shell { padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); overflow: hidden; }
   .board-panel { height: 100%; min-height: 0; gap: 10px; padding: 14px; border-radius: var(--cv-radius-xl); }
   .play-cluster { min-height: 320px; grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr); grid-template-rows: none; gap: 16px; }
   .play-cluster .code-card { order: 0; height: 100%; max-height: 100%; }
   .play-cluster .code-card :deep(.window-bar) { padding: 14px 18px; }
   .play-cluster .code-card :deep(.window-bar h2) { font-size: .9rem; }
-  .play-cluster .code-card :deep(.code-box) { max-height: none; padding: 16px 0; }
+  .play-cluster .code-card :deep(.code-box) { max-height: none; padding: 16px 0 var(--code-bottom-space, 16px); }
   .board-wrap { min-height: 0; }
   .board-footer { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   .game-actions { flex-wrap: wrap; }
@@ -2976,6 +3133,27 @@ h2 {
 @media (max-width: 359px), (orientation: landscape) and (max-height: 560px) {
   .touch-controls { grid-template-columns: repeat(3, 60px); gap: 6px; }
   .arrow { width: 60px; height: 50px; font-size: 1.1rem; }
+}
+
+/* Phone experiment: map above code, with a full-width thumb pad below both.
+   Flatten layout wrappers only; the observed scroll viewports and input DOM
+   remain the same elements, including the teleported system actions. */
+@media (max-width: 639px), (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {
+  .board-panel { min-height: 560px; padding: 8px; gap: 6px; }
+  .play-cluster { position: relative; grid-template-columns: minmax(0, 1fr); grid-template-rows: clamp(120px, 22dvh, 180px) minmax(180px, 1fr) auto; gap: 8px; }
+  .board-wrap, .board-and-controls { display: contents; }
+  .board-combo { display: none; }
+  .board-viewport { grid-column: 1; grid-row: 1; }
+  .play-cluster .code-card { grid-column: 1; grid-row: 2; order: 0; height: 100%; }
+  .play-cluster .code-card :deep(.code-box) { max-height: none; }
+  .board-footer { grid-column: 1; grid-row: 3; align-self: end; }
+  .board-footer .touch-controls { grid-column: 1; grid-row: 1; width: 100%; justify-self: stretch; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: ". up ." "left down right"; gap: 6px; }
+  .touch-controls .arrow { width: 100%; min-width: 0; height: 52px; font-size: 1.15rem; }
+  .touch-controls :deep(.tap-finger) { right: 6px; bottom: 2px; width: 22px; height: 28px; }
+  .board-panel .hud-action.sound-toggle { display: none; }
+  .board-panel .hud-action.exit-action { display: inline-grid; place-items: center; width: 40px; min-width: 40px; min-height: 44px; padding: 0; }
+  .exit-action .exit-text { display: none; }
+  .exit-action .exit-icon { display: block; width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 }
 
 @media (prefers-reduced-motion: reduce) {
