@@ -2,6 +2,12 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-20 — Move the Host launch bar above the lobby on desktop
+
+- User restored an earlier code version and requested only the lower summary/Start section move upward on desktop. At >=921px width, order the lobby grid item after the existing launch bar, leaving header/copy/connection feedback first. No markup/script duplication, changed actions, room behavior or changes to the original setup-to-launch DOM/keyboard sequence.
+- Narrower screens retain the existing bottom launch bar. No discarded viewport-fitting or decorative work restored. Updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `live-host-launch-top-build.log`) and staged/unstaged `git diff --check` passed. Source inspection confirms only the >=921px lobby ordering changed in the page, with scripts and narrower layouts untouched. No tests/browser checks, staging/commit or branch switch per existing instruction; rendered placement remains unverified.
+
 ## 2026-10-20 — Room-join button on mobile too
 
 - User expanded the Home room-join entry to mobile. Removed the desktop-only visibility and click guard; the existing button now appears beside Rest at every size and opens the same `LiveJoinDialog`.

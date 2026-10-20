@@ -472,6 +472,11 @@ button:not(:disabled):active, a:active { filter: brightness(.94); }
   .secondary:not(:disabled):hover { border-color: var(--cv-blue-light); background: #1b3d70; }
   .danger:not(:disabled):hover, .kick:not(:disabled):hover { border-color: var(--cv-red); background: #54243b; }
 }
+/* Desktop shows the launch summary immediately after the header/status rows.
+   Keep the original setup-to-launch DOM and keyboard sequence on every size. */
+@media (min-width: 921px) {
+  .wrap > .lobby-layout { order: 1; }
+}
 @media (max-width: 960px) {
   .top { flex-wrap: wrap; }
   .tools { margin-left: auto; }
