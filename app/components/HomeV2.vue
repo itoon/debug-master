@@ -36,10 +36,14 @@
     <ModeDetailsPanel v-if="detailMode" ref="detailPanel" :mode="detailMode" :repository="repository" :busy="busy || motionPhase !== 'open'" :from-rect="detailFromRect"
       @ready="detailReady" @back="closeDetails" @start="createPlayer" @select-player="selectPlayer" />
     <footer class="home-footer" :inert="motionPhase !== 'idle'">
-      <button type="button" class="practice-button rest-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('sleep')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></svg>{{ t('sleep.back') }}</button>
+      <div class="home-footer-left">
+        <button type="button" class="practice-button rest-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('sleep')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></svg>{{ t('sleep.back') }}</button>
+        <button type="button" class="practice-button join-room-button" :disabled="busy || motionPhase !== 'idle'" aria-haspopup="dialog" @click="openJoinRoom"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 4h6v16h-6M3 12h12m-4-4 4 4-4 4" /></svg>{{ t('live.joinRoom') }}</button>
+      </div>
       <div class="home-footer-info"><span>{{ t('home.team') }}: <NuxtLink to="/review">{{ t('home.review') }}</NuxtLink> · <NuxtLink to="/elements">{{ t('home.elements') }}</NuxtLink> · <NuxtLink to="/players">{{ t('home.players') }}</NuxtLink> · <NuxtLink to="/modes">{{ t('home.modes') }}</NuxtLink></span></div>
       <button type="button" class="practice-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('practice')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 4 3 5-5 3-3-5zm10 8 3 5-5 3-3-5zM4 19h5m6-15h5" /></svg>{{ t('practice.open') }}</button>
     </footer>
+    <LiveJoinDialog v-if="showJoinRoom" @close="showJoinRoom = false" />
     <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :repository="repository" :error="error" :busy="busy || motionPhase === 'leaving'"
       @close="closeSetup" @start="launch" @edit="emit('resetError')" @popup="emit('sound', 'popup')" />
     <ReturningPlayerDialog v-if="selectedPlayer" :player="selectedPlayer" :latest-score="selectedLatestScore" :error="error" :busy="busy" @close="closePlayer" @create="createPlayer" @reuse="reusePlayer" />
@@ -54,6 +58,7 @@ import type { ModeSettingsRepository, ScoreRepository, PlayerSetupInput } from "
 import { formatClock, isOnBoard, scorePlayerKey, type RankingBoard } from "../utils/ranking";
 import type { UiSoundEffect } from "../data/sound-effects";
 import type { Score } from "../types/debug-game";
+import LiveJoinDialog from "./live/LiveJoinDialog.vue";
 
 const props = defineProps<{ repository: ScoreRepository; modesRepository: ModeSettingsRepository; error?: string; busy?: boolean; entering?: boolean }>();
 const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resume: [scoreId: string, mode: ChallengeMode]; practice: []; sleep: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
@@ -64,6 +69,11 @@ const singleMode = computed(() => enabledModes.value.length === 1);
 // Same breakpoint as the compact picker CSS below. Keep ranking subscriptions
 // intact, but pause hidden credits and use direct setup for backup phone play.
 const mobilePicker = ref(false);
+const showJoinRoom = ref(false);
+function openJoinRoom(): void {
+  if (props.busy || motionPhase.value !== 'idle') return;
+  showJoinRoom.value = true;
+}
 let mobilePickerQuery: MediaQueryList | undefined;
 function syncMobilePicker(): void { mobilePicker.value = mobilePickerQuery?.matches ?? false; }
 const setupMode = ref<ChallengeMode | null>(null);
@@ -459,6 +469,7 @@ onBeforeUnmount(() => {
 .empty-board .mode-heading { inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 18px 18px; background: linear-gradient(180deg, #020d31ed, #04123980 90px, transparent 200px), linear-gradient(0deg, #020d31f2, #04123999 75px, transparent 180px); }
 .empty-board .mode-heading h2 { text-shadow: 0 2px 3px #020d31, 0 0 14px #020d31b3; }
 .home-footer { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; color: #d0e2ff; font-size: .7rem; text-align: center; }
+.home-footer-left { display: flex; align-items: center; gap: 8px; }
 .practice-button.rest-button { justify-self: start; }
 .home-v2.sleep-switch-leave-active { transition: opacity 220ms ease; }
 .home-v2.sleep-switch-leave-to { opacity: 0; }
@@ -523,7 +534,9 @@ a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
   .mobile-card-play { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #fff9; border-radius: 50%; color: #102754; background: var(--mode-accent); pointer-events: none; }
   .mobile-card-play svg { width: 20px; height: 20px; fill: currentColor; }
   .home-footer { grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+  .home-footer-left { gap: 6px; }
   .practice-button { width: 100%; min-height: 44px; justify-content: center; justify-self: stretch; padding: 8px 12px; font-size: .8rem; background: #173d7de8; }
+  .home-footer-left .practice-button { flex: none; width: auto; gap: 4px; padding: 8px; font-size: .7rem; white-space: nowrap; }
   .practice-button.rest-button { width: auto; min-width: 44px; padding: 8px; font-size: .7rem; background: #0b275c99; }
 }
 @media (orientation: landscape) and (max-width: 920px) and (max-height: 560px) {

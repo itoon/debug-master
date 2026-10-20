@@ -2,6 +2,24 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-20 — Room-join button on mobile too
+
+- User expanded the Home room-join entry to mobile. Removed the desktop-only visibility and click guard; the existing button now appears beside Rest at every size and opens the same `LiveJoinDialog`.
+- Compact phone footer uses content-width left buttons, 6px spacing, 0.7rem labels and existing 44px touch heights alongside practice. No changes to dialog validation/navigation, room/socket/auth flows or gameplay. Existing staged/unstaged work preserved; updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `mobile-join-room-build.log`) and staged/unstaged `git diff --check` passed. Source inspection confirms no desktop-only join guard remains and the same modal/navigation is reused. No tests/browser checks, staging/commit or branch switch per existing instruction; actual phone rendering remains unverified.
+
+## 2026-10-20 — Brighter Live Host and readable custom time
+
+- User reported the host page was too dark and custom-duration help/unit text became dark on blue. Lightened only the host's local panel/inset/border/muted colors and reduced its scene dim overlay from 32–70% to 8–22%.
+- Root cause: `.time-option.selected small` also matched `.custom.selected`, overriding its pale helper/unit text. Restricted yellow-background/dark-text selection rules to non-custom preset buttons; custom input values stay white, helper/unit text pale. Layout, markup, scripts, time validation, room commands and global palette remain unchanged. Preserved existing staged/unstaged work; updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `live-host-brighter-build.log`) and staged/unstaged `git diff --check` passed. Read-only source review found no actionable defects in preset/custom selectors or state styling. No tests/browser checks, staging/commit or branch switch per existing instruction; actual rendering remains unverified.
+
+## 2026-10-20 — Desktop Home room-join entry
+
+- Added the localized “เข้าร่วมห้อง” footer button beside Rest at bottom left, using the existing button style. Visible only at >=921px width / >=561px height; phone footer choices remain unchanged. `LiveJoinDialog.vue` reuses native modal focus/inert/Escape behavior, validates through the existing `normalizeRoomCode`, and shows inline malformed-code / missing-Live-config feedback.
+- Valid submission navigates the document to the configured app baseURL plus `?room=CODE`, reusing the existing mount-time Live player entry, profile setup/resume and room flow. No runner/scoring/timer/room/server/auth/host-key changes. Existing staged Live Host redesign work preserved; updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `desktop-join-room-build.log`) and staged/unstaged `git diff --check` passed. Read-only source review found no actionable defects in visibility, modal/focus/validation, baseURL navigation or SSR. No tests/browser checks, staging/commit or branch switch per existing instruction; actual rendering and runtime room entry remain unverified.
+
 ## 2026-10-19 — Approved Live Host UI redesign
 
 - Working branch: `feature/redesign-live-room`. Applied the user's approved interactive mockup to `/live/host`: navy/yellow surfaces, local logo and room/status header, host-link/big-screen tools, two-column mode/time settings and player roster, and a prominent launch panel with the actual online-ready count. Added localized empty/loading/readiness/help text and a small presentation-only `HostIcon.vue` SVG component; no dependencies or external assets.

@@ -332,12 +332,12 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .host-page {
-  --host-panel: #102958;
-  --host-panel-deep: #0a2048;
-  --host-border: #34568c;
-  --host-muted: #b5c9e9;
+  --host-panel: #1c427e;
+  --host-panel-deep: #12315e;
+  --host-border: #7097d6;
+  --host-muted: #d3e3ff;
   position: fixed; inset: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
-  background: linear-gradient(180deg, #061a3852, #061a38b3), url("~/assets/bg.png") center bottom / cover no-repeat var(--cv-navy-900);
+  background: linear-gradient(180deg, #061a3814, #061a3838), url("~/assets/bg.png") center bottom / cover no-repeat var(--cv-navy-900);
   color: var(--cv-on-dark); font-family: var(--cv-font);
 }
 .wrap { display: grid; gap: 18px; width: 100%; max-width: 1160px; margin: 0 auto; padding: 28px 28px max(32px, env(safe-area-inset-bottom)); }
@@ -389,8 +389,9 @@ svg { flex: none; width: 20px; height: 20px; }
 .time-option { display: flex; align-items: baseline; justify-content: center; gap: 5px; min-height: 60px; padding: 10px 6px; border: 2px solid var(--host-border); border-radius: var(--cv-radius); background: var(--host-panel-deep); font-weight: 800; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
 .time-value { font-size: 1.5rem; line-height: 1.3; font-variant-numeric: tabular-nums; }
 .time-option small { color: var(--host-muted); font-size: .75rem; font-weight: 700; }
-.time-option.selected { border-color: var(--cv-yellow); background: var(--cv-yellow); color: var(--cv-navy-900); }
-.time-option.selected small { color: var(--cv-navy-900); }
+/* Dark text belongs only to the yellow preset, never the navy custom row. */
+.time-option.selected:not(.custom) { border-color: var(--cv-yellow); background: var(--cv-yellow); color: var(--cv-navy-900); }
+.time-option.selected:not(.custom) small { color: var(--cv-navy-900); }
 .time-option.custom { grid-column: 1 / -1; align-items: center; justify-content: space-between; gap: 10px; min-height: 64px; margin-top: 4px; padding: 14px 0 0; border: 0; border-top: 1px solid var(--host-border); border-radius: 0; background: transparent; color: var(--cv-on-dark); text-align: left; cursor: default; }
 .custom label { display: grid; gap: 2px; font-size: .875rem; }
 .custom label small { color: var(--host-muted); font-size: .7rem; font-weight: 400; }
