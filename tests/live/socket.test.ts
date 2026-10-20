@@ -215,7 +215,7 @@ describe('openLiveSocket', () => {
 
   it('queues unsent messages (latest per coalesce key) and flushes them after hello', () => {
     const s = openLiveSocket('ws://x', hello, { onMessage, onConnection })
-    const p = (score: number) => ({ type: 'progress' as const, roundId: 1, score, levelsCompleted: 0, bestCombo: 0, combo: 0 })
+    const p = (durationSec: number) => ({ type: 'setDuration' as const, durationSec })
     s.send(p(1), 'progress')
     s.send(p(2), 'progress')
     s.send({ type: 'leave' })
@@ -223,6 +223,15 @@ describe('openLiveSocket', () => {
     expect(last().sent).toEqual([JSON.stringify({ type: 'hello' }), JSON.stringify(p(2)), JSON.stringify({ type: 'leave' })])
     s.send(p(3), 'progress')
     expect(last().sent.at(-1)).toBe(JSON.stringify(p(3)))
+  })
+
+  it('never coalesces distinct gameplay or queues it before reconciliation', () => {
+    const s = openLiveSocket('ws://x', hello, { onMessage, onConnection })
+    const e = (sequence: number) => ({ type: 'gameplay' as const, protocolVersion: 1, roundId: 1, sessionId: 's', sequence, at: 1000 + sequence, levelId: 1, action: 'direction' as const, direction: 'right' as const })
+    s.send(e(1), 'gameplay'); last().open()
+    expect(last().sent).toHaveLength(1) // durable replay owner must reconcile first
+    s.send(e(1), 'gameplay'); s.send(e(2), 'gameplay')
+    expect(last().sent.slice(1)).toEqual([JSON.stringify(e(1)), JSON.stringify(e(2))])
   })
 
   it('skips hello while the hello factory returns null', () => {

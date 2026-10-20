@@ -140,10 +140,48 @@ async function main() {
   const sr = await screen.waitState('running', (s) => s.phase === 'running', 4000)
   check(sr.phase === 'running', 'countdown -> running within 4 s')
 
-  // 5. progress puts P1 first.
-  p1.send({ type: 'progress', roundId: 1, score: 500, levelsCompleted: 1, bestCombo: 2, combo: 2 })
-  const sp = await screen.waitState('P1 score 500', (s) => s.players.some((p) => p.id === y1.id && p.score === 500))
-  check(sp.players[0].id === y1.id && sp.players[0].score === 500, 'P1 is ranked first after progress')
+  // 5. Actual canonical level 1: ready + three right inputs. No client totals.
+  const private1 = await p1.waitFor('private session', m => m.type === 'scoring' && m.session)
+  const private2 = await p2.waitFor('private session', m => m.type === 'scoring' && m.session)
+  const event = (snapshot, sequence, action, at, direction) => ({ type: 'gameplay', protocolVersion: 1,
+    roundId: sc.roundId, sessionId: snapshot.session.id, sequence, levelId: 1, action, at, ...(direction ? { direction } : {}) })
+  const readyAt = Date.now()
+  const play = async (client, snapshot, mistakes = 0) => {
+    let sequence = 0
+    const send = async (action, at, direction) => {
+      const msg = event(snapshot, ++sequence, action, at, direction)
+      const since = client.messages.length
+      client.send(msg)
+      const ack = await client.waitFor('canonical ack', m => m.type === 'scoring' && m.acknowledgedSequence === sequence, 3000, since)
+      check(!ack.error, `canonical ${action} ${sequence} accepted`)
+      return { msg, ack }
+    }
+    await send('ready', readyAt)
+    for (let i = 0; i < mistakes; i++) await send('direction', readyAt, 'up')
+    await send('direction', readyAt, 'right')
+    await send('direction', readyAt, 'right')
+    return send('direction', readyAt, 'right')
+  }
+  const complete1 = await play(p1, private1)
+  const complete2 = await play(p2, private2, 1)
+  const score1 = complete1.ack.session.totalScore
+  check(score1 === 2000 && complete1.ack.receipt.stars === 3, 'Worker calculates zero-second perfect score 2000')
+  check(complete2.ack.session.totalScore === 1500 && complete2.ack.receipt.stars === 2, 'one mistake yields two stars and 1500')
+  const sp = (await screen.waitFor('ordered standings', m => m.type === 'state' && m.state.players.find(p => p.id === y2.id)?.score === 1500)).state
+  check(sp.players[0].id === y1.id && sp.players[0].score === score1, 'public standings agree with canonical private scores')
+  const duplicateSince = p1.messages.length
+  p1.send(complete1.msg)
+  const duplicate = await p1.waitFor('duplicate ack', m => m.type === 'scoring', 3000, duplicateSince)
+  check(duplicate.session.totalScore === score1 && duplicate.receipt.delta === 0, 'duplicate final input awards no second delta')
+  p1.ws.close()
+  const resumed = connect('player'); await resumed.open(); resumed.send(player('smoke-p1', 'P1'))
+  const restored = await resumed.waitFor('private resume', m => m.type === 'scoring' && m.session)
+  check(restored.acknowledgedSequence === 4 && restored.nextExpectedSequence === 5 && restored.session.totalScore === score1, 'reconnect restores exact accepted sequence and score')
+  const replaySince = resumed.messages.length
+  resumed.send(complete1.msg)
+  const replayed = await resumed.waitFor('lost ack replay', m => m.type === 'scoring', 3000, replaySince)
+  check(replayed.receipt.delta === 0, 'lost-ack replay after reconnect is idempotent')
+  check(!screen.messages.some(m => m.type === 'scoring') && !hostA.messages.some(m => m.type === 'scoring'), 'private canonical state never reaches screen or host')
 
   // 6. a late joiner is queued.
   const p3 = connect('player')
@@ -161,17 +199,33 @@ async function main() {
   thief.send({ type: 'leave' })
   const afterThief = await screen.waitState('thief gone', (s) => !s.players.some((p) => p.id === yt.id))
   const p1row = afterThief.players.find((p) => p.id === y1.id)
-  check(p1row?.score === 500 && p1row.name === 'P1' && p1row.connected, 'P1 seat, name and score unchanged')
+  check(p1row?.score === score1 && p1row.name === 'P1' && p1row.connected, 'P1 seat, name and score unchanged')
 
   // 7. endEarly -> finished, newRound -> lobby round 2 with P3 seated in lane 2.
   hostA.send({ type: 'endEarly' })
   const sf = await screen.waitState('finished', (s) => s.phase === 'finished')
   check(sf.phase === 'finished', 'endEarly -> finished')
+  // End Early's shortened deadline is authoritative even though session.deadline stays frozen.
+  const lateSince = resumed.messages.length
+  resumed.send({ ...complete1.msg, sequence: 5, action: 'ready', levelId: 2, at: sf.endAt + 1, direction: undefined })
+  const late = await resumed.waitFor('deadline rejection', m => m.type === 'scoring', 3000, lateSince)
+  check(late.error === 'round_closed' && late.acknowledgedSequence === 4, `post-deadline event rejected during grace (${late.error}, ack ${late.acknowledgedSequence})`)
+  await new Promise(resolve => setTimeout(resolve, 2100))
+  const closedSince = resumed.messages.length
+  resumed.send({ ...complete1.msg, sequence: 5, action: 'ready', levelId: 2, at: sf.endAt, direction: undefined })
+  const closedAck = await resumed.waitFor('grace rejection', m => m.type === 'scoring', 3000, closedSince)
+  check(closedAck.error === 'round_closed', 'new pre-deadline event arriving beyond grace is rejected')
   hostA.send({ type: 'newRound' })
   const sl = await screen.waitState('lobby round 2', (s) => s.phase === 'lobby')
   const p3row = sl.players.find((p) => p.id === y3.id)
   check(sl.roundId === 2, 'newRound -> lobby with roundId 2')
   check(p3row?.status === 'playing' && p3row.lane === 2, 'P3 is playing in lane 2')
+
+  check(sl.players.every(p => p.score === 0 && p.levelsCompleted === 0), 'new-round standings never reuse prior-round best')
+  const oldSince = resumed.messages.length
+  resumed.send(complete1.msg)
+  const old = await resumed.waitFor('old round rejection', m => m.type === 'scoring', 3000, oldSince)
+  check((old.error === 'wrong_round' || old.error === 'not_playing'), 'old events cannot score in a new round')
 
   // 8. kick P2.
   hostA.send({ type: 'kick', playerId: y2.id })

@@ -14,6 +14,7 @@
     <div class="ranking-heading">
       <h3 :id="headingId">{{ t('home.today') }}</h3>
     </div>
+    <p class="scoring-policy">{{ t('ranking.scoringPolicy', { strategy: t(`scoring.${board.scoringStrategy}`) }) }}</p>
     <p v-if="error" class="board-error" role="alert">
       {{ t('storage.loadError') }}
     </p>
@@ -318,6 +319,9 @@ function ageRange(age?: number): string {
 .ranking-heading h3 {
   flex: 1;
 }
+.scoring-policy { flex: none; margin: 0 0 6px; color: var(--cv-muted); font-size: .8rem; line-height: 1.5; }
+.space .scoring-policy { color: #c4dcff; }
+.split .scoring-policy { grid-column: 1 / -1; grid-row: 1; }
 .credits-viewport {
   min-height: 0;
 }

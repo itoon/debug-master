@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PlayerHello } from '../../app/utils/live/protocol'
-import { MAX_LEVEL_MOVES } from '../../app/utils/live/protocol'
+import { LIVE_PROTOCOL_VERSION } from '../../app/utils/live/protocol'
 import { cleanName, parseClientMessage } from '../src/validate'
 
 const hello = { type: 'hello', pid: 'pid-abc123', name: 'มิ้นท์🔥', avatarId: 'art-toy/10-party.svg', age: 9 }
@@ -30,21 +30,21 @@ describe('validate', () => {
     expect(parseClientMessage('{"type":"setDuration","durationSec":600}', 'host')).toEqual({ type: 'setDuration', durationSec: 600 })
     expect(parseClientMessage('{"type":"setMode","mode":"D"}', 'host')).toBeNull()
   })
-  it('rejects progress with combo above bestCombo or negative numbers', () => {
-    const p = { type: 'progress', roundId: 1, score: 10, levelsCompleted: 1, bestCombo: 3, combo: 3 }
-    expect(parseClientMessage(JSON.stringify(p), 'player')).toEqual(p)
-    expect(parseClientMessage(JSON.stringify({ ...p, combo: 4 }), 'player')).toBeNull()
-    expect(parseClientMessage(JSON.stringify({ ...p, score: -1 }), 'player')).toBeNull()
-  })
-  it('rejects a bestCombo above (levelsCompleted + 1) x MAX_LEVEL_MOVES', () => {
-    const p = { type: 'progress', roundId: 1, score: 0, levelsCompleted: 0, bestCombo: MAX_LEVEL_MOVES, combo: 0 }
-    expect(parseClientMessage(JSON.stringify(p), 'player')).toEqual(p)
-    expect(parseClientMessage(JSON.stringify({ ...p, bestCombo: MAX_LEVEL_MOVES + 1 }), 'player')).toBeNull()
-    const two = { ...p, levelsCompleted: 2, bestCombo: 3 * MAX_LEVEL_MOVES }
-    expect(parseClientMessage(JSON.stringify(two), 'player')).toEqual(two)
-    expect(parseClientMessage(JSON.stringify({ ...two, bestCombo: 3 * MAX_LEVEL_MOVES + 1 }), 'player')).toBeNull()
-    // the huge combo that would lift the per-level score cap is refused
-    expect(parseClientMessage(JSON.stringify({ ...p, levelsCompleted: 1, bestCombo: 1_000_000 }), 'player')).toBeNull()
+  it('validates gameplay shape and refuses cumulative progress or forged fields', () => {
+    const event = { type: 'gameplay', protocolVersion: LIVE_PROTOCOL_VERSION, roundId: 1,
+      sessionId: 'server-session', sequence: 1, levelId: 1, at: 4000, action: 'ready' }
+    expect(parseClientMessage(JSON.stringify(event), 'player')).toEqual(event)
+    expect(parseClientMessage(JSON.stringify({ ...event, protocolVersion: 99 }), 'player')).toEqual({ ...event, protocolVersion: 99 })
+    expect(parseClientMessage(JSON.stringify({ ...event, action: 'direction', direction: 'right' }), 'player')).toEqual({ ...event, action: 'direction', direction: 'right' })
+    for (const invalid of [{ score: 100000 }, { stars: 3 }, { levelsCompleted: 50 }, { bestCombo: 50 },
+      { sequence: 0 }, { sequence: 1.1 }, { at: -1 }, { at: 4000.1 }, { at: null },
+      { action: 'direction' }, { action: 'direction', direction: 'diagonal' }, { direction: 'right' },
+      { action: 'complete' }, { sessionId: '' }, { protocolVersion: '1' }]) {
+      expect(parseClientMessage(JSON.stringify({ ...event, ...invalid }), 'player')).toBeNull()
+    }
+    expect(parseClientMessage(JSON.stringify(event), 'screen')).toBeNull()
+    expect(parseClientMessage(JSON.stringify(event), 'host')).toBeNull()
+    expect(parseClientMessage(JSON.stringify({ type: 'progress', roundId: 1, score: 10, levelsCompleted: 1, bestCombo: 3, combo: 3 }), 'player')).toBeNull()
   })
   it('rejects oversize, binary and non-JSON input', () => {
     expect(parseClientMessage('x'.repeat(2049), 'player')).toBeNull()

@@ -1,6 +1,5 @@
 import {
   MAX_DURATION_SEC,
-  MAX_LEVEL_MOVES,
   MAX_MSG_BYTES,
   MIN_DURATION_SEC,
   NAME_MAX,
@@ -71,23 +70,15 @@ export function parseClientMessage(raw: string | ArrayBuffer, role: Role): Clien
         age: m.age,
       }
     }
-    case 'progress': {
+    case 'gameplay': {
       if (role !== 'player') return null
-      const { roundId, score, levelsCompleted, bestCombo, combo } = m
-      if (
-        !isNonNegInt(roundId) ||
-        !isNonNegInt(score) ||
-        !isNonNegInt(levelsCompleted) ||
-        !isNonNegInt(bestCombo) ||
-        !isNonNegInt(combo) ||
-        combo > bestCombo ||
-        // A combo counts correct moves: at most every move of the cleared levels plus the current one.
-        // Bounds bestCombo, and with it the per-level score cap (maxLevelPoints).
-        bestCombo > (levelsCompleted + 1) * MAX_LEVEL_MOVES
-      ) {
-        return null
-      }
-      return { type: 'progress', roundId, score, levelsCompleted, bestCombo, combo }
+      const allowed = ['type', 'protocolVersion', 'roundId', 'sessionId', 'sequence', 'levelId', 'at', 'action', 'direction']
+      if (Object.keys(m).some(key => !allowed.includes(key)) || !isNonNegInt(m.protocolVersion) ||
+        !isNonNegInt(m.roundId) || typeof m.sessionId !== 'string' || !m.sessionId || m.sessionId.length > 128 ||
+        !isNonNegInt(m.sequence) || m.sequence < 1 || !isNonNegInt(m.levelId) ||
+        !isNonNegInt(m.at) || m.at > 8.64e15 || !['ready', 'direction', 'reset'].includes(m.action as string)) return null
+      if (m.action === 'direction' ? !['up', 'down', 'left', 'right'].includes(m.direction as string) : m.direction !== undefined) return null
+      return m as unknown as ClientMessage
     }
     case 'leave':
       return role === 'player' ? { type: 'leave' } : null
