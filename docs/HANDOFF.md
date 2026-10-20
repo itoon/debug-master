@@ -2,6 +2,36 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-20 — Move the Host launch bar above the lobby on desktop
+
+- User restored an earlier code version and requested only the lower summary/Start section move upward on desktop. At >=921px width, order the lobby grid item after the existing launch bar, leaving header/copy/connection feedback first. No markup/script duplication, changed actions, room behavior or changes to the original setup-to-launch DOM/keyboard sequence.
+- Narrower screens retain the existing bottom launch bar. No discarded viewport-fitting or decorative work restored. Updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `live-host-launch-top-build.log`) and staged/unstaged `git diff --check` passed. Source inspection confirms only the >=921px lobby ordering changed in the page, with scripts and narrower layouts untouched. No tests/browser checks, staging/commit or branch switch per existing instruction; rendered placement remains unverified.
+
+## 2026-10-20 — Room-join button on mobile too
+
+- User expanded the Home room-join entry to mobile. Removed the desktop-only visibility and click guard; the existing button now appears beside Rest at every size and opens the same `LiveJoinDialog`.
+- Compact phone footer uses content-width left buttons, 6px spacing, 0.7rem labels and existing 44px touch heights alongside practice. No changes to dialog validation/navigation, room/socket/auth flows or gameplay. Existing staged/unstaged work preserved; updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `mobile-join-room-build.log`) and staged/unstaged `git diff --check` passed. Source inspection confirms no desktop-only join guard remains and the same modal/navigation is reused. No tests/browser checks, staging/commit or branch switch per existing instruction; actual phone rendering remains unverified.
+
+## 2026-10-20 — Brighter Live Host and readable custom time
+
+- User reported the host page was too dark and custom-duration help/unit text became dark on blue. Lightened only the host's local panel/inset/border/muted colors and reduced its scene dim overlay from 32–70% to 8–22%.
+- Root cause: `.time-option.selected small` also matched `.custom.selected`, overriding its pale helper/unit text. Restricted yellow-background/dark-text selection rules to non-custom preset buttons; custom input values stay white, helper/unit text pale. Layout, markup, scripts, time validation, room commands and global palette remain unchanged. Preserved existing staged/unstaged work; updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `live-host-brighter-build.log`) and staged/unstaged `git diff --check` passed. Read-only source review found no actionable defects in preset/custom selectors or state styling. No tests/browser checks, staging/commit or branch switch per existing instruction; actual rendering remains unverified.
+
+## 2026-10-20 — Desktop Home room-join entry
+
+- Added the localized “เข้าร่วมห้อง” footer button beside Rest at bottom left, using the existing button style. Visible only at >=921px width / >=561px height; phone footer choices remain unchanged. `LiveJoinDialog.vue` reuses native modal focus/inert/Escape behavior, validates through the existing `normalizeRoomCode`, and shows inline malformed-code / missing-Live-config feedback.
+- Valid submission navigates the document to the configured app baseURL plus `?room=CODE`, reusing the existing mount-time Live player entry, profile setup/resume and room flow. No runner/scoring/timer/room/server/auth/host-key changes. Existing staged Live Host redesign work preserved; updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `desktop-join-room-build.log`) and staged/unstaged `git diff --check` passed. Read-only source review found no actionable defects in visibility, modal/focus/validation, baseURL navigation or SSR. No tests/browser checks, staging/commit or branch switch per existing instruction; actual rendering and runtime room entry remain unverified.
+
+## 2026-10-19 — Approved Live Host UI redesign
+
+- Working branch: `feature/redesign-live-room`. Applied the user's approved interactive mockup to `/live/host`: navy/yellow surfaces, local logo and room/status header, host-link/big-screen tools, two-column mode/time settings and player roster, and a prominent launch panel with the actual online-ready count. Added localized empty/loading/readiness/help text and a small presentation-only `HostIcon.vue` SVG component; no dependencies or external assets.
+- Preserve existing native mode/time radios, custom-minute validation, room creation, host commands/permission guards, player/queue membership, scores/clocks, secret-key URL/storage handling, clipboard fallback and native end-round dialog behavior. Countdown/running/results use the same dark visual treatment. Mobile stacks the columns with full-width Start; the page scrolls naturally and roster/queue lists scroll within bounded regions. Updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `live-host-redesign-build.log`) and staged/unstaged `git diff --check` passed. Read-only source review found no actionable defects and confirmed the existing room/auth/command/time/score behavior remains unchanged. Per existing user instruction, no tests or browser/device checks; actual rendering remains unverified. No staging/commit or branch switch.
+
 ## 2026-10-20 — Per-mode BEST/LATEST settings
 
 - `/modes` now provides a browser-local scoring strategy dropdown for each of A/B/C. BEST selects each player's highest-scoring session; LATEST selects their latest session, including a lower or zero score. Changes save immediately, survive reload, and refresh other open tabs. Mode visibility remains independent; Reset restores both visibility and strategy defaults and can recover malformed settings.
