@@ -2,6 +2,12 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-19 — Approved Live Host UI redesign
+
+- Working branch: `feature/redesign-live-room`. Applied the user's approved interactive mockup to `/live/host`: navy/yellow surfaces, local logo and room/status header, host-link/big-screen tools, two-column mode/time settings and player roster, and a prominent launch panel with the actual online-ready count. Added localized empty/loading/readiness/help text and a small presentation-only `HostIcon.vue` SVG component; no dependencies or external assets.
+- Preserve existing native mode/time radios, custom-minute validation, room creation, host commands/permission guards, player/queue membership, scores/clocks, secret-key URL/storage handling, clipboard fallback and native end-round dialog behavior. Countdown/running/results use the same dark visual treatment. Mobile stacks the columns with full-width Start; the page scrolls naturally and roster/queue lists scroll within bounded regions. Updated `DESIGN.md`.
+- Verification: `pnpm build` passed (exit 0, `live-host-redesign-build.log`) and staged/unstaged `git diff --check` passed. Read-only source review found no actionable defects and confirmed the existing room/auth/command/time/score behavior remains unchanged. Per existing user instruction, no tests or browser/device checks; actual rendering remains unverified. No staging/commit or branch switch.
+
 ## 2026-10-16 — Five-minute defaults and one shared competition-time setting
 
 - User confirmed one time setting shared by Beginner/Intermediate/Pro. `home-config.ts` defaults all three to 300 seconds and defines shared whole-minute validation (1–15). `/modes` adds an explicit Save duration form, inline bounds/error/status, updated saved duration on all three rows and reset/recovery; labels use i18n. The setting applies to new solo rounds on this device.
