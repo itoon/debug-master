@@ -188,6 +188,8 @@ Random nicknames combine eight playful Thai character/space bases with ten gamin
 
 Per-level score feedback owns its 1400ms display lifetime independently of `beginLevel`; next-level assembly must not clear the accepted points/stars. A new receipt replaces/re-keys the existing popup, and run exit/reset still clears it.
 
+Game buttons use `touch-action: manipulation`. D-pad single-finger taps also cancel their touch-end default and call the existing movement handler once, including zoom suppression during disabled cooldowns; mouse/keyboard keep native click handling. Multitouch, drags and cancellations remain browser gestures, and board panning explicitly retains `pinch-zoom`. No viewport zoom lock is introduced.
+
 Motion makes the game feel physical without slowing play; nothing gates input or extends the existing timings. The focal moment is a level clear: a yellow shock ring and eight yellow/blue sparks burst from Codi (≤480ms, finished before the 520ms advance), the score card springs in with its points landing a beat later, the HUD score rolls up (`useCountUp`, exponential ease-out; decreases snap) and bumps, the progress fill (`role="progressbar"`, scaleX) slides with one light glint, and the next round's tiles settle diagonally from the top-left (24ms per diagonal, capped at 300ms). `LevelBoard` is re-keyed per `beginLevel`, so starts, retries after a shatter and new levels all assemble the same way; `cascade` is opt-in so review/tutorial boards stay static.
 
 Edge wraps read as one ordinary step: within the same 260ms, a copy of Codi slides out past the edge it left while Codi slides in from one pitch beyond the opposite edge, both fading (`translate`, composed with the hop). Reduced motion keeps the instant snap.

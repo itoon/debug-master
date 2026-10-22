@@ -123,10 +123,10 @@
                 </nav>
                 </Teleport>
                 <div class="touch-controls" :aria-label="t('game.controls')">
-                <button type="button" class="arrow up" :class="{ 'guided-arrow': mobileGuidedMove === 'up' }" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲<TouchTapHint v-if="mobileGuidedMove === 'up'" /></button>
-                <button type="button" class="arrow left" :class="{ 'guided-arrow': mobileGuidedMove === 'left' }" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀<TouchTapHint v-if="mobileGuidedMove === 'left'" /></button>
-                <button type="button" class="arrow down" :class="{ 'guided-arrow': mobileGuidedMove === 'down' }" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼<TouchTapHint v-if="mobileGuidedMove === 'down'" /></button>
-                <button type="button" class="arrow right" :class="{ 'guided-arrow': mobileGuidedMove === 'right' }" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶<TouchTapHint v-if="mobileGuidedMove === 'right'" /></button>
+                <button type="button" class="arrow up" data-direction="up" :class="{ 'guided-arrow': mobileGuidedMove === 'up' }" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲<TouchTapHint v-if="mobileGuidedMove === 'up'" /></button>
+                <button type="button" class="arrow left" data-direction="left" :class="{ 'guided-arrow': mobileGuidedMove === 'left' }" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀<TouchTapHint v-if="mobileGuidedMove === 'left'" /></button>
+                <button type="button" class="arrow down" data-direction="down" :class="{ 'guided-arrow': mobileGuidedMove === 'down' }" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼<TouchTapHint v-if="mobileGuidedMove === 'down'" /></button>
+                <button type="button" class="arrow right" data-direction="right" :class="{ 'guided-arrow': mobileGuidedMove === 'right' }" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶<TouchTapHint v-if="mobileGuidedMove === 'right'" /></button>
                 </div>
               </div>
             </div>
@@ -433,6 +433,7 @@ import type { SessionReceipt } from "../types/competition";
 import type { PlayerSetupInput } from "../storage/contracts";
 import { isPlayerAvatarId, PLAYER_AVATARS } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
+import { useGameTouchControls } from "../composables/useGameTouchControls";
 import { useLiveConfig, useLiveRoom, type LiveRoom } from "../composables/useLiveRoom";
 import { livePlayerId, resetLivePlayerId } from "../utils/live/identity";
 import { clearLiveSession, loadLiveSession, saveLiveSession } from "../utils/live/session";
@@ -543,6 +544,7 @@ function cancelBoardFollow(): void {
   boardScroller.cancel();
 }
 const controlsEl = ref<HTMLElement | null>(null);
+useGameTouchControls(controlsEl, controlMove);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
 // Matches the desktop layout query in the styles below; anything smaller is
 // the compact (phone/tablet) layout with sound and exit in the HUD.
@@ -2355,7 +2357,7 @@ h2 {
 }
 
 .board-and-controls { display: grid; grid-template-rows: auto minmax(80px, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
-.board-viewport { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 6px; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; border-radius: var(--cv-radius-lg); }
+.board-viewport { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 6px; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y pinch-zoom; border-radius: var(--cv-radius-lg); }
 /* Auto margins center fitting maps and become zero on an overflowing axis,
    so the first row/column stays reachable from the scroll origin. */
 .board-viewport > .board { flex: none; max-width: none; max-height: none; margin: auto; }
@@ -2411,6 +2413,7 @@ h2 {
 }
 
 .arrow {
+  touch-action: manipulation;
   position: relative;
   width: 68px;
   height: 52px;

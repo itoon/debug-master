@@ -16,6 +16,9 @@ body {
   font-family: var(--cv-font);
 }
 
+/* Fast button taps must remain clicks on touch devices; panning and pinch zoom stay available. */
+button, [role="button"] { touch-action: manipulation; }
+
 /* CodeVenture brand font (LINE Seed Sans TH). Files live in assets/font. */
 @font-face {
   font-family: "LINESeedSans";
