@@ -2,6 +2,13 @@
 
 Branch: `feature/home-v2`, based on Dev commit `17bc6f5`.
 
+## 2026-10-22 — Archive final Live round results to D1
+
+- User asked whether adding D1 to the Worker affects the existing design; chose the recommended use: a write-once archive of each finished round's public standings so results outlive the 6-hour room wipe. The LiveRoom DO remains the only source of truth; no client, protocol, scoring, input/ack or leaderboard change, and no HTTP read endpoint.
+- `live-server/migrations/0001_round_results.sql` (`rounds`, `round_players`), binding `RESULTS_DB` (database `debug-master-live-results`, real `database_id`), `RESULTS_RETENTION_DAYS` = 90 and a daily 03:00 UTC cron in `wrangler.jsonc`; regenerated `worker-configuration.d.ts`.
+- `src/archive.ts` builds rows (playing participants only, big-screen ranking per BEST/LATEST, no pid/host key/ledger) and writes one idempotent batch. `room-logic.ts`: `roundKey` (`CODE:startAt`), `archiveDueAt`/`isArchiveDue` (finished + `GRACE_MS`, retry time), `nextAlarmAt` wakes for it; `startNewRound` clears the retry. `live-room.ts` archives from the alarm, before New round and before idle wipe; failures are logged and retried every 60 s, never blocking the room. `index.ts` `scheduled` prunes past retention.
+- Verification: 102 Worker tests (12 new, including the real migration on Node SQLite for idempotency, atomic failure and pruning) and Worker typecheck pass. Local `wrangler dev` E2E with two players: alarm path archived 2,002 ms after an early end; New-round-before-grace path archived immediately; ranks and public ids correct; cron handler ran without deleting recent rounds. Remote D1 database created (id `7f3e6372-e61b-4cf8-9a5a-677062e89b0d`, APAC) with migration 0001 applied --remote; the Worker is not deployed yet. No staging/commit.
+
 ## 2026-10-20 — Move the Host launch bar above the lobby on desktop
 
 - User restored an earlier code version and requested only the lower summary/Start section move upward on desktop. At >=921px width, order the lobby grid item after the existing launch bar, leaving header/copy/connection feedback first. No markup/script duplication, changed actions, room behavior or changes to the original setup-to-launch DOM/keyboard sequence.
