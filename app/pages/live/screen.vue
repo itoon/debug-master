@@ -34,6 +34,14 @@
         <div v-if="phase === 'running' || phase === 'finished'" class="queue-slot">
           <QueueStrip :players="queued" />
         </div>
+
+        <div v-if="canControl && (phase === 'lobby' || phase === 'finished')" class="screen-controls">
+          <template v-if="phase === 'lobby'">
+            <button type="button" :disabled="!canStart" @click="start">{{ t('live.start', { minutes: minutesText }) }}</button>
+            <p v-if="!playing.some(player => player.connected)" role="status">{{ t('live.hostNeedPlayer') }}</p>
+          </template>
+          <button v-else type="button" :disabled="!canNewRound" @click="newRound">{{ t('live.newRound') }}</button>
+        </div>
       </template>
 
       <p v-else class="screen-note brand"><i aria-hidden="true" />{{ t('live.brand') }} · <em>{{ code }}</em></p>
@@ -57,6 +65,7 @@ import RaceLanes from "~/components/live/RaceLanes.vue";
 import { useGameAudio } from "~/composables/useGameAudio";
 import { useGameI18n } from "~/composables/useGameI18n";
 import { useLiveConfig, useLiveRoom } from "~/composables/useLiveRoom";
+import { useLiveScreenControl } from "~/composables/useLiveScreenControl";
 import { countdownSec, remainingSec } from "~/utils/live/clock";
 import { normalizeRoomCode } from "~/utils/live/protocol";
 import { trackMax } from "~/utils/live/track";
@@ -72,6 +81,7 @@ const code = normalizeRoomCode(route.query.room) ?? "";
 
 const room = code ? useLiveRoom({ code, role: "screen", hello: () => ({ type: "hello" }) }) : null;
 const state = computed(() => room?.state.value ?? null);
+const { canControl, canStart, canNewRound, start, newRound } = useLiveScreenControl(code, state);
 const connected = computed(() => room?.connected.value ?? false);
 const phase = computed(() => state.value?.phase ?? null);
 const playing = computed(() => state.value?.players.filter((p) => p.status === "playing") ?? []);
@@ -79,6 +89,10 @@ const queued = computed(() => state.value?.players.filter((p) => p.status === "q
 const lanePlayers = computed(() => [...playing.value].sort((a, b) => (a.lane ?? 99) - (b.lane ?? 99)));
 const max = computed(() => trackMax(playing.value.reduce((best, p) => Math.max(best, p.score), 0)));
 const modeLabel = computed(() => (state.value ? `${state.value.mode} · ${t(`difficulty.${state.value.mode}`)}` : ""));
+const minutesText = computed(() => {
+  const minutes = (state.value?.durationSec ?? 0) / 60;
+  return Number.isInteger(minutes) ? String(minutes) : minutes.toFixed(1);
+});
 
 // Server-adjusted clock, refreshed four times a second.
 const now = ref(Date.now());
@@ -149,6 +163,12 @@ function openRoom(): void {
 .has-queue .race { bottom: 6.6cqw; }
 .board { position: absolute; right: 2.4cqw; top: 9.5cqw; bottom: 2.4cqw; width: 23cqw; }
 .queue-slot { position: absolute; left: 2.4cqw; right: 27cqw; bottom: 1.4cqw; display: flex; }
+
+.screen-controls { position: absolute; z-index: 2; top: 2cqw; right: 2.4cqw; display: grid; justify-items: end; gap: .6cqw; max-width: 36cqw; text-align: right; }
+.screen-controls button { min-height: 44px; padding: .8cqw 1.8cqw; border: 2px solid #ffe88c; border-radius: var(--cv-radius); background: var(--cv-cta); color: #3b2a00; font: inherit; font-size: clamp(14px, 1.65cqw, 28px); font-weight: 900; box-shadow: 0 .35cqw 0 #b86e0e; cursor: pointer; }
+.screen-controls button:disabled { opacity: .55; cursor: not-allowed; }
+.screen-controls button:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+.screen-controls p { margin: 0; padding: .45cqw .8cqw; border-radius: 8px; background: #071e49d0; color: #bed6ff; font-size: clamp(12px, 1.05cqw, 18px); }
 
 .countdown { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: #04122ab3; }
 .countdown-stage { display: grid; place-items: center; }
