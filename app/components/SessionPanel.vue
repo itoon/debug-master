@@ -9,11 +9,12 @@
       'ranking-panel': stage === 'ranking'
     }"
     :aria-labelledby="headingId"
+    :tabindex="stage === 'ranking' ? -1 : undefined"
     @cancel.prevent
   >
     <section class="session-card" :aria-labelledby="headingId">
       <p class="session-brand">{{ t('brand') }}</p>
-      <h1 :id="headingId" ref="heading" tabindex="-1">
+      <h1 :id="headingId" ref="heading" :tabindex="stage === 'ranking' ? undefined : -1">
         {{
           t(
             stage === 'tutorial' ? 'tutorial.title'
@@ -241,7 +242,8 @@ const rank = computed(() => props.saved && props.result ? rankOf(props.result.id
 function focusPanel(): void {
   if (panel.value instanceof HTMLDialogElement && !panel.value.open)
     panel.value.showModal()
-  heading.value?.focus()
+  if (props.stage === 'ranking') panel.value?.focus({ preventScroll: true })
+  else heading.value?.focus()
 }
 onMounted(focusPanel)
 watch(
@@ -262,6 +264,9 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   padding: 12px;
+}
+.session-panel:focus {
+  outline: none;
 }
 .session-card {
   width: min(740px, 100%);

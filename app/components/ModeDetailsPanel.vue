@@ -1,5 +1,5 @@
 <template>
-  <section ref="element" class="mode-details-view" :aria-labelledby="titleId">
+  <section ref="element" class="mode-details-view" tabindex="-1" :aria-labelledby="titleId">
     <figure ref="cover" class="detail-cover">
       <img :src="thumbnailUrl" :alt="t('home.thumbnail', { mode: t(mode.nameKey) })" draggable="false" />
       <figcaption>
@@ -35,7 +35,6 @@ const search = ref('');
 const element = ref<HTMLElement | null>(null);
 const cover = ref<HTMLElement | null>(null);
 const panel = ref<HTMLElement | null>(null);
-const heading = ref<HTMLHeadingElement | null>(null);
 const startButton = ref<HTMLButtonElement | null>(null);
 const baseURL = useRuntimeConfig().app.baseURL;
 const thumbnailUrl = computed(() => `${baseURL.endsWith('/') ? baseURL : `${baseURL}/`}${props.mode.thumbnail}`);
@@ -62,7 +61,7 @@ async function enter(): Promise<void> {
   if (disposed || closing) return;
   cancelMotion();
   emit('ready');
-  heading.value?.focus({ preventScroll: true });
+  element.value?.focus({ preventScroll: true });
 }
 async function closeWithMotion(returnRect = props.fromRect): Promise<void> {
   if (closing || disposed) return;
@@ -76,13 +75,14 @@ async function closeWithMotion(returnRect = props.fromRect): Promise<void> {
 }
 function settleResize(): void { cancelMotion(); }
 function focusStart(): void { startButton.value?.focus({ preventScroll: true }); }
-function focusHeading(): void { heading.value?.focus({ preventScroll: true }); }
+function focusHeading(): void { element.value?.focus({ preventScroll: true }); }
 defineExpose({ closeWithMotion, getElement: () => element.value, focusStart, focusHeading });
 onMounted(() => { window.addEventListener('resize', settleResize); void enter(); });
 onBeforeUnmount(() => { disposed = true; cancelMotion(); window.removeEventListener('resize', settleResize); });
 </script>
 <style scoped>
 .mode-details-view { display: grid; grid-template-columns: minmax(230px, .34fr) minmax(0, .66fr); gap: 18px; min-height: 0; height: 100%; }
+.mode-details-view:focus { outline: none; }
 .detail-cover { position: relative; min-width: 0; min-height: 0; height: 100%; margin: 0; overflow: hidden; border: 2px solid #7baaff; border-radius: 24px; background: #0b2456; transform-origin: top left; }
 .detail-cover > img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 figcaption { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 24px 20px; background: linear-gradient(180deg, #020d31e8, #04123966 110px, transparent 240px), linear-gradient(0deg, #020d31f2, #04123980 100px, transparent 220px); }

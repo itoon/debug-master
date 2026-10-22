@@ -10,6 +10,10 @@ describe('validate', () => {
     expect(parseClientMessage(JSON.stringify(hello), 'player')).toEqual(hello))
   it('replaces an unknown avatar with the default', () =>
     expect((parseClientMessage(JSON.stringify({ ...hello, avatarId: 'x.svg' }), 'player') as PlayerHello).avatarId).toBe('codi_default.svg'))
+  it('accepts a Codi hello that has no age', () => {
+    const { age: _age, ...withoutAge } = hello
+    expect(parseClientMessage(JSON.stringify(withoutAge), 'player')).toEqual(withoutAge)
+  })
   it('rejects bad pid, empty name, bad age', () => {
     for (const bad of [{ pid: 'x' }, { name: '  \u0007 ' }, { age: 4 }, { age: 9.5 }])
       expect(parseClientMessage(JSON.stringify({ ...hello, ...bad }), 'player')).toBeNull()

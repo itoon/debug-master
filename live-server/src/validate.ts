@@ -61,13 +61,13 @@ export function parseClientMessage(raw: string | ArrayBuffer, role: Role): Clien
       if (role !== 'player') return { type: 'hello' }
       const name = cleanName(m.name)
       if (!isPid(m.pid) || !name) return null
-      if (typeof m.age !== 'number' || !Number.isInteger(m.age) || m.age < AGE_MIN || m.age > AGE_MAX) return null
+      if (m.age !== undefined && (typeof m.age !== 'number' || !Number.isInteger(m.age) || m.age < AGE_MIN || m.age > AGE_MAX)) return null
       return {
         type: 'hello',
         pid: m.pid,
         name,
         avatarId: isPlayerAvatarId(m.avatarId) ? m.avatarId : PLAYER_AVATARS[0],
-        age: m.age,
+        ...(typeof m.age === 'number' ? { age: m.age } : {}),
       }
     }
     case 'gameplay': {

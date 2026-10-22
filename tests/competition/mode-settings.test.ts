@@ -126,4 +126,15 @@ describe('per-mode scoring settings', () => {
     values.set(PREFIX + 'mode-scoring', JSON.stringify({ schemaVersion: 1, data: { A: 'other' } }))
     expect(() => createLocalRepositories().modes.scoringStrategies()).toThrow(/schema/)
   })
+
+  it('stores the login method on this device and restores the default', async () => {
+    const { modes } = createLocalRepositories()
+    expect(modes.loginMethod()).toBeUndefined()
+    await modes.setLoginMethod('oauth')
+    expect(createLocalRepositories().modes.loginMethod()).toBe('oauth')
+    await expect(modes.setLoginMethod('other' as 'oauth')).rejects.toThrow()
+    expect(modes.loginMethod()).toBe('oauth')
+    await modes.reset()
+    expect(modes.loginMethod()).toBeUndefined()
+  })
 })

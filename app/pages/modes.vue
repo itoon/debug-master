@@ -12,6 +12,16 @@
     <p v-if="loadError" class="page-error" role="alert">{{ t('modes.loadError') }}</p>
     <p class="scoring-scope">{{ t('modes.scoringScope') }}</p>
     <p class="status" role="status" :class="{ error: saveError }">{{ status }}</p>
+    <form class="login-settings" @submit.prevent>
+      <div class="duration-copy">
+        <p id="login-label">{{ t('modes.login') }}</p>
+        <p id="login-help">{{ t('modes.loginHelp') }}</p>
+      </div>
+      <div class="login-choices" role="radiogroup" aria-labelledby="login-label" aria-describedby="login-help">
+        <label class="login-choice"><input v-model="loginDraft" type="radio" name="login-method" value="manual" :disabled="!loaded || saving" @change="saveLogin" />{{ t('modes.loginManual') }}</label>
+        <label class="login-choice"><input v-model="loginDraft" type="radio" name="login-method" value="oauth" :disabled="!loaded || saving" @change="saveLogin" />{{ t('modes.loginOauth') }}</label>
+      </div>
+    </form>
     <form class="duration-settings" @submit.prevent="saveTime">
       <div class="duration-copy"><label for="competition-minutes">{{ t('modes.duration') }}</label><p id="duration-help">{{ t('modes.durationHelp', { min: competitionTime.minMinutes, max: competitionTime.maxMinutes }) }}</p></div>
       <div class="duration-entry"><input id="competition-minutes" v-model="minutesDraft" type="number" inputmode="numeric" required step="1"
@@ -48,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { competitionTime, homeConfig, isCompetitionTime, type ChallengeId, type ChallengeMode } from '../data/home-config';
+import { competitionTime, homeConfig, isCompetitionTime, isLoginMethod, type ChallengeId, type ChallengeMode, type LoginMethod } from '../data/home-config';
 import { createLocalRepositories } from '../storage/LocalStorageAdapter';
 import { useGameI18n } from '../composables/useGameI18n';
 import { useModeSettings } from '../composables/useModeSettings';
@@ -57,12 +67,13 @@ import type { ScoringStrategy } from '../types/competition';
 
 const { t } = useGameI18n();
 const repositories = createLocalRepositories();
-const { enabledIds, durationSec, strategies, customized, loaded, loadError, setEnabled, setDuration, setScoringStrategy, reset } = useModeSettings(repositories.modes);
+const { enabledIds, durationSec, loginMethod, strategies, customized, loaded, loadError, setEnabled, setDuration, setLoginMethod, setScoringStrategy, reset } = useModeSettings(repositories.modes);
 const baseURL = useRuntimeConfig().app.baseURL;
 const saving = ref(false);
 const saveError = ref(false);
 const status = ref('');
 const minutesDraft = ref<string | number>(competitionTime.defaultSeconds / 60);
+const loginDraft = ref<LoginMethod>(homeConfig.login);
 const editingMinutes = ref(false);
 const parsedMinutes = computed(() => {
   const text = String(minutesDraft.value).trim();
@@ -72,6 +83,7 @@ const parsedMinutes = computed(() => {
 const minutesInvalid = computed(() => parsedMinutes.value === null);
 const durationDirty = computed(() => parsedMinutes.value !== null && parsedMinutes.value * 60 !== durationSec.value);
 watch(durationSec, value => { if (!editingMinutes.value) minutesDraft.value = value / 60; }, { immediate: true });
+watch(loginMethod, value => { loginDraft.value = value; }, { immediate: true });
 
 function isOn(id: ChallengeId): boolean { return enabledIds.value.includes(id); }
 function isLastOn(id: ChallengeId): boolean { return isOn(id) && enabledIds.value.length === 1; }
@@ -104,7 +116,13 @@ async function changeScoring(mode: ChallengeMode, event: Event): Promise<void> {
   select.value = strategyFor(mode);
 }
 function resetModes(): Promise<void> {
-  return run(async () => { await reset(); minutesDraft.value = durationSec.value / 60; }, () => t('modes.resetDone'));
+  return run(async () => { await reset(); minutesDraft.value = durationSec.value / 60; loginDraft.value = loginMethod.value; }, () => t('modes.resetDone'));
+}
+async function saveLogin(): Promise<void> {
+  const method = loginDraft.value;
+  if (!loaded.value || !isLoginMethod(method) || method === loginMethod.value) return;
+  await run(() => setLoginMethod(method), () => t('modes.loginSaved', { method: t(method === 'oauth' ? 'modes.loginOauth' : 'modes.loginManual') }));
+  if (saveError.value) loginDraft.value = loginMethod.value;
 }
 function saveTime(): Promise<void> | undefined {
   const minutes = parsedMinutes.value;
@@ -136,6 +154,12 @@ function saveTime(): Promise<void> | undefined {
 .duration-entry input[aria-invalid="true"] { border-color: #a1283a; }
 .duration-entry input:focus-visible { outline: 3px solid #ffd440; outline-offset: 3px; }
 .duration-settings > .page-error { flex-basis: 100%; margin: 0; font-size: .85rem; }
+.login-settings { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 18px; padding: 16px; border: 1px solid #b7cef0; border-radius: 14px; background: #f2f7ff; color: #142c54; }
+.login-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.login-choice { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid #7499cf; border-radius: 10px; background: #fff; font-weight: 800; cursor: pointer; }
+.login-choice:has(input:checked) { border-color: #2f6fed; background: #e7f0ff; }
+.login-choice:has(input:disabled) { opacity: .6; cursor: default; }
+.login-choice input { width: 18px; height: 18px; margin: 0; }
 .mode-list { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
 .mode-list.loading { visibility: hidden; }
 .mode-row { display: grid; grid-template-columns: 180px minmax(0, 1fr) auto; align-items: center; gap: 18px; padding: 12px 18px 12px 12px; border: 2px solid #d2e0f4; border-radius: 16px; background: #fff; transition: border-color 160ms ease, background 160ms ease; }
@@ -154,7 +178,7 @@ function saveTime(): Promise<void> | undefined {
 .switch[aria-checked="true"] .track { background: #2f6fed; }
 .switch[aria-checked="true"] .knob { transform: translateX(24px); }
 .state { min-width: 2.2em; text-align: left; }
-button:focus-visible, select:focus-visible, .home-link:focus-visible { outline: 3px solid #ffd440; outline-offset: 3px; }
+button:focus-visible, select:focus-visible, .home-link:focus-visible, .login-choice input:focus-visible { outline: 3px solid #ffd440; outline-offset: 3px; }
 @media (max-width: 640px) {
   .mode-row { grid-template-columns: 96px minmax(0, 1fr); }
   .switch { grid-column: 1 / -1; justify-self: end; }

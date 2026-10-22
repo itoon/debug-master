@@ -1,15 +1,19 @@
 import type { CompetitionSession, ScoringStrategy, SessionOperation, SessionReceipt } from "../types/competition";
 import type { Score } from "../types/debug-game";
 import type { RankingBoard } from "../utils/ranking";
-import type { ChallengeId, ModeScoringStrategies } from "../data/home-config";
+import type { ChallengeId, LoginMethod, ModeScoringStrategies } from "../data/home-config";
 
-export type PlayerProfile = { id: string; nickname: string; age: number; avatarId?: string };
+export type PlayerProfile = { id: string; nickname: string; age?: number; avatarId?: string };
 export type PlayerSetupInput = Omit<PlayerProfile, "id"> & { avatarId: string };
+export type CodiLinks = Record<string, string>;
 
 export interface PlayerRepository {
   save(player: PlayerProfile): Promise<void>;
   clearCurrent(): Promise<void>;
   clearIfPlayer(playerId: string): Promise<void>;
+  /** Codi Arena subject → the local player created for that badge. */
+  codiLinks(): CodiLinks;
+  rememberCodi(sub: string, playerId: string): Promise<void>;
 }
 
 export interface ScoreRepository {
@@ -31,6 +35,9 @@ export interface ModeSettingsRepository {
   scoringStrategies(): ModeScoringStrategies;
   setScoringStrategy(id: ChallengeId, strategy: ScoringStrategy): Promise<void>;
   saveDuration(seconds: number): Promise<void>;
+  /** Codi Arena or the typed form. Undefined keeps the home-config default. */
+  loginMethod(): LoginMethod | undefined;
+  setLoginMethod(method: LoginMethod): Promise<void>;
   reset(): Promise<void>;
   subscribe(listener: () => void): () => void;
 }

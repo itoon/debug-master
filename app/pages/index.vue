@@ -3,7 +3,7 @@
     <Transition v-if="homeConfig.enabled && showSetup && pendingPracticeIntro === null" name="sleep-switch" mode="out-in" :duration="homeTransitionDuration" @after-enter="focusHomeAfterWake">
       <HomeSleepScreen v-if="homeSleeping" key="home-sleep" @wake="wakeHome" @unlock-audio="unlockAudio" />
       <HomeV2 v-else ref="homeView" :key="homeResetKey" :entering="homeEntering"
-        :repository="repositories.scores" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
+        :repository="repositories.scores" :players="repositories.players" :modes-repository="repositories.modes" :error="homeStorageError" :busy="homeStarting" @start="prepareChallenge" @resume="resumeChallenge" @reset-error="homeStorageError = ''"
         @unlock-audio="unlockAudio" @sound="playSound" @practice="openPracticePicker" @sleep="showHomeSleep" />
     </Transition>
     <ResumeSessionDialog v-if="resumeSessionId" :session-id="resumeSessionId" @resume="resumeStoredSession" @start-new="dismissStoredSession" />
@@ -16,7 +16,10 @@
       :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
       @play="startFromTutorial" @home="backFromTutorial" @ranking="showChallengeRanking" @retry="retryScoreSave" />
     <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" :live="liveMode" @cancel="showExitConfirm = false" @confirm="confirmExit" />
-    <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial" @start="liveJoin" @close="liveGoHome" />
+    <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial"
+      :login-method="loginMethod" :codi-profile="loginMethod === 'oauth' ? liveCodiProfile : null" :manual-fallback="loginMethod === 'oauth' && liveCodiFallback" :codi-error="loginMethod === 'oauth' ? liveCodiError : undefined"
+      :codi-context="liveCode ? { kind: 'live', room: liveCode } : undefined"
+      @start="liveJoin" @close="liveGoHome" />
     <LivePlayerPanel v-if="liveMode && liveStage !== 'setup' && liveStage !== 'running'" :stage="liveStage" :state="liveState" :self-id="liveSelfId"
       :countdown="liveCountdown" :queue-remaining-sec="liveQueueRemaining" :late-score-note="liveLateScore"
       @change-player="liveChangePlayer" @leave="liveLeave" @home="liveGoHome" />
@@ -426,11 +429,13 @@ import { createViewportScroller } from "../utils/viewportScroll";
 import { PLAYER_SPRITES, PLAYER_POSES, START_FACING } from "../utils/playerSprites";
 import { DEFAULT_COMPETITION_CONFIG, enabledModesFor, homeConfig, type ChallengeMode, type ModeScoringStrategies } from "../data/home-config";
 import { useGameI18n } from "../composables/useGameI18n";
+import { useModeSettings } from "../composables/useModeSettings";
 import { createLocalRepositories } from "../storage/LocalStorageAdapter";
 import { useCompetitionSession } from "../composables/useCompetitionSession";
 import { competitionLevelKey, toScore } from "../utils/competition/session";
 import type { SessionReceipt } from "../types/competition";
 import type { PlayerSetupInput } from "../storage/contracts";
+import { resolveCodiPlayer } from "../utils/codiIdentity";
 import { isPlayerAvatarId, PLAYER_AVATARS } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
 import { useLiveConfig, useLiveRoom, type LiveRoom } from "../composables/useLiveRoom";
@@ -440,11 +445,14 @@ import { derivePlayerStage } from "../utils/live/playerStage";
 import { countdownSec, remainingSec, serverTime } from "../utils/live/clock";
 import { takeInitialSearch } from "../utils/live/initialSearch";
 import { roomCodeFromSearch, type PlayerHello, type RoomState } from "../utils/live/protocol";
+import { clearCodiResult, peekCodiResult } from "../utils/codiSession";
+import type { CodiProfile } from "../utils/codiOauth";
 import LivePlayerPanel from "../components/live/LivePlayerPanel.vue";
 
 const { t } = useGameI18n();
 const { enabled: soundEnabled, unlockAudio, playSound, stopSounds, toggleSound } = useGameAudio();
 const repositories = createLocalRepositories();
+const { loginMethod } = useModeSettings(repositories.modes);
 const competition = useCompetitionSession(repositories.sessions);
 const resumeSessionId = ref<string>();
 const retryingCheckpoint = ref(false);
@@ -891,12 +899,25 @@ function presentPracticeSummary(): void {
 }
 
 /** Home v2 supplies only session inputs; Dev's runner and scoring stay intact. */
-async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, existingPlayerId?: string): Promise<void> {
+async function prepareChallenge(profile: PlayerSetupInput & { codiSub?: string }, mode: ChallengeMode, existingPlayerId?: string): Promise<void> {
   if (homeStarting.value || !showSetup.value) return;
   const nickname = profile.nickname.trim();
-  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return;
-  // Recheck immediately before creating a profile; explicit identity reuse is allowed.
-  if (existingPlayerId === undefined) {
+  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || (profile.age !== undefined && !homeConfig.ages.includes(profile.age)) || !isPlayerAvatarId(profile.avatarId)) return;
+  // Recheck immediately before creating a profile. The same Codi badge continues its player.
+  let reusedPlayerId = existingPlayerId;
+  if (profile.codiSub) {
+    try {
+      const decision = resolveCodiPlayer(profile.codiSub, nickname, repositories.scores.list(), repositories.players.codiLinks());
+      if (decision.status === "taken") {
+        homeStorageError.value = t("home.nicknameTaken");
+        return;
+      }
+      if (decision.status === "same") reusedPlayerId = decision.playerId;
+    } catch {
+      homeStorageError.value = t("home.nicknameCheckError");
+      return;
+    }
+  } else if (reusedPlayerId === undefined) {
     try {
       const key = nicknameKey(nickname);
       if (repositories.scores.list().some(score => nicknameKey(score.name) === key)) {
@@ -926,8 +947,9 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
   const token = ++sessionToken;
   homeStarting.value = true;
   try {
-    playerId = existingPlayerId ?? newPlayerId();
-    await repositories.players.save({ id: playerId, nickname, age: profile.age, avatarId: profile.avatarId });
+    playerId = reusedPlayerId ?? newPlayerId();
+    await repositories.players.save({ id: playerId, nickname, avatarId: profile.avatarId, ...(profile.age !== undefined ? { age: profile.age } : {}) });
+    if (profile.codiSub) await repositories.players.rememberCodi(profile.codiSub, playerId);
   } catch {
     if (token === sessionToken) homeStorageError.value = t("storage.error");
     return;
@@ -944,7 +966,7 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
   currentPlayerId.value = playerId;
   currentAvatarId.value = profile.avatarId;
   playerNameDraft.value = nickname;
-  playerAgeDraft.value = profile.age;
+  playerAgeDraft.value = profile.age ?? null;
   activeChallenge.value = configuredMode;
   selectedSetId.value = configuredMode.levelSetId;
   selectedLevelIndex.value = 0;
@@ -959,7 +981,7 @@ async function prepareChallenge(profile: PlayerSetupInput, mode: ChallengeMode, 
   lastInteractionAt = Date.now();
   // Only explicit reuse of a stored identity skips the tutorial;
   // newly created profiles follow the normal introduction.
-  if (existingPlayerId !== undefined) playChallenge();
+  if (reusedPlayerId !== undefined) playChallenge();
 }
 
 async function resumeChallenge(scoreId: string, mode: ChallengeMode): Promise<void> {
@@ -1708,6 +1730,9 @@ const liveMode = computed(() => liveCode.value !== null);
 const liveProfile = ref<PlayerSetupInput | null>(null);
 // Prefill for the setup dialog: the last player on this device (after a reload outside a running round).
 const liveSetupInitial = ref<PlayerSetupInput | null>(null);
+const liveCodiProfile = ref<CodiProfile | null>(null);
+const liveCodiFallback = ref(false);
+const liveCodiError = ref("");
 // Reloaded with a saved session: the socket only listens until the first state says whether to rejoin.
 const liveResuming = ref(false);
 // Secret device id: sent only in `hello`, never compared against broadcast state.
@@ -1860,8 +1885,8 @@ watch(liveSyncStatus, next => {
 
 function validLiveProfile(profile: PlayerSetupInput): PlayerSetupInput | null {
   const nickname = profile.nickname.trim();
-  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || !homeConfig.ages.includes(profile.age) || !isPlayerAvatarId(profile.avatarId)) return null;
-  return { nickname, age: profile.age, avatarId: profile.avatarId };
+  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || (profile.age !== undefined && !homeConfig.ages.includes(profile.age)) || !isPlayerAvatarId(profile.avatarId)) return null;
+  return { nickname, avatarId: profile.avatarId, ...(profile.age !== undefined ? { age: profile.age } : {}) };
 }
 
 /** onMounted: enters Live mode when the URL carries a valid ?room=. */
@@ -1874,6 +1899,18 @@ function liveEnter(): void {
   livePid.value = livePlayerId();
   liveNow.value = Date.now();
   liveTicker = setInterval(() => { liveNow.value = Date.now(); }, 250);
+  const codi = peekCodiResult();
+  if (codi?.kind === "live" && codi.room.toUpperCase() === liveCode.value) {
+    clearLiveSession();
+    liveCodiProfile.value = codi.profile ?? null;
+    liveCodiFallback.value = codi.fallback === true;
+    liveCodiError.value = codi.error ?? "";
+    liveSetupInitial.value = null;
+    return;
+  }
+  liveCodiProfile.value = null;
+  liveCodiFallback.value = false;
+  liveCodiError.value = "";
   // Reload: the same device and room within the last round's time. Rejoin only if a round is under way.
   const saved = loadLiveSession(livePid.value, liveCode.value!, Date.now());
   const player = saved && validLiveProfile(saved);
@@ -1885,6 +1922,10 @@ function liveEnter(): void {
 
 function liveJoin(profile: PlayerSetupInput): void {
   if (!liveCode.value || liveRoom.value) return;
+  clearCodiResult();
+  liveCodiProfile.value = null;
+  liveCodiFallback.value = false;
+  liveCodiError.value = "";
   const player = validLiveProfile(profile);
   if (!player) return;
   unlockAudio(); // This tap is the gesture; the round itself starts from a socket message.
@@ -1893,7 +1934,7 @@ function liveJoin(profile: PlayerSetupInput): void {
 }
 
 function liveHello(player: PlayerSetupInput): PlayerHello {
-  return { type: "hello", pid: livePid.value, name: player.nickname, avatarId: player.avatarId, age: player.age };
+  return { type: "hello", pid: livePid.value, name: player.nickname, avatarId: player.avatarId, ...(player.age !== undefined ? { age: player.age } : {}) };
 }
 
 /** `resume`: connect without a hello; the first room state decides between rejoining and the setup form. */
@@ -1968,7 +2009,7 @@ async function liveStartRound(): Promise<void> {
   selectedMode.value = "timer";
   customMinutes.value = room.durationSec / 60;
   playerNameDraft.value = profile.nickname;
-  playerAgeDraft.value = profile.age;
+  playerAgeDraft.value = profile.age ?? null;
   playerName.value = profile.nickname;
   playerAge.value = profile.age;
   currentAvatarId.value = profile.avatarId;
@@ -2048,6 +2089,7 @@ function liveGoHome(): void {
   liveStopGame();
   clearInterval(liveTicker);
   clearLiveSession();
+  clearCodiResult();
   liveCode.value = null;
   liveProfile.value = null;
   liveSetupInitial.value = null;
@@ -2069,6 +2111,7 @@ onMounted(async () => {
   refreshStoredScores();
   unsubscribeScores = repositories.scores.subscribe(refreshStoredScores);
   liveEnter();
+  if (!liveMode.value && peekCodiResult()?.kind === "home") homeSleeping.value = false;
   if (homeConfig.enabled) {
     if (!liveMode.value) resetHomeSession();
     for (const event of ["pointerdown", "keydown", "input", "focusin"]) window.addEventListener(event, recordInteraction);

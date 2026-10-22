@@ -26,7 +26,7 @@ export type ArchivedPlayer = {
   rank: number
   name: string
   avatarId: string
-  age: number
+  age: number | null
   score: number
   levelsCompleted: number
   bestCombo: number
@@ -47,7 +47,7 @@ export function buildRoundArchive(room: StoredRoom, now: number): RoundArchive {
     .filter((p) => p.status === 'playing')
     .sort((a, b) => comparePlayers(a, b, strategy))
     .map((p, i) => ({
-      publicId: p.id, rank: i + 1, name: p.name, avatarId: p.avatarId, age: p.age,
+      publicId: p.id, rank: i + 1, name: p.name, avatarId: p.avatarId, age: p.age ?? null,
       score: p.score, levelsCompleted: p.levelsCompleted, bestCombo: p.bestCombo,
     }))
   return {
@@ -72,7 +72,7 @@ export async function writeRoundArchive(db: ArchiveDb, { round, players }: Round
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
     ).bind(round.roundKey, round.roomCode, round.roundId, round.mode, round.setId, round.difficulty,
       round.durationSec, round.scoringStrategy, round.startAt, round.endAt, round.archivedAt),
-    ...players.map((p) => insertPlayer.bind(round.roundKey, p.publicId, p.rank, p.name, p.avatarId, p.age,
+    ...players.map((p) => insertPlayer.bind(round.roundKey, p.publicId, p.rank, p.name, p.avatarId, p.age ?? null,
       p.score, p.levelsCompleted, p.bestCombo)),
   ])
 }
