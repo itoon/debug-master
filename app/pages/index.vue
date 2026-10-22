@@ -385,6 +385,7 @@
         </div>
       </div>
     </section>
+    <RotateDeviceDialog :active="rotationBlocked" :timed="isTimedMode && campaignStarted" />
   </div>
 </template>
 
@@ -545,7 +546,7 @@ function cancelBoardFollow(): void {
   boardScroller.cancel();
 }
 const controlsEl = ref<HTMLElement | null>(null);
-const { lightMotion } = useGameplayDevice();
+const { lightMotion, rotationBlocked } = useGameplayDevice();
 useGameTouchControls(controlsEl, controlMove);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
 // Matches the desktop layout query in the styles below; anything smaller is
@@ -702,7 +703,7 @@ const notificationTitle = computed(() => {
   return t("game.notificationTitle");
 });
 const canControl = computed(
-  () => (practiceActive.value || (liveMode.value ? liveCanInput.value : !competition.busy.value)) && !showExitConfirm.value && !showPracticePicker.value && !practiceSummary.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
+  () => !rotationBlocked.value && (practiceActive.value || (liveMode.value ? liveCanInput.value : !competition.busy.value)) && !showExitConfirm.value && !showPracticePicker.value && !practiceSummary.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
 );
 const codiSprite = computed(() =>
   status.value === "failed" || status.value === "timeup"
