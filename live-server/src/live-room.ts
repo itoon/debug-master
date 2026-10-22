@@ -14,12 +14,15 @@ import {
   type Role,
   type ServerMessage,
 } from '../../app/utils/live/protocol'
+import { ARCHIVE_RETRY_MS, buildRoundArchive, writeRoundArchive } from './archive'
 import {
   advanceClock,
   applyHostCommand,
+  archiveDueAt,
   claimHost,
   createRoom,
   hashHostKey,
+  isArchiveDue,
   isIdleExpired,
   isSocketFresh,
   joinPlayer,
@@ -207,6 +210,8 @@ export class LiveRoom extends DurableObject<Env> {
           if (!changed) return // rejected command: no effect on the room
           break
         }
+        // Last chance to archive the finished round before newRound replaces it.
+        if (msg.type === 'newRound' && archiveDueAt(this.room) !== null) await this.archiveRound(now, true)
         // kick names the public id; resolve the secret pid before the record is removed.
         const victim = msg.type === 'kick' ? pidForPublicId(this.room, msg.playerId) : null
         if (applyHostCommand(this.room, msg, this.connectedPids(), now)) {
@@ -258,11 +263,14 @@ export class LiveRoom extends DurableObject<Env> {
     const now = Date.now()
     // Advance first: an abandoned running room still finishes, then falls through to the idle alarm.
     const advanced = advanceClock(this.room, now)
-    if (advanced) await this.saver.saveNow()
+    const archiving = isArchiveDue(this.room, now)
+    if (archiving) await this.archiveRound(now, false)
+    if (advanced || archiving) await this.saver.saveNow()
     // Half-open player sockets: close them so they show as disconnected in every phase.
     const swept = this.closeStaleSockets(now)
     if (advanced || swept) this.broadcast()
     if (isIdleExpired(this.room, this.openSockets().length, now)) {
+      if (archiveDueAt(this.room) !== null) await this.archiveRound(now, true) // before the room is wiped
       this.saver.cancel() // nothing may re-save the room after this
       await this.ctx.storage.deleteAll()
       await this.ctx.storage.deleteAlarm() // deleteAll() does not remove alarms
@@ -271,6 +279,25 @@ export class LiveRoom extends DurableObject<Env> {
       return
     }
     await this.scheduleAlarm()
+  }
+
+  // ---- results archive (D1) ---------------------------------------------------
+
+  /**
+   * Write the finished round's standings to the archive. A failure never blocks the room: it is
+   * logged and retried by the alarm, unless `final` (the round is about to be replaced or wiped).
+   * The caller persists the room afterwards.
+   */
+  private async archiveRound(now: number, final: boolean): Promise<void> {
+    const archive = buildRoundArchive(this.room, now)
+    try {
+      await writeRoundArchive(this.env.RESULTS_DB, archive)
+      this.room.archivedRoundKey = archive.round.roundKey
+      delete this.room.archiveRetryAt
+    } catch (err) {
+      console.error(final ? 'live round archive lost' : 'live round archive failed, will retry', archive.round.roundKey, err)
+      this.room.archiveRetryAt = now + ARCHIVE_RETRY_MS
+    }
   }
 
   // ---- persistence ------------------------------------------------------------
