@@ -676,6 +676,31 @@
   }
 }
 
+/* Gameplay on phones/tablets keeps short position feedback without per-tile or looping effects.
+   Scoped to the player shell: desktop and the event's big-screen animation stay unchanged. */
+.light-motion .board.shattering,
+.light-motion .board.cascade .tile,
+.light-motion .hop,
+.light-motion .player-sprite,
+.light-motion .next-move-hint,
+.light-motion .tap-finger,
+.light-motion .combo-pop,
+.light-motion .notification,
+.light-motion .game-hud .bump,
+.light-motion .game-hud .time-low strong,
+.light-motion .score-popup::after,
+.light-motion .score-popup strong { animation: none !important; }
+.light-motion .player-sprite,
+.light-motion .next-move-hint svg { filter: none; }
+.light-motion .actor { transition-duration: 80ms; }
+.light-motion .wrap-exit,
+.light-motion .landing-dust,
+.light-motion .clear-burst,
+.light-motion .progress-glint { display: none; }
+.light-motion .progress-fill,
+.light-motion .score-pop-enter-active,
+.light-motion .score-pop-leave-active { transition: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .board.shattering,
   .board.cascade .tile,

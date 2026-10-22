@@ -186,7 +186,9 @@ Random nicknames combine eight playful Thai character/space bases with ten gamin
 
 ## Motion
 
-Per-level score feedback owns its 1400ms display lifetime independently of `beginLevel`; next-level assembly must not clear the accepted points/stars. A new receipt replaces/re-keys the existing popup, and run exit/reset still clears it.
+Phone/tablet gameplay uses the shared mobile-touch policy in `app/utils/gameplayDevice.ts`, including desktop-mode iPads. `useGameplayDevice` applies `.light-motion` to the player shell; `board.css` removes tile cascades/shatter, sprite idle/hop, dust, burst and HUD flourish animations while retaining an 80ms position transition, static guidance, colours and sounds. Score count-up and automatic viewport scrolling use the same policy and snap to their real values. Desktop and Windows touch kiosks keep the established motion. Memoized tile nodes update when the map or board sizing changes, without rebuilding their presentation on each actor move. Gameplay input, retry/advance delays, scoring and deadlines retain their existing owners.
+
+Per-level score feedback owns its 1400ms display lifetime independently of `beginLevel`; next-level assembly must not clear the accepted points/stars. A new receipt replaces/re-keys the existing popup, and run exit/reset still clears it. Touch gameplay skips the popup's blade/number motion so the real points stay readable immediately.
 
 Game buttons use `touch-action: manipulation`. D-pad single-finger taps also cancel their touch-end default and call the existing movement handler once, including zoom suppression during disabled cooldowns; mouse/keyboard keep native click handling. Multitouch, drags and cancellations remain browser gestures, and board panning explicitly retains `pinch-zoom`. No viewport zoom lock is introduced.
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
+  <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)), 'light-motion': lightMotion }" @click="playUiClick">
     <Transition v-if="homeConfig.enabled && showSetup && pendingPracticeIntro === null" name="sleep-switch" mode="out-in" :duration="homeTransitionDuration" @after-enter="focusHomeAfterWake">
       <HomeSleepScreen v-if="homeSleeping" key="home-sleep" @wake="wakeHome" @unlock-audio="unlockAudio" />
       <HomeV2 v-else ref="homeView" :key="homeResetKey" :entering="homeEntering"
@@ -87,8 +87,8 @@
                   :style="actorStyle"
                   aria-hidden="true"
                 >
-                  <span v-if="playerHop" :key="`dust-${playerHop}`" class="landing-dust"><i /><i /></span>
-                  <span v-if="status === 'success' || status === 'completed'" class="clear-burst"><i v-for="ray in 8" :key="ray" :style="{ '--ray': ray }" /></span>
+                  <span v-if="playerHop && !lightMotion" :key="`dust-${playerHop}`" class="landing-dust"><i /><i /></span>
+                  <span v-if="!lightMotion && (status === 'success' || status === 'completed')" class="clear-burst"><i v-for="ray in 8" :key="ray" :style="{ '--ray': ray }" /></span>
                   <div :key="playerHop" class="hop" :class="{ 'wrap-in': wrapExit }"
                     :style="wrapExit ? { '--wrap-dx': wrapExit.dx, '--wrap-dy': wrapExit.dy } : undefined">
                     <img
@@ -434,6 +434,7 @@ import type { PlayerSetupInput } from "../storage/contracts";
 import { isPlayerAvatarId, PLAYER_AVATARS } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
 import { useGameTouchControls } from "../composables/useGameTouchControls";
+import { useGameplayDevice } from "../composables/useGameplayDevice";
 import { useLiveConfig, useLiveRoom, type LiveRoom } from "../composables/useLiveRoom";
 import { livePlayerId, resetLivePlayerId } from "../utils/live/identity";
 import { clearLiveSession, loadLiveSession, saveLiveSession } from "../utils/live/session";
@@ -544,6 +545,7 @@ function cancelBoardFollow(): void {
   boardScroller.cancel();
 }
 const controlsEl = ref<HTMLElement | null>(null);
+const { lightMotion } = useGameplayDevice();
 useGameTouchControls(controlsEl, controlMove);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
 // Matches the desktop layout query in the styles below; anything smaller is
@@ -1364,7 +1366,8 @@ function controlMove(direction: Direction): void {
 function pulseArrow(direction: Direction, wrong: boolean): void {
   const button = controlsEl.value?.querySelector<HTMLElement>(`.arrow.${direction}`);
   if (!button || typeof button.animate !== "function") return;
-  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const still = lightMotion.value || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  button.getAnimations().forEach(animation => animation.cancel());
   if (wrong) {
     const red = { backgroundColor: "#ffd6d6", borderColor: "#ff6b6b", color: "#c62f3c" };
     button.animate(still

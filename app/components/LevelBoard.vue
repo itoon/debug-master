@@ -9,6 +9,7 @@
     <div
       v-for="tile in visibleTiles"
       :key="`${tile.row}-${tile.col}`"
+      v-memo="[tile, boardStyle]"
       class="tile"
       :class="[
         `tile-${tile.kind}`,
