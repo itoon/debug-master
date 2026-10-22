@@ -46,6 +46,7 @@
             </svg>
             <img
               v-if="place.score"
+              :class="{ 'is-photo': avatarSrc(place.score.avatarId).startsWith('https:') }"
               :src="avatarSrc(place.score.avatarId)"
               alt=""
               draggable="false"
@@ -105,6 +106,7 @@
             >
             <img
               class="row-avatar"
+              :class="{ 'is-photo': avatarSrc(score.avatarId).startsWith('https:') }"
               :src="avatarSrc(score.avatarId)"
               alt=""
               draggable="false"
@@ -395,6 +397,11 @@ function ageRange(age?: number): string {
   height: 100%;
   border-radius: inherit;
   object-fit: contain;
+}
+.podium-avatar img.is-photo,
+.row-avatar.is-photo {
+  object-fit: cover;
+  background: transparent;
 }
 .row-avatar {
   flex: none;

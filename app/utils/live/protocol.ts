@@ -13,8 +13,8 @@ export interface LivePlayer {
   // (localStorage 'debug-master:live-pid') is only ever sent in `hello` and never broadcast.
   id: string
   name: string // <= NAME_MAX UTF-16 units
-  avatarId: string // must be an existing PlayerAvatarId, otherwise the default is used
-  age: number // 5-18
+  avatarId: string // local PlayerAvatarId, or an https Codi Arena picture URL
+  age?: number // 5-18 when the player picked one. Codi Arena login has no age.
   status: PlayerStatus
   lane: number | null // 0..11, locked for the whole round, null while queued
   score: number
@@ -47,7 +47,7 @@ export type PlayerHello = {
   pid: string
   name: string
   avatarId: string
-  age: number
+  age?: number
 }
 
 export const LIVE_PROTOCOL_VERSION = 1

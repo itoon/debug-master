@@ -110,6 +110,24 @@
         ],
         "createdAt": "2026-10-14T08:07:09.733Z",
         "reason": "Claude: throwaway brainstorm mockup; hex values copied from the game's tailwind.css/component CSS, not product UI"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/pages/index.vue"
+        ],
+        "createdAt": "2026-10-22T11:29:36.372Z",
+        "reason": "pre-existing hint and control chrome, unchanged by the Codi login work"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/components/ChallengeRanking.vue"
+        ],
+        "createdAt": "2026-10-22T12:38:14.196Z",
+        "reason": "Existing podium rank accent, not introduced by the Codi photo avatar"
       }
     ]
   }

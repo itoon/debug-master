@@ -10,7 +10,7 @@ export interface LiveSession {
   pid: string
   room: string
   nickname: string
-  age: number
+  age?: number
   avatarId: string
   savedAt: number
 }
@@ -50,7 +50,7 @@ export function loadLiveSession(pid: string, room: string, now: number): LiveSes
   if (typeof s.pid !== 'string' || !PID_RE.test(s.pid) || s.pid !== pid) return null
   if (typeof s.room !== 'string' || normalizeRoomCode(s.room) !== normalizeRoomCode(room)) return null
   if (typeof s.nickname !== 'string' || !s.nickname.trim()) return null
-  if (typeof s.age !== 'number' || !Number.isInteger(s.age)) return null
+  if (s.age !== undefined && (typeof s.age !== 'number' || !Number.isInteger(s.age))) return null
   if (typeof s.avatarId !== 'string') return null
   if (typeof s.savedAt !== 'number' || !Number.isFinite(s.savedAt)) return null
   if (s.savedAt > now + 60_000 || now - s.savedAt > SESSION_MAX_AGE_MS) return null

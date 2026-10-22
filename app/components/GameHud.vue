@@ -1,7 +1,7 @@
 <template>
   <header class="game-hud" :class="{ 'practice-hud': practice }">
     <div v-if="!practice" class="pilot-info">
-      <div class="player-profile"><img :src="avatarSrc(avatarId)" alt="" draggable="false" /><div><span>{{ t('game.player') }}</span><strong :title="playerName">{{ playerName || t('game.playerFallback') }}</strong></div></div>
+      <div class="player-profile"><img :class="{ 'is-photo': avatarSrc(avatarId).startsWith('https:') }" :src="avatarSrc(avatarId)" alt="" draggable="false" /><div><span>{{ t('game.player') }}</span><strong :title="playerName">{{ playerName || t('game.playerFallback') }}</strong></div></div>
       <div class="metrics">
         <div class="metric score"><span>{{ t('game.score') }}</span><strong :key="scoreBumps" :class="{ bump: scoreBumps > 0 }">{{ shownScore.toLocaleString('th-TH') }}</strong></div>
         <div v-if="timed" class="metric time" :class="{ 'time-low': timeLow }"><span>{{ t('game.timer') }}</span><strong :key="timeLow ? time : 'steady'">{{ time }}</strong></div>
@@ -107,6 +107,7 @@ h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; line-h
 }
 .player-profile { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 12px 4px 4px; border-radius: 999px; background: #071e4980; }
 .player-profile img { flex: none; width: 36px; height: 36px; border: 2px solid #dbeaff; border-radius: 50%; background: #dbeaff; object-fit: contain; }
+.player-profile img.is-photo { object-fit: cover; background: transparent; }
 .player-profile div { display: grid; gap: 1px; min-width: 0; }
 /* The "player" caption is redundant next to the avatar on small screens. */
 .player-profile span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; font-size: .8rem; color: #bed6ff; }

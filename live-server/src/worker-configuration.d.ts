@@ -3,8 +3,11 @@
 // Runtime types generated with workerd@1.20261012.1 2026-09-29
 interface __BaseEnv_Env {
 	RESULTS_DB: D1Database;
-	ALLOWED_ORIGINS: "https://itoon.github.io,http://localhost:3000";
+	ALLOWED_ORIGINS: "https://itoon.github.io,http://localhost:3000,http://localhost:3002";
 	RESULTS_RETENTION_DAYS: "90";
+	CODI_ISSUER: "https://codi-arena-hub.innovasive.workers.dev";
+	CODI_CLIENT_ID: "cva_zlfJ437Zr3GMa4ps";
+	CODI_CLIENT_SECRET: string;
 	LIVE_ROOM: DurableObjectNamespace<import("./index").LiveRoom>;
 }
 declare namespace Cloudflare {
@@ -19,7 +22,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ALLOWED_ORIGINS" | "RESULTS_RETENTION_DAYS">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ALLOWED_ORIGINS" | "RESULTS_RETENTION_DAYS" | "CODI_ISSUER" | "CODI_CLIENT_ID">> {}
 }
 declare module "*.txt" {
 	const value: string;
