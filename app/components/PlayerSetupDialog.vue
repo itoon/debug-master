@@ -68,22 +68,18 @@
           "
         >
           <div class="hero-stage">
-            <img
+            <PlayerAvatar
               v-if="codiProfile && !pictureFailed"
               :key="codiProfile.picture"
-              class="hero-avatar codi-picture"
-              :src="codiPictureSrc(codiProfile.picture)"
-              alt=""
-              draggable="false"
+              class="hero-avatar"
+              :avatar-id="codiProfile.picture"
               @error="pictureFailed = true"
             />
-            <img
+            <PlayerAvatar
               v-else
               :key="selectedAvatar"
               class="hero-avatar"
-              :src="avatarSrc(selectedAvatar)"
-              alt=""
-              draggable="false"
+              :avatar-id="selectedAvatar"
             />
             <span
               v-if="!codiProfile || pictureFailed"
@@ -160,11 +156,9 @@
               :disabled="busy || isClosing"
             >
               <template #default="{ item }"
-                ><img
+                ><PlayerAvatar
                   class="rail-avatar-image"
-                  :src="avatarSrc(item)"
-                  alt=""
-                  draggable="false"
+                  :avatar-id="item"
               /></template>
             </HorizontalChoiceRail>
             <div v-else class="avatar-grid">
@@ -188,12 +182,7 @@
                     })
                   "
                 />
-                <img
-                  :src="avatarSrc(avatar)"
-                  alt=""
-                  draggable="false"
-                  loading="lazy"
-                />
+                <PlayerAvatar :avatar-id="avatar" alt="" loading="lazy" />
               </label>
             </div>
           </fieldset>
@@ -353,12 +342,11 @@ import {
 import { useGameI18n } from "../composables/useGameI18n";
 import { useLiveConfig } from "../composables/useLiveRoom";
 import { PLAYER_AVATARS, isPlayerAvatarId } from "../data/player-avatars";
-import { usePlayerAvatar } from "../composables/usePlayerAvatar";
 import type { PlayerRepository, PlayerSetupInput, ScoreRepository } from "../storage/contracts";
 import { formatClock } from "../utils/ranking";
 import { nicknameKey } from "../utils/playerNickname";
 import { resolveCodiPlayer } from "../utils/codiIdentity";
-import { codiPictureSrc, isCodiPictureUrl, type CodiProfile } from "../utils/codiOauth";
+import { isCodiPictureUrl, type CodiProfile } from "../utils/codiOauth";
 import {
   beginCodiLogin,
   CodiOriginError,
@@ -475,7 +463,6 @@ const codiErrorText = computed(
 const nickname = ref(
   props.codiProfile?.nickname ?? props.initial?.nickname ?? "",
 );
-const avatarSrc = usePlayerAvatar();
 const avatarLabel = (_avatar: string, index: number): string =>
   t("home.selectedAvatar", { number: index + 1, total: PLAYER_AVATARS.length });
 const ageLabel = (value: number): string => t("home.years", { age: value });
@@ -1874,20 +1861,8 @@ input:focus-visible {
   grid-column: auto;
   grid-row: auto;
 }
-.is-codi .hero-avatar.codi-picture {
-  width: auto;
-  height: 220px;
-  aspect-ratio: 1254 / 1724;
-  max-width: 220px;
-  /* The hub portrait is one wide transparent canvas. These margins close
-     the empty bands above and below the visible pixels without cropping it. */
-  margin: -48px 0 -108px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  object-fit: contain;
-  object-position: center;
+.is-codi .hero-avatar {
+  margin: 0;
 }
 .is-codi .name-plate {
   align-self: stretch;
@@ -1903,7 +1878,7 @@ input:focus-visible {
   line-height: 1.35;
 }
 .is-codi .codi-source {
-  margin: -8px 0 0;
+  margin: 0;
   color: #c9dcff;
   font-size: 0.85rem;
   font-weight: 700;
@@ -1913,7 +1888,7 @@ input:focus-visible {
 .codi-retry {
   max-width: 100%;
   min-height: 44px;
-  margin: -12px 0 0;
+  margin: 4px 0 0;
   padding: 8px 4px;
   border: 0;
   background: none;
@@ -1955,14 +1930,6 @@ input:focus-visible {
   .is-codi .setup-body {
     flex: none;
     overflow: visible;
-  }
-  .is-codi .hero-avatar.codi-picture {
-    height: 168px;
-    margin: -36px 0 -82px;
-  }
-  .player-setup-dialog.is-codi.tight-height .hero-avatar.codi-picture {
-    height: 128px;
-    margin: -28px 0 -62px;
   }
   .is-codi .codi-button {
     min-height: 48px;

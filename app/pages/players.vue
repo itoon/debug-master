@@ -24,7 +24,7 @@
           <tbody>
             <tr v-for="entry in filtered" :key="entry.id" :class="{ 'selected-row': selectedIds.includes(entry.id) }">
               <td class="selection-cell"><label class="checkbox-hit"><input v-model="selectedIds" class="select-checkbox" type="checkbox" :value="entry.id" :disabled="deleting" :aria-label="t('players.selectEntry', { name: entry.name, playedAt: dateFormatter.format(new Date(entry.createdAt)) })" /></label></td>
-              <td><div class="player-cell"><img :class="{ 'is-photo': avatarSrc(entry.avatarId).startsWith('https:') }" :src="avatarSrc(entry.avatarId)" alt="" draggable="false" /><strong>{{ entry.name }}</strong></div></td>
+              <td><div class="player-cell"><PlayerAvatar :avatar-id="entry.avatarId" /><strong>{{ entry.name }}</strong></div></td>
               <td>{{ entry.age ? t('home.years', { age: entry.age }) : '—' }}</td>
               <td>{{ modeName(entry) }}<small>{{ entry.setTitle }}</small></td>
               <td class="score-cell">{{ entry.score.toLocaleString('th-TH') }}<small>{{ formatClock(entry.elapsedMs) }}</small></td>
@@ -44,10 +44,8 @@
 import type { Score } from '../types/debug-game';
 import { createLocalRepositories } from '../storage/LocalStorageAdapter';
 import { useGameI18n } from '../composables/useGameI18n';
-import { usePlayerAvatar } from '../composables/usePlayerAvatar';
 import { formatClock } from '../utils/ranking';
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const repositories = createLocalRepositories();
 const entries = ref<Score[]>([]);
 const query = ref('');
@@ -158,7 +156,6 @@ tr:last-child td { border-bottom: 0; }
 td small { display: block; color: #64748b; font-size: .7rem; }
 .player-cell { display: flex; align-items: center; gap: 10px; min-width: 160px; }
 .player-cell img { width: 36px; height: 36px; flex: none; border-radius: 50%; background: #d9e8ff; object-fit: contain; }
-.player-cell img.is-photo { object-fit: cover; background: transparent; }
 .player-cell strong { overflow-wrap: anywhere; }
 .score-cell { font-variant-numeric: tabular-nums; }
 button { min-height: 48px; border: 1px solid #d5a7ad; border-radius: 10px; padding: 8px 12px; font: inherit; cursor: pointer; }

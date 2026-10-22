@@ -1,7 +1,7 @@
 <template>
   <dialog ref="dialog" class="returning-dialog" :aria-labelledby="titleId" @cancel.prevent="!busy && emit('close')">
     <header><h2 :id="titleId">{{ t('player.returnTitle') }}</h2><button ref="closeButton" type="button" class="close-button" :disabled="busy" :aria-label="t('player.closeProfile')" @click="emit('close')">×</button></header>
-    <img class="profile-image" :class="{ 'is-photo': avatarSrc(player.avatarId).startsWith('https:') }" :src="avatarSrc(player.avatarId)" :alt="t('home.avatar')" draggable="false" />
+    <PlayerAvatar class="profile-image" :avatar-id="player.avatarId" :alt="t('home.avatar')" />
     <p class="profile-name">{{ player.name }}</p>
     <p class="profile-age">{{ validAge ? t('home.years', { age: player.age! }) : t('player.ageUnknown') }}</p>
     <dl class="profile-score">
@@ -20,11 +20,9 @@
 import type { Score } from '../types/debug-game';
 import { homeConfig } from '../data/home-config';
 import { useGameI18n } from '../composables/useGameI18n';
-import { usePlayerAvatar } from '../composables/usePlayerAvatar';
 const props = defineProps<{ player: Score; latestScore?: Score | null; busy?: boolean; error?: string }>();
 const emit = defineEmits<{ close: []; reuse: []; create: [] }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const dialog = ref<HTMLDialogElement | null>(null);
 const closeButton = ref<HTMLButtonElement | null>(null);
 const titleId = useId();
@@ -41,7 +39,6 @@ h2 { margin: 0; font-size: 1.4rem; color: #ffdc53; }
 button { font: inherit; font-weight: 800; cursor: pointer; }
 .close-button { flex: none; width: 48px; height: 48px; border: 1px solid #87b0ef; border-radius: 12px; background: #102858; color: #fff; font-size: 1.6rem; }
 .profile-image { display: block; width: 112px; height: 112px; margin: 24px auto 16px; object-fit: contain; border: 4px solid #e5f2ff; border-radius: 50%; background: #cceaff; }
-.profile-image.is-photo { object-fit: cover; background: transparent; }
 .profile-name { margin: 0; font-size: 1.5rem; font-weight: 800; text-align: center; overflow-wrap: anywhere; }
 .profile-age { margin: 6px 0 14px; text-align: center; color: #cce1ff; }
 .profile-score { margin: 0 0 24px; text-align: center; }

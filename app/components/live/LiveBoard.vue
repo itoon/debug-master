@@ -4,7 +4,7 @@
     <TransitionGroup tag="ol" name="board-row" class="rows">
       <li v-for="(player, index) in players" :key="player.id" class="row" :class="[medal(index), { off: !player.connected }]">
         <span class="n">{{ index + 1 }}</span>
-        <img :class="{ 'is-photo': avatarSrc(player.avatarId).startsWith('https:') }" :src="avatarSrc(player.avatarId)" alt="" draggable="false" />
+        <PlayerAvatar :avatar-id="player.avatarId" />
         <b :title="player.name">{{ player.name }}</b>
         <small>{{ player.score.toLocaleString('th-TH') }}</small>
       </li>
@@ -14,12 +14,10 @@
 
 <script setup lang="ts">
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import type { LivePlayer } from "../../utils/live/protocol";
 
 defineProps<{ players: LivePlayer[] }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const headingId = useId();
 
 function medal(index: number): string {
@@ -35,7 +33,6 @@ h2 { margin: 0 0 .3cqw; font-size: 1.4cqw; font-weight: 800; }
 .row.off { opacity: .55; }
 .n { flex: none; width: 1.8cqw; height: 1.8cqw; display: grid; place-items: center; border-radius: 50%; background: #ffffff1f; font-weight: 800; font-size: 1cqw; }
 .row img { flex: none; width: 2.2cqw; height: 2.2cqw; border: 1px solid #8ba8de; border-radius: 50%; background: #d9e8ff; object-fit: contain; }
-.row img.is-photo { object-fit: cover; background: transparent; }
 .row b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .row small { color: #ffdb58; font-weight: 800; font-size: 1.25cqw; font-variant-numeric: tabular-nums; }
 /* Medal colours shared with ChallengeRanking. */

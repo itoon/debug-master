@@ -15,8 +15,8 @@
     </div>
     <ol class="startrow" :aria-label="t('live.players')">
       <li v-for="seat in seats" :key="seat.index" class="slot" :class="{ empty: !seat.player, off: seat.player && !seat.player.connected }">
-        <img v-if="seat.player" :key="seat.player.id" class="av filled" :class="{ 'is-photo': avatarSrc(seat.player.avatarId).startsWith('https:') }" :src="avatarSrc(seat.player.avatarId)" alt="" draggable="false" />
-        <img v-else class="av" :src="avatarSrc()" alt="" draggable="false" />
+        <PlayerAvatar v-if="seat.player" :key="seat.player.id" class="av filled" :avatar-id="seat.player.avatarId" />
+        <PlayerAvatar v-else class="av" />
         <span class="tile" aria-hidden="true" />
         <b :title="seat.player?.name">{{ seat.player?.name ?? t('live.emptySeat') }}</b>
       </li>
@@ -30,12 +30,10 @@ import { renderSVG } from "uqr";
 import debugMasterLogo from "../../assets/brand/logo-sleep-display.png";
 import { homeConfig } from "../../data/home-config";
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import { MAX_PLAYERS, type LivePlayer, type ModeId } from "../../utils/live/protocol";
 
 const props = defineProps<{ code: string; joinUrl: string; mode: ModeId; durationSec: number; players: LivePlayer[] }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const logoFloatDuration = `${homeConfig.sleepScreen.floatMs}ms`;
 const baseURL = useRuntimeConfig().app.baseURL;
 const grassTile = `url(${baseURL.endsWith("/") ? baseURL : `${baseURL}/`}tiles/grass.png)`;
@@ -88,7 +86,6 @@ figcaption { font-size: 1.8cqw; font-weight: 800; }
 .slot.off { opacity: .45; }
 .slot b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .av { position: relative; z-index: 1; width: 5.4cqw; height: 5.4cqw; border: .35cqw solid #dbeaff; border-radius: 50%; background: radial-gradient(circle at top, #76a3ed, #23448d); object-fit: contain; }
-.av.is-photo { object-fit: cover; background: transparent; }
 .av.filled { animation: seat-drop 520ms cubic-bezier(.34, 1.5, .64, 1) backwards, idle-hop 1.6s 520ms ease-in-out infinite alternate; }
 .tile { width: 6.6cqw; height: 2.4cqw; margin-top: -1.1cqw; border-radius: var(--cv-radius-sm); background: v-bind(grassTile) center / cover; box-shadow: 0 .5cqw 1cqw #03102f80; }
 .empty .av { opacity: .35; border-style: dashed; }

@@ -12,7 +12,7 @@
       </template>
 
       <template v-else>
-        <img v-if="self" class="live-avatar" :class="{ 'is-photo': avatarSrc(self.avatarId).startsWith('https:') }" :src="avatarSrc(self.avatarId)" alt="" draggable="false" />
+        <PlayerAvatar v-if="self" class="live-avatar" :avatar-id="self.avatarId" />
         <p v-if="self" class="live-name" :title="self.name">{{ self.name }}</p>
         <h1 :id="headingId" ref="heading" tabindex="-1">{{ title }}</h1>
 
@@ -23,7 +23,7 @@
             <p>{{ t('live.playersCount', { count: playing.length }) }}</p>
             <ul>
               <li v-for="player in playing" :key="player.id" :class="{ me: player.id === selfId, off: !player.connected }">
-                <img :class="{ 'is-photo': avatarSrc(player.avatarId).startsWith('https:') }" :src="avatarSrc(player.avatarId)" :alt="player.name" :title="player.name" draggable="false" />
+                <PlayerAvatar :avatar-id="player.avatarId" :alt="player.name" :title="player.name" />
               </li>
             </ul>
           </div>
@@ -45,7 +45,7 @@
         <ol v-if="showStandings" class="standings" :aria-label="t('live.board')">
           <li v-for="row in standings" :key="row.player.id" :class="[medal(row.rank), { me: row.player.id === selfId, off: !row.player.connected }]">
             <span class="n">{{ row.rank }}</span>
-            <img :class="{ 'is-photo': avatarSrc(row.player.avatarId).startsWith('https:') }" :src="avatarSrc(row.player.avatarId)" alt="" draggable="false" />
+            <PlayerAvatar :avatar-id="row.player.avatarId" />
             <b :title="row.player.name">{{ row.player.name }}</b>
             <small>{{ row.player.score.toLocaleString('th-TH') }}</small>
           </li>
@@ -66,7 +66,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import type { LivePlayerStage } from "../../utils/live/playerStage";
 import type { RoomState } from "../../utils/live/protocol";
 
@@ -81,7 +80,6 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ changePlayer: []; leave: []; home: [] }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const headingId = useId();
 const heading = ref<HTMLElement | null>(null);
 
@@ -142,7 +140,6 @@ h1 { color: #ffdc58; font-size: clamp(1.35rem, 4vw, 1.8rem); font-weight: 800; l
 h1:focus { outline: none; }
 .round-info { color: #bdd8ff; font-size: .95rem; }
 .live-avatar { width: 96px; height: 96px; border: 4px solid #fff; border-radius: 50%; background: #d8eaff; object-fit: contain; }
-.live-avatar.is-photo { object-fit: cover; background: transparent; }
 .live-name { max-width: 100%; margin-top: -6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.1rem; font-weight: 800; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
@@ -154,7 +151,6 @@ h1:focus { outline: none; }
 .lobby-players { display: grid; gap: 8px; width: 100%; padding-top: 12px; border-top: 1px solid #86b5ff33; color: #bdd8ff; font-size: .85rem; }
 .lobby-players ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 0; margin: 0; list-style: none; }
 .lobby-players img { display: block; width: 40px; height: 40px; border: 2px solid #8ba8de; border-radius: 50%; background: #d9e8ff; object-fit: contain; }
-.lobby-players img.is-photo { object-fit: cover; background: transparent; }
 .lobby-players .me img { border-color: #ffdb58; box-shadow: 0 0 0 2px #ffdb5855; }
 .lobby-players .off { opacity: .5; }
 
@@ -176,7 +172,6 @@ dd.score { color: #ffdb58; }
 .standings li.off { opacity: .55; }
 .standings .n { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: #ffffff1f; font-size: .8rem; font-weight: 800; }
 .standings img { flex: none; width: 30px; height: 30px; border: 1px solid #8ba8de; border-radius: 50%; background: #d9e8ff; object-fit: contain; }
-.standings img.is-photo { object-fit: cover; background: transparent; }
 .standings b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .standings small { color: #ffdb58; font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 /* Medal colours shared with ChallengeRanking / LiveBoard. */

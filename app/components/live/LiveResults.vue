@@ -6,7 +6,7 @@
       <li v-for="place in podium" :key="place.rank" class="ps" :class="`p${place.rank}`" :aria-label="place.player ? `${place.rank} · ${place.player.name}` : undefined">
         <span class="portrait" :class="{ vacant: !place.player }">
           <svg v-if="place.rank === 1 && place.player" class="crown" viewBox="0 0 32 24" aria-hidden="true"><path d="m3 6 7 5 6-9 6 9 7-5-4 15H7z" /><path d="M8 17h16" /></svg>
-          <img v-if="place.player" :class="{ 'is-photo': avatarSrc(place.player.avatarId).startsWith('https:') }" :src="avatarSrc(place.player.avatarId)" alt="" draggable="false" />
+          <PlayerAvatar v-if="place.player" :avatar-id="place.player.avatarId" />
         </span>
         <b :title="place.player?.name">{{ place.player?.name ?? '—' }}</b>
         <small>{{ place.player ? place.player.score.toLocaleString('th-TH') : '—' }}</small>
@@ -22,12 +22,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import type { LivePlayer, ModeId } from "../../utils/live/protocol";
 
 const props = defineProps<{ players: LivePlayer[]; mode: ModeId }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const headingId = useId();
 
 const ranked = computed(() => props.players.filter((p) => p.status === "playing"));
@@ -55,7 +53,6 @@ const title = computed(() => {
 .ps.p3 { --medal: #efb387; --face: linear-gradient(135deg, #f0c7a4, #a2653c); --rise-delay: 0ms; }
 .portrait { position: relative; width: 9cqw; height: 9cqw; border: .5cqw solid var(--medal); border-radius: 50%; background: radial-gradient(circle at top, #76a3ed, #23448d); box-shadow: 0 .6cqw 1.6cqw #06183c; }
 .portrait img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: contain; }
-.portrait img.is-photo { object-fit: cover; background: transparent; }
 .portrait.vacant { border-style: dashed; opacity: .6; }
 .crown { position: absolute; left: 26%; top: -38%; width: 48%; fill: #ffda4b; stroke: #b27f21; stroke-width: 1.5; filter: drop-shadow(0 2px 2px #101d46); }
 .ps b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 2cqw; line-height: 1.25; }

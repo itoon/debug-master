@@ -107,12 +107,10 @@
             >✦</span
           >
         </div>
-        <img
+        <PlayerAvatar
           class="session-avatar"
-          :class="{ 'is-photo': avatarSrc(result.avatarId).startsWith('https:') }"
-          :src="avatarSrc(result.avatarId)"
+          :avatar-id="result.avatarId"
           :alt="t('home.avatar')"
-          draggable="false"
         />
         <p class="result-player">
           {{ result.name }} ·
@@ -203,12 +201,9 @@ import { formatClock, hasRankingScore, type RankingBoard } from '../utils/rankin
 import { useGameI18n } from '../composables/useGameI18n'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { TILE_TYPES, tileDefinition } from '../data/tiles'
-import { usePlayerAvatar } from '../composables/usePlayerAvatar'
 import { useCountUp } from '../composables/useCountUp'
 
 const tutorialTiles = TILE_TYPES.map(tileDefinition)
-const avatarSrc = usePlayerAvatar()
-
 const props = withDefaults(defineProps<{
   stage: 'tutorial' | 'summary' | 'ranking'
   mode?: ChallengeMode
@@ -305,10 +300,6 @@ h1 {
   background: #d8eaff;
   object-fit: contain;
   justify-self: center;
-}
-.session-avatar.is-photo {
-  object-fit: cover;
-  background: transparent;
 }
 .result-player {
   margin: 0;
