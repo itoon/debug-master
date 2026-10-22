@@ -16,6 +16,7 @@ import type {
 import {
   COUNTDOWN_MS,
   DEFAULT_DURATION_SEC,
+  GRACE_MS,
   IDLE_MS,
   MAX_PLAYERS,
 } from '../../app/utils/live/protocol'
@@ -40,6 +41,10 @@ export interface StoredRoom {
   players: Record<string, StoredPlayer>
   hostKeyHash?: string
   lastActivity: number
+  /** roundKey of the last round written to the results archive (D1). */
+  archivedRoundKey?: string
+  /** After a failed archive write, the next attempt is not before this time. */
+  archiveRetryAt?: number
 }
 
 export function createRoom(code: string, now: number): StoredRoom {
@@ -153,8 +158,17 @@ export function migrateRoom(room: StoredRoom): StoredRoom {
   return room
 }
 
-/** Removes the player bound to the secret `pid`. */
+/** Keep a round participant's standings and private ledger until the next round. */
 export function leavePlayer(room: StoredRoom, pid: string): boolean {
+  const player = room.players[pid]
+  if (!player) return false
+  // The socket owner unbinds/closes the connection, so snapshots mark this retained row offline.
+  if (player.status === 'playing' && room.phase !== 'lobby') return true
+  return removePlayer(room, pid)
+}
+
+/** Explicit host removal, or leaving before participating in a round. */
+function removePlayer(room: StoredRoom, pid: string): boolean {
   if (!room.players[pid]) return false
   delete room.players[pid]
   return true
@@ -191,6 +205,7 @@ function startNewRound(room: StoredRoom, connected: Set<string>): void {
 
   room.players = next
   room.roundId += 1
+  delete room.archiveRetryAt
   room.phase = 'lobby'
   delete room.round
   room.startAt = null
@@ -242,7 +257,7 @@ export function applyHostCommand(
     case 'kick': {
       // cmd.playerId is the public id; the record is keyed by the secret pid.
       const pid = pidForPublicId(room, cmd.playerId)
-      changed = pid !== null && leavePlayer(room, pid)
+      changed = pid !== null && removePlayer(room, pid)
       break
     }
   }
@@ -293,9 +308,10 @@ export function isSocketFresh(lastAutoResponse: number | null, lastMessage: numb
 }
 
 /**
- * Earliest of the phase alarm (countdown/running), the stale-socket sweep (while player sockets are
- * open) and the idle cleanup (no sockets). `current` is the alarm already armed: a sweep alarm that
- * already fires within SWEEP_MS is kept, so the alarm is not rewritten on every message.
+ * Earliest of the phase alarm (countdown/running), the results archive (finished, not yet written),
+ * the stale-socket sweep (while player sockets are open) and the idle cleanup (no sockets).
+ * `current` is the alarm already armed: a sweep alarm that already fires within SWEEP_MS is kept,
+ * so the alarm is not rewritten on every message.
  */
 export function nextAlarmAt(
   room: StoredRoom,
@@ -307,11 +323,36 @@ export function nextAlarmAt(
   if (room.phase === 'countdown') at = room.startAt
   else if (room.phase === 'running') at = room.endAt
   else if (sockets.open === 0) at = room.lastActivity + IDLE_MS
+  const archiveAt = archiveDueAt(room)
+  if (archiveAt !== null) at = at === null ? archiveAt : Math.min(at, archiveAt)
   if (sockets.players > 0) {
     const sweep = current !== null && current > now && current <= now + SWEEP_MS ? current : now + SWEEP_MS
     at = at === null ? sweep : Math.min(at, sweep)
   }
   return at
+}
+
+/**
+ * Archive identity of the current round. roundId alone restarts at 1 when a wiped room code is
+ * reused, so the start time is part of the key.
+ */
+export function roundKey(room: StoredRoom): string | null {
+  return room.round && room.startAt !== null ? `${room.code}:${room.startAt}` : null
+}
+
+/**
+ * When the finished round should be written to the results archive, or null when there is nothing
+ * to write. Late inputs are still accepted for GRACE_MS after endAt, so standings are final only then.
+ */
+export function archiveDueAt(room: StoredRoom): number | null {
+  const key = roundKey(room)
+  if (room.phase !== 'finished' || key === null || room.endAt === null || room.archivedRoundKey === key) return null
+  return Math.max(room.endAt + GRACE_MS, room.archiveRetryAt ?? 0)
+}
+
+export function isArchiveDue(room: StoredRoom, now: number): boolean {
+  const at = archiveDueAt(room)
+  return at !== null && now >= at
 }
 
 export function isIdleExpired(room: StoredRoom, openSockets: number, now: number): boolean {
