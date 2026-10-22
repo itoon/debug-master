@@ -145,7 +145,8 @@ async function main() {
   const private2 = await p2.waitFor('private session', m => m.type === 'scoring' && m.session)
   const event = (snapshot, sequence, action, at, direction) => ({ type: 'gameplay', protocolVersion: 1,
     roundId: sc.roundId, sessionId: snapshot.session.id, sequence, levelId: 1, action, at, ...(direction ? { direction } : {}) })
-  const readyAt = Date.now()
+  // Like the browser, use the Worker's clock: a local clock skew must not invalidate gameplay.
+  const readyAt = sr.serverNow
   const play = async (client, snapshot, mistakes = 0) => {
     let sequence = 0
     const send = async (action, at, direction) => {
@@ -174,7 +175,7 @@ async function main() {
   const duplicate = await p1.waitFor('duplicate ack', m => m.type === 'scoring', 3000, duplicateSince)
   check(duplicate.session.totalScore === score1 && duplicate.receipt.delta === 0, 'duplicate final input awards no second delta')
   p1.ws.close()
-  const resumed = connect('player'); await resumed.open(); resumed.send(player('smoke-p1', 'P1'))
+  let resumed = connect('player'); await resumed.open(); resumed.send(player('smoke-p1', 'P1'))
   const restored = await resumed.waitFor('private resume', m => m.type === 'scoring' && m.session)
   check(restored.acknowledgedSequence === 4 && restored.nextExpectedSequence === 5 && restored.session.totalScore === score1, 'reconnect restores exact accepted sequence and score')
   const replaySince = resumed.messages.length
@@ -182,6 +183,19 @@ async function main() {
   const replayed = await resumed.waitFor('lost ack replay', m => m.type === 'scoring', 3000, replaySince)
   check(replayed.receipt.delta === 0, 'lost-ack replay after reconnect is idempotent')
   check(!screen.messages.some(m => m.type === 'scoring') && !hostA.messages.some(m => m.type === 'scoring'), 'private canonical state never reaches screen or host')
+
+  // Voluntary leave retains current-round scores, just like a dropped connection.
+  const leftSince = screen.messages.length
+  resumed.send({ type: 'leave' })
+  await resumed.waitClose()
+  const left = (await screen.waitFor('departed standings', m => m.type === 'state' &&
+    m.state.players.some(p => p.id === y1.id && !p.connected), 3000, leftSince)).state
+  check(left.players[0].id === y1.id && left.players[0].score === score1 && left.players[0].levelsCompleted === 1,
+    'leaving retains the participant score, completion count and rank')
+  resumed = connect('player'); await resumed.open(); resumed.send(player('smoke-p1', 'P1'))
+  const returned = await resumed.waitFor('private session after leave', m => m.type === 'scoring' && m.session)
+  check(returned.session.totalScore === score1 && returned.acknowledgedSequence === 4,
+    'rejoining after leave restores the same score and accepted sequence')
 
   // 6. a late joiner is queued.
   const p3 = connect('player')
