@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LivePlayer, PlayerHello } from '../../app/utils/live/protocol'
-import { IDLE_MS } from '../../app/utils/live/protocol'
+import { GRACE_MS, IDLE_MS } from '../../app/utils/live/protocol'
 import {
   advanceClock,
   applyHostCommand,
@@ -81,6 +81,18 @@ describe('alarms', () => {
     expect(nextAlarmAt(lobbyRoom, only(0), 200)).toBe(lobbyRoom.lastActivity + IDLE_MS)
     expect(nextAlarmAt(lobbyRoom, only(2), 200)).toBeNull()
     expect(nextAlarmAt(countdownRoom, only(0), 1000)).toBe(3000)
+  })
+
+  it('wakes once the finished round is final, to archive it', () => {
+    const only = (open: number) => ({ open, players: 0 })
+    const r = running()
+    advanceClock(r, 303_000)
+    expect(nextAlarmAt(r, only(2), 303_000)).toBe(303_000 + GRACE_MS)
+    // no sockets: the archive comes before the idle cleanup
+    expect(nextAlarmAt(r, only(0), 303_000)).toBe(303_000 + GRACE_MS)
+    r.archivedRoundKey = `${r.code}:${r.startAt}`
+    expect(nextAlarmAt(r, only(2), 303_000)).toBeNull()
+    expect(nextAlarmAt(r, only(0), 303_000)).toBe(r.lastActivity + IDLE_MS)
   })
 
   it('adds a stale-socket sweep while player sockets are open', () => {
