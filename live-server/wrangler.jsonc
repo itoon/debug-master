@@ -8,9 +8,21 @@
     "redact_query_string": true // hides ?key= (host key) in logs and traces
   },
   // Comma list of page origins allowed to open a room socket. Requests without an Origin header pass (smoke script).
-  "vars": { "ALLOWED_ORIGINS": "https://itoon.github.io,http://localhost:3000" },
+  // RESULTS_RETENTION_DAYS: archived round results older than this are deleted by the daily cron.
+  "vars": { "ALLOWED_ORIGINS": "https://itoon.github.io,http://localhost:3000", "RESULTS_RETENTION_DAYS": "90" },
   "durable_objects": {
     "bindings": [{ "name": "LIVE_ROOM", "class_name": "LiveRoom" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LiveRoom"] }]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LiveRoom"] }],
+  // Final round results (src/archive.ts). Created 2026-10-22 (region APAC); local `wrangler dev`
+  // uses a local copy under .wrangler/.
+  "d1_databases": [
+    {
+      "binding": "RESULTS_DB",
+      "database_name": "debug-master-live-results",
+      "database_id": "7f3e6372-e61b-4cf8-9a5a-677062e89b0d",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": { "crons": ["0 3 * * *"] } // daily results retention cleanup
 }
