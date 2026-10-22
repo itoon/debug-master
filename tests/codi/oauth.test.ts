@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { codeChallenge, codiPictureSrc, codiReturnPath, redirectUriForOrigin } from '../../app/utils/codiOauth'
+import { codeChallenge, codiPictureSrc, codiReturnPath, isCodiPictureUrl, redirectUriForOrigin } from '../../app/utils/codiOauth'
+import { resolveAvatarId } from '../../app/data/player-avatars'
 import { peekCodiResult, readCodiTxn, saveCodiResult, saveCodiTxn, type CodiTxn } from '../../app/utils/codiSession'
 
 describe('Codi Arena login helpers', () => {
@@ -19,6 +20,16 @@ describe('Codi Arena login helpers', () => {
   it('asks the hub picture URL for one rendered image', () => {
     expect(codiPictureSrc('https://codi-arena-hub.innovasive.workers.dev/oauth/picture/kid.png')).toBe('https://codi-arena-hub.innovasive.workers.dev/oauth/picture/kid.png?size=512')
     expect(codiPictureSrc('https://codi-arena-hub.innovasive.workers.dev/oauth/picture/kid.png?size=256')).toBe('https://codi-arena-hub.innovasive.workers.dev/oauth/picture/kid.png?size=256')
+  })
+
+  it('keeps a Codi photo as the player avatar and rejects other remote values', () => {
+    const photo = 'https://codi-arena-hub.innovasive.workers.dev/oauth/picture/kid.png'
+    expect(isCodiPictureUrl(photo)).toBe(true)
+    expect(isCodiPictureUrl('http://example.test/codi.png')).toBe(false)
+    expect(isCodiPictureUrl('codi_default.svg')).toBe(false)
+    expect(resolveAvatarId(photo)).toBe(photo)
+    expect(resolveAvatarId('art-toy/10-party.svg')).toBe('art-toy/10-party.svg')
+    expect(resolveAvatarId('not-a-photo')).toBe('codi_default.svg')
   })
 
   it('builds the S256 challenge from the PKCE verifier', async () => {

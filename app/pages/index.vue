@@ -436,7 +436,7 @@ import { competitionLevelKey, toScore } from "../utils/competition/session";
 import type { SessionReceipt } from "../types/competition";
 import type { PlayerSetupInput } from "../storage/contracts";
 import { resolveCodiPlayer } from "../utils/codiIdentity";
-import { isPlayerAvatarId, PLAYER_AVATARS } from "../data/player-avatars";
+import { resolveAvatarId } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
 import { useLiveConfig, useLiveRoom, type LiveRoom } from "../composables/useLiveRoom";
 import { livePlayerId, resetLivePlayerId } from "../utils/live/identity";
@@ -902,7 +902,7 @@ function presentPracticeSummary(): void {
 async function prepareChallenge(profile: PlayerSetupInput & { codiSub?: string }, mode: ChallengeMode, existingPlayerId?: string): Promise<void> {
   if (homeStarting.value || !showSetup.value) return;
   const nickname = profile.nickname.trim();
-  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || (profile.age !== undefined && !homeConfig.ages.includes(profile.age)) || !isPlayerAvatarId(profile.avatarId)) return;
+  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || (profile.age !== undefined && !homeConfig.ages.includes(profile.age)) || resolveAvatarId(profile.avatarId) !== profile.avatarId) return;
   // Recheck immediately before creating a profile. The same Codi badge continues its player.
   let reusedPlayerId = existingPlayerId;
   if (profile.codiSub) {
@@ -998,7 +998,7 @@ async function resumeChallenge(scoreId: string, mode: ChallengeMode): Promise<vo
     homeStorageError.value = t('player.unavailable');
     return;
   }
-  await prepareChallenge({ nickname: score.name, age: score.age!, avatarId: isPlayerAvatarId(score.avatarId) ? score.avatarId : PLAYER_AVATARS[0] }, mode, scorePlayerKey(score));
+  await prepareChallenge({ nickname: score.name, age: score.age!, avatarId: resolveAvatarId(score.avatarId) }, mode, scorePlayerKey(score));
 }
 
 function openPracticePicker(): void {
@@ -1885,7 +1885,7 @@ watch(liveSyncStatus, next => {
 
 function validLiveProfile(profile: PlayerSetupInput): PlayerSetupInput | null {
   const nickname = profile.nickname.trim();
-  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || (profile.age !== undefined && !homeConfig.ages.includes(profile.age)) || !isPlayerAvatarId(profile.avatarId)) return null;
+  if (!nickname || nickname.length > homeConfig.nicknameMaxLength || (profile.age !== undefined && !homeConfig.ages.includes(profile.age)) || resolveAvatarId(profile.avatarId) !== profile.avatarId) return null;
   return { nickname, avatarId: profile.avatarId, ...(profile.age !== undefined ? { age: profile.age } : {}) };
 }
 

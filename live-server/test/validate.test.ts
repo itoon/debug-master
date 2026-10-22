@@ -8,8 +8,12 @@ const hello = { type: 'hello', pid: 'pid-abc123', name: 'มิ้นท์🔥'
 describe('validate', () => {
   it('accepts a player hello and keeps a known avatar', () =>
     expect(parseClientMessage(JSON.stringify(hello), 'player')).toEqual(hello))
-  it('replaces an unknown avatar with the default', () =>
-    expect((parseClientMessage(JSON.stringify({ ...hello, avatarId: 'x.svg' }), 'player') as PlayerHello).avatarId).toBe('codi_default.svg'))
+  it('keeps an https Codi picture and replaces other remote values', () => {
+    const photo = 'https://codi-arena-hub.innovasive.workers.dev/oauth/picture/kid.png'
+    expect((parseClientMessage(JSON.stringify({ ...hello, avatarId: photo }), 'player') as PlayerHello).avatarId).toBe(photo)
+    expect((parseClientMessage(JSON.stringify({ ...hello, avatarId: 'http://example.test/codi.png' }), 'player') as PlayerHello).avatarId).toBe('codi_default.svg')
+    expect((parseClientMessage(JSON.stringify({ ...hello, avatarId: 'x.svg' }), 'player') as PlayerHello).avatarId).toBe('codi_default.svg')
+  })
   it('accepts a Codi hello that has no age', () => {
     const { age: _age, ...withoutAge } = hello
     expect(parseClientMessage(JSON.stringify(withoutAge), 'player')).toEqual(withoutAge)

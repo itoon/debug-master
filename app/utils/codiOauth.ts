@@ -66,6 +66,15 @@ export function buildAuthorizeUrl(input: {
 }
 
 /** The hub renders one Codi image at this URL. `size` asks for that same picture, not separate parts. */
+export function isCodiPictureUrl(value: unknown): value is string {
+  if (typeof value !== "string" || value.length === 0 || value.length > 500) return false;
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function codiPictureSrc(picture: string): string {
   try {
     const url = new URL(picture);

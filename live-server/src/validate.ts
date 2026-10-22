@@ -9,7 +9,7 @@ import {
   type ModeId,
   type Role,
 } from '../../app/utils/live/protocol'
-import { PLAYER_AVATARS, isPlayerAvatarId } from '../../app/data/player-avatars'
+import { resolveAvatarId } from '../../app/data/player-avatars'
 
 const MODES: readonly string[] = ['A', 'B', 'C']
 const AGE_MIN = 5
@@ -66,7 +66,7 @@ export function parseClientMessage(raw: string | ArrayBuffer, role: Role): Clien
         type: 'hello',
         pid: m.pid,
         name,
-        avatarId: isPlayerAvatarId(m.avatarId) ? m.avatarId : PLAYER_AVATARS[0],
+        avatarId: resolveAvatarId(m.avatarId),
         ...(typeof m.age === 'number' ? { age: m.age } : {}),
       }
     }

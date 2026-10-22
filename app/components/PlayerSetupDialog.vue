@@ -358,7 +358,7 @@ import type { PlayerRepository, PlayerSetupInput, ScoreRepository } from "../sto
 import { formatClock } from "../utils/ranking";
 import { nicknameKey } from "../utils/playerNickname";
 import { resolveCodiPlayer } from "../utils/codiIdentity";
-import { codiPictureSrc, type CodiProfile } from "../utils/codiOauth";
+import { codiPictureSrc, isCodiPictureUrl, type CodiProfile } from "../utils/codiOauth";
 import {
   beginCodiLogin,
   CodiOriginError,
@@ -606,7 +606,10 @@ function randomizeNickname(): void {
 
 function launch() {
   refreshNames();
-  const avatarId = codiMode.value ? PLAYER_AVATARS[0] : selectedAvatar.value;
+  const picture = props.codiProfile?.picture;
+  const avatarId = codiMode.value
+    ? (isCodiPictureUrl(picture) ? picture : PLAYER_AVATARS[0])
+    : selectedAvatar.value;
   if (
     props.busy ||
     isClosing.value ||
