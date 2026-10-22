@@ -27,7 +27,5 @@ const photo = computed(() => isCodiPictureUrl(avatarId));
    half. This inset frames the head and the top of the shoulders. */
 .player-avatar.is-photo {
   object-fit: cover;
-  object-position: center;
-  object-view-box: inset(32% 26% 20% 26%);
 }
 </style>
