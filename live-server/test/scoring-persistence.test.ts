@@ -23,7 +23,7 @@ function harness(saved?: StoredRoom) {
   let initialize: Promise<unknown> = Promise.resolve()
   const storage = {
     get: vi.fn(async () => structuredClone(stored)), getAlarm: vi.fn(async () => null),
-    put: vi.fn(async (_key: string, value: StoredRoom) => { stored = structuredClone(value); history.push(`persist:${stored.players[pid].scoring!.lastSequence}`) }),
+    put: vi.fn(async (_key: string, value: StoredRoom) => { stored = structuredClone(value); history.push(`persist:${stored.players[pid]?.scoring?.lastSequence}`) }),
     setAlarm: vi.fn(async () => undefined), deleteAlarm: vi.fn(async () => undefined), deleteAll: vi.fn(),
   }
   const ctx = { storage, blockConcurrencyWhile: (fn: () => Promise<unknown>) => { initialize = fn(); return initialize }, setWebSocketAutoResponse: vi.fn(), getWebSockets: (tag?: string) => tag === 'player' ? [ws] : tag === 'screen' ? [screen] : tag === 'host' ? [] : [ws, screen], getWebSocketAutoResponseTimestamp: () => null }
@@ -39,6 +39,27 @@ function clock() {
 }
 
 describe('durable private scoring acknowledgements', () => {
+  it('preserves accepted scores after leaving, broadcasts offline standings and restores them after restart', async () => {
+    clock()
+    const h = harness(); await h.ready
+    await h.send(h.event())
+    for (const direction of gameplayMoves(h.saved().round!.setId, 1)) {
+      await h.send(h.event({ action: 'direction', direction, at: 5000 }))
+    }
+    const before = h.saved().players[pid]
+    expect(before.score).toBeGreaterThan(0)
+    await vi.waitFor(() => expect(h.screenMessages.at(-1).state.players[0].score).toBe(before.score))
+    vi.mocked(Date.now).mockReturnValue(20_000)
+    await h.live.webSocketMessage(h.ws as never, JSON.stringify({ type: 'leave' }))
+
+    expect(h.saved().players[pid]).toEqual(before)
+    expect(h.ws.close).toHaveBeenCalledWith(1000, 'left')
+    expect(h.screenMessages.at(-1).state.players[0]).toMatchObject({ id: before.id, score: before.score, connected: false })
+    const restart = harness(h.saved()); await restart.ready
+    await restart.live.webSocketMessage(restart.ws as never, JSON.stringify({ type: 'hello', pid, name: 'P', avatarId: 'codi_default.svg', age: 9 }))
+    expect(restart.messages.find(m => m.type === 'scoring')).toMatchObject({ acknowledgedSequence: before.scoring!.lastSequence,
+      session: { id: before.scoring!.session.id, totalScore: before.score, levelsCompleted: 1 } })
+  })
   it('persists before an accepted ack and sends private resume on reconnect', async () => {
     clock()
     const h = harness(); await h.ready
