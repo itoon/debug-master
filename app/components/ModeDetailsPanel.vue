@@ -50,12 +50,17 @@ function animate(element: HTMLElement | null, frames: Keyframe[]): void {
   animations.push(animation);
 }
 async function waitForMotion(): Promise<void> { await Promise.all(animations.map(animation => animation.finished.catch(() => {}))); }
-function coverTransform(rect: { left: number; top: number; width: number; height: number }): string {
+function coverFrames(rect: { left: number; top: number; width: number; height: number }): Keyframe[] {
   const target = cover.value!.getBoundingClientRect();
-  return `translate(${rect.left - target.left}px, ${rect.top - target.top}px) scale(${rect.width / target.width}, ${rect.height / target.height})`;
+  // Resize the clipping frame so object-fit crops the artwork and the caption
+  // keeps its natural proportions, even between wide cards and tall covers.
+  return [
+    { transform: `translate(${rect.left - target.left}px, ${rect.top - target.top}px)`, width: `${rect.width}px`, height: `${rect.height}px` },
+    { transform: 'none', width: `${target.width}px`, height: `${target.height}px` },
+  ];
 }
 async function enter(): Promise<void> {
-  if (props.fromRect && cover.value) animate(cover.value, [{ transform: coverTransform(props.fromRect), opacity: 1 }, { transform: 'none', opacity: 1 }]);
+  if (props.fromRect && cover.value) animate(cover.value, coverFrames(props.fromRect));
   animate(panel.value, [{ transform: 'translateX(70px)', opacity: 0 }, { transform: 'none', opacity: 1 }]);
   await waitForMotion();
   if (disposed || closing) return;
@@ -68,7 +73,7 @@ async function closeWithMotion(returnRect = props.fromRect): Promise<void> {
   closing = true;
   cancelMotion();
   if (returnRect && cover.value) {
-    animate(cover.value, [{ transform: 'none', opacity: 1 }, { transform: coverTransform(returnRect), opacity: 1 }]);
+    animate(cover.value, coverFrames(returnRect).reverse());
   }
   animate(panel.value, [{ transform: 'none', opacity: 1 }, { transform: 'translateX(70px)', opacity: 0 }]);
   await waitForMotion();
@@ -83,7 +88,7 @@ onBeforeUnmount(() => { disposed = true; cancelMotion(); window.removeEventListe
 <style scoped>
 .mode-details-view { display: grid; grid-template-columns: minmax(230px, .34fr) minmax(0, .66fr); gap: 18px; min-height: 0; height: 100%; }
 .mode-details-view:focus { outline: none; }
-.detail-cover { position: relative; min-width: 0; min-height: 0; height: 100%; margin: 0; overflow: hidden; border: 2px solid #7baaff; border-radius: 24px; background: #0b2456; transform-origin: top left; }
+.detail-cover { box-sizing: border-box; position: relative; z-index: 1; min-width: 0; min-height: 0; height: 100%; margin: 0; overflow: hidden; border: 2px solid #7baaff; border-radius: 24px; background: #0b2456; transform-origin: top left; }
 .detail-cover > img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 figcaption { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 24px 20px; background: linear-gradient(180deg, #020d31e8, #04123966 110px, transparent 240px), linear-gradient(0deg, #020d31f2, #04123980 100px, transparent 220px); }
 figcaption h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: clamp(1.5rem, 2.5vw, 2.3rem); text-shadow: 0 2px 6px #020d31; }
