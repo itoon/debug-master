@@ -109,6 +109,7 @@
         </div>
         <img
           class="session-avatar"
+          :class="{ 'is-photo': avatarSrc(result.avatarId).startsWith('https:') }"
           :src="avatarSrc(result.avatarId)"
           :alt="t('home.avatar')"
           draggable="false"
@@ -304,6 +305,10 @@ h1 {
   background: #d8eaff;
   object-fit: contain;
   justify-self: center;
+}
+.session-avatar.is-photo {
+  object-fit: cover;
+  background: transparent;
 }
 .result-player {
   margin: 0;

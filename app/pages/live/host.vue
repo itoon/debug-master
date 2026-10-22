@@ -87,7 +87,7 @@
                   </div>
                   <ul v-else class="people game-scrollbar">
                     <li v-for="p in playing" :key="p.id" :class="{ off: !p.connected }">
-                      <img :src="avatarSrc(p.avatarId)" alt="" draggable="false" />
+                      <img :class="{ 'is-photo': avatarSrc(p.avatarId).startsWith('https:') }" :src="avatarSrc(p.avatarId)" alt="" draggable="false" />
                       <div class="person-info">
                         <b :title="p.name">{{ p.name }}</b>
                         <small :class="{ offline: !p.connected }"><i aria-hidden="true" />{{ t(p.connected ? 'live.hostPlayerReady' : 'live.disconnected') }}</small>
@@ -102,7 +102,7 @@
                   <h2 id="host-queue-title">{{ t('live.waitingQueue', { count: queued.length }) }}</h2>
                   <ul class="people game-scrollbar">
                     <li v-for="p in queued" :key="p.id" :class="{ off: !p.connected }">
-                      <img :src="avatarSrc(p.avatarId)" alt="" draggable="false" />
+                      <img :class="{ 'is-photo': avatarSrc(p.avatarId).startsWith('https:') }" :src="avatarSrc(p.avatarId)" alt="" draggable="false" />
                       <div class="person-info">
                         <b :title="p.name">{{ p.name }}</b>
                         <small v-if="!p.connected" class="offline">{{ t('live.disconnected') }}</small>
@@ -135,7 +135,7 @@
                 <ol class="people ranks">
                   <li v-for="(p, i) in podium" :key="p.id" :class="[MEDALS[i], { off: !p.connected }]">
                     <span class="n">{{ i + 1 }}</span>
-                    <img :src="avatarSrc(p.avatarId)" alt="" draggable="false" />
+                    <img :class="{ 'is-photo': avatarSrc(p.avatarId).startsWith('https:') }" :src="avatarSrc(p.avatarId)" alt="" draggable="false" />
                     <b :title="p.name">{{ p.name }}</b>
                     <small>{{ p.score.toLocaleString('th-TH') }}</small>
                   </li>
@@ -415,6 +415,7 @@ svg { flex: none; width: 20px; height: 20px; }
 .queue-card .people { max-height: 168px; }
 .people li { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 8px 10px; border: 1px solid var(--host-border); border-radius: var(--cv-radius); background: var(--host-panel-deep); }
 .people img { flex: none; width: 40px; height: 40px; border: 1px solid var(--cv-blue-light); border-radius: 50%; background: #d9e8ff; object-fit: contain; }
+.people img.is-photo { object-fit: cover; background: transparent; }
 .people b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .875rem; font-weight: 700; }
 .person-info { flex: 1; display: grid; gap: 3px; min-width: 0; }
 .person-info small { display: flex; align-items: center; gap: 5px; color: var(--cv-green); font-size: .7rem; }

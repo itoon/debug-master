@@ -9,7 +9,7 @@
         <div class="runner" :class="{ lead: player.id === leaderId, hop: hopping.has(player.id), flip: fraction(player) > 0.7 }">
           <span class="portrait">
             <svg v-if="player.id === leaderId" class="crown" viewBox="0 0 32 24" aria-hidden="true"><path d="m3 6 7 5 6-9 6 9 7-5-4 15H7z" /><path d="M8 17h16" /></svg>
-            <img :src="avatarSrc(player.avatarId)" alt="" draggable="false" />
+            <img :class="{ 'is-photo': avatarSrc(player.avatarId).startsWith('https:') }" :src="avatarSrc(player.avatarId)" alt="" draggable="false" />
             <span v-if="player.combo >= 5" class="combo">×{{ player.combo }}</span>
             <span class="plate">
               <b :title="player.name">{{ player.name }}</b>
@@ -109,6 +109,7 @@ onBeforeUnmount(() => {
 .runner.hop { animation: hop .32s ease-in-out infinite alternate; }
 .portrait { position: relative; display: block; width: 100%; height: 100%; }
 .portrait img { display: block; width: 100%; height: 100%; border: calc(.3 * var(--stage-u)) solid #dbeaff; border-radius: 50%; background: radial-gradient(circle at top, #76a3ed, #23448d); object-fit: contain; box-shadow: 0 calc(.4 * var(--stage-u)) calc(1 * var(--stage-u)) #06183c; }
+.portrait img.is-photo { object-fit: cover; background: transparent; }
 .lead .portrait img { border-color: #ffdb58; box-shadow: 0 0 calc(1.6 * var(--stage-u)) #ffdb5899; }
 .crown { position: absolute; left: 28%; top: -42%; width: 44%; fill: #ffdb58; stroke: #8a5a00; stroke-width: 1.5; filter: drop-shadow(0 2px 2px #101d46); }
 .combo { position: absolute; left: -26%; bottom: -10%; padding: calc(.05 * var(--stage-u)) calc(.45 * var(--stage-u)); border-radius: 999px; background: #f79722; color: #3b1d00; font-weight: 800; font-size: calc(.95 * var(--stage-u)); line-height: 1.3; box-shadow: 0 0 calc(1 * var(--stage-u)) #f79722aa; }

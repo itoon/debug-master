@@ -3,7 +3,7 @@
     <h2 :id="headingId">{{ t('live.queue') }}</h2>
     <ol>
       <li v-for="player in players" :key="player.id" :class="{ off: !player.connected }">
-        <img :src="avatarSrc(player.avatarId)" alt="" draggable="false" />
+        <img :class="{ 'is-photo': avatarSrc(player.avatarId).startsWith('https:') }" :src="avatarSrc(player.avatarId)" alt="" draggable="false" />
         <span :title="player.name">{{ player.name }}</span>
       </li>
     </ol>
@@ -28,5 +28,6 @@ ol { display: flex; gap: 1cqw; min-width: 0; margin: 0; padding: 0; list-style: 
 li { display: flex; align-items: center; gap: .4cqw; flex: none; font-size: 1.15cqw; font-weight: 700; }
 li.off { opacity: .45; }
 img { width: 2.4cqw; height: 2.4cqw; border: .15cqw solid #dbeaff; border-radius: 50%; background: radial-gradient(circle at top, #76a3ed, #23448d); object-fit: contain; }
+img.is-photo { object-fit: cover; background: transparent; }
 span { max-width: 7cqw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
