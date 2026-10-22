@@ -1,12 +1,15 @@
 // Worker entry for the Live Race Room.
 //   GET /health                                          -> 200 ok
 //   GET /rooms/:code/ws?role=player|host|screen[&key=…]  -> WebSocket, served by the LiveRoom Durable Object
+//   cron (daily)                                         -> delete archived round results past retention
 import { HOST_KEY_RE, normalizeRoomCode } from '../../app/utils/live/protocol'
+import { pruneRoundArchive } from './archive'
 
 export { LiveRoom } from './live-room'
 
 const ROOM_PATH = /^\/rooms\/([^/]+)\/ws$/
 const ROLES = new Set(['player', 'host', 'screen'])
+const DAY_MS = 86_400_000
 
 function text(body: string, status: number): Response {
   return new Response(body, { status, headers: { 'content-type': 'text/plain; charset=utf-8' } })
@@ -54,5 +57,11 @@ export default {
 
     const stub = env.LIVE_ROOM.get(env.LIVE_ROOM.idFromName(code))
     return stub.fetch(new Request(target, request))
+  },
+
+  async scheduled(controller, env): Promise<void> {
+    const days = Number(env.RESULTS_RETENTION_DAYS)
+    if (!Number.isFinite(days) || days <= 0) throw new Error('RESULTS_RETENTION_DAYS must be a positive number')
+    await pruneRoundArchive(env.RESULTS_DB, controller.scheduledTime - days * DAY_MS)
   },
 } satisfies ExportedHandler<Env>
