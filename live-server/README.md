@@ -3,7 +3,8 @@
 Cloudflare Worker + Durable Object (`LiveRoom`) for the Debug Master **Live Race Room**.
 One Durable Object per room code holds the room state, the round clock (alarms) and every
 WebSocket (hibernatable). Room rules are pure functions in `src/room-logic.ts`; the shared
-protocol lives in `../app/utils/live/protocol.ts`.
+protocol lives in `../app/utils/live/protocol.ts`. Final round results are copied once into a D1
+archive (`RESULTS_DB`, see [Round results archive](#round-results-archive-d1)).
 
 ## Endpoints
 
@@ -22,6 +23,7 @@ Use Node 22.
 
 ```bash
 pnpm --dir live-server install
+pnpm --dir live-server exec wrangler d1 migrations apply debug-master-live-results --local   # once, and after new migrations
 pnpm --dir live-server dev        # wrangler dev on http://127.0.0.1:8787 (local DO + storage in .wrangler/)
 pnpm --dir live-server smoke      # in another terminal: end-to-end check, prints "smoke ok"
 pnpm --dir live-server typecheck
@@ -39,8 +41,15 @@ pnpm --dir live-server types      # writes src/worker-configuration.d.ts (commit
 
 ## Deploy
 
+The results archive database `debug-master-live-results` already exists (created 2026-10-22,
+region APAC; its id is in `wrangler.jsonc`). Only for a new Cloudflare account, create it again
+with `wrangler d1 create debug-master-live-results` and replace `database_id`.
+
+Then, every deploy (apply migrations **before** the code that writes them):
+
 ```bash
 npx wrangler login                # once per machine
+pnpm --dir live-server exec wrangler d1 migrations apply debug-master-live-results --remote
 pnpm --dir live-server run deploy     # wrangler deploy -> https://debug-master-live.<account>.workers.dev
 ```
 
@@ -81,6 +90,37 @@ or override it for one deploy:
 pnpm --dir live-server run deploy --var ALLOWED_ORIGINS:https://itoon.github.io,https://booth.example
 ```
 
+## Round results archive (D1)
+
+When a round ends, the LiveRoom writes its final standings once to D1 (`src/archive.ts`,
+schema in `migrations/`): table `rounds` (room code, round, mode/set, difficulty, duration,
+strategy, start/end) and `round_players` (rank, public id, name, avatar, age, score, levels,
+best combo). Never stored: the secret player pid, the host key hash, the private scoring ledger,
+or queued players.
+
+- **When:** `endAt` + the 2-second late-input grace (an alarm), or earlier when the host presses
+  New round, or just before an abandoned room is wiped. Ranking is the big screen's order for the
+  round's BEST/LATEST strategy. `round_key` is `CODE:startAt`, because a wiped room code reused
+  later starts again at round 1.
+- **Never on the gameplay path:** inputs, acknowledgements and results never wait for D1. A failed
+  write is logged (`live round archive failed, will retry`) and retried every 60 s while the room
+  stays finished; if it still fails at New round or wipe time the log says `live round archive lost`.
+  Writes are idempotent, so retries never duplicate a round.
+- **Read only by organisers**, never by the game (no HTTP endpoint):
+
+  ```bash
+  pnpm --dir live-server exec wrangler d1 execute debug-master-live-results --remote --json \
+    --command "SELECT r.room_code, r.round_id, r.start_at, p.rank, p.name, p.score, p.levels_completed
+               FROM rounds r JOIN round_players p USING (round_key)
+               WHERE r.room_code = 'CODI-1' ORDER BY r.start_at, p.rank"
+  ```
+
+  Use `--local` instead of `--remote` against `wrangler dev`.
+- **Retention:** a daily cron (03:00 UTC) deletes rounds archived more than `RESULTS_RETENTION_DAYS`
+  (default 90, in `wrangler.jsonc` `vars`) days ago. Players are children: export what you need
+  to keep before then. Test the cron locally with `wrangler dev --test-scheduled` and
+  `curl "http://127.0.0.1:8787/__scheduled?cron=0+3+*+*+*"`.
+
 ## Runbook
 
 **Host key lost** (the browser that created the room was cleared, or the host link is gone):
@@ -89,7 +129,8 @@ room again with a new room code** on `/live/host` and point the big screen and p
 new code. The old room is wiped automatically 6 hours after its last activity.
 
 **Room stuck or abandoned:** a running round still finishes at `endAt` by itself; with no
-sockets left, the room's storage is deleted 6 hours after the last activity or disconnect.
+sockets left, the room's storage is deleted 6 hours after the last activity or disconnect. Its
+finished round's results are archived first (see above), so they outlive the room.
 
 **Logs:** `observability.redact_query_string` is on, so host keys in `?key=` never reach logs.
 
@@ -144,6 +185,12 @@ failure blocks new input and offers reload; reload restores accepted cursor/mist
 completion count and popup deltas come from accepted server data. Live results are never copied
 into the ordinary browser leaderboard store. Practice remains unscored; ordinary/Dead scoring
 continues entirely in the browser, with Dead's five hearts and generated levels preserved.
+
+Leaving or changing players after joining a round retains the participant's name, score, completed
+levels, rank and private scoring ledger through countdown, play and results. Their public row is
+marked disconnected; returning with the same device identity restores that round's session.
+Starting a new round drops disconnected participants and resets the remaining players' scores.
+Leaving the lobby or queue removes that unplayed entry; an explicit host kick still removes its target.
 
 `room.phase`/`room.endAt` define results, including End Early's shortened deadline. The frozen
 session deadline may be later. A final input at/before endAt may arrive during the two-second
