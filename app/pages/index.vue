@@ -151,7 +151,7 @@
 
         <transition name="score-pop">
           <div v-if="scorePopup && !practiceActive" class="score-popup" role="status" aria-live="polite">
-            <strong>+{{ scorePopup.points }}</strong>
+            <strong>+{{ scorePopup.points.toLocaleString('th-TH') }}</strong>
             <span>{{ '★'.repeat(scorePopup.stars) }} · {{ t('scoring.stars', { count: scorePopup.stars }) }}</span>
           </div>
         </transition>
