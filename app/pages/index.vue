@@ -150,8 +150,8 @@
         </div>
 
         <transition name="score-pop">
-          <div v-if="scorePopup && !practiceActive" class="score-popup" role="status" aria-live="polite">
-            <strong>+{{ scorePopup.points }}</strong>
+          <div v-if="scorePopup && !practiceActive" :key="scorePopupId" class="score-popup" role="status" aria-live="polite">
+            <strong>+{{ scorePopup.points.toLocaleString('th-TH') }}</strong>
             <span>{{ '★'.repeat(scorePopup.stars) }} · {{ t('scoring.stars', { count: scorePopup.stars }) }}</span>
           </div>
         </transition>
@@ -593,6 +593,7 @@ const bestCombo = ref(0);
 const revealedHintCount = ref(0);
 const scores = ref<Score[]>([]);
 const scorePopup = ref<ScorePopup | null>(null);
+const scorePopupId = ref(0);
 const timerRemaining = ref(0);
 const startedAt = ref(0);
 const levelStartedAt = ref(0);
@@ -1182,6 +1183,16 @@ function clearScorePopupTimer(): void {
   }
 }
 
+function showLevelScorePopup(feedback: ScorePopup): void {
+  clearScorePopupTimer();
+  scorePopup.value = feedback;
+  scorePopupId.value++;
+  scorePopupTimer = setTimeout(() => {
+    scorePopup.value = null;
+    scorePopupTimer = null;
+  }, 1400);
+}
+
 function clearPendingRunTimers(): void {
   for (const timer of [stepTimer, failAnimationTimer, retryTimer]) {
     if (timer !== null) clearTimeout(timer);
@@ -1217,7 +1228,6 @@ async function beginLevel(liveResumeCursor?: number): Promise<void> {
   }
   clearPendingRunTimers();
   clearLevelAdvanceTimer();
-  clearScorePopupTimer();
   runState = createRunState(parseProgram(currentLevel.value.code));
   boardRound.value += 1;
   player.row = currentLevel.value.start[0];
@@ -1235,7 +1245,6 @@ async function beginLevel(liveResumeCursor?: number): Promise<void> {
   revealedHintCount.value = 0;
   notificationMessage.value = "";
   boardShattering.value = false;
-  scorePopup.value = null;
   status.value = "playing";
   feedbackMessage.value = t("game.startInstruction");
   if (!practiceActive.value && !liveMode.value) replayCheckpointCursor();
@@ -1380,10 +1389,8 @@ function completeLevel(): void {
   playSound("clear");
   if (!practiceActive.value && !liveMode.value) {
     syncCompetitionCounters();
-    scorePopup.value = completionFeedback;
+    if (completionFeedback) showLevelScorePopup(completionFeedback);
     completionFeedback = null;
-    clearScorePopupTimer();
-    scorePopupTimer = setTimeout(() => { scorePopup.value = null; }, 1400);
   } else if (practiceActive.value) {
     clearScorePopupTimer();
     scorePopup.value = null;
@@ -1845,10 +1852,9 @@ watch(() => liveRoom.value?.scoring.value, message => {
   syncLiveCounters();
   const receipt = message.receipt;
   if (receipt && receipt.delta > 0) {
-    scorePopup.value = { levelId: receipt.session.levels[receipt.session.checkpoint.levelKey ?? '']?.levelId ?? currentLevel.value.id, points: receipt.delta, stars: receipt.stars };
-    clearScorePopupTimer(); scorePopupTimer = setTimeout(() => { scorePopup.value = null; }, 1400);
+    showLevelScorePopup({ levelId: receipt.session.levels[receipt.session.checkpoint.levelKey ?? '']?.levelId ?? currentLevel.value.id, points: receipt.delta, stars: receipt.stars });
   }
-});
+}, { flush: 'sync' });
 let liveNeedsRestore = false;
 watch(liveSyncStatus, next => {
   if (next === 'resync' || next === 'closed' || next === 'storage-error' || next === 'reload-required') {
