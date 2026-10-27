@@ -1,5 +1,5 @@
 <template>
-  <section ref="element" class="mode-details-view" :aria-labelledby="titleId">
+  <section ref="element" class="mode-details-view" tabindex="-1" :aria-labelledby="titleId">
     <figure ref="cover" class="detail-cover">
       <img :src="thumbnailUrl" :alt="t('home.thumbnail', { mode: t(mode.nameKey) })" draggable="false" />
       <figcaption>
@@ -35,7 +35,6 @@ const search = ref('');
 const element = ref<HTMLElement | null>(null);
 const cover = ref<HTMLElement | null>(null);
 const panel = ref<HTMLElement | null>(null);
-const heading = ref<HTMLHeadingElement | null>(null);
 const startButton = ref<HTMLButtonElement | null>(null);
 const baseURL = useRuntimeConfig().app.baseURL;
 const thumbnailUrl = computed(() => `${baseURL.endsWith('/') ? baseURL : `${baseURL}/`}${props.mode.thumbnail}`);
@@ -51,39 +50,45 @@ function animate(element: HTMLElement | null, frames: Keyframe[]): void {
   animations.push(animation);
 }
 async function waitForMotion(): Promise<void> { await Promise.all(animations.map(animation => animation.finished.catch(() => {}))); }
-function coverTransform(rect: { left: number; top: number; width: number; height: number }): string {
+function coverFrames(rect: { left: number; top: number; width: number; height: number }): Keyframe[] {
   const target = cover.value!.getBoundingClientRect();
-  return `translate(${rect.left - target.left}px, ${rect.top - target.top}px) scale(${rect.width / target.width}, ${rect.height / target.height})`;
+  // Resize the clipping frame so object-fit crops the artwork and the caption
+  // keeps its natural proportions, even between wide cards and tall covers.
+  return [
+    { transform: `translate(${rect.left - target.left}px, ${rect.top - target.top}px)`, width: `${rect.width}px`, height: `${rect.height}px` },
+    { transform: 'none', width: `${target.width}px`, height: `${target.height}px` },
+  ];
 }
 async function enter(): Promise<void> {
-  if (props.fromRect && cover.value) animate(cover.value, [{ transform: coverTransform(props.fromRect), opacity: 1 }, { transform: 'none', opacity: 1 }]);
+  if (props.fromRect && cover.value) animate(cover.value, coverFrames(props.fromRect));
   animate(panel.value, [{ transform: 'translateX(70px)', opacity: 0 }, { transform: 'none', opacity: 1 }]);
   await waitForMotion();
   if (disposed || closing) return;
   cancelMotion();
   emit('ready');
-  heading.value?.focus({ preventScroll: true });
+  element.value?.focus({ preventScroll: true });
 }
 async function closeWithMotion(returnRect = props.fromRect): Promise<void> {
   if (closing || disposed) return;
   closing = true;
   cancelMotion();
   if (returnRect && cover.value) {
-    animate(cover.value, [{ transform: 'none', opacity: 1 }, { transform: coverTransform(returnRect), opacity: 1 }]);
+    animate(cover.value, coverFrames(returnRect).reverse());
   }
   animate(panel.value, [{ transform: 'none', opacity: 1 }, { transform: 'translateX(70px)', opacity: 0 }]);
   await waitForMotion();
 }
 function settleResize(): void { cancelMotion(); }
 function focusStart(): void { startButton.value?.focus({ preventScroll: true }); }
-function focusHeading(): void { heading.value?.focus({ preventScroll: true }); }
+function focusHeading(): void { element.value?.focus({ preventScroll: true }); }
 defineExpose({ closeWithMotion, getElement: () => element.value, focusStart, focusHeading });
 onMounted(() => { window.addEventListener('resize', settleResize); void enter(); });
 onBeforeUnmount(() => { disposed = true; cancelMotion(); window.removeEventListener('resize', settleResize); });
 </script>
 <style scoped>
 .mode-details-view { display: grid; grid-template-columns: minmax(230px, .34fr) minmax(0, .66fr); gap: 18px; min-height: 0; height: 100%; }
-.detail-cover { position: relative; min-width: 0; min-height: 0; height: 100%; margin: 0; overflow: hidden; border: 2px solid #7baaff; border-radius: 24px; background: #0b2456; transform-origin: top left; }
+.mode-details-view:focus { outline: none; }
+.detail-cover { box-sizing: border-box; position: relative; z-index: 1; min-width: 0; min-height: 0; height: 100%; margin: 0; overflow: hidden; border: 2px solid #7baaff; border-radius: 24px; background: #0b2456; transform-origin: top left; }
 .detail-cover > img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 figcaption { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 24px 20px; background: linear-gradient(180deg, #020d31e8, #04123966 110px, transparent 240px), linear-gradient(0deg, #020d31f2, #04123980 100px, transparent 220px); }
 figcaption h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: clamp(1.5rem, 2.5vw, 2.3rem); text-shadow: 0 2px 6px #020d31; }

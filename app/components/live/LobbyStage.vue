@@ -8,11 +8,11 @@
       </figure>
       <div class="room">
         <p class="ltitle">{{ t('live.roomCode') }}</p>
-        <p class="code">{{ code }}</p>
+        <p class="code" :class="{ 'long-code': code.length > 10 }">{{ code }}</p>
         <p class="chip">{{ roundInfo[0] }}<em>{{ modeLabel }}</em>{{ roundInfo[1] }}</p>
       </div>
+      <img class="brand-logo" :src="debugMasterLogo" width="1448" height="980" alt="Debug Master" draggable="false" />
     </div>
-    <img class="brand-logo" :src="debugMasterLogo" width="1448" height="980" alt="Debug Master" draggable="false" />
     <ol class="startrow" :aria-label="t('live.players')">
       <li v-for="seat in seats" :key="seat.index" class="slot" :class="{ empty: !seat.player, off: seat.player && !seat.player.connected }">
         <PlayerAvatar v-if="seat.player" :key="seat.player.id" class="av filled" :avatar-id="seat.player.avatarId" />
@@ -67,19 +67,20 @@ const seats = computed(() => {
 
 <style scoped>
 .lobby-stage { position: absolute; inset: 0; }
-.lobby { position: absolute; inset: 0; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4cqw; padding: 5cqw 6cqw 15cqw; }
+.lobby { position: absolute; inset: 0; display: grid; grid-template-columns: 24cqw minmax(0, 1fr) 24cqw; align-items: center; gap: 3cqw; padding: 8cqw 4cqw 14cqw; }
 .qrcard { display: grid; justify-items: center; gap: .8cqw; margin: 0; padding: 1.6cqw; border-radius: var(--cv-radius-xl); background: #fff; color: #061a38; box-shadow: 0 2cqw 3cqw #03102f80; }
 .qr { width: 20cqw; height: 20cqw; }
 .qr :deep(svg) { display: block; width: 100%; height: 100%; }
 figcaption { font-size: 1.8cqw; font-weight: 800; }
 .room p { margin: 0; }
+.room { min-width: 0; }
 .ltitle { color: #bed6ff; font-size: 2.2cqw; font-weight: 800; }
-.code { color: #ffdb58; font-size: 7.5cqw; font-weight: 900; line-height: 1.05; letter-spacing: .4cqw; text-shadow: 0 .5cqw 0 #8a5a00; overflow-wrap: anywhere; }
+.code { color: #ffdb58; font-size: 5.2cqw; font-weight: 900; line-height: 1.05; letter-spacing: .2cqw; text-shadow: 0 .5cqw 0 #8a5a00; overflow-wrap: anywhere; }
+.code.long-code { font-size: 3.8cqw; }
 .room .chip { display: inline-block; margin-top: 1.4cqw; padding: .7cqw 1.8cqw; border: 1px solid #6e9fe866; border-radius: 999px; background: #071e49d0; font-size: 1.7cqw; font-weight: 700; }
 .chip em { font-style: normal; color: #87dfff; }
-/* Match the QR/room grid's center after its 5cqw top / 15cqw bottom padding.
-   Individual translate keeps centering separate from the floating transform. */
-.brand-logo { --float-offset: clamp(3px, .65cqw, 12px); position: absolute; right: 4cqw; top: calc(50% - 5cqw); translate: 0 -50%; width: 38cqw; height: auto; object-fit: contain; pointer-events: none; animation: logo-float v-bind(logoFloatDuration) ease-in-out infinite; will-change: transform; }
+/* Give the logo its own column so its floating animation never covers the room code. */
+.brand-logo { --float-offset: clamp(3px, .65cqw, 12px); display: block; width: 100%; height: auto; min-width: 0; object-fit: contain; pointer-events: none; animation: logo-float v-bind(logoFloatDuration) ease-in-out infinite; will-change: transform; }
 .startrow { position: absolute; left: 0; right: 0; bottom: 2.6cqw; display: flex; justify-content: center; gap: 1cqw; margin: 0; padding: 0; list-style: none; }
 .slot { position: relative; display: grid; justify-items: center; gap: .3cqw; width: 6.6cqw; font-size: 1.25cqw; font-weight: 700; }
 .slot.off { opacity: .45; }
