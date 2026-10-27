@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { enabledModesFor, homeConfig } from '../../app/data/home-config'
+import { enabledModesFor, homeConfig, resolveLoginMethod } from '../../app/data/home-config'
 import type { ScoringStrategy } from '../../app/types/competition'
 import { createLocalRepositories } from '../../app/storage/LocalStorageAdapter'
 import { createCompetitionSession } from '../../app/utils/competition/session'
@@ -29,6 +29,23 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('per-mode scoring settings', () => {
+  it('defaults to Codi Arena, persists either choice and resets without changing competition defaults', async () => {
+    const { modes } = createLocalRepositories()
+    expect(resolveLoginMethod(modes.loginMethod())).toBe('oauth')
+    await modes.setLoginMethod('manual')
+    expect(resolveLoginMethod(createLocalRepositories().modes.loginMethod())).toBe('manual')
+    await modes.setLoginMethod('oauth')
+    expect(resolveLoginMethod(createLocalRepositories().modes.loginMethod())).toBe('oauth')
+    await expect(modes.setLoginMethod('other' as 'oauth')).rejects.toThrow()
+    expect(modes.loginMethod()).toBe('oauth')
+    await modes.setLoginMethod('manual')
+    await modes.reset()
+    expect(modes.loginMethod()).toBeUndefined()
+    expect(resolveLoginMethod(modes.loginMethod())).toBe('oauth')
+    expect(enabledModesFor(modes.enabledIds()).map(mode => [mode.id, mode.timeLimit, mode.scoringStrategy]))
+      .toEqual([['A', 300, 'BEST']])
+  })
+
   it('combines saved duration and strategy without either write clearing the other', async () => {
     const { modes } = createLocalRepositories()
     await modes.setScoringStrategy('A', 'LATEST')

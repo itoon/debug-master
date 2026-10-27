@@ -1,7 +1,7 @@
 <template>
   <dialog ref="dialog" class="returning-dialog" :aria-labelledby="titleId" @cancel.prevent="!busy && emit('close')">
     <header><h2 :id="titleId">{{ t('player.returnTitle') }}</h2><button ref="closeButton" type="button" class="close-button" :disabled="busy" :aria-label="t('player.closeProfile')" @click="emit('close')">×</button></header>
-    <img class="profile-image" :src="avatarSrc(player.avatarId)" :alt="t('home.avatar')" draggable="false" />
+    <PlayerAvatar class="profile-image" :avatar-id="player.avatarId" :alt="t('home.avatar')" />
     <p class="profile-name">{{ player.name }}</p>
     <p class="profile-age">{{ validAge ? t('home.years', { age: player.age! }) : t('player.ageUnknown') }}</p>
     <dl class="profile-score">
@@ -19,17 +19,16 @@
 <script setup lang="ts">
 import type { Score } from '../types/debug-game';
 import { homeConfig } from '../data/home-config';
+import { playerSetupFromScore } from '../utils/playerProfile';
 import { useGameI18n } from '../composables/useGameI18n';
-import { usePlayerAvatar } from '../composables/usePlayerAvatar';
 const props = defineProps<{ player: Score; latestScore?: Score | null; busy?: boolean; error?: string }>();
 const emit = defineEmits<{ close: []; reuse: []; create: [] }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const dialog = ref<HTMLDialogElement | null>(null);
 const closeButton = ref<HTMLButtonElement | null>(null);
 const titleId = useId();
 const validAge = computed(() => homeConfig.ages.includes(props.player.age as number));
-const canReuse = computed(() => validAge.value && props.player.name.trim().length > 0 && props.player.name.trim().length <= homeConfig.nicknameMaxLength);
+const canReuse = computed(() => playerSetupFromScore(props.player) !== null);
 onMounted(() => { dialog.value?.showModal(); closeButton.value?.focus(); });
 onBeforeUnmount(() => dialog.value?.close());
 </script>

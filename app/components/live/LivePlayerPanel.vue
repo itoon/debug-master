@@ -12,7 +12,7 @@
       </template>
 
       <template v-else>
-        <img v-if="self" class="live-avatar" :src="avatarSrc(self.avatarId)" alt="" draggable="false" />
+        <PlayerAvatar v-if="self" class="live-avatar" :avatar-id="self.avatarId" />
         <p v-if="self" class="live-name" :title="self.name">{{ self.name }}</p>
         <h1 :id="headingId" ref="heading" tabindex="-1">{{ title }}</h1>
 
@@ -23,7 +23,7 @@
             <p>{{ t('live.playersCount', { count: playing.length }) }}</p>
             <ul>
               <li v-for="player in playing" :key="player.id" :class="{ me: player.id === selfId, off: !player.connected }">
-                <img :src="avatarSrc(player.avatarId)" :alt="player.name" :title="player.name" draggable="false" />
+                <PlayerAvatar :avatar-id="player.avatarId" :alt="player.name" :title="player.name" />
               </li>
             </ul>
           </div>
@@ -45,7 +45,7 @@
         <ol v-if="showStandings" class="standings" :aria-label="t('live.board')">
           <li v-for="row in standings" :key="row.player.id" :class="[medal(row.rank), { me: row.player.id === selfId, off: !row.player.connected }]">
             <span class="n">{{ row.rank }}</span>
-            <img :src="avatarSrc(row.player.avatarId)" alt="" draggable="false" />
+            <PlayerAvatar :avatar-id="row.player.avatarId" />
             <b :title="row.player.name">{{ row.player.name }}</b>
             <small>{{ row.player.score.toLocaleString('th-TH') }}</small>
           </li>
@@ -66,7 +66,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import type { LivePlayerStage } from "../../utils/live/playerStage";
 import type { RoomState } from "../../utils/live/protocol";
 
@@ -81,7 +80,6 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ changePlayer: []; leave: []; home: [] }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const headingId = useId();
 const heading = ref<HTMLElement | null>(null);
 

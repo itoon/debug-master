@@ -1,3 +1,5 @@
+import { isCodiPictureUrl } from "../utils/codiOauth";
+
 // Selectable avatar set from the reference frontend's profile editor.
 export const PLAYER_AVATARS = [
   "codi_default.svg",
@@ -24,7 +26,12 @@ export function isPlayerAvatarId(value: unknown): value is PlayerAvatarId {
   return typeof value === "string" && (PLAYER_AVATARS as readonly string[]).includes(value);
 }
 
-/** Old scores and unknown avatar IDs use the standard Codi profile. */
+/** Old scores and unknown avatar IDs use the standard Codi profile. A Codi Arena photo URL is kept. */
+export function resolveAvatarId(value: unknown): string {
+  if (isPlayerAvatarId(value) || isCodiPictureUrl(value)) return value;
+  return PLAYER_AVATARS[0];
+}
+
 export function playerAvatarPath(value?: string): string {
   return `student-avatar/${isPlayerAvatarId(value) ? value : PLAYER_AVATARS[0]}`;
 }

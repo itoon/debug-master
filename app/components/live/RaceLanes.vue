@@ -9,7 +9,7 @@
         <div class="runner" :class="{ lead: player.id === leaderId, hop: hopping.has(player.id), flip: fraction(player) > 0.7 }">
           <span class="portrait">
             <svg v-if="player.id === leaderId" class="crown" viewBox="0 0 32 24" aria-hidden="true"><path d="m3 6 7 5 6-9 6 9 7-5-4 15H7z" /><path d="M8 17h16" /></svg>
-            <img :src="avatarSrc(player.avatarId)" alt="" draggable="false" />
+            <PlayerAvatar :avatar-id="player.avatarId" />
             <span v-if="player.combo >= 5" class="combo">×{{ player.combo }}</span>
             <span class="plate">
               <b :title="player.name">{{ player.name }}</b>
@@ -26,13 +26,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, watch } from "vue";
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import { laneFraction, trackTicks } from "../../utils/live/track";
 import type { LivePlayer } from "../../utils/live/protocol";
 
 const props = defineProps<{ players: LivePlayer[]; max: number }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const baseURL = useRuntimeConfig().app.baseURL;
 const tileBase = baseURL.endsWith("/") ? baseURL : `${baseURL}/`;
 const TILE_KINDS = ["grass", "ice", "sand", "stone", "wood", "blue"] as const;

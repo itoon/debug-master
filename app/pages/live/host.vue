@@ -81,13 +81,13 @@
                   </div>
                   <p class="roster-caption">{{ t('live.hostPlayerListHint') }}</p>
                   <div v-if="!playing.length" class="empty-players">
-                    <img :src="avatarSrc()" alt="" width="82" height="82" draggable="false" />
+                    <PlayerAvatar alt="" width="82" height="82" />
                     <h3>{{ t('live.hostNoPlayers') }}</h3>
                     <p>{{ t('live.hostEmptyHelp') }}</p>
                   </div>
                   <ul v-else class="people game-scrollbar">
                     <li v-for="p in playing" :key="p.id" :class="{ off: !p.connected }">
-                      <img :src="avatarSrc(p.avatarId)" alt="" draggable="false" />
+                      <PlayerAvatar :avatar-id="p.avatarId" />
                       <div class="person-info">
                         <b :title="p.name">{{ p.name }}</b>
                         <small :class="{ offline: !p.connected }"><i aria-hidden="true" />{{ t(p.connected ? 'live.hostPlayerReady' : 'live.disconnected') }}</small>
@@ -102,7 +102,7 @@
                   <h2 id="host-queue-title">{{ t('live.waitingQueue', { count: queued.length }) }}</h2>
                   <ul class="people game-scrollbar">
                     <li v-for="p in queued" :key="p.id" :class="{ off: !p.connected }">
-                      <img :src="avatarSrc(p.avatarId)" alt="" draggable="false" />
+                      <PlayerAvatar :avatar-id="p.avatarId" />
                       <div class="person-info">
                         <b :title="p.name">{{ p.name }}</b>
                         <small v-if="!p.connected" class="offline">{{ t('live.disconnected') }}</small>
@@ -135,7 +135,7 @@
                 <ol class="people ranks">
                   <li v-for="(p, i) in podium" :key="p.id" :class="[MEDALS[i], { off: !p.connected }]">
                     <span class="n">{{ i + 1 }}</span>
-                    <img :src="avatarSrc(p.avatarId)" alt="" draggable="false" />
+                    <PlayerAvatar :avatar-id="p.avatarId" />
                     <b :title="p.name">{{ p.name }}</b>
                     <small>{{ p.score.toLocaleString('th-TH') }}</small>
                   </li>
@@ -167,7 +167,6 @@ import HostIcon from "~/components/live/HostIcon.vue";
 import debugMasterLogo from "~/assets/brand/logo-sleep-display.png";
 import { useGameI18n } from "~/composables/useGameI18n";
 import { useLiveConfig, useLiveRoom, type LiveRoom } from "~/composables/useLiveRoom";
-import { usePlayerAvatar } from "~/composables/usePlayerAvatar";
 import { remainingSec } from "~/utils/live/clock";
 import { hostKeyFor, newHostKey, saveHostKey } from "~/utils/live/identity";
 import { DURATION_PRESETS_SEC, HOST_KEY_RE, MAX_DURATION_SEC, MIN_DURATION_SEC, MAX_PLAYERS, normalizeRoomCode } from "~/utils/live/protocol";
@@ -183,7 +182,6 @@ const { t } = useGameI18n();
 const { enabled } = useLiveConfig();
 const route = useRoute();
 const router = useRouter();
-const avatarSrc = usePlayerAvatar();
 const code = normalizeRoomCode(route.query.room) ?? "";
 
 // The room opens after mount: the host key lives in localStorage, which the server render can't read.

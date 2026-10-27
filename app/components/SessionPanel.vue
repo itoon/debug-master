@@ -9,11 +9,12 @@
       'ranking-panel': stage === 'ranking'
     }"
     :aria-labelledby="headingId"
+    :tabindex="stage === 'ranking' ? -1 : undefined"
     @cancel.prevent
   >
     <section class="session-card" :aria-labelledby="headingId">
       <p class="session-brand">{{ t('brand') }}</p>
-      <h1 :id="headingId" ref="heading" tabindex="-1">
+      <h1 :id="headingId" ref="heading" :tabindex="stage === 'ranking' ? undefined : -1">
         {{
           t(
             stage === 'tutorial' ? 'tutorial.title'
@@ -106,11 +107,10 @@
             >✦</span
           >
         </div>
-        <img
+        <PlayerAvatar
           class="session-avatar"
-          :src="avatarSrc(result.avatarId)"
+          :avatar-id="result.avatarId"
           :alt="t('home.avatar')"
-          draggable="false"
         />
         <p class="result-player">
           {{ result.name }} ·
@@ -201,12 +201,9 @@ import { formatClock, hasRankingScore, type RankingBoard } from '../utils/rankin
 import { useGameI18n } from '../composables/useGameI18n'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { TILE_TYPES, tileDefinition } from '../data/tiles'
-import { usePlayerAvatar } from '../composables/usePlayerAvatar'
 import { useCountUp } from '../composables/useCountUp'
 
 const tutorialTiles = TILE_TYPES.map(tileDefinition)
-const avatarSrc = usePlayerAvatar()
-
 const props = withDefaults(defineProps<{
   stage: 'tutorial' | 'summary' | 'ranking'
   mode?: ChallengeMode
@@ -241,7 +238,8 @@ const rank = computed(() => props.saved && props.result ? rankOf(props.result.id
 function focusPanel(): void {
   if (panel.value instanceof HTMLDialogElement && !panel.value.open)
     panel.value.showModal()
-  heading.value?.focus()
+  if (props.stage === 'ranking') panel.value?.focus({ preventScroll: true })
+  else heading.value?.focus()
 }
 onMounted(focusPanel)
 watch(
@@ -262,6 +260,9 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   padding: 12px;
+}
+.session-panel:focus {
+  outline: none;
 }
 .session-card {
   width: min(740px, 100%);

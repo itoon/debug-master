@@ -3,6 +3,7 @@ import type { CompetitionConfig, ScoringStrategy } from "../types/competition";
 export const DEFAULT_COMPETITION_CONFIG: Readonly<CompetitionConfig> = Object.freeze({ difficulty: 1, scoringStrategy: "BEST" });
 
 export type ChallengeId = "A" | "B" | "C";
+export type LoginMethod = "manual" | "oauth";
 export type ModeScoringStrategies = Partial<Record<ChallengeId, ScoringStrategy>>;
 
 export const competitionTime = { defaultSeconds: 300, minMinutes: 1, maxMinutes: 15 } as const;
@@ -29,6 +30,8 @@ export const homeConfig = {
   idleTimeoutMs: 90_000,
   sleepScreen: { floatMs: 4200, transitionMs: 650, cardInMs: 520, cardStaggerMs: 150, entryBufferMs: 80 }, // Entry/manual only; idle does not activate it.
   nicknameMaxLength: 24,
+  /** Default only: the team chooses Codi Arena or the typed form at /modes. */
+  login: "oauth",
   nicknameEmojis: ['🎮', '🔥', '🚀', '✨', '😎', '⚡', '🌟', '🤖', '🐱', '🦖', '🍀', '🍉'],
   practice: { levelSetId: "set-01" },
   modeMotion: { cardsMs: 420, popupInMs: 380, popupOutMs: 180 },
@@ -43,6 +46,15 @@ export const homeConfig = {
 
 export const CHALLENGE_IDS: readonly ChallengeId[] = homeConfig.modes.map((mode) => mode.id);
 export const defaultEnabledIds: readonly ChallengeId[] = homeConfig.modes.filter((mode) => mode.enabled).map((mode) => mode.id);
+
+export function isLoginMethod(value: unknown): value is LoginMethod {
+  return value === "manual" || value === "oauth";
+}
+
+/** Saved choice at /modes, otherwise the home-config default. */
+export function resolveLoginMethod(saved: LoginMethod | undefined): LoginMethod {
+  return saved ?? homeConfig.login;
+}
 
 /** Configured modes that are switched on, in config order. Never empty: falls back to the defaults. */
 export function enabledModesFor(ids: readonly ChallengeId[] | undefined, strategies: ModeScoringStrategies = {}, durationSec?: number): ChallengeMode[] {

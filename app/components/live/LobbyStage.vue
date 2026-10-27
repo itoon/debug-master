@@ -15,8 +15,8 @@
     <img class="brand-logo" :src="debugMasterLogo" width="1448" height="980" alt="Debug Master" draggable="false" />
     <ol class="startrow" :aria-label="t('live.players')">
       <li v-for="seat in seats" :key="seat.index" class="slot" :class="{ empty: !seat.player, off: seat.player && !seat.player.connected }">
-        <img v-if="seat.player" :key="seat.player.id" class="av filled" :src="avatarSrc(seat.player.avatarId)" alt="" draggable="false" />
-        <img v-else class="av" :src="avatarSrc()" alt="" draggable="false" />
+        <PlayerAvatar v-if="seat.player" :key="seat.player.id" class="av filled" :avatar-id="seat.player.avatarId" />
+        <PlayerAvatar v-else class="av" />
         <span class="tile" aria-hidden="true" />
         <b :title="seat.player?.name">{{ seat.player?.name ?? t('live.emptySeat') }}</b>
       </li>
@@ -30,12 +30,10 @@ import { renderSVG } from "uqr";
 import debugMasterLogo from "../../assets/brand/logo-sleep-display.png";
 import { homeConfig } from "../../data/home-config";
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import { MAX_PLAYERS, type LivePlayer, type ModeId } from "../../utils/live/protocol";
 
 const props = defineProps<{ code: string; joinUrl: string; mode: ModeId; durationSec: number; players: LivePlayer[] }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const logoFloatDuration = `${homeConfig.sleepScreen.floatMs}ms`;
 const baseURL = useRuntimeConfig().app.baseURL;
 const grassTile = `url(${baseURL.endsWith("/") ? baseURL : `${baseURL}/`}tiles/grass.png)`;

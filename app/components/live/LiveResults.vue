@@ -6,7 +6,7 @@
       <li v-for="place in podium" :key="place.rank" class="ps" :class="`p${place.rank}`" :aria-label="place.player ? `${place.rank} · ${place.player.name}` : undefined">
         <span class="portrait" :class="{ vacant: !place.player }">
           <svg v-if="place.rank === 1 && place.player" class="crown" viewBox="0 0 32 24" aria-hidden="true"><path d="m3 6 7 5 6-9 6 9 7-5-4 15H7z" /><path d="M8 17h16" /></svg>
-          <img v-if="place.player" :src="avatarSrc(place.player.avatarId)" alt="" draggable="false" />
+          <PlayerAvatar v-if="place.player" :avatar-id="place.player.avatarId" />
         </span>
         <b :title="place.player?.name">{{ place.player?.name ?? '—' }}</b>
         <small>{{ place.player ? place.player.score.toLocaleString('th-TH') : '—' }}</small>
@@ -22,12 +22,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import type { LivePlayer, ModeId } from "../../utils/live/protocol";
 
 const props = defineProps<{ players: LivePlayer[]; mode: ModeId }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const headingId = useId();
 
 const ranked = computed(() => props.players.filter((p) => p.status === "playing"));

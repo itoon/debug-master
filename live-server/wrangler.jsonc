@@ -9,7 +9,12 @@
   },
   // Comma list of page origins allowed to open a room socket. Requests without an Origin header pass (smoke script).
   // RESULTS_RETENTION_DAYS: archived round results older than this are deleted by the daily cron.
-  "vars": { "ALLOWED_ORIGINS": "https://itoon.github.io,http://localhost:3000", "RESULTS_RETENTION_DAYS": "90" },
+  "vars": {
+    "ALLOWED_ORIGINS": "https://itoon.github.io,http://localhost:3000,http://localhost:3002",
+    "RESULTS_RETENTION_DAYS": "90",
+    "CODI_ISSUER": "https://codi-arena-hub.innovasive.workers.dev",
+    "CODI_CLIENT_ID": "cva_zlfJ437Zr3GMa4ps"
+  },
   "durable_objects": {
     "bindings": [{ "name": "LIVE_ROOM", "class_name": "LiveRoom" }]
   },

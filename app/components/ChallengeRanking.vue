@@ -44,11 +44,9 @@
               <path d="m3 6 7 5 6-9 6 9 7-5-4 15H7z" />
               <path d="M8 17h16" />
             </svg>
-            <img
+            <PlayerAvatar
               v-if="place.score"
-              :src="avatarSrc(place.score.avatarId)"
-              alt=""
-              draggable="false"
+              :avatar-id="place.score.avatarId"
             />
             <span v-else aria-hidden="true">—</span>
             <span class="podium-medal" aria-hidden="true">{{
@@ -103,12 +101,7 @@
               :aria-label="t('ranking.rank', { rank: index + 1 })"
               >{{ index + 1 }}</span
             >
-            <img
-              class="row-avatar"
-              :src="avatarSrc(score.avatarId)"
-              alt=""
-              draggable="false"
-            />
+            <PlayerAvatar class="row-avatar" :avatar-id="score.avatarId" />
             <span class="who">
               <strong>{{ score.name }}</strong>
               <small v-if="ageRange(score.age)">{{
@@ -166,8 +159,6 @@ import { PLAYER_SPRITES, PLAYER_POSES } from '../utils/playerSprites'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { useGameI18n } from '../composables/useGameI18n'
 import { useLeaderboardCredits } from '../composables/useLeaderboardCredits'
-import { usePlayerAvatar } from '../composables/usePlayerAvatar'
-
 const props = withDefaults(
   defineProps<{
     repository: ScoreRepository
@@ -251,7 +242,6 @@ watch(
   },
   { flush: 'post' }
 )
-const avatarSrc = usePlayerAvatar()
 const {
   isDragging,
   pauseForInput,

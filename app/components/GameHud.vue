@@ -1,7 +1,7 @@
 <template>
   <header class="game-hud" :class="{ 'practice-hud': practice }">
     <div v-if="!practice" class="pilot-info">
-      <div class="player-profile"><img :src="avatarSrc(avatarId)" alt="" draggable="false" /><div><span>{{ t('game.player') }}</span><strong :title="playerName">{{ playerName || t('game.playerFallback') }}</strong></div></div>
+      <div class="player-profile"><PlayerAvatar :avatar-id="avatarId" /><div><span>{{ t('game.player') }}</span><strong :title="playerName">{{ playerName || t('game.playerFallback') }}</strong></div></div>
       <div class="metrics">
         <div class="metric score"><span>{{ t('game.score') }}</span><strong :key="scoreBumps" :class="{ bump: scoreBumps > 0 }">{{ shownScore.toLocaleString('th-TH') }}</strong></div>
         <div v-if="timed" class="metric time" :class="{ 'time-low': timeLow }"><span>{{ t('game.timer') }}</span><strong :key="timeLow ? time : 'steady'">{{ time }}</strong></div>
@@ -30,7 +30,6 @@
 
 <script setup lang="ts">
 import { useGameI18n } from "../composables/useGameI18n";
-import { usePlayerAvatar } from "../composables/usePlayerAvatar";
 import { useCountUp } from "../composables/useCountUp";
 const props = defineProps<{
   level: { id: number; title?: string; concept: string };
@@ -53,7 +52,6 @@ const props = defineProps<{
   liveRank?: string;
 }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const shownScore = useCountUp(toRef(props, "score"), { duration: 700 });
 // Re-keys the score so its bump replays on every gain, not on resets.
 const scoreBumps = ref(0);

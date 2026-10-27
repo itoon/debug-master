@@ -3,7 +3,7 @@
     <h2 :id="headingId">{{ t('live.queue') }}</h2>
     <ol>
       <li v-for="player in players" :key="player.id" :class="{ off: !player.connected }">
-        <img :src="avatarSrc(player.avatarId)" alt="" draggable="false" />
+        <PlayerAvatar :avatar-id="player.avatarId" />
         <span :title="player.name">{{ player.name }}</span>
       </li>
     </ol>
@@ -12,12 +12,10 @@
 
 <script setup lang="ts">
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import type { LivePlayer } from "../../utils/live/protocol";
 
 defineProps<{ players: LivePlayer[] }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const headingId = useId();
 </script>
 

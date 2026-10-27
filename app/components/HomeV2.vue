@@ -44,7 +44,9 @@
       <button type="button" class="practice-button" :disabled="busy || motionPhase !== 'idle'" @click="emit('practice')"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 4 3 5-5 3-3-5zm10 8 3 5-5 3-3-5zM4 19h5m6-15h5" /></svg>{{ t('practice.open') }}</button>
     </footer>
     <LiveJoinDialog v-if="showJoinRoom" @close="showJoinRoom = false" />
-    <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :repository="repository" :error="error" :busy="busy || motionPhase === 'leaving'"
+    <PlayerSetupDialog v-if="setupMode" ref="setupDialog" :mode="setupMode" :repository="repository" :players="players" :error="error" :busy="busy || motionPhase === 'leaving'"
+      :login-method="loginMethod" :codi-profile="loginMethod === 'oauth' ? (codiReturn?.profile ?? null) : null" :manual-fallback="loginMethod === 'oauth' && codiReturn?.fallback === true" :codi-error="loginMethod === 'oauth' ? codiReturn?.error : undefined"
+      :codi-context="{ kind: 'home', modeId: setupMode.id }"
       @close="closeSetup" @start="launch" @edit="emit('resetError')" @popup="emit('sound', 'popup')" />
     <ReturningPlayerDialog v-if="selectedPlayer" :player="selectedPlayer" :latest-score="selectedLatestScore" :error="error" :busy="busy" @close="closePlayer" @create="createPlayer" @reuse="reusePlayer" />
   </main>
@@ -54,17 +56,19 @@
 import { homeConfig, type ChallengeMode, type ChallengeId } from "../data/home-config";
 import { useModeSettings } from "../composables/useModeSettings";
 import { useGameI18n } from "../composables/useGameI18n";
-import type { ModeSettingsRepository, ScoreRepository, PlayerSetupInput } from "../storage/contracts";
+import type { ModeSettingsRepository, PlayerRepository, PlayerSetupInput, ScoreRepository } from "../storage/contracts";
 import { formatClock, bestPlayerScore, latestPlayerScore, scorePlayerKey, type RankingBoard } from "../utils/ranking";
 import type { UiSoundEffect } from "../data/sound-effects";
 import type { Score } from "../types/debug-game";
+import { clearCodiResult, peekCodiResult, type CodiResult } from "../utils/codiSession";
 import LiveJoinDialog from "./live/LiveJoinDialog.vue";
 
-const props = defineProps<{ repository: ScoreRepository; modesRepository: ModeSettingsRepository; error?: string; busy?: boolean; entering?: boolean }>();
-const emit = defineEmits<{ start: [player: PlayerSetupInput, mode: ChallengeMode]; resume: [scoreId: string, mode: ChallengeMode]; practice: []; sleep: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
+const props = defineProps<{ repository: ScoreRepository; players: PlayerRepository; modesRepository: ModeSettingsRepository; error?: string; busy?: boolean; entering?: boolean }>();
+const emit = defineEmits<{ start: [player: PlayerSetupInput & { codiSub?: string }, mode: ChallengeMode]; resume: [scoreId: string, mode: ChallengeMode]; practice: []; sleep: []; resetError: []; unlockAudio: []; sound: [effect: UiSoundEffect] }>();
 const { t } = useGameI18n();
 // Saved on this device at /modes; hidden until read so SSR defaults never flash.
-const { enabledModes, loaded: modesLoaded } = useModeSettings(props.modesRepository);
+const { enabledModes, loginMethod, loaded: modesLoaded } = useModeSettings(props.modesRepository);
+const codiReturn = ref<CodiResult | null>(null);
 const singleMode = computed(() => enabledModes.value.length === 1);
 // Same breakpoint as the compact picker CSS below. Keep ranking subscriptions
 // intact, but pause hidden credits and use direct setup for backup phone play.
@@ -340,6 +344,8 @@ function clearDetachedFocus(modeId: ChallengeId) {
 }
 async function closeSetup() {
   if (props.busy || motionPhase.value !== "open") return;
+  clearCodiResult();
+  codiReturn.value = null;
   const token = ++motionToken;
   motionPhase.value = "leaving";
   await setupDialog.value?.closeWithMotion();
@@ -369,7 +375,9 @@ async function closeSetup() {
   if (!disposed && token === motionToken) launchButton?.focus({ preventScroll: true });
 }
 function launch(player: PlayerSetupInput) {
-  if (motionPhase.value === "open" && setupMode.value && !props.busy) emit("start", player, setupMode.value);
+  if (motionPhase.value === "open" && setupMode.value && !props.busy) {
+    emit("start", player, setupMode.value);
+  }
 }
 async function focusFirstMode(): Promise<void> {
   await nextTick();
@@ -381,6 +389,13 @@ onMounted(() => {
   syncMobilePicker();
   mobilePickerQuery.addEventListener('change', syncMobilePicker);
   window.addEventListener("resize", recenterCards);
+  const result = peekCodiResult();
+  if (result?.kind !== "home") return;
+  const mode = enabledModes.value.find((item) => item.id === result.modeId);
+  if (!mode) return;
+  codiReturn.value = result;
+  setupMode.value = { ...mode };
+  motionPhase.value = "open";
 });
 watch([enabledModes, () => props.busy], ([modes, busy]) => {
   const selected = selectedMode.value;

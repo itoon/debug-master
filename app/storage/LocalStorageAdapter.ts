@@ -2,7 +2,7 @@ import type { Score } from "../types/debug-game";
 import { CompetitionSessionRepository } from "./CompetitionSessionRepository";
 import { toScore } from "../utils/competition/session";
 import { todayRanking, type RankingBoard } from "../utils/ranking";
-import { CHALLENGE_IDS, isCompetitionTime, type ChallengeId, type ModeScoringStrategies } from "../data/home-config";
+import { CHALLENGE_IDS, isCompetitionTime, isLoginMethod, type ChallengeId, type LoginMethod, type ModeScoringStrategies } from "../data/home-config";
 import type { ScoringStrategy } from "../types/competition";
 import type { ModeSettingsRepository, PlayerProfile, PlayerRepository, ScoreRepository } from "./contracts";
 
@@ -91,18 +91,44 @@ export class LocalStorageAdapter {
   }
 }
 
+function isStoredPlayer(value: unknown): value is PlayerProfile | undefined {
+  if (value === undefined) return true;
+  if (!value || typeof value !== "object") return false;
+  const player = value as PlayerProfile;
+  return typeof player.id === "string" && typeof player.nickname === "string" && (player.age === undefined || Number.isFinite(player.age));
+}
+
+function isCodiSub(value: string): boolean {
+  return value.length > 0 && value.length <= 200 && value !== "__proto__" && value !== "constructor" && value !== "prototype";
+}
+
+function isCodiLinks(value: unknown): value is Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  return Object.entries(value).every(([sub, playerId]) => isCodiSub(sub) && typeof playerId === "string" && playerId.length > 0 && playerId.length <= 80);
+}
+
 export class LocalPlayerRepository implements PlayerRepository {
   constructor(private readonly adapter: LocalStorageAdapter) {}
   save(player: PlayerProfile): Promise<void> { return this.adapter.mutate("player", () => this.adapter.write("player", player)); }
   clearCurrent(): Promise<void> { return this.adapter.mutate("player", () => this.adapter.remove("player")); }
   clearIfPlayer(playerId: string): Promise<void> {
     return this.adapter.mutate("player", () => {
-      const current = this.adapter.read<PlayerProfile | undefined>("player", undefined, (value): value is PlayerProfile | undefined =>
-        value === undefined || Boolean(value && typeof value === "object" &&
-          typeof (value as PlayerProfile).id === "string" && typeof (value as PlayerProfile).nickname === "string" &&
-          Number.isFinite((value as PlayerProfile).age)),
-      );
+      const current = this.adapter.read<PlayerProfile | undefined>("player", undefined, isStoredPlayer);
       if (current?.id === playerId) this.adapter.remove("player");
+    });
+  }
+  codiLinks(): Record<string, string> {
+    try { return this.adapter.read("codi-links", {}, isCodiLinks); }
+    catch { return {}; }
+  }
+  rememberCodi(sub: string, playerId: string): Promise<void> {
+    if (!isCodiSub(sub) || playerId.length === 0 || playerId.length > 80) return Promise.reject(new Error("Invalid Codi player link"));
+    return this.adapter.mutate("codi-links", () => {
+      const links = Object.create(null) as Record<string, string>;
+      for (const [key, value] of Object.entries(this.codiLinks())) links[key] = value;
+      if (links[sub] === playerId) return;
+      links[sub] = playerId;
+      this.adapter.write("codi-links", links);
     });
   }
 }
@@ -162,14 +188,22 @@ export class LocalModeSettingsRepository implements ModeSettingsRepository {
     if (!isCompetitionTime(seconds)) return Promise.reject(new Error('Competition time must be whole minutes within the configured range'));
     return this.adapter.mutate('modes', () => this.adapter.write('mode-duration', seconds));
   }
+  loginMethod(): LoginMethod | undefined {
+    return this.adapter.read<LoginMethod | undefined>('login-method', undefined, (value): value is LoginMethod | undefined => value === undefined || isLoginMethod(value));
+  }
+  setLoginMethod(method: LoginMethod): Promise<void> {
+    if (!isLoginMethod(method)) return Promise.reject(new Error('Login method must be manual or oauth'));
+    return this.adapter.mutate('modes', () => this.adapter.write('login-method', method));
+  }
   reset(): Promise<void> {
     return this.adapter.mutate('modes', () => {
       this.adapter.remove('mode-scoring');
       this.adapter.remove('mode-duration');
       this.adapter.remove('modes');
+      this.adapter.remove('login-method');
     });
   }
-  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, ['modes', 'mode-duration', 'mode-scoring']); }
+  subscribe(listener: () => void): () => void { return this.adapter.subscribe(listener, ['modes', 'mode-duration', 'mode-scoring', 'login-method']); }
 }
 
 export function createLocalRepositories() {

@@ -4,7 +4,7 @@
     <TransitionGroup tag="ol" name="board-row" class="rows">
       <li v-for="(player, index) in players" :key="player.id" class="row" :class="[medal(index), { off: !player.connected }]">
         <span class="n">{{ index + 1 }}</span>
-        <img :src="avatarSrc(player.avatarId)" alt="" draggable="false" />
+        <PlayerAvatar :avatar-id="player.avatarId" />
         <b :title="player.name">{{ player.name }}</b>
         <small>{{ player.score.toLocaleString('th-TH') }}</small>
       </li>
@@ -14,12 +14,10 @@
 
 <script setup lang="ts">
 import { useGameI18n } from "../../composables/useGameI18n";
-import { usePlayerAvatar } from "../../composables/usePlayerAvatar";
 import type { LivePlayer } from "../../utils/live/protocol";
 
 defineProps<{ players: LivePlayer[] }>();
 const { t } = useGameI18n();
-const avatarSrc = usePlayerAvatar();
 const headingId = useId();
 
 function medal(index: number): string {
