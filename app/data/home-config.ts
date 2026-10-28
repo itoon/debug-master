@@ -31,7 +31,7 @@ export const homeConfig = {
   sleepScreen: { floatMs: 4200, transitionMs: 650, cardInMs: 520, cardStaggerMs: 150, entryBufferMs: 80 }, // Entry/manual only; idle does not activate it.
   nicknameMaxLength: 24,
   /** Default only: the team chooses Codi Arena or the typed form at /modes. */
-  login: "manual",
+  login: "oauth",
   nicknameEmojis: ['🎮', '🔥', '🚀', '✨', '😎', '⚡', '🌟', '🤖', '🐱', '🦖', '🍀', '🍉'],
   practice: { levelSetId: "set-01" },
   modeMotion: { cardsMs: 420, popupInMs: 380, popupOutMs: 180 },
@@ -39,8 +39,8 @@ export const homeConfig = {
   leaderboardScroll: { pixelsPerSecond: 18, returnPixelsPerSecond: 12, startPauseMs: 1400, endPauseMs: 1800, interactionPauseMs: 3000 },
   modes: [
     { id: "A", enabled: true, ...DEFAULT_COMPETITION_CONFIG, nameKey: "mode.A", levelRange: [1, 50], levelSetId: "challenge-beginner", timeLimit: competitionTime.defaultSeconds, challengeId: "A", thumbnail: "thumbnail-game-1.png" },
-    { id: "B", enabled: true, ...DEFAULT_COMPETITION_CONFIG, nameKey: "mode.B", levelRange: [1, 50], levelSetId: "challenge-intermediate", timeLimit: competitionTime.defaultSeconds, challengeId: "B", thumbnail: "thumbnail-game-2.png" },
-    { id: "C", enabled: true, ...DEFAULT_COMPETITION_CONFIG, nameKey: "mode.C", levelRange: [1, 50], levelSetId: "challenge-pro", timeLimit: competitionTime.defaultSeconds, challengeId: "C", thumbnail: "thumbnail-game-3.png" },
+    { id: "B", enabled: false, ...DEFAULT_COMPETITION_CONFIG, nameKey: "mode.B", levelRange: [1, 50], levelSetId: "challenge-intermediate", timeLimit: competitionTime.defaultSeconds, challengeId: "B", thumbnail: "thumbnail-game-2.png" },
+    { id: "C", enabled: false, ...DEFAULT_COMPETITION_CONFIG, nameKey: "mode.C", levelRange: [1, 50], levelSetId: "challenge-pro", timeLimit: competitionTime.defaultSeconds, challengeId: "C", thumbnail: "thumbnail-game-3.png" },
   ] satisfies ChallengeMode[],
 } as const;
 

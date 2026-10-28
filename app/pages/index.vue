@@ -1,5 +1,5 @@
 <template>
-  <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)) }" @click="playUiClick">
+  <div class="app-shell" :class="{ 'home-flow-shell': homeConfig.enabled && (showSetup || showTutorial || (showRanking && !showSummary)), 'light-motion': lightMotion }" @click="playUiClick">
     <Transition v-if="homeConfig.enabled && showSetup && pendingPracticeIntro === null" name="sleep-switch" mode="out-in" :duration="homeTransitionDuration" @after-enter="focusHomeAfterWake">
       <HomeSleepScreen v-if="homeSleeping" key="home-sleep" @wake="wakeHome" @unlock-audio="unlockAudio" />
       <HomeV2 v-else ref="homeView" :key="homeResetKey" :entering="homeEntering"
@@ -90,8 +90,8 @@
                   :style="actorStyle"
                   aria-hidden="true"
                 >
-                  <span v-if="playerHop" :key="`dust-${playerHop}`" class="landing-dust"><i /><i /></span>
-                  <span v-if="status === 'success' || status === 'completed'" class="clear-burst"><i v-for="ray in 8" :key="ray" :style="{ '--ray': ray }" /></span>
+                  <span v-if="playerHop && !lightMotion" :key="`dust-${playerHop}`" class="landing-dust"><i /><i /></span>
+                  <span v-if="!lightMotion && (status === 'success' || status === 'completed')" class="clear-burst"><i v-for="ray in 8" :key="ray" :style="{ '--ray': ray }" /></span>
                   <div :key="playerHop" class="hop" :class="{ 'wrap-in': wrapExit }"
                     :style="wrapExit ? { '--wrap-dx': wrapExit.dx, '--wrap-dy': wrapExit.dy } : undefined">
                     <img
@@ -126,10 +126,10 @@
                 </nav>
                 </Teleport>
                 <div class="touch-controls" :aria-label="t('game.controls')">
-                <button type="button" class="arrow up" :class="{ 'guided-arrow': mobileGuidedMove === 'up' }" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲<TouchTapHint v-if="mobileGuidedMove === 'up'" /></button>
-                <button type="button" class="arrow left" :class="{ 'guided-arrow': mobileGuidedMove === 'left' }" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀<TouchTapHint v-if="mobileGuidedMove === 'left'" /></button>
-                <button type="button" class="arrow down" :class="{ 'guided-arrow': mobileGuidedMove === 'down' }" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼<TouchTapHint v-if="mobileGuidedMove === 'down'" /></button>
-                <button type="button" class="arrow right" :class="{ 'guided-arrow': mobileGuidedMove === 'right' }" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶<TouchTapHint v-if="mobileGuidedMove === 'right'" /></button>
+                <button type="button" class="arrow up" data-direction="up" :class="{ 'guided-arrow': mobileGuidedMove === 'up' }" :disabled="!canControl" :aria-label="t('game.up')" aria-keyshortcuts="ArrowUp W" @click="controlMove('up')">▲<TouchTapHint v-if="mobileGuidedMove === 'up'" /></button>
+                <button type="button" class="arrow left" data-direction="left" :class="{ 'guided-arrow': mobileGuidedMove === 'left' }" :disabled="!canControl" :aria-label="t('game.left')" aria-keyshortcuts="ArrowLeft A" @click="controlMove('left')">◀<TouchTapHint v-if="mobileGuidedMove === 'left'" /></button>
+                <button type="button" class="arrow down" data-direction="down" :class="{ 'guided-arrow': mobileGuidedMove === 'down' }" :disabled="!canControl" :aria-label="t('game.down')" aria-keyshortcuts="ArrowDown S" @click="controlMove('down')">▼<TouchTapHint v-if="mobileGuidedMove === 'down'" /></button>
+                <button type="button" class="arrow right" data-direction="right" :class="{ 'guided-arrow': mobileGuidedMove === 'right' }" :disabled="!canControl" :aria-label="t('game.right')" aria-keyshortcuts="ArrowRight D" @click="controlMove('right')">▶<TouchTapHint v-if="mobileGuidedMove === 'right'" /></button>
                 </div>
               </div>
             </div>
@@ -153,7 +153,7 @@
         </div>
 
         <transition name="score-pop">
-          <div v-if="scorePopup && !practiceActive" class="score-popup" role="status" aria-live="polite">
+          <div v-if="scorePopup && !practiceActive" :key="scorePopupId" class="score-popup" role="status" aria-live="polite">
             <strong>+{{ scorePopup.points.toLocaleString('th-TH') }}</strong>
             <span>{{ '★'.repeat(scorePopup.stars) }} · {{ t('scoring.stars', { count: scorePopup.stars }) }}</span>
           </div>
@@ -388,6 +388,7 @@
         </div>
       </div>
     </section>
+    <RotateDeviceDialog :active="rotationBlocked" :timed="isTimedMode && campaignStarted" />
   </div>
 </template>
 
@@ -435,9 +436,12 @@ import { useCompetitionSession } from "../composables/useCompetitionSession";
 import { competitionLevelKey, toScore } from "../utils/competition/session";
 import type { SessionReceipt } from "../types/competition";
 import type { PlayerSetupInput } from "../storage/contracts";
+import { playerSetupFromScore } from "../utils/playerProfile";
 import { resolveCodiPlayer } from "../utils/codiIdentity";
 import { resolveAvatarId } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
+import { useGameTouchControls } from "../composables/useGameTouchControls";
+import { useGameplayDevice } from "../composables/useGameplayDevice";
 import { useLiveConfig, useLiveRoom, type LiveRoom } from "../composables/useLiveRoom";
 import { livePlayerId, resetLivePlayerId } from "../utils/live/identity";
 import { clearLiveSession, loadLiveSession, saveLiveSession } from "../utils/live/session";
@@ -551,6 +555,8 @@ function cancelBoardFollow(): void {
   boardScroller.cancel();
 }
 const controlsEl = ref<HTMLElement | null>(null);
+const { lightMotion, rotationBlocked } = useGameplayDevice();
+useGameTouchControls(controlsEl, controlMove);
 const boardSpace = ref<BoardSpace>({ width: 0, height: 0 });
 // Matches the desktop layout query in the styles below; anything smaller is
 // the compact (phone/tablet) layout with sound and exit in the HUD.
@@ -601,6 +607,7 @@ const bestCombo = ref(0);
 const revealedHintCount = ref(0);
 const scores = ref<Score[]>([]);
 const scorePopup = ref<ScorePopup | null>(null);
+const scorePopupId = ref(0);
 const timerRemaining = ref(0);
 const startedAt = ref(0);
 const levelStartedAt = ref(0);
@@ -705,7 +712,7 @@ const notificationTitle = computed(() => {
   return t("game.notificationTitle");
 });
 const canControl = computed(
-  () => (practiceActive.value || (liveMode.value ? liveCanInput.value : !competition.busy.value)) && !showExitConfirm.value && !showPracticePicker.value && !practiceSummary.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
+  () => !rotationBlocked.value && (practiceActive.value || (liveMode.value ? liveCanInput.value : !competition.busy.value)) && !showExitConfirm.value && !showPracticePicker.value && !practiceSummary.value && !practiceStarting.value && status.value === "playing" && Boolean(expectedMove.value),
 );
 const codiSprite = computed(() =>
   status.value === "failed" || status.value === "timeup"
@@ -958,6 +965,7 @@ async function prepareChallenge(profile: PlayerSetupInput & { codiSub?: string }
   }
   if (token !== sessionToken) return;
   homeStorageError.value = "";
+  clearCodiResult();
   // Keep one same-URL history entry so browser Back exits a session to Home.
   // Preserve Vue Router's state; session screens themselves are not routes.
   if (!window.history.state?.debugMasterHomeV2Session) {
@@ -994,11 +1002,12 @@ async function resumeChallenge(scoreId: string, mode: ChallengeMode): Promise<vo
     homeStorageError.value = t('storage.loadError');
     return;
   }
-  if (!score || !homeConfig.ages.includes(score.age as number) || !score.name.trim() || score.name.trim().length > homeConfig.nicknameMaxLength) {
+  const profile = score && playerSetupFromScore(score);
+  if (!score || !profile) {
     homeStorageError.value = t('player.unavailable');
     return;
   }
-  await prepareChallenge({ nickname: score.name, age: score.age!, avatarId: resolveAvatarId(score.avatarId) }, mode, scorePlayerKey(score));
+  await prepareChallenge(profile, mode, scorePlayerKey(score));
 }
 
 function openPracticePicker(): void {
@@ -1204,6 +1213,16 @@ function clearScorePopupTimer(): void {
   }
 }
 
+function showLevelScorePopup(feedback: ScorePopup): void {
+  clearScorePopupTimer();
+  scorePopup.value = feedback;
+  scorePopupId.value++;
+  scorePopupTimer = setTimeout(() => {
+    scorePopup.value = null;
+    scorePopupTimer = null;
+  }, 1400);
+}
+
 function clearPendingRunTimers(): void {
   for (const timer of [stepTimer, failAnimationTimer, retryTimer]) {
     if (timer !== null) clearTimeout(timer);
@@ -1239,7 +1258,6 @@ async function beginLevel(liveResumeCursor?: number): Promise<void> {
   }
   clearPendingRunTimers();
   clearLevelAdvanceTimer();
-  clearScorePopupTimer();
   runState = createRunState(parseProgram(currentLevel.value.code));
   boardRound.value += 1;
   player.row = currentLevel.value.start[0];
@@ -1257,7 +1275,6 @@ async function beginLevel(liveResumeCursor?: number): Promise<void> {
   revealedHintCount.value = 0;
   notificationMessage.value = "";
   boardShattering.value = false;
-  scorePopup.value = null;
   status.value = "playing";
   feedbackMessage.value = t("game.startInstruction");
   if (!practiceActive.value && !liveMode.value) replayCheckpointCursor();
@@ -1375,7 +1392,8 @@ function controlMove(direction: Direction): void {
 function pulseArrow(direction: Direction, wrong: boolean): void {
   const button = controlsEl.value?.querySelector<HTMLElement>(`.arrow.${direction}`);
   if (!button || typeof button.animate !== "function") return;
-  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const still = lightMotion.value || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  button.getAnimations().forEach(animation => animation.cancel());
   if (wrong) {
     const red = { backgroundColor: "#ffd6d6", borderColor: "#ff6b6b", color: "#c62f3c" };
     button.animate(still
@@ -1402,10 +1420,8 @@ function completeLevel(): void {
   playSound("clear");
   if (!practiceActive.value && !liveMode.value) {
     syncCompetitionCounters();
-    scorePopup.value = completionFeedback;
+    if (completionFeedback) showLevelScorePopup(completionFeedback);
     completionFeedback = null;
-    clearScorePopupTimer();
-    scorePopupTimer = setTimeout(() => { scorePopup.value = null; }, 1400);
   } else if (practiceActive.value) {
     clearScorePopupTimer();
     scorePopup.value = null;
@@ -1870,10 +1886,9 @@ watch(() => liveRoom.value?.scoring.value, message => {
   syncLiveCounters();
   const receipt = message.receipt;
   if (receipt && receipt.delta > 0) {
-    scorePopup.value = { levelId: receipt.session.levels[receipt.session.checkpoint.levelKey ?? '']?.levelId ?? currentLevel.value.id, points: receipt.delta, stars: receipt.stars };
-    clearScorePopupTimer(); scorePopupTimer = setTimeout(() => { scorePopup.value = null; }, 1400);
+    showLevelScorePopup({ levelId: receipt.session.levels[receipt.session.checkpoint.levelKey ?? '']?.levelId ?? currentLevel.value.id, points: receipt.delta, stars: receipt.stars });
   }
-});
+}, { flush: 'sync' });
 let liveNeedsRestore = false;
 watch(liveSyncStatus, next => {
   if (next === 'resync' || next === 'closed' || next === 'storage-error' || next === 'reload-required') {
@@ -2392,7 +2407,7 @@ h2 {
 }
 
 .board-and-controls { display: grid; grid-template-rows: auto minmax(80px, 1fr) auto; justify-items: center; align-items: center; gap: 12px; width: 100%; height: 100%; min-width: 0; min-height: 0; }
-.board-viewport { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 6px; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; border-radius: var(--cv-radius-lg); }
+.board-viewport { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 6px; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y pinch-zoom; border-radius: var(--cv-radius-lg); }
 /* Auto margins center fitting maps and become zero on an overflowing axis,
    so the first row/column stays reachable from the scroll origin. */
 .board-viewport > .board { flex: none; max-width: none; max-height: none; margin: auto; }
@@ -2448,6 +2463,7 @@ h2 {
 }
 
 .arrow {
+  touch-action: manipulation;
   position: relative;
   width: 68px;
   height: 52px;

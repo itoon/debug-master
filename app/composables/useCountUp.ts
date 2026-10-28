@@ -1,6 +1,7 @@
 // Presentation only: a displayed number that eases toward its source value.
+import { lightGameplayMotion } from '../utils/gameplayDevice';
 // Increases roll up; decreases (new run, reset) snap so totals never count down.
-// Reduced motion, hidden tabs and SSR show the final value immediately.
+// Touch devices, reduced motion and hidden tabs skip the per-frame number animation.
 export function useCountUp(source: Ref<number>, options: { duration?: number; from?: number; delay?: number } = {}) {
   const duration = options.duration ?? 600;
   const shown = ref(options.from ?? source.value);
@@ -17,7 +18,7 @@ export function useCountUp(source: Ref<number>, options: { duration?: number; fr
   function run(target: number): void {
     stop();
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (target <= shown.value || reduced || document.hidden) {
+    if (target <= shown.value || reduced || lightGameplayMotion() || document.hidden) {
       shown.value = target;
       return;
     }
@@ -37,7 +38,8 @@ export function useCountUp(source: Ref<number>, options: { duration?: number; fr
   watch(source, (value) => run(value));
   onMounted(() => {
     if (shown.value === source.value) return;
-    if (options.delay) delayTimer = setTimeout(() => run(source.value), options.delay);
+    if (lightGameplayMotion() || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) run(source.value);
+    else if (options.delay) delayTimer = setTimeout(() => run(source.value), options.delay);
     else run(source.value);
   });
   onBeforeUnmount(stop);

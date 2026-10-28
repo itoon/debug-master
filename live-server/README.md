@@ -11,6 +11,7 @@ archive (`RESULTS_DB`, see [Round results archive](#round-results-archive-d1)).
 | Request | Response |
 |---|---|
 | `GET /health` | `200 ok` |
+| `POST /oauth/complete` | Exchanges a Codi Arena authorization code and PKCE verifier for the child's display profile; only registered, allowed page origins may call it. |
 | `GET /rooms/:code/ws?role=player\|host\|screen[&key=…]` | WebSocket upgrade (`426` without one, `403` for an Origin not in `ALLOWED_ORIGINS`, `400` for a bad room code or role) |
 
 `:code` must match `^[A-Z0-9-]{3,16}$` (lower case is upper-cased). `key` is only forwarded for
@@ -40,6 +41,18 @@ pnpm --dir live-server types      # writes src/worker-configuration.d.ts (commit
 ```
 
 ## Deploy
+
+### Codi Arena login
+
+The game settings at `/modes` let staff choose **กรอกชื่อเอง** or **Codi Arena** for both solo and Live play. Codi Arena is the default; the choice is saved in that browser. The manual form does not require the worker's OAuth configuration.
+
+For Codi Arena, set `CODI_ISSUER` and `CODI_CLIENT_ID` on the worker (public values are in `wrangler.jsonc`) and store `CODI_CLIENT_SECRET` with `pnpm --dir live-server exec wrangler secret put CODI_CLIENT_SECRET`. Never put the secret in Nuxt public runtime config. Set `NUXT_PUBLIC_LIVE_URL` to this worker when running or building the game.
+
+The registered callbacks are `http://localhost:3002/callback` and `https://itoon.github.io/debug-master/callback`. Start the local game with `pnpm dev --port 3002` and include its exact origin in `ALLOWED_ORIGINS`. If the issuer, client or allowed callbacks change, update the corresponding public Nuxt settings and `app/utils/codiOauth.ts` together. Apply `0002_optional_player_age.sql` along with the other D1 migrations before deploying this worker; Codi profiles do not request a child's age.
+
+The browser receives the nickname, picture and subject; the worker keeps the client secret and access token out of its response. This integration signs players in and does not submit stars to the hub.
+
+### Worker deployment
 
 The results archive database `debug-master-live-results` already exists (created 2026-10-22,
 region APAC; its id is in `wrangler.jsonc`). Only for a new Cloudflare account, create it again

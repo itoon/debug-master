@@ -376,8 +376,6 @@ async function closeSetup() {
 }
 function launch(player: PlayerSetupInput) {
   if (motionPhase.value === "open" && setupMode.value && !props.busy) {
-    clearCodiResult();
-    codiReturn.value = null;
     emit("start", player, setupMode.value);
   }
 }
@@ -393,7 +391,7 @@ onMounted(() => {
   window.addEventListener("resize", recenterCards);
   const result = peekCodiResult();
   if (result?.kind !== "home") return;
-  const mode = homeConfig.modes.find((item) => item.id === result.modeId);
+  const mode = enabledModes.value.find((item) => item.id === result.modeId);
   if (!mode) return;
   codiReturn.value = result;
   setupMode.value = { ...mode };

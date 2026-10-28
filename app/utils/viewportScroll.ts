@@ -1,4 +1,5 @@
 /** One cancellable, transform-free scroll owner for a bounded viewport. */
+import { lightGameplayMotion } from './gameplayDevice';
 export function createViewportScroller() {
   let frame: number | undefined;
   let generation = 0;
@@ -14,7 +15,7 @@ export function createViewportScroller() {
     const left = Math.max(0, Math.min(target.left, element.scrollWidth - element.clientWidth));
     const fromTop = element.scrollTop;
     const fromLeft = element.scrollLeft;
-    if (Math.max(Math.abs(top - fromTop), Math.abs(left - fromLeft)) < 1 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (Math.max(Math.abs(top - fromTop), Math.abs(left - fromLeft)) < 1 || window.matchMedia('(prefers-reduced-motion: reduce)').matches || lightGameplayMotion()) {
       element.scrollTo({ top, left, behavior: 'instant' });
       return;
     }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { enabledModesFor } from '../../app/data/home-config'
+import { enabledModesFor, homeConfig, resolveLoginMethod } from '../../app/data/home-config'
 import type { ScoringStrategy } from '../../app/types/competition'
 import { createLocalRepositories } from '../../app/storage/LocalStorageAdapter'
 import { createCompetitionSession } from '../../app/utils/competition/session'
@@ -29,19 +29,36 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('per-mode scoring settings', () => {
+  it('defaults to Codi Arena, persists either choice and resets without changing competition defaults', async () => {
+    const { modes } = createLocalRepositories()
+    expect(resolveLoginMethod(modes.loginMethod())).toBe('oauth')
+    await modes.setLoginMethod('manual')
+    expect(resolveLoginMethod(createLocalRepositories().modes.loginMethod())).toBe('manual')
+    await modes.setLoginMethod('oauth')
+    expect(resolveLoginMethod(createLocalRepositories().modes.loginMethod())).toBe('oauth')
+    await expect(modes.setLoginMethod('other' as 'oauth')).rejects.toThrow()
+    expect(modes.loginMethod()).toBe('oauth')
+    await modes.setLoginMethod('manual')
+    await modes.reset()
+    expect(modes.loginMethod()).toBeUndefined()
+    expect(resolveLoginMethod(modes.loginMethod())).toBe('oauth')
+    expect(enabledModesFor(modes.enabledIds()).map(mode => [mode.id, mode.timeLimit, mode.scoringStrategy]))
+      .toEqual([['A', 300, 'BEST']])
+  })
+
   it('combines saved duration and strategy without either write clearing the other', async () => {
     const { modes } = createLocalRepositories()
     await modes.setScoringStrategy('A', 'LATEST')
     await modes.saveDuration(600)
     const restored = createLocalRepositories().modes
     expect(enabledModesFor(restored.enabledIds(), restored.scoringStrategies(), restored.durationSec()).map(mode => [mode.id, mode.timeLimit, mode.scoringStrategy]))
-      .toEqual([['A', 600, 'LATEST'], ['B', 600, 'BEST'], ['C', 600, 'BEST']])
+      .toEqual([['A', 600, 'LATEST']])
     await restored.setScoringStrategy('B', 'LATEST')
     expect(restored.durationSec()).toBe(600)
     await restored.reset()
     expect(restored.durationSec()).toBeUndefined()
     expect(restored.scoringStrategies()).toEqual({})
-    expect(enabledModesFor(restored.enabledIds()).map(mode => mode.timeLimit)).toEqual([300, 300, 300])
+    expect(enabledModesFor(restored.enabledIds()).map(mode => mode.timeLimit)).toEqual([300])
   })
   it('restores independent strategies without changing enabled modes or global defaults', async () => {
     const { modes } = createLocalRepositories()
@@ -50,7 +67,7 @@ describe('per-mode scoring settings', () => {
     const restored = createLocalRepositories().modes
     expect(enabledModesFor(restored.enabledIds(), restored.scoringStrategies()).map(mode => [mode.id, mode.scoringStrategy]))
       .toEqual([['A', 'LATEST'], ['C', 'BEST']])
-    expect(enabledModesFor(undefined).map(mode => mode.scoringStrategy)).toEqual(['BEST', 'BEST', 'BEST'])
+    expect(enabledModesFor(undefined).map(mode => mode.scoringStrategy)).toEqual(['BEST'])
     await restored.save(['A', 'B', 'C'])
     expect(restored.scoringStrategies()).toEqual({ A: 'LATEST' })
   })
@@ -118,8 +135,10 @@ describe('per-mode scoring settings', () => {
     await modes.reset()
     expect(modes.enabledIds()).toBeUndefined()
     expect(modes.scoringStrategies()).toEqual({})
+    expect(homeConfig.modes.map(mode => [mode.id, mode.enabled, mode.timeLimit, mode.scoringStrategy]))
+      .toEqual([['A', true, 300, 'BEST'], ['B', false, 300, 'BEST'], ['C', false, 300, 'BEST']])
     expect(enabledModesFor(modes.enabledIds(), modes.scoringStrategies()).map(mode => [mode.id, mode.scoringStrategy]))
-      .toEqual([['A', 'BEST'], ['B', 'BEST'], ['C', 'BEST']])
+      .toEqual([['A', 'BEST']])
   })
 
   it('reports malformed persisted strategy data rather than silently accepting it', () => {

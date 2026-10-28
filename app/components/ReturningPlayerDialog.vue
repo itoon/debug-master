@@ -19,6 +19,7 @@
 <script setup lang="ts">
 import type { Score } from '../types/debug-game';
 import { homeConfig } from '../data/home-config';
+import { playerSetupFromScore } from '../utils/playerProfile';
 import { useGameI18n } from '../composables/useGameI18n';
 const props = defineProps<{ player: Score; latestScore?: Score | null; busy?: boolean; error?: string }>();
 const emit = defineEmits<{ close: []; reuse: []; create: [] }>();
@@ -27,7 +28,7 @@ const dialog = ref<HTMLDialogElement | null>(null);
 const closeButton = ref<HTMLButtonElement | null>(null);
 const titleId = useId();
 const validAge = computed(() => homeConfig.ages.includes(props.player.age as number));
-const canReuse = computed(() => validAge.value && props.player.name.trim().length > 0 && props.player.name.trim().length <= homeConfig.nicknameMaxLength);
+const canReuse = computed(() => playerSetupFromScore(props.player) !== null);
 onMounted(() => { dialog.value?.showModal(); closeButton.value?.focus(); });
 onBeforeUnmount(() => dialog.value?.close());
 </script>
