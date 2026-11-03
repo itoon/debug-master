@@ -17,7 +17,8 @@ export type CodiContext =
   | { kind: "home"; modeId: ChallengeId }
   | { kind: "live"; room: string };
 
-export type CodiProfile = { sub: string; nickname: string; picture: string };
+/** `arena_no` / `arena_test` travel with the kid's runs to the Codi Arena Scoreboard. */
+export type CodiProfile = { sub: string; nickname: string; picture: string; arena_no?: number; arena_test?: boolean };
 
 export function redirectUriForOrigin(origin: string): string | null {
   return CODI_REDIRECTS[origin as keyof typeof CODI_REDIRECTS] ?? null;

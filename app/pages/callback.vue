@@ -6,6 +6,7 @@
 </template>
 
 <script setup lang="ts">
+import type { CodiProfile } from "../utils/codiOauth";
 import { useGameI18n } from "../composables/useGameI18n";
 import { useLiveConfig } from "../composables/useLiveRoom";
 import { codiReturnPath, redirectUriForOrigin } from "../utils/codiOauth";
@@ -64,7 +65,10 @@ function readProfile(value: unknown): { sub: string; nickname: string; picture: 
   const body = value as Record<string, unknown>;
   if (typeof body.sub !== "string" || typeof body.nickname !== "string" || typeof body.picture !== "string") return null;
   if (!body.picture.startsWith("https://")) return null;
-  return { sub: body.sub, nickname: body.nickname, picture: body.picture };
+  const profile: CodiProfile = { sub: body.sub, nickname: body.nickname, picture: body.picture };
+  if (Number.isInteger(body.arena_no)) profile.arena_no = body.arena_no as number;
+  if (typeof body.arena_test === "boolean") profile.arena_test = body.arena_test;
+  return profile;
 }
 </script>
 

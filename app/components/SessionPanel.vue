@@ -135,6 +135,9 @@
         <p v-if="storageError || error" class="session-error" role="alert">
           {{ t(storageError ? 'storage.error' : 'storage.loadError') }}
         </p>
+        <p v-if="boardStatus" class="session-board" :class="`is-${boardStatus}`" role="status">
+          {{ t(`board.${boardStatus}`) }}
+        </p>
         <button
           v-if="!saved"
           type="button"
@@ -216,6 +219,8 @@ const props = withDefaults(defineProps<{
   saving: boolean
   storageError: boolean
   showSummaryRank?: boolean
+  /** This run on the Codi Arena Scoreboard (COD-1144); absent when the run doesn't go there. */
+  boardStatus?: 'sending' | 'sent' | 'pending' | 'closed' | 'rejected'
 }>(), { showSummaryRank: true })
 const emit = defineEmits<{ play: []; home: []; ranking: []; retry: [] }>()
 // The final score rolls up from zero once its tile has popped in.
@@ -876,4 +881,7 @@ button:disabled {
     font-size: 0.75rem;
   }
 }
+.session-board { margin: 0; font-size: 0.9rem; font-weight: 700; text-align: center; opacity: 0.9; }
+.session-board.is-sent { color: #7ee8a2; }
+.session-board.is-pending, .session-board.is-closed, .session-board.is-rejected { color: #ffd66b; }
 </style>

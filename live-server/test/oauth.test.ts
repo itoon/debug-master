@@ -42,6 +42,11 @@ describe('POST /oauth/complete', () => {
     expect(response.headers.get('cache-control')).toBe('no-store')
   })
 
+  it('passes the badge number and test flag through for the Scoreboard', async () => {
+    const response = await complete(LOCAL, LOCAL_REDIRECT, hub({ userinfo: { sub: 'kid', nickname: 'มะลิ', picture: 'https://example.test/codi.png', arena_no: 14, arena_test: true, email: 'x@y' } }))
+    expect(await response.json()).toEqual({ sub: 'kid', nickname: 'มะลิ', picture: 'https://example.test/codi.png', arena_no: 14, arena_test: true })
+  })
+
   it('accepts the GitHub Pages origin only with its own redirect URI', async () => {
     const ok = await complete(PAGES, PAGES_REDIRECT, hub())
     expect(ok.status).toBe(200)

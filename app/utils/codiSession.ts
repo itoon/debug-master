@@ -109,7 +109,11 @@ function parseProfile(value: unknown): CodiProfile | null {
   const nickname = typeof profile.nickname === "string" ? trimCodiNickname(profile.nickname) : "";
   if (!nickname || typeof profile.sub !== "string" || profile.sub.length === 0 || profile.sub.length > 200) return null;
   if (typeof profile.picture !== "string" || !profile.picture.startsWith("https://") || profile.picture.length > 500) return null;
-  return { sub: profile.sub, nickname, picture: profile.picture };
+  const parsed: CodiProfile = { sub: profile.sub, nickname, picture: profile.picture };
+  // Kept for the Codi Arena Scoreboard: the badge number, and whether it is a test badge (hidden from the board).
+  if (Number.isInteger(profile.arena_no)) parsed.arena_no = profile.arena_no as number;
+  if (typeof profile.arena_test === "boolean") parsed.arena_test = profile.arena_test;
+  return parsed;
 }
 
 function token(value: unknown): value is string {

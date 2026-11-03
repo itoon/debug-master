@@ -1,11 +1,13 @@
 // Worker entry for the Live Race Room.
 //   GET /health                                          -> 200 ok
 //   POST /oauth/complete                                 -> exchange a Codi Arena code for a name and picture
+//   POST /scores                                         -> relay a challenge run to the Codi Arena Scoreboard (adds the API key)
 //   GET /rooms/:code/ws?role=player|host|screen[&key=…]  -> WebSocket, served by the LiveRoom Durable Object
 //   cron (daily)                                         -> delete archived round results past retention
 import { HOST_KEY_RE, normalizeRoomCode } from '../../app/utils/live/protocol'
 import { pruneRoundArchive } from './archive'
 import { handleOauth } from './oauth'
+import { handleScoreboard } from './scoreboard'
 
 export { LiveRoom } from './live-room'
 
@@ -30,6 +32,8 @@ export default {
   async fetch(request, env): Promise<Response> {
     const oauth = await handleOauth(request, env)
     if (oauth) return oauth
+    const scoreboard = await handleScoreboard(request, env)
+    if (scoreboard) return scoreboard
 
     const url = new URL(request.url)
     if (url.pathname === '/health') return text('ok', 200)

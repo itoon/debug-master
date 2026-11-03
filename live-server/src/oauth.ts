@@ -10,7 +10,8 @@ export interface OauthEnv {
   CODI_CLIENT_SECRET?: string;
 }
 
-export type CodiProfile = { sub: string; nickname: string; picture: string };
+/** `arena_no` / `arena_test` go to the Codi Arena Scoreboard with the kid's runs (badge number; test badges stay off the board). */
+export type CodiProfile = { sub: string; nickname: string; picture: string; arena_no?: number; arena_test?: boolean };
 
 const VERIFIER_RE = /^[A-Za-z0-9._~-]{43,128}$/;
 const SKEW_SEC = 60;
@@ -101,7 +102,10 @@ export async function completeLogin(input: {
   if (!sub || sub !== claims.sub || !nickname || !picture || !picture.startsWith("https://") || picture.length > 500) {
     throw new Error("profile");
   }
-  return { sub, nickname, picture };
+  const profile: CodiProfile = { sub, nickname, picture };
+  if (Number.isInteger(info.arena_no)) profile.arena_no = info.arena_no as number;
+  if (typeof info.arena_test === "boolean") profile.arena_test = info.arena_test;
+  return profile;
 }
 
 export async function verifyIdToken(idToken: string, input: {

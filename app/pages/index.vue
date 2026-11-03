@@ -14,6 +14,7 @@
       :stage="pendingPracticeIntro !== null || showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge ?? undefined" :practice-intro-count="pendingPracticeIntro !== null ? practiceLevels.length : undefined" :repository="repositories.scores" :board="rankingBoard"
       :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
+      :board-status="boardStatus ?? undefined"
       @play="startFromTutorial" @home="backFromTutorial" @ranking="showChallengeRanking" @retry="retryScoreSave" />
     <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" :live="liveMode" @cancel="showExitConfirm = false" @confirm="confirmExit" />
     <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial"
@@ -450,6 +451,7 @@ import { countdownSec, remainingSec, serverTime } from "../utils/live/clock";
 import { takeInitialSearch } from "../utils/live/initialSearch";
 import { roomCodeFromSearch, type PlayerHello, type RoomState } from "../utils/live/protocol";
 import { clearCodiResult, peekCodiResult } from "../utils/codiSession";
+import { createHubProfiles, createScoreboardOutbox, scoreboardBody, sendViaRelay, type RelayStatus } from "../utils/scoreboard";
 import type { CodiProfile } from "../utils/codiOauth";
 import LivePlayerPanel from "../components/live/LivePlayerPanel.vue";
 
@@ -957,6 +959,9 @@ async function prepareChallenge(profile: PlayerSetupInput & { codiSub?: string }
     playerId = reusedPlayerId ?? newPlayerId();
     await repositories.players.save({ id: playerId, nickname, avatarId: profile.avatarId, ...(profile.age !== undefined ? { age: profile.age } : {}) });
     if (profile.codiSub) await repositories.players.rememberCodi(profile.codiSub, playerId);
+    // The badge kid's profile goes with their runs to the Codi Arena Scoreboard (also after a reload).
+    const signedIn = peekCodiResult()?.profile;
+    if (profile.codiSub && signedIn?.sub === profile.codiSub) hubProfiles?.remember(playerId, signedIn);
   } catch {
     if (token === sessionToken) homeStorageError.value = t("storage.error");
     return;
@@ -1565,6 +1570,24 @@ function showCanonicalResult(): void {
   playSound('complete');
 }
 
+// --- Codi Arena Scoreboard (COD-1144): finished Challenge runs go to their Tier's Board through the live-server
+// relay. A run that can't be sent waits in localStorage and goes again on the next run or on reload.
+const scoreboardRelay = String(useRuntimeConfig().public.liveUrl ?? "");
+const browserStorage = (() => { try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; } })();
+const hubProfiles = typeof window !== "undefined" ? createHubProfiles(browserStorage) : undefined;
+const scoreboardOutbox = scoreboardRelay ? createScoreboardOutbox(browserStorage, body => sendViaRelay(scoreboardRelay, body)) : undefined;
+const boardStatus = ref<RelayStatus | "sending" | null>(null);
+function sendRunToScoreboard(): void {
+  const session = competition.session.value;
+  const body = session && scoreboardOutbox ? scoreboardBody(session, hubProfiles?.forPlayer(session.playerId)) : undefined;
+  if (!body || !scoreboardOutbox) { boardStatus.value = null; return; }
+  boardStatus.value = "sending";
+  // Older waiting runs first, then this one; the result screen never waits on it.
+  void scoreboardOutbox.flush().then(() => scoreboardOutbox.submit(body)).then((status) => {
+    if (competition.session.value?.id === body.submissionId) boardStatus.value = status;
+  });
+}
+
 function finishCompetition(at: number): Promise<void> {
   if (finishingSession) return finishingSession;
   if (!competition.session.value) return Promise.resolve();
@@ -1587,6 +1610,7 @@ function finishCompetition(at: number): Promise<void> {
       return;
     }
     scoreSaving.value = false;
+    sendRunToScoreboard();
     showCanonicalResult();
     if (homeAfterSave) openSetup();
   })();
@@ -2121,6 +2145,7 @@ function liveDispose(): void {
 // ---- /Live ----
 
 onMounted(async () => {
+  void scoreboardOutbox?.flush();
   // Load facings and the failure pose up front so switching doesn't flash.
   for (const src of [...Object.values(PLAYER_SPRITES), ...Object.values(PLAYER_POSES)]) new Image().src = src;
   refreshStoredScores();
