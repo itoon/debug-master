@@ -1,7 +1,7 @@
 // Forwards finished home-challenge rounds to the Codi Arena Scoreboard in API key mode. Each challenge
 // (A Beginner, B Intermediate, C Pro) is its own booth with its own bk_ key, and both stay in this worker.
 // A Codi player is identified by a ticket this worker signed at /oauth/complete; a typed-name player is a guest.
-//   POST /scoreboard/scores  { challengeId, score, submissionId, ticket } | { challengeId, score, submissionId, guest: { name, guestId } }
+//   POST /scoreboard/scores  { challengeId, score, submissionId, ticket } | { challengeId, score, submissionId, guest: { name, guestId }, photoUrl? }
 import { createScoreboardClient, GUEST_ID_RE, SUBMISSION_ID_RE, type HubUser } from "../../app/utils/scoreboardClient";
 
 export interface ScoreboardEnv {
@@ -78,7 +78,7 @@ export async function handleScoreboard(request: Request, env: ScoreboardEnv, fet
   if (!origin || !allowedOrigins(env).has(origin)) return json({ ok: false, code: "FORBIDDEN_ORIGIN", retryable: false }, 403, null);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
   if (request.method !== "POST") return json({ ok: false, code: "METHOD", retryable: false }, 405, origin);
-  const body = await readBody(request);
+  const body = await readBody(request, allowedOrigins(env));
   if (!body) return json({ ok: false, code: "INVALID_BODY", retryable: false }, 400, origin);
   const booth = scoreboardBooth(env, body.challengeId);
   if (!scoreboardEnabled(env) || !booth) return json({ ok: false, code: "SCOREBOARD_OFF", retryable: false }, 503, origin);
@@ -98,15 +98,27 @@ export async function handleScoreboard(request: Request, env: ScoreboardEnv, fet
     maxAttempts: 1,
     fetch: fetchImpl,
   });
-  const result = await client.submitScore({ score: body.score, submissionId: body.submissionId, ...(hubUser ? { hubUser } : { guest: body.guest! }) });
+  const player = hubUser ? { hubUser } : { guest: body.guest!, ...(body.photoUrl ? { photoUrl: body.photoUrl } : {}) };
+  const result = await client.submitScore({ score: body.score, submissionId: body.submissionId, ...player });
   if (result.ok) return json({ ok: true, duplicate: result.duplicate, entry: result.entry }, 200, origin);
   if (result.code === "UNAUTHORIZED") console.error(`scoreboard rejected SCOREBOARD_API_KEY_${body.challengeId}: set the booth's current key`);
   return json({ ok: false, code: result.code, retryable: result.retryable }, result.status || 502, origin);
 }
 
-type Body = { challengeId: ScoreboardChallenge; score: number; submissionId: string; ticket?: string; guest?: { name: string; guestId?: string } };
+type Body = { challengeId: ScoreboardChallenge; score: number; submissionId: string; ticket?: string; guest?: { name: string; guestId?: string }; photoUrl?: string };
 
-async function readBody(request: Request): Promise<Body | null> {
+/** A walk-in's avatar: only an avatar file served by the game's own https site, never any image. */
+export function isGameAvatarUrl(value: unknown, origins: Set<string>): value is string {
+  if (typeof value !== "string" || value.length > 500) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && origins.has(url.origin) && /\/student-avatar\/[A-Za-z0-9_/-]+\.svg$/.test(url.pathname) && !url.search && !url.hash;
+  } catch {
+    return false;
+  }
+}
+
+async function readBody(request: Request, origins: Set<string>): Promise<Body | null> {
   const text = await request.text();
   if (text.length === 0 || text.length > 4096) return null;
   try {
@@ -127,7 +139,9 @@ async function readBody(request: Request): Promise<Body | null> {
     const length = [...name].length;
     if (length < 1 || length > 40) return null;
     if (guest.guestId !== undefined && (typeof guest.guestId !== "string" || !GUEST_ID_RE.test(guest.guestId))) return null;
-    return { challengeId, score: body.score, submissionId: body.submissionId, guest: { name, ...(guest.guestId ? { guestId: guest.guestId as string } : {}) } };
+    // An avatar URL that isn't the game's own is dropped, not rejected: the score still counts.
+    const photoUrl = isGameAvatarUrl(body.photoUrl, origins) ? { photoUrl: body.photoUrl } : {};
+    return { challengeId, score: body.score, submissionId: body.submissionId, guest: { name, ...(guest.guestId ? { guestId: guest.guestId as string } : {}) }, ...photoUrl };
   } catch {
     return null;
   }

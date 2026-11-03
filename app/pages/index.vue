@@ -439,7 +439,7 @@ import type { SessionReceipt } from "../types/competition";
 import type { PlayerSetupInput } from "../storage/contracts";
 import { playerSetupFromScore } from "../utils/playerProfile";
 import { resolveCodiPlayer } from "../utils/codiIdentity";
-import { resolveAvatarId } from "../data/player-avatars";
+import { isPlayerAvatarId, resolveAvatarId } from "../data/player-avatars";
 import { useGameAudio } from "../composables/useGameAudio";
 import { useGameTouchControls } from "../composables/useGameTouchControls";
 import { useGameplayDevice } from "../composables/useGameplayDevice";
@@ -460,6 +460,7 @@ const { t } = useGameI18n();
 const { enabled: soundEnabled, unlockAudio, playSound, stopSounds, toggleSound } = useGameAudio();
 const repositories = createLocalRepositories();
 const scoreboard = useScoreboardConfig();
+const srcForAvatar = usePlayerAvatar();
 const scoreboardLive = useLiveConfig(); // Challenge rounds go through live-server, which holds each booth's bk_ key.
 const { loginMethod } = useModeSettings(repositories.modes);
 const competition = useCompetitionSession(repositories.sessions);
@@ -1586,13 +1587,19 @@ function codiSubFor(playerId: string): string | undefined {
   }
 }
 
+/** The picked avatar as an absolute URL; the hub only takes https, so local http dev sends none. */
+function avatarPhotoUrl(avatarId: string | undefined): string | undefined {
+  if (window.location.protocol !== "https:" || !isPlayerAvatarId(avatarId)) return undefined;
+  return new URL(srcForAvatar(avatarId), window.location.origin).href;
+}
+
 /** Home challenges with a booth only: Live rooms and practice never reach the Codi Arena Scoreboard. */
 function submitChallengeRound(score: Score): void {
   if (!scoreboardLive.enabled || liveMode.value || practiceActive.value) return;
   const challengeId = score.challengeId;
   if (!challengeId || activeChallenge.value?.challengeId !== challengeId || !scoreboard.boothFor(challengeId) || !score.playerId) return;
   const codiLinked = codiSubFor(score.playerId) !== undefined;
-  const round = challengeRound({ challengeId, sessionId: score.id, score: score.score, playerId: score.playerId, name: score.name, ticket: codiLinked ? scoreTicketFor(score.playerId) : undefined, codiLinked });
+  const round = challengeRound({ challengeId, photoUrl: avatarPhotoUrl(score.avatarId), sessionId: score.id, score: score.score, playerId: score.playerId, name: score.name, ticket: codiLinked ? scoreTicketFor(score.playerId) : undefined, codiLinked });
   if (!round) {
     if (codiLinked) rescanRoundIds.add(score.id);
     return;

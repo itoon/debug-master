@@ -21,6 +21,8 @@ export type PendingRound = {
   createdAt: number;
   ticket?: string;
   guest?: { name: string; guestId?: string };
+  /** A walk-in's chosen avatar on this game's own https site; the board shows it instead of an initial. */
+  photoUrl?: string;
 };
 
 export type RoundStatus = "sending" | "recorded" | "pending" | "closed" | "dropped";
@@ -93,7 +95,7 @@ function removePending(submissionId: string, storage = store()): void {
 }
 
 /** Builds the round for one finished challenge session, or null when the player can't be named on the board. */
-export function challengeRound(input: { challengeId: ScoreboardChallenge; sessionId: string; score: number; playerId: string; name: string; ticket?: string; codiLinked: boolean; now?: number }): PendingRound | null {
+export function challengeRound(input: { challengeId: ScoreboardChallenge; sessionId: string; score: number; playerId: string; name: string; ticket?: string; codiLinked: boolean; photoUrl?: string; now?: number }): PendingRound | null {
   if (!SUBMISSION_ID_RE.test(input.sessionId) || !Number.isFinite(input.score)) return null;
   const base = { challengeId: input.challengeId, submissionId: input.sessionId, score: input.score, createdAt: input.now ?? Date.now() };
   if (input.ticket) return { ...base, ticket: input.ticket };
@@ -101,7 +103,9 @@ export function challengeRound(input: { challengeId: ScoreboardChallenge; sessio
   if (input.codiLinked) return null;
   const name = input.name.trim();
   if (!name) return null;
-  return { ...base, guest: { name, ...(GUEST_ID_RE.test(input.playerId) ? { guestId: input.playerId } : {}) } };
+  // Badge players keep their Codi picture; only a walk-in sends the avatar they picked.
+  const photoUrl = input.photoUrl?.startsWith("https://") ? { photoUrl: input.photoUrl } : {};
+  return { ...base, guest: { name, ...(GUEST_ID_RE.test(input.playerId) ? { guestId: input.playerId } : {}) }, ...photoUrl };
 }
 
 /** Keep the round, then send everything waiting. Same submissionId again is a no-op. */

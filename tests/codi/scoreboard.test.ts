@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { avatarIdFromPhotoUrl } from "../../app/data/player-avatars";
 import { challengeRound, flushRounds, loginScoreTicket, queueRound, readPending, rememberScoreTicket, roundStatus, scoreTicketFor, scoreboardVersion } from "../../app/utils/scoreboard";
 
 function memory(): Pick<Storage, "getItem" | "setItem"> & { data: Map<string, string> } {
@@ -12,6 +13,20 @@ describe("challengeRound", () => {
   it("names a badge player by ticket and a typed player as a guest", () => {
     expect(challengeRound({ ...base, ticket: "t.s", codiLinked: true, now: 1 })).toEqual({ challengeId: "C", submissionId: base.sessionId, score: 420, createdAt: 1, ticket: "t.s" });
     expect(challengeRound({ ...base, codiLinked: false, now: 1 })).toEqual({ challengeId: "C", submissionId: base.sessionId, score: 420, createdAt: 1, guest: { name: "มะลิ", guestId: base.playerId } });
+  });
+
+  it("sends a walk-in's avatar but never a badge player's", () => {
+    const photoUrl = "https://itoon.github.io/debug-master/student-avatar/art-toy/06-sun_glassed.svg";
+    expect(challengeRound({ ...base, codiLinked: false, photoUrl })?.photoUrl).toBe(photoUrl);
+    expect(challengeRound({ ...base, ticket: "t.s", codiLinked: true, photoUrl })?.photoUrl).toBeUndefined();
+    expect(challengeRound({ ...base, codiLinked: false, photoUrl: "http://localhost:3002/student-avatar/x.svg" })?.photoUrl).toBeUndefined();
+  });
+
+  it("maps a board photo back to the game's own avatar", () => {
+    expect(avatarIdFromPhotoUrl("https://itoon.github.io/debug-master/student-avatar/art-toy/06-sun_glassed.svg")).toBe("art-toy/06-sun_glassed.svg");
+    expect(avatarIdFromPhotoUrl("https://itoon.github.io/debug-master/student-avatar/codi_default.svg")).toBe("codi_default.svg");
+    expect(avatarIdFromPhotoUrl("https://example.test/photo.png")).toBeUndefined();
+    expect(avatarIdFromPhotoUrl(undefined)).toBeUndefined();
   });
 
   it("skips a badge player without a ticket and bad ids", () => {

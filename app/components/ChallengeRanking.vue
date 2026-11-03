@@ -162,6 +162,7 @@ import { useGameI18n } from '../composables/useGameI18n'
 import { useLeaderboardCredits } from '../composables/useLeaderboardCredits'
 import { useHubLeaderboard, useScoreboardConfig } from '../composables/useHubLeaderboard'
 import type { LeaderboardEntry } from '../utils/scoreboardClient'
+import { avatarIdFromPhotoUrl } from '../data/player-avatars'
 const props = withDefaults(
   defineProps<{
     repository: ScoreRepository
@@ -217,7 +218,8 @@ const loaded = computed(() => hub ? hub.loaded.value : local!.loaded.value)
 const hubRules = computed(() => hub?.board.value?.booth.rules)
 function hubRow(entry: LeaderboardEntry): Row {
   return {
-    id: `hub-${entry.rank}`, name: entry.displayName, avatarId: entry.photoUrl ?? entry.pictureUrl ?? '',
+    // A walk-in's photo is one of our own avatar files: show it as that avatar, not as a remote photo.
+    id: `hub-${entry.rank}`, name: entry.displayName, avatarId: avatarIdFromPhotoUrl(entry.photoUrl) ?? entry.photoUrl ?? entry.pictureUrl ?? '',
     score: entry.value, playCount: entry.playCount, hubRank: entry.rank, ...(entry.arenaNo ? { arenaNo: entry.arenaNo } : {}),
     challengeId: props.board.challengeId, setId: props.board.setId, setTitle: '', mode: props.board.mode, language: 'python', debug: false,
     bestCombo: 0, levelsCompleted: 0, levelReached: 0, inputs: 0, elapsedMs: 0, createdAt: '', updatedAt: '',

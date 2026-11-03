@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { handleScoreboard, signTicket, verifyTicket } from '../src/scoreboard'
 
 const LOCAL = 'http://localhost:3002'
+const PAGES = 'https://itoon.github.io'
 const KEY = 'ticket-secret'
 const env = {
-  ALLOWED_ORIGINS: LOCAL, SCOREBOARD_BASE_URL: 'http://hub.test', SCORE_TICKET_SECRET: KEY,
+  ALLOWED_ORIGINS: `${LOCAL},${PAGES}`, SCOREBOARD_BASE_URL: 'http://hub.test', SCORE_TICKET_SECRET: KEY,
   SCOREBOARD_BOOTH_A: 'debug-master', SCOREBOARD_API_KEY_A: 'bk_a',
   SCOREBOARD_BOOTH_C: 'debug-master-pro', SCOREBOARD_API_KEY_C: 'bk_c',
 }
@@ -38,6 +39,17 @@ describe('POST /scoreboard/scores', () => {
     expect(calls[0]!.url).toBe('http://hub.test/api/booths/debug-master-pro/scores')
     expect(new Headers(calls[0]!.init.headers).get('authorization')).toBe('Bearer bk_c')
     expect(JSON.parse(String(calls[0]!.init.body)).guest).toEqual({ name: 'เอ', guestId: 'p-1' })
+  })
+
+  it("forwards a walk-in's own avatar and drops any other image", async () => {
+    const calls: { url: string; init: RequestInit }[] = []
+    const ok = hub(calls, 201, { scoreId: 's', entry: { value: 1, playCount: 1, improved: true } })
+    const avatar = `${PAGES}/debug-master/student-avatar/art-toy/14-bee.svg`
+    await post({ challengeId: 'A', score: 1, submissionId: 'p-1', guest: { name: 'a' }, photoUrl: avatar }, ok, PAGES)
+    await post({ challengeId: 'A', score: 1, submissionId: 'p-2', guest: { name: 'a' }, photoUrl: 'https://evil.test/student-avatar/x.svg' }, ok, PAGES)
+    await post({ challengeId: 'A', score: 1, submissionId: 'p-3', guest: { name: 'a' }, photoUrl: `${PAGES}/debug-master/other.png` }, ok, PAGES)
+    const sentPhotos = calls.map((call) => JSON.parse(String(call.init.body)).photoUrl)
+    expect(sentPhotos).toEqual([avatar, undefined, undefined])
   })
 
   it('passes hub errors through with retryable', async () => {

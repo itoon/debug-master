@@ -35,3 +35,15 @@ export function resolveAvatarId(value: unknown): string {
 export function playerAvatarPath(value?: string): string {
   return `student-avatar/${isPlayerAvatarId(value) ? value : PLAYER_AVATARS[0]}`;
 }
+
+/** The avatar a board photo URL points back to, when it is one of this game's own avatar files. */
+export function avatarIdFromPhotoUrl(url: string | undefined): PlayerAvatarId | undefined {
+  if (!url) return undefined;
+  try {
+    const match = new URL(url).pathname.match(/\/student-avatar\/(.+)$/);
+    const id = match ? decodeURIComponent(match[1]!) : undefined;
+    return isPlayerAvatarId(id) ? id : undefined;
+  } catch {
+    return undefined;
+  }
+}
