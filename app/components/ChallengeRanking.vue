@@ -14,9 +14,9 @@
     <div class="ranking-heading">
       <h3 :id="headingId">{{ t('home.today') }}</h3>
     </div>
-    <p class="scoring-policy">{{ t('ranking.scoringPolicy', { strategy: t(`scoring.${board.scoringStrategy}`) }) }}</p>
+    <p class="scoring-policy">{{ hubRules ? t('ranking.hubPolicy', { rule: t(`ranking.hubRule.${hubRules.aggregate}`) }) : t('ranking.scoringPolicy', { strategy: t(`scoring.${board.scoringStrategy}`) }) }}</p>
     <p v-if="error" class="board-error" role="alert">
-      {{ t('storage.loadError') }}
+      {{ t(remote ? 'ranking.hubLoadError' : 'storage.loadError') }}
     </p>
     <template v-else-if="rows.length || (placeholder && loaded)">
       <p v-if="!rows.length" class="placeholder-note">{{ t('ranking.empty') }}</p>
@@ -73,9 +73,9 @@
         ref="creditsViewport"
         class="credits-viewport game-scrollbar"
         :class="{ dragging: isDragging }"
-        :tabindex="credits || selectable ? 0 : undefined"
-        :role="credits || selectable ? 'region' : undefined"
-        :aria-label="credits || selectable ? t('ranking.readScores') : undefined"
+        :tabindex="credits || canSelect ? 0 : undefined"
+        :role="credits || canSelect ? 'region' : undefined"
+        :aria-label="credits || canSelect ? t('ranking.readScores') : undefined"
         @click.stop="focusForInput"
         @wheel.passive="pauseForInput"
         @pointerdown="beginManualDrag"
@@ -91,11 +91,11 @@
             :key="score.id"
             :style="{ '--row': index }"
             :class="[
-              { podium: index < 3, mine: isMine(score), selectable },
+              { podium: index < 3, mine: isMine(score), selectable: canSelect },
               `place-${index + 1}`
             ]"
           >
-            <button v-if="selectable" type="button" class="player-select" :disabled="selectionBusy" :aria-label="t('ranking.selectPlayer', { name: score.name, rank: index + 1 })" @click.stop="emit('selectPlayer', score)"><span class="sr-only">{{ t('ranking.selectPlayer', { name: score.name, rank: index + 1 }) }}</span></button>
+            <button v-if="canSelect" type="button" class="player-select" :disabled="selectionBusy" :aria-label="t('ranking.selectPlayer', { name: score.name, rank: index + 1 })" @click.stop="emit('selectPlayer', score)"><span class="sr-only">{{ t('ranking.selectPlayer', { name: score.name, rank: index + 1 }) }}</span></button>
             <span
               class="rank-number"
               :aria-label="t('ranking.rank', { rank: index + 1 })"
@@ -107,6 +107,7 @@
               <small v-if="ageRange(score.age)">{{
                 ageRange(score.age)
               }}</small>
+              <small v-else-if="score.arenaNo">{{ t('ranking.arenaNo', { no: score.arenaNo }) }}</small>
             </span>
             <span v-if="isMine(score)" class="you">{{
               t('ranking.you')
@@ -116,7 +117,7 @@
                 :aria-label="t('ranking.points', { score: score.score })"
                 >{{ score.score.toLocaleString('th-TH') }}</strong
               >
-              <small>{{ formatClock(score.elapsedMs) }}</small>
+              <small>{{ score.playCount !== undefined ? t('ranking.plays', { count: score.playCount }) : formatClock(score.elapsedMs) }}</small>
             </span>
           </li>
           <!-- Open places up to the board size, so an empty board still reads as a leaderboard. -->
@@ -159,12 +160,16 @@ import { PLAYER_SPRITES, PLAYER_POSES } from '../utils/playerSprites'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { useGameI18n } from '../composables/useGameI18n'
 import { useLeaderboardCredits } from '../composables/useLeaderboardCredits'
+import { useHubLeaderboard, useScoreboardConfig } from '../composables/useHubLeaderboard'
+import type { LeaderboardEntry } from '../utils/scoreboardClient'
 const props = withDefaults(
   defineProps<{
     repository: ScoreRepository
     board: RankingBoard
     highlightId?: string
     highlightPlayerId?: string
+    /** Codi Arena `sub` of the current player: highlights their row on the hub board. */
+    hubUserId?: string
     limit?: number
     search?: string
     selectable?: boolean
@@ -198,18 +203,35 @@ const emit = defineEmits<{
 }>()
 const { t } = useGameI18n()
 const headingId = useId()
-const { rows, error, loaded } = useScoreBoard(
-  props.repository,
-  computed(() => props.board),
-  props.limit
-)
+type Row = Score & { playCount?: number; hubRank?: number; arenaNo?: number }
+// A challenge with a booth reads its board from the Codi Arena Scoreboard. Its rows carry no player ids,
+// so they can't be picked to resume a local player; a badge scan finds the same player instead.
+const booth = useScoreboardConfig().boothFor(props.board.challengeId)
+const remote = booth !== null
+const canSelect = computed(() => props.selectable && !remote)
+const hub = booth ? useHubLeaderboard(booth, props.limit, computed(() => props.hubUserId)) : null
+const local = remote ? null : useScoreBoard(props.repository, computed(() => props.board), props.limit)
+const rows = computed<Row[]>(() => hub ? hub.entries.value.map(hubRow) : local!.rows.value)
+const error = computed(() => hub ? hub.error.value : local!.error.value)
+const loaded = computed(() => hub ? hub.loaded.value : local!.loaded.value)
+const hubRules = computed(() => hub?.board.value?.booth.rules)
+function hubRow(entry: LeaderboardEntry): Row {
+  return {
+    id: `hub-${entry.rank}`, name: entry.displayName, avatarId: entry.photoUrl ?? entry.pictureUrl ?? '',
+    score: entry.value, playCount: entry.playCount, hubRank: entry.rank, ...(entry.arenaNo ? { arenaNo: entry.arenaNo } : {}),
+    challengeId: props.board.challengeId, setId: props.board.setId, setTitle: '', mode: props.board.mode, language: 'python', debug: false,
+    bestCombo: 0, levelsCompleted: 0, levelReached: 0, inputs: 0, elapsedMs: 0, createdAt: '', updatedAt: '',
+    difficulty: props.board.difficulty, scoringStrategy: props.board.scoringStrategy,
+  }
+}
 const visibleRows = computed(() => {
   const query = props.search.trim().normalize('NFC').toLocaleLowerCase('th-TH');
   return rows.value.map((score, index) => ({ score, index })).filter(({ score }) =>
     !query || score.name.normalize('NFC').toLocaleLowerCase('th-TH').includes(query),
   );
 });
-function isMine(score: Score): boolean {
+function isMine(score: Row): boolean {
+  if (hub) return score.hubRank !== undefined && hub.me.value?.rank === score.hubRank
   return score.id === props.highlightId || Boolean(props.highlightPlayerId && scorePlayerKey(score) === props.highlightPlayerId);
 }
 watch(() => props.search, () => { if (creditsViewport.value) creditsViewport.value.scrollTop = 0; }, { flush: 'post' });

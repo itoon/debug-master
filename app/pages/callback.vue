@@ -59,12 +59,13 @@ function failHere(): void {
   message.value = t("callback.failed");
 }
 
-function readProfile(value: unknown): { sub: string; nickname: string; picture: string } | null {
+function readProfile(value: unknown): { sub: string; nickname: string; picture: string; scoreTicket?: string } | null {
   if (!value || typeof value !== "object") return null;
   const body = value as Record<string, unknown>;
   if (typeof body.sub !== "string" || typeof body.nickname !== "string" || typeof body.picture !== "string") return null;
   if (!body.picture.startsWith("https://")) return null;
-  return { sub: body.sub, nickname: body.nickname, picture: body.picture };
+  const scoreTicket = typeof body.scoreTicket === "string" ? { scoreTicket: body.scoreTicket } : {};
+  return { sub: body.sub, nickname: body.nickname, picture: body.picture, ...scoreTicket };
 }
 </script>
 

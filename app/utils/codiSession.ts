@@ -109,7 +109,8 @@ function parseProfile(value: unknown): CodiProfile | null {
   const nickname = typeof profile.nickname === "string" ? trimCodiNickname(profile.nickname) : "";
   if (!nickname || typeof profile.sub !== "string" || profile.sub.length === 0 || profile.sub.length > 200) return null;
   if (typeof profile.picture !== "string" || !profile.picture.startsWith("https://") || profile.picture.length > 500) return null;
-  return { sub: profile.sub, nickname, picture: profile.picture };
+  const scoreTicket = typeof profile.scoreTicket === "string" && profile.scoreTicket.length <= 2048 ? profile.scoreTicket : undefined;
+  return { sub: profile.sub, nickname, picture: profile.picture, ...(scoreTicket ? { scoreTicket } : {}) };
 }
 
 function token(value: unknown): value is string {

@@ -126,12 +126,13 @@
             <dd>{{ formatClock(result.elapsedMs) }}</dd>
           </div>
           <div v-if="showResultRank">
-            <dt>{{ t('summary.rank') }}</dt>
+            <dt>{{ t(remote ? 'summary.hubRank' : 'summary.rank') }}</dt>
             <dd>
               {{ rank ? t('ranking.rank', { rank }) : t('ranking.unranked') }}
             </dd>
           </div>
         </dl>
+        <p v-if="scoreboardStatus" class="scoreboard-note" role="status">{{ t(`scoreboard.${scoreboardStatus}`) }}</p>
         <p v-if="storageError || error" class="session-error" role="alert">
           {{ t(storageError ? 'storage.error' : 'storage.loadError') }}
         </p>
@@ -161,6 +162,7 @@
           :board="board"
           :limit="Infinity"
           :highlight-id="saved ? rankedResult?.id : undefined"
+          :hub-user-id="hubUserId"
           variant="space"
           podium
           placeholder
@@ -202,6 +204,8 @@ import { useGameI18n } from '../composables/useGameI18n'
 import { useScoreBoard } from '../composables/useScoreBoard'
 import { TILE_TYPES, tileDefinition } from '../data/tiles'
 import { useCountUp } from '../composables/useCountUp'
+import { useHubLeaderboard, useScoreboardConfig } from '../composables/useHubLeaderboard'
+import type { RoundStatus } from '../utils/scoreboard'
 
 const tutorialTiles = TILE_TYPES.map(tileDefinition)
 const props = withDefaults(defineProps<{
@@ -216,6 +220,10 @@ const props = withDefaults(defineProps<{
   saving: boolean
   storageError: boolean
   showSummaryRank?: boolean
+  /** Codi Arena `sub` of the player, for their rank on the hub board. */
+  hubUserId?: string
+  /** Challenges with a booth: how this round's trip to the Codi Arena Scoreboard went. */
+  scoreboardStatus?: RoundStatus | 'rescan'
 }>(), { showSummaryRank: true })
 const emit = defineEmits<{ play: []; home: []; ranking: []; retry: [] }>()
 // The final score rolls up from zero once its tile has popped in.
@@ -232,9 +240,13 @@ const { selectedSession, rankOf, error } = useScoreBoard(
   computed(() => props.board),
   Infinity
 )
+// A challenge with a booth ranks on the Codi Arena Scoreboard; only a badge player has a rank there.
+const booth = useScoreboardConfig().boothFor(props.board.challengeId)
+const remote = booth !== null
+const hubRank = booth ? useHubLeaderboard(booth, 1, computed(() => props.hubUserId)) : null
 const rankedResult = computed(() => props.saved && props.result ? selectedSession(props.result.id) : undefined)
-const showResultRank = computed(() => props.showSummaryRank && !!props.result && hasRankingScore(props.result))
-const rank = computed(() => props.saved && props.result ? rankOf(props.result.id) : undefined)
+const showResultRank = computed(() => props.showSummaryRank && !!props.result && hasRankingScore(props.result) && (!remote || !!props.hubUserId))
+const rank = computed(() => !props.saved || !props.result ? undefined : hubRank ? hubRank.me.value?.rank : rankOf(props.result.id))
 function focusPanel(): void {
   if (panel.value instanceof HTMLDialogElement && !panel.value.open)
     panel.value.showModal()
@@ -255,6 +267,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.scoreboard-note { margin: 0; color: #d6e6ff; font-size: .9rem; font-weight: 700; line-height: 1.5; text-align: center; }
 .session-panel {
   min-height: 100%;
   display: grid;

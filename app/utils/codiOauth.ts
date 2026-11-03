@@ -17,7 +17,8 @@ export type CodiContext =
   | { kind: "home"; modeId: ChallengeId }
   | { kind: "live"; room: string };
 
-export type CodiProfile = { sub: string; nickname: string; picture: string };
+/** `scoreTicket`: signed by live-server; sent back with a Beginner score so the Scoreboard knows the kid. */
+export type CodiProfile = { sub: string; nickname: string; picture: string; scoreTicket?: string };
 
 export function redirectUriForOrigin(origin: string): string | null {
   return CODI_REDIRECTS[origin as keyof typeof CODI_REDIRECTS] ?? null;

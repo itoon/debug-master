@@ -14,6 +14,7 @@
       :stage="pendingPracticeIntro !== null || showTutorial ? 'tutorial' : showSummary ? 'summary' : 'ranking'"
       :mode="activeChallenge ?? undefined" :practice-intro-count="pendingPracticeIntro !== null ? practiceLevels.length : undefined" :repository="repositories.scores" :board="rankingBoard"
       :result="summaryScore" :saved="scoreSaved" :saving="scoreSaving" :storage-error="scoreStorageError" :show-summary-rank="showSummaryRank"
+      :hub-user-id="currentCodiSub" :scoreboard-status="summaryScore ? (rescanRoundIds.has(summaryScore.id) ? 'rescan' : roundStatus[summaryScore.id]) : undefined"
       @play="startFromTutorial" @home="backFromTutorial" @ranking="showChallengeRanking" @retry="retryScoreSave" />
     <ExitConfirmDialog v-if="showExitConfirm" :practice="practiceActive" :live="liveMode" @cancel="showExitConfirm = false" @confirm="confirmExit" />
     <PlayerSetupDialog v-if="liveMode && liveStage === 'setup'" :mode="liveSetupMode" :initial="liveSetupInitial"
@@ -451,11 +452,15 @@ import { takeInitialSearch } from "../utils/live/initialSearch";
 import { roomCodeFromSearch, type PlayerHello, type RoomState } from "../utils/live/protocol";
 import { clearCodiResult, peekCodiResult } from "../utils/codiSession";
 import type { CodiProfile } from "../utils/codiOauth";
+import { useScoreboardConfig } from "../composables/useHubLeaderboard";
+import { challengeRound, flushRounds, loginScoreTicket, queueRound, rememberScoreTicket, roundStatus, scoreTicketFor } from "../utils/scoreboard";
 import LivePlayerPanel from "../components/live/LivePlayerPanel.vue";
 
 const { t } = useGameI18n();
 const { enabled: soundEnabled, unlockAudio, playSound, stopSounds, toggleSound } = useGameAudio();
 const repositories = createLocalRepositories();
+const scoreboard = useScoreboardConfig();
+const scoreboardLive = useLiveConfig(); // Challenge rounds go through live-server, which holds each booth's bk_ key.
 const { loginMethod } = useModeSettings(repositories.modes);
 const competition = useCompetitionSession(repositories.sessions);
 const resumeSessionId = ref<string>();
@@ -670,6 +675,10 @@ const rankingSubtitle = computed(() => {
   return `${setTitle} · ตะลุยด่าน`;
 });
 const lastScoreId = ref("");
+/** Codi Arena `sub` of the current player, when they signed in with a badge. */
+const currentCodiSub = ref<string>();
+/** Challenge rounds by a badge player whose score ticket is gone: they must scan again. */
+const rescanRoundIds = reactive(new Set<string>());
 const isTimedMode = computed(
   () => selectedMode.value === "timer" || selectedMode.value === "ranking",
 );
@@ -957,6 +966,8 @@ async function prepareChallenge(profile: PlayerSetupInput & { codiSub?: string }
     playerId = reusedPlayerId ?? newPlayerId();
     await repositories.players.save({ id: playerId, nickname, avatarId: profile.avatarId, ...(profile.age !== undefined ? { age: profile.age } : {}) });
     if (profile.codiSub) await repositories.players.rememberCodi(profile.codiSub, playerId);
+    const ticket = loginScoreTicket(profile.codiSub, profile.codiSub ? peekCodiResult()?.profile : undefined);
+    if (ticket) rememberScoreTicket(playerId, ticket);
   } catch {
     if (token === sessionToken) homeStorageError.value = t("storage.error");
     return;
@@ -972,6 +983,7 @@ async function prepareChallenge(profile: PlayerSetupInput & { codiSub?: string }
     window.history.pushState({ ...window.history.state, debugMasterHomeV2Session: true }, "", window.location.href);
   }
   currentPlayerId.value = playerId;
+  currentCodiSub.value = codiSubFor(playerId);
   currentAvatarId.value = profile.avatarId;
   playerNameDraft.value = nickname;
   playerAgeDraft.value = profile.age ?? null;
@@ -1553,6 +1565,7 @@ function showCanonicalResult(): void {
   const saved = competition.session.value;
   if (!saved || saved.status !== 'finished') return;
   const score = toScore(saved);
+  submitChallengeRound(score);
   syncCompetitionCounters();
   summaryScore.value = score;
   lastScoreId.value = score.id;
@@ -1563,6 +1576,28 @@ function showCanonicalResult(): void {
   showRanking.value = !activeChallenge.value;
   lastInteractionAt = Date.now();
   playSound('complete');
+}
+
+function codiSubFor(playerId: string): string | undefined {
+  try {
+    return Object.entries(repositories.players.codiLinks()).find(([, linked]) => linked === playerId)?.[0];
+  } catch {
+    return undefined;
+  }
+}
+
+/** Home challenges with a booth only: Live rooms and practice never reach the Codi Arena Scoreboard. */
+function submitChallengeRound(score: Score): void {
+  if (!scoreboardLive.enabled || liveMode.value || practiceActive.value) return;
+  const challengeId = score.challengeId;
+  if (!challengeId || activeChallenge.value?.challengeId !== challengeId || !scoreboard.boothFor(challengeId) || !score.playerId) return;
+  const codiLinked = codiSubFor(score.playerId) !== undefined;
+  const round = challengeRound({ challengeId, sessionId: score.id, score: score.score, playerId: score.playerId, name: score.name, ticket: codiLinked ? scoreTicketFor(score.playerId) : undefined, codiLinked });
+  if (!round) {
+    if (codiLinked) rescanRoundIds.add(score.id);
+    return;
+  }
+  void queueRound(round, scoreboardLive.liveUrl);
 }
 
 function finishCompetition(at: number): Promise<void> {
@@ -1616,6 +1651,7 @@ async function resumeStoredSession(id: string): Promise<void> {
     selectedMode.value = saved.mode;
     if (saved.mode !== 'dead') selectedSetId.value = saved.setId;
     currentPlayerId.value = saved.playerId;
+    currentCodiSub.value = codiSubFor(saved.playerId);
     currentAvatarId.value = saved.avatarId;
     playerName.value = saved.name; playerNameDraft.value = saved.name;
     playerAge.value = saved.age; playerAgeDraft.value = saved.age ?? null;
@@ -2126,6 +2162,8 @@ onMounted(async () => {
   refreshStoredScores();
   unsubscribeScores = repositories.scores.subscribe(refreshStoredScores);
   liveEnter();
+  // Send challenge rounds a previous page load could not deliver.
+  if (scoreboardLive.enabled) void flushRounds(scoreboardLive.liveUrl);
   if (!liveMode.value && peekCodiResult()?.kind === "home") homeSleeping.value = false;
   if (homeConfig.enabled) {
     if (!liveMode.value) resetHomeSession();

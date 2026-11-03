@@ -1,9 +1,11 @@
 // Exchanges a Codi Arena authorization code. The browser only receives the kid's
-// name and picture. The client secret and access token stay in this worker.
+// name, picture and a signed score ticket. The client secret and access token stay in this worker.
 import { homeConfig } from "../../app/data/home-config";
 import { redirectUriForOrigin } from "../../app/utils/codiOauth";
+import type { HubUser } from "../../app/utils/scoreboardClient";
+import { pickHubUser, scoreboardEnabled, signTicket, type ScoreboardEnv } from "./scoreboard";
 
-export interface OauthEnv {
+export interface OauthEnv extends ScoreboardEnv {
   ALLOWED_ORIGINS?: string;
   CODI_ISSUER?: string;
   CODI_CLIENT_ID?: string;
@@ -38,10 +40,12 @@ export async function handleOauth(request: Request, env: OauthEnv, fetchImpl: ty
   }
 
   try {
-    const profile = await completeLogin({
+    const { hubUser, ...profile } = await completeLogin({
       issuer, clientId, clientSecret, redirectUri,
       code: body.code, codeVerifier: body.code_verifier, nonce: body.nonce, fetchImpl,
     });
+    // The page sends this back with a challenge score; the worker turns it into the Scoreboard hubUser.
+    if (scoreboardEnabled(env)) return json({ ...profile, scoreTicket: await signTicket(hubUser, env.SCORE_TICKET_SECRET!) }, 200, origin);
     return json(profile, 200, origin);
   } catch (error) {
     const reason = (error instanceof Error ? error.message : "error").replace(/cvs_[A-Za-z0-9_-]+/g, "[redacted]").slice(0, 120);
@@ -60,7 +64,7 @@ export async function completeLogin(input: {
   nonce: string;
   fetchImpl?: typeof fetch;
   now?: number;
-}): Promise<CodiProfile> {
+}): Promise<CodiProfile & { hubUser: HubUser }> {
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? Date.now();
   const tokenResponse = await fetchDirect(fetchImpl, new URL("/oauth/token", input.issuer), {
@@ -101,7 +105,7 @@ export async function completeLogin(input: {
   if (!sub || sub !== claims.sub || !nickname || !picture || !picture.startsWith("https://") || picture.length > 500) {
     throw new Error("profile");
   }
-  return { sub, nickname, picture };
+  return { sub, nickname, picture, hubUser: pickHubUser(info)! };
 }
 
 export async function verifyIdToken(idToken: string, input: {
