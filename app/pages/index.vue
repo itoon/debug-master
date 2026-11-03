@@ -452,6 +452,7 @@ import { takeInitialSearch } from "../utils/live/initialSearch";
 import { roomCodeFromSearch, type PlayerHello, type RoomState } from "../utils/live/protocol";
 import { clearCodiResult, peekCodiResult } from "../utils/codiSession";
 import { createHubProfiles, createScoreboardOutbox, scoreboardBody, sendViaRelay, type RelayStatus } from "../utils/scoreboard";
+import { centralYou } from "../composables/useCentralBoard";
 import type { CodiProfile } from "../utils/codiOauth";
 import LivePlayerPanel from "../components/live/LivePlayerPanel.vue";
 
@@ -811,6 +812,7 @@ async function startGame(): Promise<void> {
         ...(deadRun.value ? { deadSeed: deadRun.value.seed, hearts: DEAD_LIVES } : {}) },
     });
     if (!saved || token !== sessionToken) return;
+    markCentralYou(saved);
   }
   beginTimer();
   if (liveMode.value) void restoreLiveBoard();
@@ -1577,8 +1579,13 @@ const browserStorage = (() => { try { return typeof window === "undefined" ? nul
 const hubProfiles = typeof window !== "undefined" ? createHubProfiles(browserStorage) : undefined;
 const scoreboardOutbox = scoreboardRelay ? createScoreboardOutbox(browserStorage, body => sendViaRelay(scoreboardRelay, body)) : undefined;
 const boardStatus = ref<RelayStatus | "sending" | null>(null);
+/** "You" on the central Boards: this run's player, session, nickname and (badge kids) Hub sub. */
+function markCentralYou(session: { id: string; playerId: string; name: string }): void {
+  Object.assign(centralYou, { playerId: session.playerId, sessionId: session.id, nickname: session.name, sub: hubProfiles?.forPlayer(session.playerId)?.sub });
+}
 function sendRunToScoreboard(): void {
   const session = competition.session.value;
+  if (session) markCentralYou(session);
   const body = session && scoreboardOutbox ? scoreboardBody(session, hubProfiles?.forPlayer(session.playerId)) : undefined;
   if (!body || !scoreboardOutbox) { boardStatus.value = null; return; }
   boardStatus.value = "sending";

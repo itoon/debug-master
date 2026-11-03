@@ -12,9 +12,11 @@
     :aria-labelledby="headingId"
   >
     <div class="ranking-heading">
-      <h3 :id="headingId">{{ t('home.today') }}</h3>
+      <h3 :id="headingId">{{ central ? t('ranking.central') : t('home.today') }}</h3>
     </div>
     <p class="scoring-policy">{{ t('ranking.scoringPolicy', { strategy: t(`scoring.${board.scoringStrategy}`) }) }}</p>
+    <p v-if="centralWanted && !central && loaded" class="scoring-policy device-only" role="status">{{ t('ranking.deviceOnly') }}</p>
+    <p v-if="outsideMe" class="scoring-policy central-me" role="status">{{ t('ranking.centralMe', { rank: outsideMe.rank }) }}</p>
     <p v-if="error" class="board-error" role="alert">
       {{ t('storage.loadError') }}
     </p>
@@ -73,9 +75,9 @@
         ref="creditsViewport"
         class="credits-viewport game-scrollbar"
         :class="{ dragging: isDragging }"
-        :tabindex="credits || selectable ? 0 : undefined"
-        :role="credits || selectable ? 'region' : undefined"
-        :aria-label="credits || selectable ? t('ranking.readScores') : undefined"
+        :tabindex="credits || rowsSelectable ? 0 : undefined"
+        :role="credits || rowsSelectable ? 'region' : undefined"
+        :aria-label="credits || rowsSelectable ? t('ranking.readScores') : undefined"
         @click.stop="focusForInput"
         @wheel.passive="pauseForInput"
         @pointerdown="beginManualDrag"
@@ -91,11 +93,11 @@
             :key="score.id"
             :style="{ '--row': index }"
             :class="[
-              { podium: index < 3, mine: isMine(score), selectable },
+              { podium: index < 3, mine: isMine(score), selectable: rowsSelectable },
               `place-${index + 1}`
             ]"
           >
-            <button v-if="selectable" type="button" class="player-select" :disabled="selectionBusy" :aria-label="t('ranking.selectPlayer', { name: score.name, rank: index + 1 })" @click.stop="emit('selectPlayer', score)"><span class="sr-only">{{ t('ranking.selectPlayer', { name: score.name, rank: index + 1 }) }}</span></button>
+            <button v-if="rowsSelectable" type="button" class="player-select" :disabled="selectionBusy" :aria-label="t('ranking.selectPlayer', { name: score.name, rank: index + 1 })" @click.stop="emit('selectPlayer', score)"><span class="sr-only">{{ t('ranking.selectPlayer', { name: score.name, rank: index + 1 }) }}</span></button>
             <span
               class="rank-number"
               :aria-label="t('ranking.rank', { rank: index + 1 })"
@@ -103,7 +105,7 @@
             >
             <PlayerAvatar class="row-avatar" :avatar-id="score.avatarId" />
             <span class="who">
-              <strong>{{ score.name }}</strong>
+              <strong>{{ score.name }}<template v-if="score.central?.arenaNo !== undefined"> #{{ score.central.arenaNo }}</template></strong>
               <small v-if="ageRange(score.age)">{{
                 ageRange(score.age)
               }}</small>
@@ -116,7 +118,7 @@
                 :aria-label="t('ranking.points', { score: score.score })"
                 >{{ score.score.toLocaleString('th-TH') }}</strong
               >
-              <small>{{ formatClock(score.elapsedMs) }}</small>
+              <small>{{ score.central ? t('ranking.plays', { count: score.central.plays }) : formatClock(score.elapsedMs) }}</small>
             </span>
           </li>
           <!-- Open places up to the board size, so an empty board still reads as a leaderboard. -->
@@ -198,11 +200,15 @@ const emit = defineEmits<{
 }>()
 const { t } = useGameI18n()
 const headingId = useId()
-const { rows, error, loaded } = useScoreBoard(
+const { rows, error, loaded, central, centralWanted, me } = useScoreBoard(
   props.repository,
   computed(() => props.board),
   props.limit
 )
+// Central rows are other devices' players: picking one can't continue them here.
+const rowsSelectable = computed(() => props.selectable && !central.value)
+/** The signed-in kid's own place when they aren't in the list. */
+const outsideMe = computed(() => (central.value && me.value && !rows.value.some(isMine) ? me.value : null))
 const visibleRows = computed(() => {
   const query = props.search.trim().normalize('NFC').toLocaleLowerCase('th-TH');
   return rows.value.map((score, index) => ({ score, index })).filter(({ score }) =>
@@ -1011,4 +1017,5 @@ h3 {
     animation: mine-glow 900ms ease-in-out 2;
   }
 }
+.device-only, .central-me { font-weight: 700; color: #ffd66b; }
 </style>

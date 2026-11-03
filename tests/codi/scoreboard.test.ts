@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CompetitionSession } from '../../app/types/competition'
 import { createCompetitionSession } from '../../app/utils/competition/session'
 import {
-  createHubProfiles, createScoreboardOutbox, relayOutcome, scoreboardBody, sendViaRelay, type RelayBody,
+  centralBoardId, centralScores, createHubProfiles, createScoreboardOutbox, relayOutcome, scoreboardBody, sendViaRelay, type RelayBody,
 } from '../../app/utils/scoreboard'
 import { newSession, START } from '../competition/fixtures'
 
@@ -100,5 +100,39 @@ describe('Hub profiles', () => {
     createHubProfiles(storage).remember('player-1', hub)
     expect(createHubProfiles(storage).forPlayer('player-1')).toEqual(hub)
     expect(createHubProfiles(storage).forPlayer('player-2')).toBeUndefined()
+  })
+})
+
+// COD-1145: challenge rankings come from the central Board; this device's "today" board only when it can't be read.
+describe('centralBoardId', () => {
+  const board = { challengeId: 'B' as const, setId: 'challenge-intermediate', mode: 'timer' as const, timeLimitSec: 300, difficulty: 1, scoringStrategy: 'BEST' as const }
+  it('names the Tier Board for the event\'s challenge setup', () => {
+    expect(centralBoardId(board)).toBe('intermediate')
+  })
+  it('keeps staff setups, practice and other modes on this device', () => {
+    expect(centralBoardId({ ...board, timeLimitSec: 600 })).toBeUndefined()
+    expect(centralBoardId({ ...board, difficulty: 2 })).toBeUndefined()
+    expect(centralBoardId({ ...board, challengeId: undefined })).toBeUndefined()
+  })
+})
+
+describe('centralScores', () => {
+  const entries = [
+    { rank: 1, playerType: 'user' as const, displayName: 'Ploy', arenaNo: 14, pictureUrl: 'https://hub/p.png', value: 900, playCount: 3 },
+    { rank: 2, playerType: 'guest' as const, displayName: 'Mew', value: 640, playCount: 1 },
+  ]
+  it('shapes Scoreboard entries as ranking rows with their pictures and play counts', () => {
+    const rows = centralScores('pro', entries, {})
+    expect(rows.map(r => [r.name, r.score, r.avatarId])).toEqual([['Ploy', 900, 'https://hub/p.png'], ['Mew', 640, 'codi_default.svg']])
+    expect(rows[0]!.central).toEqual({ plays: 3, arenaNo: 14 })
+    expect(new Set(rows.map(r => r.id)).size).toBe(2)
+  })
+  it('gives "you" the local player and session, by Hub rank or Guest nickname', () => {
+    const you = { playerId: 'player-1', sessionId: 'session-9', nickname: 'mew' }
+    const rows = centralScores('pro', entries, you)
+    expect(rows[1]).toMatchObject({ id: 'session-9', playerId: 'player-1' })
+    expect(rows[0]!.playerId).not.toBe('player-1')
+    const hubRows = centralScores('pro', entries, { ...you, meRank: 1, nickname: undefined })
+    expect(hubRows[0]).toMatchObject({ id: 'session-9', playerId: 'player-1' })
   })
 })

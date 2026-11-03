@@ -90,6 +90,8 @@ export type Score = {
   age?: number;
   /** Ranking / timer modes: the run's time limit, so boards don't mix. */
   timeLimitSec?: number;
+  /** A row of the Codi Arena Scoreboard's Board (COD-1145), not a run stored on this device. */
+  central?: { plays: number; arenaNo?: number };
 };
 
 /** Transient practice results; never stored in the score repository. */

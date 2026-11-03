@@ -1,5 +1,7 @@
 import { competitionTime, DEFAULT_COMPETITION_CONFIG, type ChallengeId } from "../data/home-config";
 import type { CompetitionSession } from "../types/competition";
+import type { Score } from "../types/debug-game";
+import type { RankingBoard } from "./ranking";
 
 // Codi Arena Scoreboard (COD-1144): a finished Challenge run at the default 5:00 goes to the `debug-master` Booth,
 // on the Board of its Tier, through the live-server Worker (which holds the booth's API key — this site is static).
@@ -123,4 +125,55 @@ export function createHubProfiles(storage: Store | null) {
       return p && typeof p.sub === "string" ? p : undefined;
     },
   };
+}
+
+// ---- Reading the central Board (COD-1145) ----
+
+/** The Tier Board a challenge ranking shows, or undefined when that ranking stays on this device (staff setups). */
+export function centralBoardId(board: Pick<RankingBoard, "challengeId" | "timeLimitSec" | "difficulty">): (typeof CHALLENGE_BOARDS)[ChallengeId] | undefined {
+  if (!board.challengeId) return undefined;
+  if (board.timeLimitSec !== competitionTime.defaultSeconds || board.difficulty !== DEFAULT_COMPETITION_CONFIG.difficulty) return undefined;
+  return CHALLENGE_BOARDS[board.challengeId];
+}
+
+/** One row of the Scoreboard's public leaderboard (never another player's id). */
+export type CentralEntry = { rank: number; playerType: "user" | "guest"; displayName: string; arenaNo?: number; pictureUrl?: string; photoUrl?: string; value: number; playCount: number };
+export type CentralLeaderboard = { entries: CentralEntry[]; me: { rank: number; value: number; playCount: number } | null };
+
+/** Who "you" are: this device's player and run; the signed-in kid is found by `me` rank, a typed player by nickname. */
+export type CentralYou = { playerId?: string; sessionId?: string; nickname?: string; meRank?: number };
+
+const DEFAULT_AVATAR = "codi_default.svg";
+
+/** Scoreboard entries as ranking rows, so the same ranking components draw them. "You" carries the local ids. */
+export function centralScores(boardId: string, entries: CentralEntry[], you: CentralYou): Score[] {
+  const nickname = you.nickname?.trim().normalize("NFC").toLocaleLowerCase("th-TH");
+  let found = false;
+  return entries.map((e, index) => {
+    const byRank = e.playerType === "user" && you.meRank !== undefined && you.meRank === e.rank;
+    const byName = e.playerType === "guest" && !!nickname && e.displayName.trim().normalize("NFC").toLocaleLowerCase("th-TH") === nickname;
+    const mine = !found && (byRank || byName) && !!you.playerId;
+    if (mine) found = true;
+    const picture = [e.photoUrl, e.pictureUrl].find((p): p is string => typeof p === "string" && p.startsWith("https://"));
+    const id = `central-${boardId}-${index}`;
+    return {
+      id: mine && you.sessionId ? you.sessionId : id,
+      playerId: mine ? you.playerId : id,
+      name: e.displayName, avatarId: picture ?? DEFAULT_AVATAR,
+      setId: boardId, setTitle: "", mode: "timer", language: "python", debug: false,
+      score: e.value, bestCombo: 0, levelsCompleted: 0, levelReached: 0, inputs: 0, elapsedMs: 0,
+      createdAt: "", updatedAt: "", difficulty: DEFAULT_COMPETITION_CONFIG.difficulty, scoringStrategy: "BEST",
+      central: { plays: e.playCount, ...(e.arenaNo === undefined ? {} : { arenaNo: e.arenaNo }) },
+    } satisfies Score;
+  });
+}
+
+/** GET <scoreboard>/api/booths/<booth>/leaderboard for one Board (public, CORS open, 5 s timeout). */
+export async function fetchCentralBoard(config: { url: string; boothId: string }, boardId: string, sub: string | undefined, fetchImpl: typeof fetch = fetch): Promise<CentralLeaderboard> {
+  const q = new URLSearchParams({ board: boardId, limit: "50" });
+  if (sub) q.set("userId", sub);
+  const res = await fetchImpl(`${config.url.replace(/\/+$/, "")}/api/booths/${encodeURIComponent(config.boothId)}/leaderboard?${q}`, { signal: AbortSignal.timeout(5000) });
+  if (!res.ok) throw new Error(`leaderboard ${res.status}`);
+  const body = await res.json() as Partial<CentralLeaderboard>;
+  return { entries: Array.isArray(body.entries) ? body.entries : [], me: body.me ?? null };
 }

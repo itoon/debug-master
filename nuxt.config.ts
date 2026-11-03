@@ -7,6 +7,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       liveUrl: "",
+      // Codi Arena Scoreboard (COD-1145): where challenge rankings are read (NUXT_PUBLIC_SCOREBOARD_URL).
+      scoreboardUrl: "",
+      scoreboardBoothId: "debug-master",
       codiIssuer: "https://codi-arena-hub.innovasive.workers.dev",
       codiClientId: "cva_zlfJ437Zr3GMa4ps",
     },
