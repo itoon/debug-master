@@ -222,7 +222,7 @@ const props = withDefaults(defineProps<{
   showSummaryRank?: boolean
   /** Codi Arena `sub` of the player, for their rank on the hub board. */
   hubUserId?: string
-  /** Challenges with a booth: how this round's trip to the Codi Arena Scoreboard went. */
+  /** Challenges on the Scoreboard: how this round's trip to the Codi Arena Scoreboard went. */
   scoreboardStatus?: RoundStatus | 'rescan'
 }>(), { showSummaryRank: true })
 const emit = defineEmits<{ play: []; home: []; ranking: []; retry: [] }>()
@@ -240,7 +240,7 @@ const { selectedSession, rankOf, error } = useScoreBoard(
   computed(() => props.board),
   Infinity
 )
-// A challenge with a booth ranks on the Codi Arena Scoreboard; only a badge player has a rank there.
+// A challenge with a Board ranks on the Codi Arena Scoreboard; only a badge player has a rank there.
 const booth = useScoreboardConfig().boothFor(props.board.challengeId)
 const remote = booth !== null
 const hubRank = booth ? useHubLeaderboard(booth, 1, computed(() => props.hubUserId)) : null

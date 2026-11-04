@@ -9,13 +9,11 @@ export default defineNuxtConfig({
       liveUrl: "",
       codiIssuer: "https://codi-arena-hub.innovasive.workers.dev",
       codiClientId: "cva_zlfJ437Zr3GMa4ps",
-      // Codi Arena Scoreboard: one booth per home challenge. Public leaderboards are read from here;
-      // scores go through live-server, which holds each booth's bk_ key. A missing booth (or an empty URL) keeps that board on the device.
-      // Dev reads the local hub, whose Intermediate booth has a different id; NUXT_PUBLIC_SCOREBOARD_URL overrides either.
+      // Codi Arena Scoreboard: one booth for the game, with a Board per home challenge (A beginner, B intermediate,
+      // C pro). Public leaderboards are read from here; scores go through live-server, which holds the booth's bk_ key.
+      // An empty URL or booth keeps the boards on the device. NUXT_PUBLIC_SCOREBOARD_URL / _BOOTH_ID override these.
       scoreboardUrl: process.env.NODE_ENV === "production" ? "https://codiarena-leaderboard-656350060084.asia-southeast3.run.app" : "http://localhost:3000",
-      scoreboardBooths: process.env.NODE_ENV === "production"
-        ? { A: "debug-master", B: "debug-master-intermediate", C: "debug-master-pro" }
-        : { A: "debug-master", B: "debug-master-intermedia", C: "debug-master-pro" },
+      scoreboardBoothId: "debug-master",
     },
   },
   // Live pages and the Codi callback read the browser only: render them client-side,

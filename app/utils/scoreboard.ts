@@ -1,5 +1,6 @@
-// Codi Arena Scoreboard for the home challenges (never Live rooms or practice). Each challenge is its own
-// booth; live-server picks the booth and its bk_ key from the round's challengeId, so no key reaches the page.
+// Codi Arena Scoreboard for the home challenges (never Live rooms or practice). The game is one booth and each
+// challenge is one of its Boards; live-server picks the Board from the round's challengeId and adds the booth's
+// bk_ key, so no key reaches the page.
 // A finished round is kept on this device with its submissionId until live-server has forwarded it,
 // so a network blip neither drops nor double-counts it.
 import { reactive, ref } from "vue";
@@ -79,7 +80,7 @@ export function readPending(storage = store(), now = Date.now()): PendingRound[]
   const stored = readJson<unknown>(storage, PENDING_KEY, []);
   const rounds = [...(Array.isArray(stored) ? stored : []), ...memoryPending.values()]
     .filter((round, index, all) => all.findIndex((other) => other?.submissionId === round?.submissionId) === index);
-  // Rounds queued before challenges had their own booths were all Beginner.
+  // Rounds queued before rounds carried their challenge were all Beginner.
   return rounds.map((round) => round && typeof round === "object" && round.challengeId === undefined ? { ...round, challengeId: "A" } : round)
     .filter((round): round is PendingRound => Boolean(round)
     && ["A", "B", "C"].includes(round.challengeId)

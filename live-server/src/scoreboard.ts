@@ -1,20 +1,17 @@
-// Forwards finished home-challenge rounds to the Codi Arena Scoreboard in API key mode. Each challenge
-// (A Beginner, B Intermediate, C Pro) is its own booth with its own bk_ key, and both stay in this worker.
+// Forwards finished home-challenge rounds to the Codi Arena Scoreboard in API key mode. The game is one booth,
+// and each challenge (A Beginner, B Intermediate, C Pro) is one of its Boards; the booth's bk_ key stays in this worker.
 // A Codi player is identified by a ticket this worker signed at /oauth/complete; a typed-name player is a guest.
 //   POST /scoreboard/scores  { challengeId, score, submissionId, ticket } | { challengeId, score, submissionId, guest: { name, guestId }, photoUrl? }
-import { createScoreboardClient, GUEST_ID_RE, SUBMISSION_ID_RE, type HubUser } from "../../app/utils/scoreboardClient";
+import { CHALLENGE_BOARDS, createScoreboardClient, GUEST_ID_RE, SUBMISSION_ID_RE, type ChallengeBoard, type HubUser } from "../../app/utils/scoreboardClient";
 
 export interface ScoreboardEnv {
   ALLOWED_ORIGINS?: string;
   SCOREBOARD_BASE_URL?: string;
   /** Signs score tickets. Separate from the booth keys so rotating one key keeps players signed in. */
   SCORE_TICKET_SECRET?: string;
-  SCOREBOARD_BOOTH_A?: string;
-  SCOREBOARD_BOOTH_B?: string;
-  SCOREBOARD_BOOTH_C?: string;
-  SCOREBOARD_API_KEY_A?: string;
-  SCOREBOARD_API_KEY_B?: string;
-  SCOREBOARD_API_KEY_C?: string;
+  SCOREBOARD_BOOTH_ID?: string;
+  /** The booth's bk_ key, one for all its Boards. */
+  SCOREBOARD_API_KEY?: string;
 }
 
 export type ScoreboardChallenge = "A" | "B" | "C";
@@ -25,16 +22,16 @@ const TICKET_TTL_MS = 12 * 60 * 60 * 1000;
 /** Userinfo fields the Scoreboard reads. Nothing else about the kid goes in the ticket. */
 const HUB_FIELDS = ["sub", "nickname", "name", "picture", "arena_picture_full", "arena_no", "arena_test"] as const;
 
-/** The booth and key for one challenge, or null while that challenge has none. */
-export function scoreboardBooth(env: ScoreboardEnv, challengeId: ScoreboardChallenge): { boothId: string; apiKey: string } | null {
-  const boothId = env[`SCOREBOARD_BOOTH_${challengeId}`]?.trim();
-  const apiKey = env[`SCOREBOARD_API_KEY_${challengeId}`]?.trim();
-  return boothId && apiKey?.startsWith("bk_") ? { boothId, apiKey } : null;
+/** The booth, its key and the challenge's Board, or null while the booth has no key. */
+export function scoreboardBooth(env: ScoreboardEnv, challengeId: ScoreboardChallenge): { boothId: string; apiKey: string; board: ChallengeBoard } | null {
+  const boothId = env.SCOREBOARD_BOOTH_ID?.trim();
+  const apiKey = env.SCOREBOARD_API_KEY?.trim();
+  return boothId && apiKey?.startsWith("bk_") ? { boothId, apiKey, board: CHALLENGE_BOARDS[challengeId] } : null;
 }
 
-/** Tickets are only worth issuing when some challenge can send scores. */
+/** Tickets are only worth issuing when scores can be sent. */
 export function scoreboardEnabled(env: ScoreboardEnv): boolean {
-  return Boolean(env.SCOREBOARD_BASE_URL && env.SCORE_TICKET_SECRET && CHALLENGES.some((id) => scoreboardBooth(env, id)));
+  return Boolean(env.SCOREBOARD_BASE_URL && env.SCORE_TICKET_SECRET && scoreboardBooth(env, "A"));
 }
 
 export function pickHubUser(info: Record<string, unknown>): HubUser | null {
@@ -99,9 +96,9 @@ export async function handleScoreboard(request: Request, env: ScoreboardEnv, fet
     fetch: fetchImpl,
   });
   const player = hubUser ? { hubUser } : { guest: body.guest!, ...(body.photoUrl ? { photoUrl: body.photoUrl } : {}) };
-  const result = await client.submitScore({ score: body.score, submissionId: body.submissionId, ...player });
+  const result = await client.submitScore({ score: body.score, board: booth.board, submissionId: body.submissionId, ...player });
   if (result.ok) return json({ ok: true, duplicate: result.duplicate, entry: result.entry }, 200, origin);
-  if (result.code === "UNAUTHORIZED") console.error(`scoreboard rejected SCOREBOARD_API_KEY_${body.challengeId}: set the booth's current key`);
+  if (result.code === "UNAUTHORIZED") console.error("scoreboard rejected SCOREBOARD_API_KEY: set the booth's current key");
   return json({ ok: false, code: result.code, retryable: result.retryable }, result.status || 502, origin);
 }
 
