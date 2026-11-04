@@ -14,13 +14,11 @@
     "RESULTS_RETENTION_DAYS": "90",
     "CODI_ISSUER": "https://codi-arena-hub.innovasive.workers.dev",
     "CODI_CLIENT_ID": "cva_zlfJ437Zr3GMa4ps",
-    // Production Codi Arena Scoreboard, one booth per home challenge (A Beginner, B Intermediate, C Pro).
-    // The secrets SCOREBOARD_API_KEY_A/B/C (bk_…) and SCORE_TICKET_SECRET come from `wrangler secret put`;
-    // a challenge without its key keeps its scores on the device. .dev.vars points local dev at the local hub.
+    // Production Codi Arena Scoreboard: one booth for the game, whose Boards beginner, intermediate and pro are
+    // home challenges A, B and C. The secrets SCOREBOARD_API_KEY (bk_…) and SCORE_TICKET_SECRET come from
+    // `wrangler secret put`; without the key scores stay on the device. .dev.vars points local dev at a local Scoreboard.
     "SCOREBOARD_BASE_URL": "https://codiarena-leaderboard-656350060084.asia-southeast3.run.app",
-    "SCOREBOARD_BOOTH_A": "debug-master",
-    "SCOREBOARD_BOOTH_B": "debug-master-intermediate",
-    "SCOREBOARD_BOOTH_C": "debug-master-pro"
+    "SCOREBOARD_BOOTH_ID": "debug-master"
   },
   "durable_objects": {
     "bindings": [{ "name": "LIVE_ROOM", "class_name": "LiveRoom" }]

@@ -1593,7 +1593,7 @@ function avatarPhotoUrl(avatarId: string | undefined): string | undefined {
   return new URL(srcForAvatar(avatarId), window.location.origin).href;
 }
 
-/** Home challenges with a booth only: Live rooms and practice never reach the Codi Arena Scoreboard. */
+/** Home challenges with a Board only: Live rooms and practice never reach the Codi Arena Scoreboard. */
 function submitChallengeRound(score: Score): void {
   if (!scoreboardLive.enabled || liveMode.value || practiceActive.value) return;
   const challengeId = score.challengeId;

@@ -20,6 +20,8 @@ export type LeaderboardEntry = {
 
 export type Leaderboard = {
   booth: { id: string; name: string; rules: ScoreboardRules };
+  /** The Board these entries rank (absent on a Scoreboard without Boards). */
+  board?: { id: string; name: string };
   entries: LeaderboardEntry[];
   me: { rank: number; value: number; playCount: number } | null;
   updatedAt: string;
@@ -31,6 +33,10 @@ export type GuestPlayer = { name: string; guestId?: string };
 export type SubmitResult =
   | { ok: true; duplicate: boolean; scoreId: string; entry: { value: number; playCount: number; improved: boolean }; submissionId: string }
   | { ok: false; status: number; code: string; message: string; retryable: boolean; submissionId: string };
+
+/** The game is one booth; home challenges A, B, C are its Beginner, Intermediate and Pro Boards. */
+export const CHALLENGE_BOARDS = { A: "beginner", B: "intermediate", C: "pro" } as const;
+export type ChallengeBoard = (typeof CHALLENGE_BOARDS)[keyof typeof CHALLENGE_BOARDS];
 
 export const SUBMISSION_ID_RE = /^[A-Za-z0-9_-]{1,100}$/;
 export const GUEST_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
@@ -68,10 +74,10 @@ export function createScoreboardClient(opts: {
 
   return {
     /** Submit one finished round. Never rejects. API key mode: exactly one of hubUser / guest. */
-    async submitScore(round: { score: number; submissionId: string; hubUser?: HubUser; guest?: GuestPlayer; photoUrl?: string }): Promise<SubmitResult> {
-      const { score, submissionId, hubUser, guest, photoUrl } = round;
+    async submitScore(round: { score: number; board?: string; submissionId: string; hubUser?: HubUser; guest?: GuestPlayer; photoUrl?: string }): Promise<SubmitResult> {
+      const { score, board, submissionId, hubUser, guest, photoUrl } = round;
       if (typeof score !== "number" || !Number.isFinite(score)) throw new TypeError("score must be a finite number");
-      const body = JSON.stringify({ score, submissionId, hubUser, guest, photoUrl });
+      const body = JSON.stringify({ score, board, submissionId, hubUser, guest, photoUrl });
       let last: Response_ | undefined;
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         last = await request("/scores", {
@@ -90,8 +96,9 @@ export function createScoreboardClient(opts: {
     },
 
     /** Public leaderboard (no auth, CORS open, cached 2 s server-side — poll every 3–5 s at most). */
-    async getLeaderboard(query: { limit?: number; userId?: string } = {}): Promise<Leaderboard> {
+    async getLeaderboard(query: { board?: string; limit?: number; userId?: string } = {}): Promise<Leaderboard> {
       const q = new URLSearchParams();
+      if (query.board) q.set("board", query.board);
       if (query.limit !== undefined) q.set("limit", String(query.limit));
       if (query.userId) q.set("userId", query.userId);
       const search = q.toString();

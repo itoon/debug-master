@@ -6,8 +6,7 @@ const PAGES = 'https://itoon.github.io'
 const KEY = 'ticket-secret'
 const env = {
   ALLOWED_ORIGINS: `${LOCAL},${PAGES}`, SCOREBOARD_BASE_URL: 'http://hub.test', SCORE_TICKET_SECRET: KEY,
-  SCOREBOARD_BOOTH_A: 'debug-master', SCOREBOARD_API_KEY_A: 'bk_a',
-  SCOREBOARD_BOOTH_C: 'debug-master-pro', SCOREBOARD_API_KEY_C: 'bk_c',
+  SCOREBOARD_BOOTH_ID: 'debug-master', SCOREBOARD_API_KEY: 'bk_booth',
 }
 
 describe('score tickets', () => {
@@ -22,22 +21,25 @@ describe('score tickets', () => {
 })
 
 describe('POST /scoreboard/scores', () => {
-  it('sends a ticket player as hubUser with the API key', async () => {
+  it('sends a ticket player as hubUser with the API key, on the Beginner Board for challenge A', async () => {
     const calls: { url: string; init: RequestInit }[] = []
     const ticket = await signTicket({ sub: 'kid', nickname: 'มะลิ' }, KEY)
     const res = await post({ challengeId: 'A', score: 120, submissionId: 'round-1', ticket }, hub(calls, 201, { scoreId: 's1', entry: { value: 120, playCount: 1, improved: true } }))
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ ok: true, duplicate: false, entry: { value: 120, playCount: 1, improved: true } })
     expect(calls[0]!.url).toBe('http://hub.test/api/booths/debug-master/scores')
-    expect(new Headers(calls[0]!.init.headers).get('authorization')).toBe('Bearer bk_a')
-    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ score: 120, submissionId: 'round-1', hubUser: { sub: 'kid', nickname: 'มะลิ' } })
+    expect(new Headers(calls[0]!.init.headers).get('authorization')).toBe('Bearer bk_booth')
+    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ score: 120, board: 'beginner', submissionId: 'round-1', hubUser: { sub: 'kid', nickname: 'มะลิ' } })
   })
 
-  it('sends a typed-name player as a guest to the booth of the challenge played', async () => {
+  it('sends a typed-name player as a guest to the Board of the challenge played, on the same booth', async () => {
     const calls: { url: string; init: RequestInit }[] = []
-    await post({ challengeId: 'C', score: 0, submissionId: 'round-2', guest: { name: ' เอ ', guestId: 'p-1' } }, hub(calls, 201, { scoreId: 's2', entry: { value: 0, playCount: 1, improved: false } }))
-    expect(calls[0]!.url).toBe('http://hub.test/api/booths/debug-master-pro/scores')
-    expect(new Headers(calls[0]!.init.headers).get('authorization')).toBe('Bearer bk_c')
+    const ok = hub(calls, 201, { scoreId: 's2', entry: { value: 0, playCount: 1, improved: false } })
+    await post({ challengeId: 'C', score: 0, submissionId: 'round-2', guest: { name: ' เอ ', guestId: 'p-1' } }, ok)
+    await post({ challengeId: 'B', score: 5, submissionId: 'round-3', guest: { name: 'บี' } }, ok)
+    expect(calls.map((call) => call.url)).toEqual(['http://hub.test/api/booths/debug-master/scores', 'http://hub.test/api/booths/debug-master/scores'])
+    expect(new Headers(calls[0]!.init.headers).get('authorization')).toBe('Bearer bk_booth')
+    expect(calls.map((call) => JSON.parse(String(call.init.body)).board)).toEqual(['pro', 'intermediate'])
     expect(JSON.parse(String(calls[0]!.init.body)).guest).toEqual({ name: 'เอ', guestId: 'p-1' })
   })
 
@@ -58,7 +60,7 @@ describe('POST /scoreboard/scores', () => {
     expect(await res.json()).toEqual({ ok: false, code: 'INTERNAL', retryable: true })
   })
 
-  it('rejects forged tickets, bad bodies, other origins and a challenge without a key', async () => {
+  it('rejects forged tickets, bad bodies, other origins, and is off without the booth key', async () => {
     const never = hub([], 201, {})
     const guest = { challengeId: 'A', score: 1, submissionId: 'r', guest: { name: 'a' } }
     expect((await post({ challengeId: 'A', score: 1, submissionId: 'r', ticket: 'a.b' }, never)).status).toBe(401)
@@ -66,7 +68,8 @@ describe('POST /scoreboard/scores', () => {
     expect((await post({ ...guest, challengeId: 'live' }, never)).status).toBe(400)
     expect((await post({ challengeId: 'A', score: 1, submissionId: 'r' }, never)).status).toBe(400)
     expect((await post(guest, never, 'https://evil.test')).status).toBe(403)
-    expect((await post({ ...guest, challengeId: 'B' }, never)).status).toBe(503)
+    const noKey = await handleScoreboard(request(guest, LOCAL), { ...env, SCOREBOARD_API_KEY: '' }, never)
+    expect(noKey!.status).toBe(503)
     const noSecret = await handleScoreboard(request(guest, LOCAL), { ...env, SCORE_TICKET_SECRET: '' }, never)
     expect(noSecret!.status).toBe(503)
   })

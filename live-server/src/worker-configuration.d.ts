@@ -7,15 +7,11 @@ interface __BaseEnv_Env {
 	RESULTS_RETENTION_DAYS: "90";
 	CODI_ISSUER: "https://codi-arena-hub.innovasive.workers.dev";
 	CODI_CLIENT_ID: "cva_zlfJ437Zr3GMa4ps";
-	SCOREBOARD_BOOTH_A: "debug-master";
-	SCOREBOARD_BOOTH_C: "debug-master-pro";
+	SCOREBOARD_BOOTH_ID: "debug-master";
 	CODI_CLIENT_SECRET: string;
 	SCOREBOARD_BASE_URL: string;
-	SCOREBOARD_API_KEY_A: string;
-	SCOREBOARD_API_KEY_B: string;
-	SCOREBOARD_API_KEY_C: string;
+	SCOREBOARD_API_KEY: string;
 	SCORE_TICKET_SECRET: string;
-	SCOREBOARD_BOOTH_B: string;
 	LIVE_ROOM: DurableObjectNamespace<import("./index").LiveRoom>;
 }
 declare namespace Cloudflare {
@@ -30,7 +26,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ALLOWED_ORIGINS" | "RESULTS_RETENTION_DAYS" | "CODI_ISSUER" | "CODI_CLIENT_ID" | "SCOREBOARD_BOOTH_A" | "SCOREBOARD_BOOTH_C" | "CODI_CLIENT_SECRET" | "SCOREBOARD_BASE_URL" | "SCOREBOARD_API_KEY_A" | "SCOREBOARD_API_KEY_B" | "SCOREBOARD_API_KEY_C" | "SCORE_TICKET_SECRET" | "SCOREBOARD_BOOTH_B">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ALLOWED_ORIGINS" | "RESULTS_RETENTION_DAYS" | "CODI_ISSUER" | "CODI_CLIENT_ID" | "SCOREBOARD_BOOTH_ID" | "CODI_CLIENT_SECRET" | "SCOREBOARD_BASE_URL" | "SCOREBOARD_API_KEY" | "SCORE_TICKET_SECRET">> {}
 }
 declare module "*.txt" {
 	const value: string;

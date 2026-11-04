@@ -205,7 +205,7 @@ const emit = defineEmits<{
 const { t } = useGameI18n()
 const headingId = useId()
 type Row = Score & { playCount?: number; hubRank?: number; arenaNo?: number }
-// A challenge with a booth reads its board from the Codi Arena Scoreboard. Its rows carry no player ids,
+// A challenge with a Board reads it from the Codi Arena Scoreboard. Its rows carry no player ids,
 // so they can't be picked to resume a local player; a badge scan finds the same player instead.
 const booth = useScoreboardConfig().boothFor(props.board.challengeId)
 const remote = booth !== null
